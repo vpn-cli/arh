@@ -15,9 +15,13 @@ interface GameboyLoadingScreenProps {
    rects with shapeRendering="crispEdges" so they sit on the same pixel
    grid as the background art instead of reading as smooth vector stickers. */
 
+/* Pixel-art flora. Colours sampled from loading_bg.jpg; drawn as integer
+   rects with shapeRendering="crispEdges" so they sit on the same pixel
+   grid as the background art instead of reading as smooth vector stickers. */
+
 function DaisyFlower({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg viewBox="0 0 7 14" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
+    <svg viewBox="0 0 7 18" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
       <rect x="3" y="0" width="1" height="1" fill="#034910" />
       <rect x="2" y="1" width="3" height="1" fill="#fefde8" />
       <rect x="1" y="2" width="5" height="1" fill="#fefde8" />
@@ -39,68 +43,101 @@ function DaisyFlower({ className = "", style = {} }: { className?: string; style
       <rect x="3" y="11" width="1" height="1" fill="#1a6a11" />
       <rect x="3" y="12" width="1" height="1" fill="#034910" />
       <rect x="3" y="13" width="1" height="1" fill="#034910" />
+      <rect x="1" y="14" width="1" height="1" fill="#5ea92f" />
+      <rect x="5" y="14" width="1" height="1" fill="#5ea92f" />
+      <rect x="1" y="15" width="1" height="1" fill="#367224" />
+      <rect x="2" y="15" width="3" height="1" fill="#1a6a11" />
+      <rect x="5" y="15" width="1" height="1" fill="#367224" />
+      <rect x="0" y="16" width="1" height="1" fill="#367224" />
+      <rect x="1" y="16" width="5" height="1" fill="#1a6a11" />
+      <rect x="6" y="16" width="1" height="1" fill="#367224" />
+      <rect x="0" y="17" width="1" height="1" fill="#1a6a11" />
+      <rect x="1" y="17" width="5" height="1" fill="#034910" />
+      <rect x="6" y="17" width="1" height="1" fill="#1a6a11" />
     </svg>
   );
 }
 
 function ButtercupFlower({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg viewBox="0 0 6 12" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
-      <rect x="2" y="0" width="2" height="1" fill="#fade3c" />
-      <rect x="1" y="1" width="1" height="1" fill="#fade3c" />
-      <rect x="2" y="1" width="2" height="1" fill="#ffda36" />
-      <rect x="4" y="1" width="1" height="1" fill="#fade3c" />
-      <rect x="0" y="2" width="1" height="1" fill="#fade3c" />
-      <rect x="1" y="2" width="4" height="1" fill="#ffda36" />
-      <rect x="5" y="2" width="1" height="1" fill="#fade3c" />
-      <rect x="0" y="3" width="1" height="1" fill="#fade3c" />
-      <rect x="1" y="3" width="1" height="1" fill="#ffda36" />
-      <rect x="2" y="3" width="2" height="1" fill="#f8b566" />
-      <rect x="4" y="3" width="1" height="1" fill="#ffda36" />
-      <rect x="5" y="3" width="1" height="1" fill="#fade3c" />
-      <rect x="1" y="4" width="1" height="1" fill="#fade3c" />
-      <rect x="2" y="4" width="2" height="1" fill="#ffda36" />
-      <rect x="4" y="4" width="1" height="1" fill="#fade3c" />
-      <rect x="2" y="5" width="2" height="1" fill="#f8b566" />
-      <rect x="2" y="6" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="7" width="1" height="1" fill="#1a6a11" />
-      <rect x="1" y="8" width="1" height="1" fill="#034910" />
-      <rect x="2" y="8" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="9" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="10" width="1" height="1" fill="#034910" />
-      <rect x="2" y="11" width="1" height="1" fill="#034910" />
+    <svg viewBox="0 0 7 16" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
+      <rect x="3" y="0" width="2" height="1" fill="#fade3c" />
+      <rect x="2" y="1" width="1" height="1" fill="#fade3c" />
+      <rect x="3" y="1" width="2" height="1" fill="#ffda36" />
+      <rect x="5" y="1" width="1" height="1" fill="#fade3c" />
+      <rect x="1" y="2" width="1" height="1" fill="#fade3c" />
+      <rect x="2" y="2" width="4" height="1" fill="#ffda36" />
+      <rect x="6" y="2" width="1" height="1" fill="#fade3c" />
+      <rect x="1" y="3" width="1" height="1" fill="#fade3c" />
+      <rect x="2" y="3" width="1" height="1" fill="#ffda36" />
+      <rect x="3" y="3" width="2" height="1" fill="#f8b566" />
+      <rect x="5" y="3" width="1" height="1" fill="#ffda36" />
+      <rect x="6" y="3" width="1" height="1" fill="#fade3c" />
+      <rect x="2" y="4" width="1" height="1" fill="#fade3c" />
+      <rect x="3" y="4" width="2" height="1" fill="#ffda36" />
+      <rect x="5" y="4" width="1" height="1" fill="#fade3c" />
+      <rect x="3" y="5" width="2" height="1" fill="#f8b566" />
+      <rect x="3" y="6" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="7" width="1" height="1" fill="#1a6a11" />
+      <rect x="2" y="8" width="1" height="1" fill="#034910" />
+      <rect x="3" y="8" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="9" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="10" width="1" height="1" fill="#034910" />
+      <rect x="3" y="11" width="1" height="1" fill="#034910" />
+      <rect x="1" y="12" width="1" height="1" fill="#5ea92f" />
+      <rect x="5" y="12" width="1" height="1" fill="#5ea92f" />
+      <rect x="1" y="13" width="1" height="1" fill="#367224" />
+      <rect x="2" y="13" width="3" height="1" fill="#1a6a11" />
+      <rect x="5" y="13" width="1" height="1" fill="#367224" />
+      <rect x="0" y="14" width="1" height="1" fill="#367224" />
+      <rect x="1" y="14" width="5" height="1" fill="#1a6a11" />
+      <rect x="6" y="14" width="1" height="1" fill="#367224" />
+      <rect x="0" y="15" width="1" height="1" fill="#1a6a11" />
+      <rect x="1" y="15" width="5" height="1" fill="#034910" />
+      <rect x="6" y="15" width="1" height="1" fill="#1a6a11" />
     </svg>
   );
 }
 
 function PinkWildflower({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg viewBox="0 0 6 11" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
-      <rect x="2" y="0" width="1" height="1" fill="#fd9ee0" />
-      <rect x="1" y="1" width="1" height="1" fill="#fd9ee0" />
-      <rect x="2" y="1" width="1" height="1" fill="#ff9be1" />
-      <rect x="3" y="1" width="1" height="1" fill="#fd9ee0" />
-      <rect x="0" y="2" width="1" height="1" fill="#fd9ee0" />
-      <rect x="1" y="2" width="2" height="1" fill="#ff9be1" />
-      <rect x="3" y="2" width="2" height="1" fill="#fd9ee0" />
-      <rect x="1" y="3" width="1" height="1" fill="#fd9ee0" />
-      <rect x="2" y="3" width="1" height="1" fill="#ff9be1" />
-      <rect x="3" y="3" width="1" height="1" fill="#fd9ee0" />
-      <rect x="2" y="4" width="1" height="1" fill="#fd9ee0" />
-      <rect x="2" y="5" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="6" width="1" height="1" fill="#1a6a11" />
-      <rect x="1" y="7" width="1" height="1" fill="#034910" />
-      <rect x="2" y="7" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="8" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="9" width="1" height="1" fill="#034910" />
-      <rect x="2" y="10" width="1" height="1" fill="#034910" />
+    <svg viewBox="0 0 7 15" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
+      <rect x="3" y="0" width="1" height="1" fill="#fd9ee0" />
+      <rect x="2" y="1" width="1" height="1" fill="#fd9ee0" />
+      <rect x="3" y="1" width="1" height="1" fill="#ff9be1" />
+      <rect x="4" y="1" width="1" height="1" fill="#fd9ee0" />
+      <rect x="1" y="2" width="1" height="1" fill="#fd9ee0" />
+      <rect x="2" y="2" width="2" height="1" fill="#ff9be1" />
+      <rect x="4" y="2" width="2" height="1" fill="#fd9ee0" />
+      <rect x="2" y="3" width="1" height="1" fill="#fd9ee0" />
+      <rect x="3" y="3" width="1" height="1" fill="#ff9be1" />
+      <rect x="4" y="3" width="1" height="1" fill="#fd9ee0" />
+      <rect x="3" y="4" width="1" height="1" fill="#fd9ee0" />
+      <rect x="3" y="5" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="6" width="1" height="1" fill="#1a6a11" />
+      <rect x="2" y="7" width="1" height="1" fill="#034910" />
+      <rect x="3" y="7" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="8" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="9" width="1" height="1" fill="#034910" />
+      <rect x="3" y="10" width="1" height="1" fill="#034910" />
+      <rect x="1" y="11" width="1" height="1" fill="#5ea92f" />
+      <rect x="5" y="11" width="1" height="1" fill="#5ea92f" />
+      <rect x="1" y="12" width="1" height="1" fill="#367224" />
+      <rect x="2" y="12" width="3" height="1" fill="#1a6a11" />
+      <rect x="5" y="12" width="1" height="1" fill="#367224" />
+      <rect x="0" y="13" width="1" height="1" fill="#367224" />
+      <rect x="1" y="13" width="5" height="1" fill="#1a6a11" />
+      <rect x="6" y="13" width="1" height="1" fill="#367224" />
+      <rect x="0" y="14" width="1" height="1" fill="#1a6a11" />
+      <rect x="1" y="14" width="5" height="1" fill="#034910" />
+      <rect x="6" y="14" width="1" height="1" fill="#1a6a11" />
     </svg>
   );
 }
 
 function CloverPlant({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg viewBox="0 0 10 14" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
+    <svg viewBox="0 0 10 18" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
       <rect x="2" y="0" width="2" height="1" fill="#5ea92f" />
       <rect x="6" y="0" width="2" height="1" fill="#5ea92f" />
       <rect x="1" y="1" width="8" height="1" fill="#5ea92f" />
@@ -131,71 +168,104 @@ function CloverPlant({ className = "", style = {} }: { className?: string; style
       <rect x="5" y="11" width="1" height="1" fill="#1a6a11" />
       <rect x="4" y="12" width="1" height="1" fill="#034910" />
       <rect x="4" y="13" width="1" height="1" fill="#034910" />
+      <rect x="2" y="14" width="1" height="1" fill="#5ea92f" />
+      <rect x="6" y="14" width="1" height="1" fill="#5ea92f" />
+      <rect x="2" y="15" width="1" height="1" fill="#367224" />
+      <rect x="3" y="15" width="3" height="1" fill="#1a6a11" />
+      <rect x="6" y="15" width="1" height="1" fill="#367224" />
+      <rect x="1" y="16" width="1" height="1" fill="#367224" />
+      <rect x="2" y="16" width="5" height="1" fill="#1a6a11" />
+      <rect x="7" y="16" width="1" height="1" fill="#367224" />
+      <rect x="1" y="17" width="1" height="1" fill="#1a6a11" />
+      <rect x="2" y="17" width="5" height="1" fill="#034910" />
+      <rect x="7" y="17" width="1" height="1" fill="#1a6a11" />
     </svg>
   );
 }
 
 function BluebellFlower({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg viewBox="0 0 6 11" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
-      <rect x="2" y="0" width="1" height="1" fill="#7270d1" />
-      <rect x="1" y="1" width="1" height="1" fill="#7270d1" />
-      <rect x="2" y="1" width="1" height="1" fill="#6f6dce" />
-      <rect x="3" y="1" width="1" height="1" fill="#7270d1" />
-      <rect x="1" y="2" width="1" height="1" fill="#7270d1" />
-      <rect x="2" y="2" width="2" height="1" fill="#6f6dce" />
-      <rect x="4" y="2" width="1" height="1" fill="#7270d1" />
-      <rect x="1" y="3" width="2" height="1" fill="#7270d1" />
-      <rect x="3" y="3" width="1" height="1" fill="#6f6dce" />
-      <rect x="4" y="3" width="1" height="1" fill="#7270d1" />
-      <rect x="2" y="4" width="2" height="1" fill="#7270d1" />
-      <rect x="2" y="5" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="6" width="1" height="1" fill="#1a6a11" />
-      <rect x="1" y="7" width="1" height="1" fill="#034910" />
-      <rect x="2" y="7" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="8" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="9" width="1" height="1" fill="#034910" />
-      <rect x="2" y="10" width="1" height="1" fill="#034910" />
+    <svg viewBox="0 0 7 15" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
+      <rect x="3" y="0" width="1" height="1" fill="#7270d1" />
+      <rect x="2" y="1" width="1" height="1" fill="#7270d1" />
+      <rect x="3" y="1" width="1" height="1" fill="#6f6dce" />
+      <rect x="4" y="1" width="1" height="1" fill="#7270d1" />
+      <rect x="2" y="2" width="1" height="1" fill="#7270d1" />
+      <rect x="3" y="2" width="2" height="1" fill="#6f6dce" />
+      <rect x="5" y="2" width="1" height="1" fill="#7270d1" />
+      <rect x="2" y="3" width="2" height="1" fill="#7270d1" />
+      <rect x="4" y="3" width="1" height="1" fill="#6f6dce" />
+      <rect x="5" y="3" width="1" height="1" fill="#7270d1" />
+      <rect x="3" y="4" width="2" height="1" fill="#7270d1" />
+      <rect x="3" y="5" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="6" width="1" height="1" fill="#1a6a11" />
+      <rect x="2" y="7" width="1" height="1" fill="#034910" />
+      <rect x="3" y="7" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="8" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="9" width="1" height="1" fill="#034910" />
+      <rect x="3" y="10" width="1" height="1" fill="#034910" />
+      <rect x="1" y="11" width="1" height="1" fill="#5ea92f" />
+      <rect x="5" y="11" width="1" height="1" fill="#5ea92f" />
+      <rect x="1" y="12" width="1" height="1" fill="#367224" />
+      <rect x="2" y="12" width="3" height="1" fill="#1a6a11" />
+      <rect x="5" y="12" width="1" height="1" fill="#367224" />
+      <rect x="0" y="13" width="1" height="1" fill="#367224" />
+      <rect x="1" y="13" width="5" height="1" fill="#1a6a11" />
+      <rect x="6" y="13" width="1" height="1" fill="#367224" />
+      <rect x="0" y="14" width="1" height="1" fill="#1a6a11" />
+      <rect x="1" y="14" width="5" height="1" fill="#034910" />
+      <rect x="6" y="14" width="1" height="1" fill="#1a6a11" />
     </svg>
   );
 }
 
 function GoldenPoppyFlower({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg viewBox="0 0 6 12" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
-      <rect x="2" y="0" width="2" height="1" fill="#fade3c" />
-      <rect x="1" y="1" width="1" height="1" fill="#fade3c" />
-      <rect x="2" y="1" width="2" height="1" fill="#ffda36" />
-      <rect x="4" y="1" width="1" height="1" fill="#fade3c" />
-      <rect x="0" y="2" width="1" height="1" fill="#fade3c" />
-      <rect x="1" y="2" width="1" height="1" fill="#ffda36" />
-      <rect x="2" y="2" width="1" height="1" fill="#f8b566" />
-      <rect x="3" y="2" width="1" height="1" fill="#d48e50" />
-      <rect x="4" y="2" width="1" height="1" fill="#ffda36" />
-      <rect x="5" y="2" width="1" height="1" fill="#fade3c" />
-      <rect x="0" y="3" width="1" height="1" fill="#fade3c" />
-      <rect x="1" y="3" width="1" height="1" fill="#ffda36" />
-      <rect x="2" y="3" width="2" height="1" fill="#f8b566" />
-      <rect x="4" y="3" width="1" height="1" fill="#ffda36" />
-      <rect x="5" y="3" width="1" height="1" fill="#fade3c" />
-      <rect x="1" y="4" width="1" height="1" fill="#fade3c" />
-      <rect x="2" y="4" width="2" height="1" fill="#ffda36" />
-      <rect x="4" y="4" width="1" height="1" fill="#fade3c" />
-      <rect x="2" y="5" width="2" height="1" fill="#fade3c" />
-      <rect x="2" y="6" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="7" width="1" height="1" fill="#1a6a11" />
-      <rect x="1" y="8" width="1" height="1" fill="#034910" />
-      <rect x="2" y="8" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="9" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="10" width="1" height="1" fill="#034910" />
-      <rect x="2" y="11" width="1" height="1" fill="#034910" />
+    <svg viewBox="0 0 7 16" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
+      <rect x="3" y="0" width="2" height="1" fill="#fade3c" />
+      <rect x="2" y="1" width="1" height="1" fill="#fade3c" />
+      <rect x="3" y="1" width="2" height="1" fill="#ffda36" />
+      <rect x="5" y="1" width="1" height="1" fill="#fade3c" />
+      <rect x="1" y="2" width="1" height="1" fill="#fade3c" />
+      <rect x="2" y="2" width="1" height="1" fill="#ffda36" />
+      <rect x="3" y="2" width="1" height="1" fill="#f8b566" />
+      <rect x="4" y="2" width="1" height="1" fill="#d48e50" />
+      <rect x="5" y="2" width="1" height="1" fill="#ffda36" />
+      <rect x="6" y="2" width="1" height="1" fill="#fade3c" />
+      <rect x="1" y="3" width="1" height="1" fill="#fade3c" />
+      <rect x="2" y="3" width="1" height="1" fill="#ffda36" />
+      <rect x="3" y="3" width="2" height="1" fill="#f8b566" />
+      <rect x="5" y="3" width="1" height="1" fill="#ffda36" />
+      <rect x="6" y="3" width="1" height="1" fill="#fade3c" />
+      <rect x="2" y="4" width="1" height="1" fill="#fade3c" />
+      <rect x="3" y="4" width="2" height="1" fill="#ffda36" />
+      <rect x="5" y="4" width="1" height="1" fill="#fade3c" />
+      <rect x="3" y="5" width="2" height="1" fill="#fade3c" />
+      <rect x="3" y="6" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="7" width="1" height="1" fill="#1a6a11" />
+      <rect x="2" y="8" width="1" height="1" fill="#034910" />
+      <rect x="3" y="8" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="9" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="10" width="1" height="1" fill="#034910" />
+      <rect x="3" y="11" width="1" height="1" fill="#034910" />
+      <rect x="1" y="12" width="1" height="1" fill="#5ea92f" />
+      <rect x="5" y="12" width="1" height="1" fill="#5ea92f" />
+      <rect x="1" y="13" width="1" height="1" fill="#367224" />
+      <rect x="2" y="13" width="3" height="1" fill="#1a6a11" />
+      <rect x="5" y="13" width="1" height="1" fill="#367224" />
+      <rect x="0" y="14" width="1" height="1" fill="#367224" />
+      <rect x="1" y="14" width="5" height="1" fill="#1a6a11" />
+      <rect x="6" y="14" width="1" height="1" fill="#367224" />
+      <rect x="0" y="15" width="1" height="1" fill="#1a6a11" />
+      <rect x="1" y="15" width="5" height="1" fill="#034910" />
+      <rect x="6" y="15" width="1" height="1" fill="#1a6a11" />
     </svg>
   );
 }
 
 function LushForegroundClover({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg viewBox="0 0 15 16" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
+    <svg viewBox="0 0 15 20" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
       <rect x="3" y="0" width="2" height="1" fill="#5ea92f" />
       <rect x="9" y="0" width="2" height="1" fill="#5ea92f" />
       <rect x="2" y="1" width="4" height="1" fill="#5ea92f" />
@@ -237,6 +307,17 @@ function LushForegroundClover({ className = "", style = {} }: { className?: stri
       <rect x="6" y="13" width="1" height="1" fill="#1a6a11" />
       <rect x="5" y="14" width="1" height="1" fill="#034910" />
       <rect x="5" y="15" width="1" height="1" fill="#034910" />
+      <rect x="3" y="16" width="1" height="1" fill="#5ea92f" />
+      <rect x="7" y="16" width="1" height="1" fill="#5ea92f" />
+      <rect x="3" y="17" width="1" height="1" fill="#367224" />
+      <rect x="4" y="17" width="3" height="1" fill="#1a6a11" />
+      <rect x="7" y="17" width="1" height="1" fill="#367224" />
+      <rect x="2" y="18" width="1" height="1" fill="#367224" />
+      <rect x="3" y="18" width="5" height="1" fill="#1a6a11" />
+      <rect x="8" y="18" width="1" height="1" fill="#367224" />
+      <rect x="2" y="19" width="1" height="1" fill="#1a6a11" />
+      <rect x="3" y="19" width="5" height="1" fill="#034910" />
+      <rect x="8" y="19" width="1" height="1" fill="#1a6a11" />
     </svg>
   );
 }
@@ -808,19 +889,19 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
             }}
           >
             {/* Left corner close-up framing */}
-            <LushForegroundClover className="absolute bottom-[3%] -left-[1%] w-16 h-20 sm:w-24 sm:h-28 opacity-95 animate-flower-sway-slow" style={{ animationDelay: '0.5s' }} />
-            <DaisyFlower className="absolute bottom-[5%] left-[4%] w-12 h-17 animate-flower-sway" style={{ animationDelay: '1.7s' }} />
-            <GoldenPoppyFlower className="absolute bottom-[4%] left-[9%] w-11 h-15 animate-flower-sway-fast" style={{ animationDelay: '0.9s' }} />
-            <PinkWildflower className="absolute bottom-[7%] left-[14%] w-10 h-14 animate-flower-sway-slow" style={{ animationDelay: '2.6s' }} />
-            <BluebellFlower className="absolute bottom-[3%] left-[19%] w-10 h-14 animate-flower-sway" style={{ animationDelay: '1.1s' }} />
-            <DaisyFlower className="absolute bottom-[6%] left-[25%] w-9 h-13 animate-flower-sway-fast" style={{ animationDelay: '3.1s' }} />
+            <LushForegroundClover className="absolute bottom-[0%] -left-[1%] w-16 h-24 sm:w-24 sm:h-33 opacity-95 animate-flower-sway-slow" style={{ animationDelay: '0.5s' }} />
+            <DaisyFlower className="absolute bottom-[1%] left-[4%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.7s' }} />
+            <GoldenPoppyFlower className="absolute bottom-[0%] left-[9%] w-11 h-19 animate-flower-sway-fast" style={{ animationDelay: '0.9s' }} />
+            <PinkWildflower className="absolute bottom-[2%] left-[14%] w-10 h-18 animate-flower-sway-slow" style={{ animationDelay: '2.6s' }} />
+            <BluebellFlower className="absolute bottom-[0%] left-[19%] w-10 h-18 animate-flower-sway" style={{ animationDelay: '1.1s' }} />
+            <DaisyFlower className="absolute bottom-[1%] left-[25%] w-9 h-17 animate-flower-sway-fast" style={{ animationDelay: '3.1s' }} />
 
             {/* Right corner close-up framing */}
-            <ButtercupFlower className="absolute bottom-[5%] right-[7%] w-12 h-16 animate-flower-sway" style={{ animationDelay: '1.3s' }} />
-            <PinkWildflower className="absolute bottom-[7%] right-[13%] w-10 h-14 animate-flower-sway-fast" style={{ animationDelay: '0.4s' }} />
-            <GoldenPoppyFlower className="absolute bottom-[3%] right-[19%] w-11 h-15 animate-flower-sway-slow" style={{ animationDelay: '2.3s' }} />
-            <DaisyFlower className="absolute bottom-[6%] right-[25%] w-9 h-13 animate-flower-sway" style={{ animationDelay: '1.9s' }} />
-            <LushForegroundClover className="absolute bottom-[3%] -right-[1%] w-16 h-20 sm:w-24 sm:h-28 opacity-95 animate-flower-sway-fast" style={{ animationDelay: '2.1s' }} />
+            <ButtercupFlower className="absolute bottom-[1%] right-[7%] w-12 h-20 animate-flower-sway" style={{ animationDelay: '1.3s' }} />
+            <PinkWildflower className="absolute bottom-[2%] right-[13%] w-10 h-18 animate-flower-sway-fast" style={{ animationDelay: '0.4s' }} />
+            <GoldenPoppyFlower className="absolute bottom-[0%] right-[19%] w-11 h-19 animate-flower-sway-slow" style={{ animationDelay: '2.3s' }} />
+            <DaisyFlower className="absolute bottom-[1%] right-[25%] w-9 h-17 animate-flower-sway" style={{ animationDelay: '1.9s' }} />
+            <LushForegroundClover className="absolute bottom-[0%] -right-[1%] w-16 h-24 sm:w-24 sm:h-33 opacity-95 animate-flower-sway-fast" style={{ animationDelay: '2.1s' }} />
           </div>
 
           {/* ═══════════════════════════════════════════════════════
@@ -837,17 +918,17 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
             <GrassTuft className="absolute bottom-[1%] -left-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95" />
             <GrassTuft className="absolute bottom-[4%] left-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90" />
             <GrassTuft className="absolute bottom-[7%] left-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85" />
-            <GoldenPoppyFlower className="absolute bottom-[9%] left-[2%] w-12 h-17 animate-flower-sway-fast" style={{ animationDelay: '0.7s' }} />
-            <PinkWildflower className="absolute bottom-[12%] left-[10%] w-11 h-15 animate-flower-sway-slow" style={{ animationDelay: '2.2s' }} />
-            <DaisyFlower className="absolute bottom-[6%] left-[19%] w-12 h-17 animate-flower-sway" style={{ animationDelay: '1.4s' }} />
+            <GoldenPoppyFlower className="absolute bottom-[2%] left-[2%] w-12 h-21 animate-flower-sway-fast" style={{ animationDelay: '0.7s' }} />
+            <PinkWildflower className="absolute bottom-[3%] left-[10%] w-11 h-19 animate-flower-sway-slow" style={{ animationDelay: '2.2s' }} />
+            <DaisyFlower className="absolute bottom-[1%] left-[19%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.4s' }} />
 
             {/* Right edge */}
             <GrassTuft className="absolute bottom-[1%] -right-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95" />
             <GrassTuft className="absolute bottom-[4%] right-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90" />
             <GrassTuft className="absolute bottom-[7%] right-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85" />
-            <BluebellFlower className="absolute bottom-[9%] right-[2%] w-12 h-17 animate-flower-sway" style={{ animationDelay: '1.8s' }} />
-            <DaisyFlower className="absolute bottom-[12%] right-[10%] w-11 h-15 animate-flower-sway-fast" style={{ animationDelay: '0.5s' }} />
-            <ButtercupFlower className="absolute bottom-[6%] right-[20%] w-12 h-17 animate-flower-sway-slow" style={{ animationDelay: '2.7s' }} />
+            <BluebellFlower className="absolute bottom-[2%] right-[2%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.8s' }} />
+            <DaisyFlower className="absolute bottom-[3%] right-[10%] w-11 h-19 animate-flower-sway-fast" style={{ animationDelay: '0.5s' }} />
+            <ButtercupFlower className="absolute bottom-[1%] right-[20%] w-12 h-21 animate-flower-sway-slow" style={{ animationDelay: '2.7s' }} />
           </div>
         </div>
       </div>
