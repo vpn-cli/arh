@@ -606,8 +606,11 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
   const [showPopup, setShowPopup] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Parallax cursor tracking with smooth lerp damping
-  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+  // Parallax cursor tracking with smooth lerp damping.
+  // The lerp writes --mx/--my straight to the DOM instead of setState:
+  // this subtree is ~1700 SVG rects, and re-rendering it every frame was
+  // the whole source of the lag. Layers read the vars via calc().
+  const rootRef = React.useRef<HTMLDivElement>(null);
   const targetOffsetRef = React.useRef({ x: 0, y: 0 });
   const currentOffsetRef = React.useRef({ x: 0, y: 0 });
   const animFrameRef = React.useRef<number | null>(null);
@@ -623,20 +626,40 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
       };
     };
 
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const updateParallax = () => {
       const current = currentOffsetRef.current;
       const target = targetOffsetRef.current;
-      current.x += (target.x - current.x) * 0.08;
-      current.y += (target.y - current.y) * 0.08;
-      setMouseOffset({ x: current.x, y: current.y });
+      const dx = target.x - current.x;
+      const dy = target.y - current.y;
+      // Park the loop once settled; it restarts on the next mousemove.
+      if (Math.abs(dx) < 0.0005 && Math.abs(dy) < 0.0005) {
+        animFrameRef.current = null;
+        return;
+      }
+      current.x += dx * 0.08;
+      current.y += dy * 0.08;
+      const el = rootRef.current;
+      if (el) {
+        el.style.setProperty("--mx", current.x.toFixed(4));
+        el.style.setProperty("--my", current.y.toFixed(4));
+      }
       animFrameRef.current = requestAnimationFrame(updateParallax);
     };
 
-    window.addEventListener("mousemove", handleMouseMove, { passive: true });
-    animFrameRef.current = requestAnimationFrame(updateParallax);
+    const onMove = (e: MouseEvent) => {
+      if (reduced) return;
+      handleMouseMove(e);
+      if (animFrameRef.current === null) {
+        animFrameRef.current = requestAnimationFrame(updateParallax);
+      }
+    };
+
+    window.addEventListener("mousemove", onMove, { passive: true });
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mousemove", onMove);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, []);
@@ -676,9 +699,11 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
 
   return (
     <div 
+      ref={rootRef}
       className={`fixed inset-0 z-50 flex items-start justify-start p-8 sm:p-12 transition-opacity duration-1000 ${
         isTransitioning ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
+      style={{ ["--mx" as string]: "0", ["--my" as string]: "0" } as React.CSSProperties}
     >
       {/* Background Scene Container with Locked 16:9 Aspect Ratio */}
       <div className="absolute inset-0 -z-10 overflow-hidden flex items-center justify-center bg-[#8db356]">
@@ -695,7 +720,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
             alt="Retro Meadow" 
             className="w-full h-full object-fill pixelated pointer-events-none will-change-transform"
             style={{
-              transform: `scale(1.06) translate3d(${mouseOffset.x * -9}px, ${mouseOffset.y * -4}px, 0)`,
+              transform: "scale(1.06) translate3d(calc(var(--mx, 0) * -9px), calc(var(--my, 0) * -4px), 0)",
             }}
           />
 
@@ -706,7 +731,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div 
             className="absolute inset-0 pointer-events-none overflow-hidden z-[5] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -11}px, ${mouseOffset.y * -5}px, 0)`,
+              transform: "translate3d(calc(var(--mx, 0) * -11px), calc(var(--my, 0) * -5px), 0)",
             }}
           >
             <ButtercupFlower className="absolute bottom-[28%] left-[23%] w-4 h-6 opacity-75 animate-flower-sway-slow" style={{ animationDelay: '0.8s' }} />
@@ -724,7 +749,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div 
             className="absolute inset-0 pointer-events-none z-10 will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -13}px, ${mouseOffset.y * -6}px, 0)`,
+              transform: "translate3d(calc(var(--mx, 0) * -13px), calc(var(--my, 0) * -6px), 0)",
             }}
           >
             {/* 1. Grass Nyan Cat (Bottom Right): Animated pixel stars & rainbow sparkles */}
@@ -801,7 +826,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div 
             className="absolute inset-0 pointer-events-none overflow-hidden z-[15] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -16}px, ${mouseOffset.y * -6}px, 0)`,
+              transform: "translate3d(calc(var(--mx, 0) * -16px), calc(var(--my, 0) * -6px), 0)",
             }}
           >
             <ButtercupFlower className="absolute bottom-[17%] left-[27%] w-6 h-9 animate-flower-sway-slow" style={{ animationDelay: '1.5s' }} />
@@ -821,7 +846,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div 
             className="absolute inset-0 pointer-events-none overflow-hidden z-[22] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -20}px, ${mouseOffset.y * -7}px, 0)`,
+              transform: "translate3d(calc(var(--mx, 0) * -20px), calc(var(--my, 0) * -7px), 0)",
             }}
           >
             {/* Left lower meadow clovers & blossoms */}
@@ -848,20 +873,20 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div 
             className="absolute inset-0 pointer-events-none overflow-hidden z-[28] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -30}px, ${mouseOffset.y * -14}px, 0)`,
+              transform: "translate3d(calc(var(--mx, 0) * -30px), calc(var(--my, 0) * -14px), 0)",
             }}
           >
             {/* Wind Gust Breeze Lines */}
-            <div className="absolute top-[28%] left-0 w-64 sm:w-96 h-1 bg-gradient-to-r from-transparent via-white/50 via-yellow-100/40 to-transparent rounded-full animate-wind-gust blur-[0.5px]" style={{ animationDelay: '0s' }} />
-            <div className="absolute top-[48%] left-0 w-72 sm:w-[28rem] h-1.5 bg-gradient-to-r from-transparent via-white/60 via-emerald-100/40 to-transparent rounded-full animate-wind-gust-fast blur-[0.5px]" style={{ animationDelay: '2.8s' }} />
-            <div className="absolute top-[68%] left-0 w-80 sm:w-[32rem] h-1 bg-gradient-to-r from-transparent via-yellow-100/50 via-white/40 to-transparent rounded-full animate-wind-gust blur-[0.5px]" style={{ animationDelay: '5.2s' }} />
+            <div className="absolute top-[28%] left-0 w-64 sm:w-96 h-1 bg-gradient-to-r from-transparent via-white/50 via-yellow-100/40 to-transparent rounded-full animate-wind-gust" style={{ animationDelay: '0s' }} />
+            <div className="absolute top-[48%] left-0 w-72 sm:w-[28rem] h-1.5 bg-gradient-to-r from-transparent via-white/60 via-emerald-100/40 to-transparent rounded-full animate-wind-gust-fast" style={{ animationDelay: '2.8s' }} />
+            <div className="absolute top-[68%] left-0 w-80 sm:w-[32rem] h-1 bg-gradient-to-r from-transparent via-yellow-100/50 via-white/40 to-transparent rounded-full animate-wind-gust" style={{ animationDelay: '5.2s' }} />
 
             {/* Dandelion Fluffs drifting across on the wind */}
-            <span className="absolute top-[20%] left-0 w-3 h-3 bg-white/95 rounded-full shadow-[0_0_8px_#ffffff] blur-[0.3px] animate-dandelion-float" style={{ animationDelay: '0s' }} />
-            <span className="absolute top-[35%] left-0 w-2.5 h-2.5 bg-white/90 rounded-full shadow-[0_0_6px_#ffffff] blur-[0.3px] animate-dandelion-float" style={{ animationDelay: '3.8s' }} />
-            <span className="absolute top-[50%] left-0 w-3 h-3 bg-white/95 rounded-full shadow-[0_0_8px_#ffffff] blur-[0.3px] animate-dandelion-float" style={{ animationDelay: '7.5s' }} />
-            <span className="absolute top-[65%] left-0 w-2.5 h-2.5 bg-white/90 rounded-full shadow-[0_0_6px_#ffffff] blur-[0.3px] animate-dandelion-float" style={{ animationDelay: '11.2s' }} />
-            <span className="absolute top-[80%] left-0 w-3 h-3 bg-white/95 rounded-full shadow-[0_0_8px_#ffffff] blur-[0.3px] animate-dandelion-float" style={{ animationDelay: '14.5s' }} />
+            <span className="absolute top-[20%] left-0 w-3 h-3 bg-white/95 rounded-full shadow-[0_0_8px_#ffffff] animate-dandelion-float" style={{ animationDelay: '0s' }} />
+            <span className="absolute top-[35%] left-0 w-2.5 h-2.5 bg-white/90 rounded-full shadow-[0_0_6px_#ffffff] animate-dandelion-float" style={{ animationDelay: '3.8s' }} />
+            <span className="absolute top-[50%] left-0 w-3 h-3 bg-white/95 rounded-full shadow-[0_0_8px_#ffffff] animate-dandelion-float" style={{ animationDelay: '7.5s' }} />
+            <span className="absolute top-[65%] left-0 w-2.5 h-2.5 bg-white/90 rounded-full shadow-[0_0_6px_#ffffff] animate-dandelion-float" style={{ animationDelay: '11.2s' }} />
+            <span className="absolute top-[80%] left-0 w-3 h-3 bg-white/95 rounded-full shadow-[0_0_8px_#ffffff] animate-dandelion-float" style={{ animationDelay: '14.5s' }} />
 
             {/* Golden Sunlit Pollen Motes */}
             <span className="absolute top-[24%] left-0 w-2.5 h-2.5 bg-yellow-300 rounded-full shadow-[0_0_10px_#fde047,0_0_16px_#ca8a04] animate-pollen-swirl" style={{ animationDelay: '0.8s' }} />
@@ -885,8 +910,8 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div 
             className="fixed inset-0 pointer-events-none rooted-flora z-[35] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -26}px, ${26 + mouseOffset.y * -8}px, 0)`,
-              ["--lean" as string]: `${mouseOffset.x * 0.9}deg`,
+              transform: "translate3d(calc(var(--mx, 0) * -26px), calc(26px + var(--my, 0) * -8px), 0)",
+              ["--lean" as string]: "calc(var(--mx, 0) * 0.9deg)",
             } as React.CSSProperties}
           >
             {/* Left corner close-up framing */}
@@ -912,8 +937,8 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div
             className="fixed inset-0 pointer-events-none rooted-flora z-[40] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -36}px, ${30 + mouseOffset.y * -10}px, 0)`,
-              ["--lean" as string]: `${mouseOffset.x * 1.4}deg`,
+              transform: "translate3d(calc(var(--mx, 0) * -36px), calc(30px + var(--my, 0) * -10px), 0)",
+              ["--lean" as string]: "calc(var(--mx, 0) * 1.4deg)",
             } as React.CSSProperties}
           >
             {/* Left edge */}
