@@ -1,0 +1,805 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Pixelify+Sans:wght@400;500;600;700&family=Press+Start+2P&family=VT323&display=swap');
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════
+   DESIGN SYSTEM — Pastel Pixel Desktop
+   ═══════════════════════════════════════════════════════ */
+
+@theme {
+  /* Palette — Pastel Pixel World */
+  --color-bg-parchment: #FFFFFF;
+  --color-bg-cream: #FFF3D8;
+  --color-bg-warm: #FFFFFF;
+
+  --color-pink: #FF8FB3;
+  --color-pink-hover: #FF7FA6;
+  --color-pink-soft: #FFD0DC;
+  --color-yellow: #FFD98A;
+  --color-yellow-warm: #FFF3D8;
+  --color-blue: #DDEBF7;
+  --color-blue-soft: #E8F4FC;
+  --color-lavender: #C8B8F1;
+  --color-lavender-soft: #DFD5F5;
+  --color-mint: #B9D7C0;
+  --color-mint-soft: #CBE6D2;
+
+  --color-dark: #20233F;
+  --color-border: #20233F;
+  --color-dark-muted: #4B4E6A;
+
+  /* Typography */
+  --font-pixel: 'Pixelify Sans', sans-serif;
+  --font-retro: 'Press Start 2P', monospace;
+  --font-terminal: 'VT323', monospace;
+  --font-handwriting: 'Caveat', cursive;
+}
+
+/* ═══════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════ */
+
+html {
+  scroll-behavior: smooth;
+  background-color: #FFFFFF;
+}
+
+body {
+  background-color: #FFFFFF;
+  color: var(--color-dark, #20233F);
+  font-family: 'Pixelify Sans', sans-serif;
+  overflow-x: clip;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-pink, #FF8FB3);
+  color: var(--color-dark, #20233F);
+}
+
+/* ═══════════════════════════════════════════════════════
+   PIXEL ART UTILITIES
+   ═══════════════════════════════════════════════════════ */
+
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PIXEL WINDOW — Retro OS panel component
+   
+   Usage: <div class="pixel-window pixel-window--pink">
+            <div class="pixel-window__bar">Title</div>
+            <div class="pixel-window__content">...</div>
+          </div>
+   ═══════════════════════════════════════════════════════ */
+
+.pixel-window {
+  background: #FFFFFF;
+  border: 3px solid var(--color-border, #20233F);
+  box-shadow:
+    6px 6px 0 0 rgba(32, 35, 63, 0.25),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  position: relative;
+}
+
+.pixel-window__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--color-border, #20233F);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
+  user-select: none;
+  line-height: 1.4;
+}
+
+.pixel-window__dots {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.pixel-window__dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pixel-window__content {
+  padding: 16px;
+}
+
+/* Window accent variants — color the title bar dots */
+.pixel-window--pink .pixel-window__dots span:nth-child(1) {
+  background: #FFB6C1;
+}
+
+.pixel-window--pink .pixel-window__dots span:nth-child(2) {
+  background: #FFE4A1;
+}
+
+.pixel-window--pink .pixel-window__dots span:nth-child(3) {
+  background: #B8E6D0;
+}
+
+.pixel-window--blue .pixel-window__dots span:nth-child(1) {
+  background: #A8D8EA;
+}
+
+.pixel-window--blue .pixel-window__dots span:nth-child(2) {
+  background: #D4B8FF;
+}
+
+.pixel-window--blue .pixel-window__dots span:nth-child(3) {
+  background: #FFB6C1;
+}
+
+.pixel-window--yellow .pixel-window__dots span:nth-child(1) {
+  background: #FFE4A1;
+}
+
+.pixel-window--yellow .pixel-window__dots span:nth-child(2) {
+  background: #FFB6C1;
+}
+
+.pixel-window--yellow .pixel-window__dots span:nth-child(3) {
+  background: #A8D8EA;
+}
+
+.pixel-window--lavender .pixel-window__dots span:nth-child(1) {
+  background: #D4B8FF;
+}
+
+.pixel-window--lavender .pixel-window__dots span:nth-child(2) {
+  background: #FFB6C1;
+}
+
+.pixel-window--lavender .pixel-window__dots span:nth-child(3) {
+  background: #FFE4A1;
+}
+
+.pixel-window--mint .pixel-window__dots span:nth-child(1) {
+  background: #B8E6D0;
+}
+
+.pixel-window--mint .pixel-window__dots span:nth-child(2) {
+  background: #A8D8EA;
+}
+
+.pixel-window--mint .pixel-window__dots span:nth-child(3) {
+  background: #D4B8FF;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PIXEL BUTTONS
+   ═══════════════════════════════════════════════════════ */
+
+.pixel-btn {
+  font-family: 'Pixelify Sans', sans-serif;
+  font-weight: 600;
+  border: 2.5px solid var(--color-border, #20233F);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  box-shadow:
+    3px 3px 0 0 var(--color-border, #20233F),
+    inset 2px 2px 0 0 rgba(255, 255, 255, 0.5);
+}
+
+.pixel-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow:
+    4px 4px 0 0 var(--color-border, #20233F),
+    inset 2px 2px 0 0 rgba(255, 255, 255, 0.6);
+}
+
+.pixel-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow:
+    1px 1px 0 0 var(--color-border, #20233F),
+    inset 1px 1px 0 0 rgba(0, 0, 0, 0.08);
+}
+
+.pixel-btn--pink {
+  background: var(--color-pink, #FF8FB3);
+  color: var(--color-dark, #20233F);
+}
+
+.pixel-btn--pink:hover {
+  background: var(--color-pink-hover, #FF7FA6);
+}
+
+.pixel-btn--yellow {
+  background: var(--color-yellow, #FFD98A);
+  color: var(--color-dark, #20233F);
+}
+
+.pixel-btn--yellow:hover {
+  background: #FFCF70;
+}
+
+.pixel-btn--lavender {
+  background: var(--color-lavender, #C8B8F1);
+  color: var(--color-dark, #20233F);
+}
+
+.pixel-btn--lavender:hover {
+  background: #B6A0EA;
+}
+
+.pixel-btn--mint {
+  background: var(--color-mint, #B9D7C0);
+  color: var(--color-dark, #20233F);
+}
+
+.pixel-btn--mint:hover {
+  background: #A5C8AD;
+}
+
+.pixel-btn--large {
+  padding: 10px 24px;
+  font-size: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SPEECH BUBBLE
+   ═══════════════════════════════════════════════════════ */
+
+.speech-bubble {
+  background: #FFFFFF;
+  border: 2.5px solid var(--color-border, #20233F);
+  box-shadow: 3px 3px 0 0 rgba(32, 35, 63, 0.2);
+  position: relative;
+  padding: 10px 14px;
+  font-family: 'Pixelify Sans', sans-serif;
+  font-weight: 600;
+  color: var(--color-dark, #20233F);
+  line-height: 1.4;
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 24px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 10px solid var(--color-border, #20233F);
+}
+
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 25px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 8px solid #FFFFFF;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════════════════════
+   WASHI TAPE
+   ═══════════════════════════════════════════════════════ */
+
+.washi-tape {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.washi-tape--pink {
+  background: rgba(255, 182, 193, 0.85);
+}
+
+.washi-tape--yellow {
+  background: rgba(255, 228, 161, 0.85);
+}
+
+.washi-tape--blue {
+  background: rgba(168, 216, 234, 0.85);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes float-gentle {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes wiggle {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-2deg);
+  }
+
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
+@keyframes blink-cursor {
+
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes sparkle {
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 4px #FFF8D6);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounce-soft {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes steam-rise {
+  0% {
+    transform: translateY(0) scale(0.9);
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: translateY(-8px) scale(1.2);
+    opacity: 0.35;
+  }
+
+  100% {
+    transform: translateY(-16px) scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 182, 193, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 16px 4px rgba(255, 182, 193, 0.3);
+  }
+}
+
+@keyframes heart-pop {
+  0% {
+    transform: scale(0) rotate(-15deg);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.3) rotate(5deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0) translateY(-40px) rotate(15deg);
+    opacity: 0;
+  }
+}
+
+.animate-float {
+  animation: float-gentle 3s ease-in-out infinite;
+}
+
+.animate-wiggle {
+  animation: wiggle 2s ease-in-out infinite;
+}
+
+.animate-sparkle {
+  animation: sparkle 2.5s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out forwards;
+}
+
+.animate-slide-left {
+  animation: slide-in-left 0.6s ease-out forwards;
+}
+
+.animate-slide-right {
+  animation: slide-in-right 0.6s ease-out forwards;
+}
+
+.animate-bounce-soft {
+  animation: bounce-soft 2s ease-in-out infinite;
+}
+
+.animate-steam {
+  animation: steam-rise 2.2s ease-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-heart-pop {
+  animation: heart-pop 0.8s ease-out forwards;
+}
+
+.animate-blink {
+  animation: blink-cursor 1s step-end infinite;
+}
+
+@keyframes nyan-fly {
+  0% {
+    transform: translate3d(-320px, 0, 0);
+  }
+  25% {
+    transform: translate3d(25vw, -12px, 0);
+  }
+  50% {
+    transform: translate3d(50vw, 8px, 0);
+  }
+  75% {
+    transform: translate3d(75vw, -10px, 0);
+  }
+  100% {
+    transform: translate3d(calc(100vw + 320px), 0, 0);
+  }
+}
+
+.animate-nyan-fly {
+  animation: nyan-fly 14s linear infinite;
+}
+
+@keyframes retro-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-retro-float {
+  animation: retro-float 2.2s ease-in-out infinite;
+}
+
+@keyframes firefly-rise {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.6);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.8;
+    transform: translateY(-50px) translateX(10px) scale(1);
+  }
+  100% {
+    transform: translateY(-100px) translateX(-5px) scale(0.4);
+    opacity: 0;
+  }
+}
+
+.animate-firefly {
+  animation: firefly-rise 4s ease-in-out infinite;
+}
+
+/* Prominent Fireflies with glowing aura */
+@keyframes firefly-glow-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.6);
+    opacity: 0;
+    filter: drop-shadow(0 0 4px #fef08a);
+  }
+  20% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px #fef08a) drop-shadow(0 0 20px #eab308);
+  }
+  50% {
+    transform: translate3d(24px, -45px, 0) scale(1.2);
+    opacity: 0.95;
+    filter: drop-shadow(0 0 14px #fef08a) drop-shadow(0 0 24px #facc15);
+  }
+  75% {
+    transform: translate3d(10px, -80px, 0) scale(0.9);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate3d(30px, -125px, 0) scale(0.4);
+    opacity: 0;
+  }
+}
+
+.animate-firefly-prominent {
+  animation: firefly-glow-drift 5s ease-in-out infinite;
+}
+
+/* Prominent Wind Gusts (Ghibli / Zelda wind lines) */
+@keyframes wind-gust {
+  0% {
+    transform: translate3d(-20vw, 0, 0) scaleX(0.4);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.65;
+  }
+  50% {
+    transform: translate3d(50vw, -12px, 0) scaleX(1.4);
+    opacity: 0.7;
+  }
+  80% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate3d(120vw, -25px, 0) scaleX(0.8);
+    opacity: 0;
+  }
+}
+
+.animate-wind-gust {
+  animation: wind-gust 7s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+}
+
+.animate-wind-gust-fast {
+  animation: wind-gust 4.5s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
+}
+
+/* Golden Sunbeam Pollen Swirl */
+@keyframes pollen-swirl {
+  0% {
+    transform: translate3d(-5vw, 0, 0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.95;
+  }
+  50% {
+    transform: translate3d(45vw, 25px, 0) scale(1.1);
+    opacity: 1;
+  }
+  85% {
+    transform: translate3d(85vw, -12px, 0) scale(0.85);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate3d(108vw, 15px, 0) scale(0.4);
+    opacity: 0;
+  }
+}
+
+.animate-pollen-swirl {
+  animation: pollen-swirl 9.5s ease-in-out infinite;
+}
+
+/* Chill Pinterest-style animations: feebly waving flowers & drifting petals */
+@keyframes flower-sway-feeble {
+  0%, 100% {
+    transform: rotate(0deg) skewX(0deg);
+  }
+  30% {
+    transform: rotate(3.5deg) skewX(2deg);
+  }
+  65% {
+    transform: rotate(-2.5deg) skewX(-1.5deg);
+  }
+  85% {
+    transform: rotate(1deg) skewX(0.5deg);
+  }
+}
+
+.animate-flower-sway {
+  transform-origin: bottom center;
+  animation: flower-sway-feeble 5s ease-in-out infinite;
+}
+
+.animate-flower-sway-slow {
+  transform-origin: bottom center;
+  animation: flower-sway-feeble 6.8s ease-in-out infinite;
+}
+
+.animate-flower-sway-fast {
+  transform-origin: bottom center;
+  animation: flower-sway-feeble 3.6s ease-in-out infinite;
+}
+
+@keyframes petal-drift {
+  0% {
+    transform: translate3d(-10vw, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate3d(50vw, 35px, 0) rotate(180deg);
+    opacity: 0.85;
+  }
+  92% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(110vw, 15px, 0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-petal-drift {
+  animation: petal-drift 13s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes dandelion-float {
+  0% {
+    transform: translate3d(-5vw, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.85;
+  }
+  50% {
+    transform: translate3d(50vw, -25px, 0) rotate(45deg);
+  }
+  88% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate3d(105vw, -10px, 0) rotate(90deg);
+    opacity: 0;
+  }
+}
+
+.animate-dandelion-float {
+  animation: dandelion-float 17s ease-in-out infinite;
+}
+
+@keyframes chill-breathe {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.025) translateY(-2px);
+  }
+}
+
+.animate-chill-breathe {
+  animation: chill-breathe 4.5s ease-in-out infinite;
+}
+
+/* Staggered entrance delays */
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
+
+.delay-400 {
+  animation-delay: 400ms;
+}
+
+.delay-500 {
+  animation-delay: 500ms;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCROLLBAR STYLING
+   ═══════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FFFFFF;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-lavender, #C8B8F1);
+  border: 2px solid var(--color-border, #20233F);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-lavender-soft, #DFD5F5);
+}
+
+/* ═══════════════════════════════════════════════════════
+   REDUCED MOTION
+   ═══════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
