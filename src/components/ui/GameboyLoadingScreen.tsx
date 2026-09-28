@@ -725,24 +725,6 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           />
 
           {/* ═══════════════════════════════════════════════════════
-              PARALLAX LAYER 1 (z-[5]): Distant Hillside Wildflowers
-              Very gentle parallax: x * -8px, y * -4px
-              ═══════════════════════════════════════════════════════ */}
-          <div 
-            className="absolute inset-0 pointer-events-none overflow-hidden z-[5] will-change-transform"
-            style={{
-              transform: "translate3d(calc(var(--mx, 0) * -11px), calc(var(--my, 0) * -5px), 0)",
-            }}
-          >
-            <ButtercupFlower className="absolute bottom-[28%] left-[23%] w-4 h-6 opacity-75 animate-flower-sway-slow" style={{ animationDelay: '0.8s' }} />
-            <DaisyFlower className="absolute bottom-[26%] left-[32%] w-4 h-6 opacity-80 animate-flower-sway" style={{ animationDelay: '1.9s' }} />
-            <PinkWildflower className="absolute bottom-[30%] left-[57%] w-4 h-6 opacity-75 animate-flower-sway-fast" style={{ animationDelay: '0.3s' }} />
-            <BluebellFlower className="absolute bottom-[27%] left-[64%] w-4 h-6 opacity-80 animate-flower-sway" style={{ animationDelay: '1.4s' }} />
-            <ButtercupFlower className="absolute bottom-[25%] left-[81%] w-4 h-6 opacity-75 animate-flower-sway-slow" style={{ animationDelay: '2.2s' }} />
-            <PinkWildflower className="absolute bottom-[29%] left-[87%] w-4 h-6 opacity-70 animate-flower-sway" style={{ animationDelay: '0.5s' }} />
-          </div>
-
-          {/* ═══════════════════════════════════════════════════════
               IN-PLACE ANIMATIONS FOR PIXEL MEMES (z-10)
               Subtle midground parallax: x * -12px, y * -6px
               ═══════════════════════════════════════════════════════ */}
@@ -819,51 +801,31 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           </div>
 
           {/* ═══════════════════════════════════════════════════════
-              PARALLAX LAYER 2 (z-[15]): Midground Meadow Flowers
-              Moderate parallax: x * -22px, y * -11px
-              Around Game Boy, Cartridge, Pokeballs, and Hello Kitty
-              ═══════════════════════════════════════════════════════ */}
-          <div 
-            className="absolute inset-0 pointer-events-none overflow-hidden z-[15] will-change-transform"
-            style={{
-              transform: "translate3d(calc(var(--mx, 0) * -16px), calc(var(--my, 0) * -6px), 0)",
-            }}
-          >
-            <ButtercupFlower className="absolute bottom-[17%] left-[27%] w-6 h-9 animate-flower-sway-slow" style={{ animationDelay: '1.5s' }} />
-            <DaisyFlower className="absolute bottom-[15%] left-[35%] w-7 h-10 animate-flower-sway" style={{ animationDelay: '0.4s' }} />
-            <BluebellFlower className="absolute bottom-[14%] left-[43%] w-6 h-9 animate-flower-sway-slow" style={{ animationDelay: '1.8s' }} />
-            <GoldenPoppyFlower className="absolute bottom-[17%] left-[51%] w-6 h-9 animate-flower-sway-fast" style={{ animationDelay: '2.4s' }} />
-            <DaisyFlower className="absolute bottom-[13%] left-[61%] w-7 h-10 animate-flower-sway-slow" style={{ animationDelay: '0.9s' }} />
-            <PinkWildflower className="absolute bottom-[16%] left-[71%] w-6 h-9 animate-flower-sway" style={{ animationDelay: '1.2s' }} />
-            <ButtercupFlower className="absolute bottom-[15%] left-[83%] w-6 h-9 animate-flower-sway-fast" style={{ animationDelay: '0.6s' }} />
-          </div>
-
-          {/* ═══════════════════════════════════════════════════════
               PARALLAX LAYER 3 (z-[22]): Foreground Blooming Flowers & Clovers
               Strong parallax: x * -44px, y * -20px
               Lower screen framing with swaying wildflowers
               ═══════════════════════════════════════════════════════ */}
           <div 
-            className="absolute inset-0 pointer-events-none overflow-hidden z-[22] will-change-transform"
+            className="fixed inset-0 pointer-events-none rooted-flora z-[22] will-change-transform"
             style={{
-              transform: "translate3d(calc(var(--mx, 0) * -20px), calc(var(--my, 0) * -7px), 0)",
+              transform: "translate3d(calc(var(--mx, 0) * -20px), calc(22px + var(--my, 0) * -7px), 0)",
             }}
           >
             {/* Left lower meadow clovers & blossoms */}
-            <CloverPlant className="absolute bottom-[3%] left-[4%] w-9 h-12 animate-flower-sway-slow" style={{ animationDelay: '0.2s' }} />
-            <DaisyFlower className="absolute bottom-[2%] left-[9%] w-8 h-12 animate-flower-sway" style={{ animationDelay: '1.2s' }} />
-            <ButtercupFlower className="absolute bottom-[5%] left-[15%] w-7 h-10 animate-flower-sway-fast" style={{ animationDelay: '0.6s' }} />
-            <CloverPlant className="absolute bottom-[1%] left-[21%] w-10 h-13 animate-flower-sway" style={{ animationDelay: '2.1s' }} />
+            <CloverPlant className="absolute bottom-[0%] left-[4%] w-9 h-12 animate-flower-sway-slow" style={{ animationDelay: '0.2s' }} />
+            <DaisyFlower className="absolute bottom-[0%] left-[9%] w-8 h-12 animate-flower-sway" style={{ animationDelay: '1.2s' }} />
+            <ButtercupFlower className="absolute bottom-[0%] left-[15%] w-7 h-10 animate-flower-sway-fast" style={{ animationDelay: '0.6s' }} />
+            <CloverPlant className="absolute bottom-[0%] left-[21%] w-10 h-13 animate-flower-sway" style={{ animationDelay: '2.1s' }} />
 
             {/* Center lower framing */}
-            <GoldenPoppyFlower className="absolute bottom-[4%] left-[40%] w-8 h-11 animate-flower-sway-slow" style={{ animationDelay: '1.1s' }} />
-            <PinkWildflower className="absolute bottom-[2%] left-[47%] w-8 h-11 animate-flower-sway-fast" style={{ animationDelay: '2.5s' }} />
-            <BluebellFlower className="absolute bottom-[3%] left-[55%] w-7 h-10 animate-flower-sway" style={{ animationDelay: '0.7s' }} />
+            <GoldenPoppyFlower className="absolute bottom-[0%] left-[40%] w-8 h-11 animate-flower-sway-slow" style={{ animationDelay: '1.1s' }} />
+            <PinkWildflower className="absolute bottom-[0%] left-[47%] w-8 h-11 animate-flower-sway-fast" style={{ animationDelay: '2.5s' }} />
+            <BluebellFlower className="absolute bottom-[0%] left-[55%] w-7 h-10 animate-flower-sway" style={{ animationDelay: '0.7s' }} />
 
             {/* Right lower meadow */}
-            <DaisyFlower className="absolute bottom-[2%] right-[12%] w-9 h-13 animate-flower-sway" style={{ animationDelay: '1.4s' }} />
-            <PinkWildflower className="absolute bottom-[4%] right-[6%] w-7 h-11 animate-flower-sway-slow" style={{ animationDelay: '2.0s' }} />
-            <CloverPlant className="absolute bottom-[1%] right-[2%] w-10 h-13 animate-flower-sway-fast" style={{ animationDelay: '0.7s' }} />
+            <DaisyFlower className="absolute bottom-[0%] right-[12%] w-9 h-13 animate-flower-sway" style={{ animationDelay: '1.4s' }} />
+            <PinkWildflower className="absolute bottom-[0%] right-[6%] w-7 h-11 animate-flower-sway-slow" style={{ animationDelay: '2.0s' }} />
+            <CloverPlant className="absolute bottom-[0%] right-[2%] w-10 h-13 animate-flower-sway-fast" style={{ animationDelay: '0.7s' }} />
           </div>
 
           {/* ═══════════════════════════════════════════════════════
@@ -916,17 +878,17 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           >
             {/* Left corner close-up framing */}
             <LushForegroundClover className="absolute bottom-[0%] -left-[1%] w-16 h-24 sm:w-24 sm:h-33 opacity-95 animate-flower-sway-slow" style={{ animationDelay: '0.5s' }} />
-            <DaisyFlower className="absolute bottom-[1%] left-[4%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.7s' }} />
+            <DaisyFlower className="absolute bottom-[0%] left-[4%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.7s' }} />
             <GoldenPoppyFlower className="absolute bottom-[0%] left-[9%] w-11 h-19 animate-flower-sway-fast" style={{ animationDelay: '0.9s' }} />
-            <PinkWildflower className="absolute bottom-[2%] left-[14%] w-10 h-18 animate-flower-sway-slow" style={{ animationDelay: '2.6s' }} />
+            <PinkWildflower className="absolute bottom-[0%] left-[14%] w-10 h-18 animate-flower-sway-slow" style={{ animationDelay: '2.6s' }} />
             <BluebellFlower className="absolute bottom-[0%] left-[19%] w-10 h-18 animate-flower-sway" style={{ animationDelay: '1.1s' }} />
-            <DaisyFlower className="absolute bottom-[1%] left-[25%] w-9 h-17 animate-flower-sway-fast" style={{ animationDelay: '3.1s' }} />
+            <DaisyFlower className="absolute bottom-[0%] left-[25%] w-9 h-17 animate-flower-sway-fast" style={{ animationDelay: '3.1s' }} />
 
             {/* Right corner close-up framing */}
-            <ButtercupFlower className="absolute bottom-[1%] right-[7%] w-12 h-20 animate-flower-sway" style={{ animationDelay: '1.3s' }} />
-            <PinkWildflower className="absolute bottom-[2%] right-[13%] w-10 h-18 animate-flower-sway-fast" style={{ animationDelay: '0.4s' }} />
+            <ButtercupFlower className="absolute bottom-[0%] right-[7%] w-12 h-20 animate-flower-sway" style={{ animationDelay: '1.3s' }} />
+            <PinkWildflower className="absolute bottom-[0%] right-[13%] w-10 h-18 animate-flower-sway-fast" style={{ animationDelay: '0.4s' }} />
             <GoldenPoppyFlower className="absolute bottom-[0%] right-[19%] w-11 h-19 animate-flower-sway-slow" style={{ animationDelay: '2.3s' }} />
-            <DaisyFlower className="absolute bottom-[1%] right-[25%] w-9 h-17 animate-flower-sway" style={{ animationDelay: '1.9s' }} />
+            <DaisyFlower className="absolute bottom-[0%] right-[25%] w-9 h-17 animate-flower-sway" style={{ animationDelay: '1.9s' }} />
             <LushForegroundClover className="absolute bottom-[0%] -right-[1%] w-16 h-24 sm:w-24 sm:h-33 opacity-95 animate-flower-sway-fast" style={{ animationDelay: '2.1s' }} />
           </div>
 
@@ -943,19 +905,19 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           >
             {/* Left edge */}
             <GrassTuft className="absolute bottom-[1%] -left-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95" />
-            <GrassTuft className="absolute bottom-[4%] left-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90" />
-            <GrassTuft className="absolute bottom-[7%] left-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85" />
-            <GoldenPoppyFlower className="absolute bottom-[2%] left-[2%] w-12 h-21 animate-flower-sway-fast" style={{ animationDelay: '0.7s' }} />
-            <PinkWildflower className="absolute bottom-[3%] left-[10%] w-11 h-19 animate-flower-sway-slow" style={{ animationDelay: '2.2s' }} />
-            <DaisyFlower className="absolute bottom-[1%] left-[19%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.4s' }} />
+            <GrassTuft className="absolute bottom-[1%] left-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90" />
+            <GrassTuft className="absolute bottom-[0%] left-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85" />
+            <GoldenPoppyFlower className="absolute bottom-[0%] left-[2%] w-12 h-21 animate-flower-sway-fast" style={{ animationDelay: '0.7s' }} />
+            <PinkWildflower className="absolute bottom-[0%] left-[10%] w-11 h-19 animate-flower-sway-slow" style={{ animationDelay: '2.2s' }} />
+            <DaisyFlower className="absolute bottom-[0%] left-[19%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.4s' }} />
 
             {/* Right edge */}
             <GrassTuft className="absolute bottom-[1%] -right-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95" />
-            <GrassTuft className="absolute bottom-[4%] right-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90" />
-            <GrassTuft className="absolute bottom-[7%] right-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85" />
-            <BluebellFlower className="absolute bottom-[2%] right-[2%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.8s' }} />
-            <DaisyFlower className="absolute bottom-[3%] right-[10%] w-11 h-19 animate-flower-sway-fast" style={{ animationDelay: '0.5s' }} />
-            <ButtercupFlower className="absolute bottom-[1%] right-[20%] w-12 h-21 animate-flower-sway-slow" style={{ animationDelay: '2.7s' }} />
+            <GrassTuft className="absolute bottom-[1%] right-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90" />
+            <GrassTuft className="absolute bottom-[0%] right-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85" />
+            <BluebellFlower className="absolute bottom-[0%] right-[2%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.8s' }} />
+            <DaisyFlower className="absolute bottom-[0%] right-[10%] w-11 h-19 animate-flower-sway-fast" style={{ animationDelay: '0.5s' }} />
+            <ButtercupFlower className="absolute bottom-[0%] right-[20%] w-12 h-21 animate-flower-sway-slow" style={{ animationDelay: '2.7s' }} />
           </div>
         </div>
       </div>
