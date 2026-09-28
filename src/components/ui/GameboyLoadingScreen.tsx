@@ -88,14 +88,30 @@ function GoldenPoppyFlower({ className = "", style = {} }: { className?: string;
 function GrassTuft({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg viewBox="0 0 60 80" fill="none" className={`pointer-events-none select-none pixelated ${className}`} style={style}>
-      <path d="M30 80 C29 58 26 40 21 18" stroke="#0f2b0b" strokeWidth="9" strokeLinecap="square" />
-      <path d="M30 80 C32 60 37 44 44 24" stroke="#163a11" strokeWidth="9" strokeLinecap="square" />
-      <path d="M30 80 C28 62 20 48 8 32" stroke="#0c240a" strokeWidth="8" strokeLinecap="square" />
-      <path d="M30 80 C33 64 44 52 56 40" stroke="#1b4715" strokeWidth="8" strokeLinecap="square" />
-      <path d="M30 80 C30 66 30 50 31 30" stroke="#22571b" strokeWidth="7" strokeLinecap="square" />
-      <path d="M30 80 C27 66 16 56 2 46" stroke="#123310" strokeWidth="7" strokeLinecap="square" />
-      <path d="M30 80 C34 64 40 56 50 52" stroke="#2a6a21" strokeWidth="6" strokeLinecap="square" />
-      <path d="M30 80 C26 68 20 60 12 56" stroke="#174012" strokeWidth="6" strokeLinecap="square" />
+      <g className="grass-blade" style={{ animationDelay: "0s", animationDuration: "4.2s" }}>
+        <path d="M30 80 C29 58 26 40 21 18" stroke="#0f2b0b" strokeWidth="9" strokeLinecap="square" />
+      </g>
+      <g className="grass-blade grass-blade--gust" style={{ animationDelay: "0.5s", animationDuration: "4.9s" }}>
+        <path d="M30 80 C32 60 37 44 44 24" stroke="#163a11" strokeWidth="9" strokeLinecap="square" />
+      </g>
+      <g className="grass-blade" style={{ animationDelay: "1.1s", animationDuration: "3.7s" }}>
+        <path d="M30 80 C28 62 20 48 8 32" stroke="#0c240a" strokeWidth="8" strokeLinecap="square" />
+      </g>
+      <g className="grass-blade" style={{ animationDelay: "0.3s", animationDuration: "5.4s" }}>
+        <path d="M30 80 C33 64 44 52 56 40" stroke="#1b4715" strokeWidth="8" strokeLinecap="square" />
+      </g>
+      <g className="grass-blade grass-blade--gust" style={{ animationDelay: "1.6s", animationDuration: "4.0s" }}>
+        <path d="M30 80 C30 66 30 50 31 30" stroke="#22571b" strokeWidth="7" strokeLinecap="square" />
+      </g>
+      <g className="grass-blade" style={{ animationDelay: "0.8s", animationDuration: "6.1s" }}>
+        <path d="M30 80 C27 66 16 56 2 46" stroke="#123310" strokeWidth="7" strokeLinecap="square" />
+      </g>
+      <g className="grass-blade" style={{ animationDelay: "2.1s", animationDuration: "3.4s" }}>
+        <path d="M30 80 C34 64 40 56 50 52" stroke="#2a6a21" strokeWidth="6" strokeLinecap="square" />
+      </g>
+      <g className="grass-blade" style={{ animationDelay: "1.3s", animationDuration: "5.7s" }}>
+        <path d="M30 80 C26 68 20 60 12 56" stroke="#174012" strokeWidth="6" strokeLinecap="square" />
+      </g>
     </svg>
   );
 }
@@ -397,19 +413,25 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
               Lush oversized corner plants closest to the camera lens
               ═══════════════════════════════════════════════════════ */}
           <div 
-            className="absolute inset-0 pointer-events-none overflow-hidden z-[35] will-change-transform"
+            className="fixed inset-0 pointer-events-none z-[35] will-change-transform"
             style={{
               transform: `translate3d(${mouseOffset.x * -72}px, ${mouseOffset.y * -32}px, 0)`,
             }}
           >
             {/* Left corner close-up framing */}
-            <LushForegroundClover className="absolute -bottom-[2%] -left-[1%] w-14 h-18 sm:w-20 sm:h-24 opacity-95 animate-flower-sway-slow drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" style={{ animationDelay: '0.5s' }} />
-            <DaisyFlower className="absolute -bottom-[1%] left-[3%] w-11 h-16 animate-flower-sway drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]" style={{ animationDelay: '1.7s' }} />
-            <GoldenPoppyFlower className="absolute -bottom-[2%] left-[7%] w-10 h-14 animate-flower-sway-fast drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]" style={{ animationDelay: '0.9s' }} />
+            <LushForegroundClover className="absolute bottom-[3%] -left-[1%] w-16 h-20 sm:w-24 sm:h-28 opacity-95 animate-flower-sway-slow drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" style={{ animationDelay: '0.5s' }} />
+            <DaisyFlower className="absolute bottom-[5%] left-[4%] w-12 h-17 animate-flower-sway drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]" style={{ animationDelay: '1.7s' }} />
+            <GoldenPoppyFlower className="absolute bottom-[4%] left-[9%] w-11 h-15 animate-flower-sway-fast drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]" style={{ animationDelay: '0.9s' }} />
+            <PinkWildflower className="absolute bottom-[7%] left-[14%] w-10 h-14 animate-flower-sway-slow drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]" style={{ animationDelay: '2.6s' }} />
+            <BluebellFlower className="absolute bottom-[3%] left-[19%] w-10 h-14 animate-flower-sway drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]" style={{ animationDelay: '1.1s' }} />
+            <DaisyFlower className="absolute bottom-[6%] left-[25%] w-9 h-13 animate-flower-sway-fast drop-shadow-[0_4px_8px_rgba(0,0,0,0.28)]" style={{ animationDelay: '3.1s' }} />
 
             {/* Right corner close-up framing */}
-            <ButtercupFlower className="absolute -bottom-[1%] right-[6%] w-11 h-15 animate-flower-sway drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]" style={{ animationDelay: '1.3s' }} />
-            <LushForegroundClover className="absolute -bottom-[2%] -right-[1%] w-14 h-18 sm:w-20 sm:h-24 opacity-95 animate-flower-sway-fast drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" style={{ animationDelay: '2.1s' }} />
+            <ButtercupFlower className="absolute bottom-[5%] right-[7%] w-12 h-16 animate-flower-sway drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]" style={{ animationDelay: '1.3s' }} />
+            <PinkWildflower className="absolute bottom-[7%] right-[13%] w-10 h-14 animate-flower-sway-fast drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]" style={{ animationDelay: '0.4s' }} />
+            <GoldenPoppyFlower className="absolute bottom-[3%] right-[19%] w-11 h-15 animate-flower-sway-slow drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]" style={{ animationDelay: '2.3s' }} />
+            <DaisyFlower className="absolute bottom-[6%] right-[25%] w-9 h-13 animate-flower-sway drop-shadow-[0_4px_8px_rgba(0,0,0,0.28)]" style={{ animationDelay: '1.9s' }} />
+            <LushForegroundClover className="absolute bottom-[3%] -right-[1%] w-16 h-20 sm:w-24 sm:h-28 opacity-95 animate-flower-sway-fast drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" style={{ animationDelay: '2.1s' }} />
           </div>
 
           {/* ═══════════════════════════════════════════════════════
@@ -417,20 +439,26 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
               Strongest parallax: x * -110px, y * -44px
               ═══════════════════════════════════════════════════════ */}
           <div
-            className="absolute inset-0 pointer-events-none overflow-hidden z-[40] will-change-transform"
+            className="fixed inset-0 pointer-events-none z-[40] will-change-transform"
             style={{
               transform: `translate3d(${mouseOffset.x * -110}px, ${mouseOffset.y * -44}px, 0)`,
             }}
           >
             {/* Left edge */}
-            <GrassTuft className="absolute -bottom-[6%] -left-[6%] w-44 h-56 sm:w-60 sm:h-72 opacity-95 animate-flower-sway-slow drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)]" style={{ animationDelay: '0.3s' }} />
-            <GrassTuft className="absolute -bottom-[10%] left-[4%] w-36 h-48 sm:w-48 sm:h-60 opacity-90 animate-flower-sway drop-shadow-[0_6px_14px_rgba(0,0,0,0.4)]" style={{ animationDelay: '1.6s' }} />
-            <GrassTuft className="absolute -bottom-[14%] left-[13%] w-28 h-40 sm:w-36 sm:h-48 opacity-85 animate-flower-sway-fast drop-shadow-[0_6px_12px_rgba(0,0,0,0.35)]" style={{ animationDelay: '2.4s' }} />
+            <GrassTuft className="absolute bottom-[1%] -left-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95 drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)]" />
+            <GrassTuft className="absolute bottom-[4%] left-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90 drop-shadow-[0_6px_14px_rgba(0,0,0,0.4)]" />
+            <GrassTuft className="absolute bottom-[7%] left-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85 drop-shadow-[0_6px_12px_rgba(0,0,0,0.35)]" />
+            <GoldenPoppyFlower className="absolute bottom-[9%] left-[2%] w-12 h-17 animate-flower-sway-fast drop-shadow-[0_5px_10px_rgba(0,0,0,0.4)]" style={{ animationDelay: '0.7s' }} />
+            <PinkWildflower className="absolute bottom-[12%] left-[10%] w-11 h-15 animate-flower-sway-slow drop-shadow-[0_5px_10px_rgba(0,0,0,0.4)]" style={{ animationDelay: '2.2s' }} />
+            <DaisyFlower className="absolute bottom-[6%] left-[19%] w-12 h-17 animate-flower-sway drop-shadow-[0_5px_10px_rgba(0,0,0,0.4)]" style={{ animationDelay: '1.4s' }} />
 
             {/* Right edge */}
-            <GrassTuft className="absolute -bottom-[6%] -right-[6%] w-44 h-56 sm:w-60 sm:h-72 opacity-95 animate-flower-sway-fast drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)]" style={{ animationDelay: '0.9s' }} />
-            <GrassTuft className="absolute -bottom-[10%] right-[4%] w-36 h-48 sm:w-48 sm:h-60 opacity-90 animate-flower-sway-slow drop-shadow-[0_6px_14px_rgba(0,0,0,0.4)]" style={{ animationDelay: '2.0s' }} />
-            <GrassTuft className="absolute -bottom-[14%] right-[13%] w-28 h-40 sm:w-36 sm:h-48 opacity-85 animate-flower-sway drop-shadow-[0_6px_12px_rgba(0,0,0,0.35)]" style={{ animationDelay: '1.1s' }} />
+            <GrassTuft className="absolute bottom-[1%] -right-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95 drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)]" />
+            <GrassTuft className="absolute bottom-[4%] right-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90 drop-shadow-[0_6px_14px_rgba(0,0,0,0.4)]" />
+            <GrassTuft className="absolute bottom-[7%] right-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85 drop-shadow-[0_6px_12px_rgba(0,0,0,0.35)]" />
+            <BluebellFlower className="absolute bottom-[9%] right-[2%] w-12 h-17 animate-flower-sway drop-shadow-[0_5px_10px_rgba(0,0,0,0.4)]" style={{ animationDelay: '1.8s' }} />
+            <DaisyFlower className="absolute bottom-[12%] right-[10%] w-11 h-15 animate-flower-sway-fast drop-shadow-[0_5px_10px_rgba(0,0,0,0.4)]" style={{ animationDelay: '0.5s' }} />
+            <ButtercupFlower className="absolute bottom-[6%] right-[20%] w-12 h-17 animate-flower-sway-slow drop-shadow-[0_5px_10px_rgba(0,0,0,0.4)]" style={{ animationDelay: '2.7s' }} />
           </div>
         </div>
       </div>
