@@ -700,7 +700,7 @@ body {
 
 .grass-blade {
   transform-box: view-box;
-  transform-origin: 30px 80px;
+  transform-origin: 50% 100%;
   animation: grass-blade-sway 4.2s ease-in-out infinite;
 }
 
