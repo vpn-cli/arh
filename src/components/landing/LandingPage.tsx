@@ -23,7 +23,12 @@ export default function LandingPage() {
 
       {/* Retro Loading Screen overlay */}
       {!introFinished && (
-        <GameboyLoadingScreen onComplete={() => setIntroFinished(true)} />
+        <GameboyLoadingScreen
+          onComplete={() => {
+            setIntroFinished(true);
+            setStoryStarted(true);
+          }}
+        />
       )}
 
       {/* Navigation taskbar */}
@@ -32,6 +37,7 @@ export default function LandingPage() {
       <main className="flex-1 w-full max-w-[1200px] mx-auto px-4 py-8 sm:py-12 relative z-10 flex flex-col items-center">
         
         {/* HERO SECTION - Preserving the vibe of the top banner from the reference */}
+        {!storyStarted && (
         <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 mb-16 mt-8 relative">
           <div className="w-full md:w-2/3">
             <h1 className="font-pixel text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-dark leading-tight">
@@ -48,10 +54,7 @@ export default function LandingPage() {
                 className="pixel-btn pixel-btn--pink pixel-btn--large mt-8 text-xl flex items-center gap-4"
                 onClick={() => {
                   setStoryStarted(true);
-                  // Scroll down to story flow slightly smoothly
-                  setTimeout(() => {
-                     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                  }, 100);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
               >
                 START <span className="animate-bounce-soft inline-block">→</span >
@@ -87,10 +90,14 @@ export default function LandingPage() {
              a<br/>pixelated<br/>hamster<br/>adventure<br/>&lt;3
           </div>
         </div>
+        )}
 
         {/* INTERACTIVE STORY SECTION */}
         {storyStarted && (
-           <div className="w-full mt-12 mb-20 animate-slide-up" id="story-section">
+           <div
+             className="w-full flex-1 flex items-center justify-center min-h-[85vh] animate-slide-up"
+             id="story-section"
+           >
              <StoryFlow />
            </div>
         )}
@@ -98,6 +105,7 @@ export default function LandingPage() {
       </main>
 
       {/* FOOTER */}
+      {!storyStarted && (
       <footer className="w-full relative bg-blue-soft/30 border-t-3 border-border px-4 pt-16 pb-12 mt-auto overflow-hidden">
         {/* Pixel clouds / city bg (abstracted via particles or simple divs here) */}
         <div className="absolute bottom-0 left-0 w-full h-full pointer-events-none opacity-40">
@@ -134,6 +142,7 @@ export default function LandingPage() {
            </div>
         </div>
       </footer>
+      )}
     </div>
   );
 }
