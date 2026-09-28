@@ -683,6 +683,36 @@ body {
   animation: flower-sway-feeble 3.6s ease-in-out infinite;
 }
 
+/* Per-blade grass waving. Each blade pivots at its own root in SVG user
+   space, so a tuft ripples instead of leaning as one rigid block. */
+@keyframes grass-blade-sway {
+  0%, 100% { transform: rotate(-2.4deg) skewX(-1deg); }
+  35%      { transform: rotate(3.2deg) skewX(1.6deg); }
+  70%      { transform: rotate(-1.4deg) skewX(-0.8deg); }
+}
+
+@keyframes grass-blade-gust {
+  0%, 72%, 100% { transform: rotate(-1.8deg) skewX(-1deg); }
+  12%           { transform: rotate(7deg) skewX(4deg); }
+  26%           { transform: rotate(2.5deg) skewX(1.2deg); }
+  44%           { transform: rotate(5.5deg) skewX(3deg); }
+}
+
+.grass-blade {
+  transform-box: view-box;
+  transform-origin: 30px 80px;
+  animation: grass-blade-sway 4.2s ease-in-out infinite;
+}
+
+/* Occasional stronger gust rolling through the tuft */
+.grass-blade--gust {
+  animation: grass-blade-gust 9s cubic-bezier(0.3, 0.05, 0.3, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grass-blade, .grass-blade--gust { animation: none; }
+}
+
 @keyframes petal-drift {
   0% {
     transform: translate3d(-10vw, 0, 0) rotate(0deg);
