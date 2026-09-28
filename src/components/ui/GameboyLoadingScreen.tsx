@@ -885,7 +885,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div 
             className="fixed inset-0 pointer-events-none rooted-flora z-[35] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -26}px, ${mouseOffset.y * -8}px, 0)`,
+              transform: `translate3d(${mouseOffset.x * -26}px, ${26 + mouseOffset.y * -8}px, 0)`,
               ["--lean" as string]: `${mouseOffset.x * 0.9}deg`,
             } as React.CSSProperties}
           >
@@ -912,7 +912,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div
             className="fixed inset-0 pointer-events-none rooted-flora z-[40] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -36}px, ${mouseOffset.y * -10}px, 0)`,
+              transform: `translate3d(${mouseOffset.x * -36}px, ${30 + mouseOffset.y * -10}px, 0)`,
               ["--lean" as string]: `${mouseOffset.x * 1.4}deg`,
             } as React.CSSProperties}
           >
