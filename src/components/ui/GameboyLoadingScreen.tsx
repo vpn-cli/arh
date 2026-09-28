@@ -695,7 +695,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
             alt="Retro Meadow" 
             className="w-full h-full object-fill pixelated pointer-events-none will-change-transform"
             style={{
-              transform: `scale(1.06) translate3d(${mouseOffset.x * -4}px, ${mouseOffset.y * -2}px, 0)`,
+              transform: `scale(1.06) translate3d(${mouseOffset.x * -9}px, ${mouseOffset.y * -4}px, 0)`,
             }}
           />
 
@@ -706,7 +706,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div 
             className="absolute inset-0 pointer-events-none overflow-hidden z-[5] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -8}px, ${mouseOffset.y * -4}px, 0)`,
+              transform: `translate3d(${mouseOffset.x * -11}px, ${mouseOffset.y * -5}px, 0)`,
             }}
           >
             <ButtercupFlower className="absolute bottom-[28%] left-[23%] w-4 h-6 opacity-75 animate-flower-sway-slow" style={{ animationDelay: '0.8s' }} />
@@ -724,7 +724,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div 
             className="absolute inset-0 pointer-events-none z-10 will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -12}px, ${mouseOffset.y * -6}px, 0)`,
+              transform: `translate3d(${mouseOffset.x * -13}px, ${mouseOffset.y * -6}px, 0)`,
             }}
           >
             {/* 1. Grass Nyan Cat (Bottom Right): Animated pixel stars & rainbow sparkles */}
@@ -801,7 +801,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div 
             className="absolute inset-0 pointer-events-none overflow-hidden z-[15] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -22}px, ${mouseOffset.y * -11}px, 0)`,
+              transform: `translate3d(${mouseOffset.x * -16}px, ${mouseOffset.y * -6}px, 0)`,
             }}
           >
             <ButtercupFlower className="absolute bottom-[17%] left-[27%] w-6 h-9 animate-flower-sway-slow" style={{ animationDelay: '1.5s' }} />
@@ -821,7 +821,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div 
             className="absolute inset-0 pointer-events-none overflow-hidden z-[22] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -44}px, ${mouseOffset.y * -20}px, 0)`,
+              transform: `translate3d(${mouseOffset.x * -20}px, ${mouseOffset.y * -7}px, 0)`,
             }}
           >
             {/* Left lower meadow clovers & blossoms */}
@@ -883,10 +883,11 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
               Lush oversized corner plants closest to the camera lens
               ═══════════════════════════════════════════════════════ */}
           <div 
-            className="fixed inset-0 pointer-events-none z-[35] will-change-transform"
+            className="fixed inset-0 pointer-events-none rooted-flora z-[35] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -72}px, ${mouseOffset.y * -32}px, 0)`,
-            }}
+              transform: `translate3d(${mouseOffset.x * -26}px, ${mouseOffset.y * -8}px, 0)`,
+              ["--lean" as string]: `${mouseOffset.x * 0.9}deg`,
+            } as React.CSSProperties}
           >
             {/* Left corner close-up framing */}
             <LushForegroundClover className="absolute bottom-[0%] -left-[1%] w-16 h-24 sm:w-24 sm:h-33 opacity-95 animate-flower-sway-slow" style={{ animationDelay: '0.5s' }} />
@@ -909,10 +910,11 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
               Strongest parallax: x * -110px, y * -44px
               ═══════════════════════════════════════════════════════ */}
           <div
-            className="fixed inset-0 pointer-events-none z-[40] will-change-transform"
+            className="fixed inset-0 pointer-events-none rooted-flora z-[40] will-change-transform"
             style={{
-              transform: `translate3d(${mouseOffset.x * -110}px, ${mouseOffset.y * -44}px, 0)`,
-            }}
+              transform: `translate3d(${mouseOffset.x * -36}px, ${mouseOffset.y * -10}px, 0)`,
+              ["--lean" as string]: `${mouseOffset.x * 1.4}deg`,
+            } as React.CSSProperties}
           >
             {/* Left edge */}
             <GrassTuft className="absolute bottom-[1%] -left-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95" />

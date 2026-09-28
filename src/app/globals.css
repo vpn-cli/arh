@@ -713,6 +713,19 @@ body {
   .grass-blade, .grass-blade--gust { animation: none; }
 }
 
+/* Rooted plants lean from their own base as the camera pans, instead of
+   sliding bodily across ground they are supposed to be growing out of.
+   Uses the standalone `rotate` property so it composes with the sway
+   animation's `transform` rather than overwriting it. */
+.rooted-flora svg {
+  transform-origin: 50% 100%;
+  rotate: var(--lean, 0deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rooted-flora svg { rotate: 0deg; }
+}
+
 @keyframes petal-drift {
   0% {
     transform: translate3d(-10vw, 0, 0) rotate(0deg);
