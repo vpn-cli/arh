@@ -8,7 +8,6 @@ import PixelCursor from "../ui/PixelCursor";
 import GameboyLoadingScreen from "../ui/GameboyLoadingScreen";
 import StoryFlow from "./StoryFlow";
 import HamsterSticker from "../ui/HamsterSticker";
-import Parallax from "./Parallax";
 
 export default function LandingPage() {
   const [introFinished, setIntroFinished] = useState(false);
@@ -16,9 +15,6 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-screen w-full bg-bg-parchment text-dark flex flex-col overflow-x-hidden">
-      {/* Scroll depth layers (reads [data-parallax]) */}
-      <Parallax />
-
       {/* Ambient particle layer */}
       <AmbientParticles />
 
@@ -38,7 +34,7 @@ export default function LandingPage() {
         {/* HERO SECTION - Preserving the vibe of the top banner from the reference */}
         <div className="w-full flex flex-col md:flex-row items-center justify-between gap-8 mb-16 mt-8 relative">
           <div className="w-full md:w-2/3">
-            <h1 data-parallax="0.06" className="font-pixel text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-dark leading-tight">
+            <h1 className="font-pixel text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-dark leading-tight">
               A LITTLE <br/>
               WEBSITE <br/>
               <span className="text-pink">FOR A VERY</span><br/>
@@ -65,7 +61,7 @@ export default function LandingPage() {
           
           <div className="w-full md:w-1/3 relative flex justify-center h-64 md:h-auto">
              {/* Fake sticky note */}
-             <div data-parallax="0.22" className="absolute top-0 right-0 lg:-right-12 transform rotate-6 bg-blue-soft p-4 border border-dark border-dashed shadow-md z-0 hidden sm:block">
+             <div className="absolute top-0 right-0 lg:-right-12 transform rotate-6 bg-blue-soft p-4 border border-dark border-dashed shadow-md z-0 hidden sm:block">
                 <ul className="font-handwriting text-xl text-dark space-y-1">
                   <li>♡ SAME FRIEND</li>
                   <li>♡ SAME CHAOS</li>
@@ -75,21 +71,19 @@ export default function LandingPage() {
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-4 washi-tape washi-tape--yellow -rotate-2 border border-border/20 z-10" />
              </div>
 
-             <div data-parallax="-0.14" className="z-10">
-               <HamsterSticker
-                src="/images/hampters/hampter_00.png"
-                speech="psst... it's your birthday!"
-                className="mt-12"
-                scale={1.2}
-              />
-             </div>
+             <HamsterSticker
+              src="/images/hampters/hampter_00.png"
+              speech="psst... it's your birthday!"
+              className="mt-12 z-10"
+              scale={1.2}
+            />
           </div>
 
-          <div data-parallax="0.38" className="absolute -left-12 top-1/2 font-handwriting text-dark/40 -rotate-12 hidden lg:block text-xl">
+          <div className="absolute -left-12 top-1/2 font-handwriting text-dark/40 -rotate-12 hidden lg:block text-xl">
              same<br/>stupid<br/>hamster,<br/>different<br/>page!
           </div>
           
-          <div data-parallax="0.3" className="absolute -right-16 bottom-0 font-handwriting text-dark/40 rotate-6 hidden lg:block text-xl text-right">
+          <div className="absolute -right-16 bottom-0 font-handwriting text-dark/40 rotate-6 hidden lg:block text-xl text-right">
              a<br/>pixelated<br/>hamster<br/>adventure<br/>&lt;3
           </div>
         </div>
@@ -108,16 +102,16 @@ export default function LandingPage() {
         {/* Pixel clouds / city bg (abstracted via particles or simple divs here) */}
         <div className="absolute bottom-0 left-0 w-full h-full pointer-events-none opacity-40">
            {/* Cloud decorations */}
-           <div data-parallax="0.34" className="absolute bottom-4 left-10 text-4xl">☁️</div>
-           <div data-parallax="0.46" className="absolute bottom-12 left-1/4 text-6xl">☁️</div>
-           <div data-parallax="0.4" className="absolute bottom-2 right-1/4 text-5xl">☁️</div>
-           <div data-parallax="0.26" className="absolute bottom-16 right-10 text-3xl">☁️</div>
-           <div data-parallax="0.2" className="absolute bottom-20 left-1/2 text-2xl text-yellow animate-pulse">✨</div>
-           <div data-parallax="0.16" className="absolute top-10 right-1/3 text-xl text-pink animate-pulse delay-200">✨</div>
+           <div className="absolute bottom-4 left-10 text-4xl">☁️</div>
+           <div className="absolute bottom-12 left-1/4 text-6xl">☁️</div>
+           <div className="absolute bottom-2 right-1/4 text-5xl">☁️</div>
+           <div className="absolute bottom-16 right-10 text-3xl">☁️</div>
+           <div className="absolute bottom-20 left-1/2 text-2xl text-yellow animate-pulse">✨</div>
+           <div className="absolute top-10 right-1/3 text-xl text-pink animate-pulse delay-200">✨</div>
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-center gap-12 text-center md:text-left">
-           <div data-parallax="0.1">
+           <div>
              <h3 className="font-pixel text-2xl sm:text-3xl font-bold text-dark mb-2 tracking-wide">
                SAME STUPID HAMSTER. <br/>
                A MUCH HAPPIER YEAR. ♡
@@ -127,7 +121,7 @@ export default function LandingPage() {
              </p>
            </div>
            
-           <div data-parallax="-0.12" className="relative">
+           <div className="relative">
               <div className="speech-bubble absolute -top-12 -left-16 font-handwriting text-sm rotate-6 z-20">
                 make it<br/>memorable<br/>&lt;3
               </div>

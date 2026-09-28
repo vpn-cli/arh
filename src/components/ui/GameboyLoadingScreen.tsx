@@ -85,6 +85,21 @@ function GoldenPoppyFlower({ className = "", style = {} }: { className?: string;
   );
 }
 
+function GrassTuft({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 60 80" fill="none" className={`pointer-events-none select-none pixelated ${className}`} style={style}>
+      <path d="M30 80 C29 58 26 40 21 18" stroke="#0f2b0b" strokeWidth="9" strokeLinecap="square" />
+      <path d="M30 80 C32 60 37 44 44 24" stroke="#163a11" strokeWidth="9" strokeLinecap="square" />
+      <path d="M30 80 C28 62 20 48 8 32" stroke="#0c240a" strokeWidth="8" strokeLinecap="square" />
+      <path d="M30 80 C33 64 44 52 56 40" stroke="#1b4715" strokeWidth="8" strokeLinecap="square" />
+      <path d="M30 80 C30 66 30 50 31 30" stroke="#22571b" strokeWidth="7" strokeLinecap="square" />
+      <path d="M30 80 C27 66 16 56 2 46" stroke="#123310" strokeWidth="7" strokeLinecap="square" />
+      <path d="M30 80 C34 64 40 56 50 52" stroke="#2a6a21" strokeWidth="6" strokeLinecap="square" />
+      <path d="M30 80 C26 68 20 60 12 56" stroke="#174012" strokeWidth="6" strokeLinecap="square" />
+    </svg>
+  );
+}
+
 function LushForegroundClover({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg viewBox="0 0 40 50" fill="none" className={`pointer-events-none select-none pixelated ${className}`} style={style}>
@@ -192,7 +207,10 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <img 
             src="/images/loading_bg.jpg" 
             alt="Retro Meadow" 
-            className="w-full h-full object-fill pixelated pointer-events-none"
+            className="w-full h-full object-fill pixelated pointer-events-none will-change-transform"
+            style={{
+              transform: `scale(1.06) translate3d(${mouseOffset.x * -4}px, ${mouseOffset.y * -2}px, 0)`,
+            }}
           />
 
           {/* ═══════════════════════════════════════════════════════
@@ -392,6 +410,27 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
             {/* Right corner close-up framing */}
             <ButtercupFlower className="absolute -bottom-[1%] right-[6%] w-11 h-15 animate-flower-sway drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]" style={{ animationDelay: '1.3s' }} />
             <LushForegroundClover className="absolute -bottom-[2%] -right-[1%] w-14 h-18 sm:w-20 sm:h-24 opacity-95 animate-flower-sway-fast drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)]" style={{ animationDelay: '2.1s' }} />
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════
+              PARALLAX LAYER 6 (z-[40]): Side grass right against the lens
+              Strongest parallax: x * -110px, y * -44px
+              ═══════════════════════════════════════════════════════ */}
+          <div
+            className="absolute inset-0 pointer-events-none overflow-hidden z-[40] will-change-transform"
+            style={{
+              transform: `translate3d(${mouseOffset.x * -110}px, ${mouseOffset.y * -44}px, 0)`,
+            }}
+          >
+            {/* Left edge */}
+            <GrassTuft className="absolute -bottom-[6%] -left-[6%] w-44 h-56 sm:w-60 sm:h-72 opacity-95 animate-flower-sway-slow drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)]" style={{ animationDelay: '0.3s' }} />
+            <GrassTuft className="absolute -bottom-[10%] left-[4%] w-36 h-48 sm:w-48 sm:h-60 opacity-90 animate-flower-sway drop-shadow-[0_6px_14px_rgba(0,0,0,0.4)]" style={{ animationDelay: '1.6s' }} />
+            <GrassTuft className="absolute -bottom-[14%] left-[13%] w-28 h-40 sm:w-36 sm:h-48 opacity-85 animate-flower-sway-fast drop-shadow-[0_6px_12px_rgba(0,0,0,0.35)]" style={{ animationDelay: '2.4s' }} />
+
+            {/* Right edge */}
+            <GrassTuft className="absolute -bottom-[6%] -right-[6%] w-44 h-56 sm:w-60 sm:h-72 opacity-95 animate-flower-sway-fast drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)]" style={{ animationDelay: '0.9s' }} />
+            <GrassTuft className="absolute -bottom-[10%] right-[4%] w-36 h-48 sm:w-48 sm:h-60 opacity-90 animate-flower-sway-slow drop-shadow-[0_6px_14px_rgba(0,0,0,0.4)]" style={{ animationDelay: '2.0s' }} />
+            <GrassTuft className="absolute -bottom-[14%] right-[13%] w-28 h-40 sm:w-36 sm:h-48 opacity-85 animate-flower-sway drop-shadow-[0_6px_12px_rgba(0,0,0,0.35)]" style={{ animationDelay: '1.1s' }} />
           </div>
         </div>
       </div>
