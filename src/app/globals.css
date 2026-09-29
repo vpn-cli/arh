@@ -40,6 +40,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
   background-color: #FFFFFF;
 }
 
@@ -55,6 +56,75 @@ body {
 
 ::selection {
   background: var(--color-pink, #FF8FB3);
+  color: var(--color-dark, #20233F);
+}
+
+/* ═══════════════════════════════════════════════════════
+   TITLE SCREEN MENU — rows inside a PixelWindow
+
+   Selection is inverse video, the way a Game Boy menu marks the
+   active row: the highlight itself is the affordance, so the caret
+   only has to confirm it.
+   ═══════════════════════════════════════════════════════ */
+
+.gb-menu:focus-visible {
+  outline: 3px solid var(--color-pink, #FF8FB3);
+  outline-offset: -3px;
+}
+
+.gb-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px 10px 10px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 1px;
+  color: var(--color-dark-muted, #4B4E6A);
+  cursor: pointer;
+  user-select: none;
+  transition: background 120ms steps(2), color 120ms steps(2), padding-left 120ms steps(2);
+}
+
+.gb-menu-item[aria-selected='true'] {
+  background: linear-gradient(90deg, var(--color-border, #20233F) 0%, #3A3F66 100%);
+  color: var(--color-bg-cream, #FFF3D8);
+  box-shadow: inset 0 0 0 2px var(--color-pink, #FF8FB3);
+  text-shadow: 0 0 6px rgba(255, 143, 179, 0.7);
+  padding-left: 14px;
+}
+
+.gb-menu-item:active {
+  transform: translateY(1px);
+}
+
+.gb-menu-item__caret {
+  color: var(--color-pink, #FF8FB3);
+  visibility: hidden;
+  transform: translateX(-4px);
+}
+
+.gb-menu-item[aria-selected='true'] .gb-menu-item__caret {
+  visibility: visible;
+  transform: translateX(0);
+  filter: drop-shadow(0 0 4px var(--color-pink, #FF8FB3));
+}
+
+/* Keycaps in the navigation hint: drawn as keys so the hint shows
+   which keys to press instead of spelling it out. */
+.gb-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  padding: 3px 5px;
+  background: #FFFFFF;
+  border: 2px solid var(--color-border, #20233F);
+  box-shadow: 0 2px 0 0 var(--color-border, #20233F);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  line-height: 1;
   color: var(--color-dark, #20233F);
 }
 
@@ -683,35 +753,13 @@ body {
   animation: flower-sway-feeble 3.6s ease-in-out infinite;
 }
 
-/* Per-blade grass waving. Each blade pivots at its own root in SVG user
-   space, so a tuft ripples instead of leaning as one rigid block. */
-@keyframes grass-blade-sway {
-  0%, 100% { transform: rotate(-2.4deg) skewX(-1deg); }
-  35%      { transform: rotate(3.2deg) skewX(1.6deg); }
-  70%      { transform: rotate(-1.4deg) skewX(-0.8deg); }
-}
-
-@keyframes grass-blade-gust {
-  0%, 72%, 100% { transform: rotate(-1.8deg) skewX(-1deg); }
-  12%           { transform: rotate(7deg) skewX(4deg); }
-  26%           { transform: rotate(2.5deg) skewX(1.2deg); }
-  44%           { transform: rotate(5.5deg) skewX(3deg); }
-}
-
-.grass-blade {
-  transform-box: view-box;
-  transform-origin: 50% 100%;
-  animation: grass-blade-sway 4.2s ease-in-out infinite;
-}
-
-/* Occasional stronger gust rolling through the tuft */
-.grass-blade--gust {
-  animation: grass-blade-gust 9s cubic-bezier(0.3, 0.05, 0.3, 1) infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .grass-blade, .grass-blade--gust { animation: none; }
-}
+/* Blades stay static. A transform animation on SVG content cannot be
+   composited, so animating these 8 groups repainted all 256 rects of every
+   tuft on the main thread each frame. The tuft sways as a whole instead
+   (see the animate-flower-sway-* class on each <GrassTuft>), which the
+   compositor handles without touching the rects.
+   ponytail: lost the per-blade ripple; bring it back as a sprite sheet or
+   a pre-baked CSS-animated <image> if the effect is missed. */
 
 /* Rooted plants lean from their own base as the camera pans, instead of
    sliding bodily across ground they are supposed to be growing out of.
@@ -813,22 +861,12 @@ body {
    SCROLLBAR STYLING
    ═══════════════════════════════════════════════════════ */
 
+html {
+  scrollbar-width: none;
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #FFFFFF;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-lavender, #C8B8F1);
-  border: 2px solid var(--color-border, #20233F);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-lavender-soft, #DFD5F5);
+  display: none;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -844,5 +882,79 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+/* ═══════════════════════════════════════════════════════
+   LENS-CLOSE FLYING LEAVES
+   Blurred because they cross inches from the camera, so they read as
+   out-of-focus foreground rather than sharp sprites stuck to the glass.
+   ═══════════════════════════════════════════════════════ */
+.gb-leaf {
+  position: absolute;
+  left: 0;
+  width: 26px;
+  height: 14px;
+  background: linear-gradient(120deg, #a7d96a 0%, #5ea92f 55%, #1a6a11 100%);
+  border-radius: 100% 0 100% 0;
+  filter: blur(3px);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.gb-leaf--small {
+  width: 16px;
+  height: 9px;
+  filter: blur(2px);
+  background: linear-gradient(120deg, #cfe98f 0%, #8db356 60%, #367224 100%);
+}
+
+.gb-leaf--big {
+  width: 38px;
+  height: 20px;
+  filter: blur(5px);
+  background: linear-gradient(120deg, #f8d66b 0%, #b8a13a 50%, #5c6b1f 100%);
+}
+
+@keyframes leaf-gust {
+  0% {
+    transform: translate3d(-12vw, 0, 0) rotate(-20deg) scale(0.9);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.85;
+  }
+  35% {
+    transform: translate3d(28vw, -6vh, 0) rotate(160deg) scale(1.1);
+  }
+  65% {
+    transform: translate3d(62vw, 5vh, 0) rotate(420deg) scale(0.95);
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate3d(118vw, -3vh, 0) rotate(700deg) scale(1);
+    opacity: 0;
+  }
+}
+
+.animate-leaf-gust {
+  animation: leaf-gust 6.5s cubic-bezier(0.3, 0.1, 0.5, 1) infinite;
+}
+
+.animate-leaf-gust-slow {
+  animation: leaf-gust 10s cubic-bezier(0.35, 0.05, 0.5, 1) infinite;
+}
+
+.animate-leaf-gust-fast {
+  animation: leaf-gust 4.2s cubic-bezier(0.25, 0.1, 0.4, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-leaf-gust,
+  .animate-leaf-gust-slow,
+  .animate-leaf-gust-fast {
+    animation: none;
+    opacity: 0;
   }
 }

@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 type CursorMode = "default" | "pointer" | "photo" | "hamster";
 
 export default function PixelCursor() {
-  const [position, setPosition] = useState({ x: -100, y: -100 });
+  // The lerped position is written straight to the node. Storing it in state
+  // re-rendered this component — and its SVGs — on every animation frame the
+  // mouse was moving, which is the last thing the page needs while the pixel
+  // scene is already busy.
+  const nodeRef = useRef<HTMLDivElement>(null);
   const [cursorMode, setCursorMode] = useState<CursorMode>("default");
   const [isVisible, setIsVisible] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
@@ -30,7 +34,7 @@ export default function PixelCursor() {
     const handleMouseMove = (e: MouseEvent) => {
       targetX = e.clientX;
       targetY = e.clientY;
-      if (!isVisible) setIsVisible(true);
+      setIsVisible(true);
 
       const target = e.target as HTMLElement | null;
       if (target) {
@@ -57,7 +61,10 @@ export default function PixelCursor() {
     const render = () => {
       currentX += (targetX - currentX) * 0.45;
       currentY += (targetY - currentY) * 0.45;
-      setPosition({ x: currentX, y: currentY });
+      const el = nodeRef.current;
+      if (el) {
+        el.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+      }
       animationFrameId = requestAnimationFrame(render);
     };
 
@@ -70,18 +77,15 @@ export default function PixelCursor() {
       document.removeEventListener("mouseleave", handleMouseLeave);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isVisible]);
+  }, []);
 
   if (!isEnabled || !isVisible) return null;
 
   return (
     <div
-      className="fixed pointer-events-none z-[9999] transition-transform duration-75 ease-out select-none will-change-transform"
-      style={{
-        transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
-        left: -8,
-        top: -8,
-      }}
+      ref={nodeRef}
+      className="fixed pointer-events-none z-[9999] select-none will-change-transform"
+      style={{ left: -8, top: -8, transform: "translate3d(-100px, -100px, 0)" }}
     >
       {cursorMode === "default" && (
         <svg
