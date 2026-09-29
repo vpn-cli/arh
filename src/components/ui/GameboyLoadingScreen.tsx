@@ -601,9 +601,39 @@ function GrassTuft({ className = "", style = {} }: { className?: string; style?:
   );
 }
 
+/* Game Boy blips synthesised on the fly -- square waves are what the
+   original hardware had, and a few oscillators beat shipping wav files. */
+let audioCtx: AudioContext | null = null;
+
+function blip(notes: number[], dur = 0.07, volume = 0.05) {
+  try {
+    audioCtx ??= new AudioContext();
+    if (audioCtx.state === "suspended") void audioCtx.resume();
+    const ctx = audioCtx;
+    notes.forEach((freq, i) => {
+      const t = ctx.currentTime + i * dur;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(volume, t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + dur);
+    });
+  } catch {
+    /* no audio device / blocked autoplay: the menu still works silently */
+  }
+}
+
+const sfx = {
+  move: () => blip([660]),
+  select: () => blip([784, 988, 1319], 0.08, 0.06),
+};
+
 export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScreenProps) {
   const [selectedIndex, setSelectedIndex] = useState(0); // 0 = New Game, 1 = Continue
-  const [showPopup, setShowPopup] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Parallax cursor tracking with smooth lerp damping.
@@ -614,6 +644,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
   const targetOffsetRef = React.useRef({ x: 0, y: 0 });
   const currentOffsetRef = React.useRef({ x: 0, y: 0 });
   const animFrameRef = React.useRef<number | null>(null);
+  const lastLeanRef = React.useRef(0);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -644,6 +675,14 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
       if (el) {
         el.style.setProperty("--mx", current.x.toFixed(4));
         el.style.setProperty("--my", current.y.toFixed(4));
+        // --lean rotates ~35 flora SVGs (~1700 rects). A fresh value every
+        // frame re-rasterizes all of them; stepping it keeps the tilt while
+        // only repainting when it visibly changes.
+        const lean = Math.round(current.x * 8) / 8;
+        if (lean !== lastLeanRef.current) {
+          lastLeanRef.current = lean;
+          el.style.setProperty("--lean-x", String(lean));
+        }
       }
       animFrameRef.current = requestAnimationFrame(updateParallax);
     };
@@ -666,22 +705,28 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
 
   const menuItems = ["START NEW GAME", "CONTINUE"];
 
-  const handleSelect = (index: number) => {
-    if (index === 0) {
-      // Start New Game
-      setIsTransitioning(true);
-      setTimeout(() => {
-        onComplete();
-      }, 1000);
-    } else {
-      // Continue
-      setShowPopup(true);
-    }
+  // Both rows open the story: CONTINUE picks up exactly where START does,
+  // so it fades straight through instead of scolding you in a popup.
+  const handleSelect = () => {
+    if (isTransitioning) return;
+    sfx.select();
+    setIsTransitioning(true);
+    setTimeout(onComplete, 700);
   };
+
+  // One place covers both hover and arrow keys changing the row.
+  const firstRenderRef = React.useRef(true);
+  useEffect(() => {
+    if (firstRenderRef.current) {
+      firstRenderRef.current = false;
+      return;
+    }
+    sfx.move();
+  }, [selectedIndex]);
 
   // Keyboard navigation
   useEffect(() => {
-    if (showPopup || isTransitioning) return;
+    if (isTransitioning) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowUp") {
@@ -689,19 +734,19 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
       } else if (e.key === "ArrowDown") {
         setSelectedIndex(1);
       } else if (e.key === "Enter") {
-        handleSelect(selectedIndex);
+        handleSelect();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIndex, showPopup, isTransitioning]);
+  }, [selectedIndex, isTransitioning]);
 
   return (
     <div 
       ref={rootRef}
-      className={`fixed inset-0 z-50 flex items-start justify-start p-8 sm:p-12 transition-opacity duration-1000 ${
-        isTransitioning ? "opacity-0 pointer-events-none" : "opacity-100"
+      className={`fixed inset-0 z-50 flex items-start justify-start p-8 sm:p-12 transition-all duration-700 ease-in ${
+        isTransitioning ? "opacity-0 scale-105 blur-sm pointer-events-none" : "opacity-100 scale-100"
       }`}
       style={{ ["--mx" as string]: "0", ["--my" as string]: "0" } as React.CSSProperties}
     >
@@ -873,7 +918,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
             className="fixed inset-0 pointer-events-none rooted-flora z-[35] will-change-transform"
             style={{
               transform: "translate3d(calc(var(--mx, 0) * -26px), calc(26px + var(--my, 0) * -8px), 0)",
-              ["--lean" as string]: "calc(var(--mx, 0) * 0.9deg)",
+              ["--lean" as string]: "calc(var(--lean-x, 0) * 0.9deg)",
             } as React.CSSProperties}
           >
             {/* Left corner close-up framing */}
@@ -900,26 +945,43 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
             className="fixed inset-0 pointer-events-none rooted-flora z-[40] will-change-transform"
             style={{
               transform: "translate3d(calc(var(--mx, 0) * -36px), calc(30px + var(--my, 0) * -10px), 0)",
-              ["--lean" as string]: "calc(var(--mx, 0) * 1.4deg)",
+              ["--lean" as string]: "calc(var(--lean-x, 0) * 1.4deg)",
             } as React.CSSProperties}
           >
             {/* Left edge */}
-            <GrassTuft className="absolute bottom-[1%] -left-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95" />
-            <GrassTuft className="absolute bottom-[1%] left-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90" />
-            <GrassTuft className="absolute bottom-[0%] left-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85" />
+            <GrassTuft className="absolute bottom-[1%] -left-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95 animate-flower-sway-slow" />
+            <GrassTuft className="absolute bottom-[1%] left-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90 animate-flower-sway" />
+            <GrassTuft className="absolute bottom-[0%] left-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85 animate-flower-sway-fast" />
             <GoldenPoppyFlower className="absolute bottom-[0%] left-[2%] w-12 h-21 animate-flower-sway-fast" style={{ animationDelay: '0.7s' }} />
             <PinkWildflower className="absolute bottom-[0%] left-[10%] w-11 h-19 animate-flower-sway-slow" style={{ animationDelay: '2.2s' }} />
             <DaisyFlower className="absolute bottom-[0%] left-[19%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.4s' }} />
 
             {/* Right edge */}
-            <GrassTuft className="absolute bottom-[1%] -right-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95" />
-            <GrassTuft className="absolute bottom-[1%] right-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90" />
-            <GrassTuft className="absolute bottom-[0%] right-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85" />
+            <GrassTuft className="absolute bottom-[1%] -right-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95 animate-flower-sway" />
+            <GrassTuft className="absolute bottom-[1%] right-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90 animate-flower-sway-fast" />
+            <GrassTuft className="absolute bottom-[0%] right-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85 animate-flower-sway-slow" />
             <BluebellFlower className="absolute bottom-[0%] right-[2%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.8s' }} />
             <DaisyFlower className="absolute bottom-[0%] right-[10%] w-11 h-19 animate-flower-sway-fast" style={{ animationDelay: '0.5s' }} />
             <ButtercupFlower className="absolute bottom-[0%] right-[20%] w-12 h-21 animate-flower-sway-slow" style={{ animationDelay: '2.7s' }} />
           </div>
         </div>
+      </div>
+
+      {/* ═══ FLYING LEAVES (z-[45]): right in front of the lens ═══
+          Blurred on purpose -- anything this close to the camera is out of
+          focus, and the gust carries them faster than the pollen behind. */}
+      <div
+        className="fixed inset-0 pointer-events-none overflow-hidden z-[45] will-change-transform"
+        style={{
+          transform: "translate3d(calc(var(--mx, 0) * -46px), calc(var(--my, 0) * -16px), 0)",
+        }}
+      >
+        <span className="gb-leaf gb-leaf--big animate-leaf-gust-fast" style={{ top: "12%", animationDelay: "0s" }} />
+        <span className="gb-leaf animate-leaf-gust" style={{ top: "31%", animationDelay: "1.8s" }} />
+        <span className="gb-leaf gb-leaf--small animate-leaf-gust-slow" style={{ top: "44%", animationDelay: "3.4s" }} />
+        <span className="gb-leaf gb-leaf--big animate-leaf-gust" style={{ top: "58%", animationDelay: "5.1s" }} />
+        <span className="gb-leaf animate-leaf-gust-fast" style={{ top: "72%", animationDelay: "2.6s" }} />
+        <span className="gb-leaf gb-leaf--small animate-leaf-gust" style={{ top: "86%", animationDelay: "6.3s" }} />
       </div>
 
       {/* Animated Scanlines / Screen Effect */}
@@ -953,72 +1015,46 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
         <span className="absolute bottom-[48%] right-[32%] w-2.5 h-2.5 bg-yellow-100 rounded-full shadow-[0_0_10px_#fef08a] animate-firefly-prominent" style={{ animationDelay: '4.8s' }} />
       </div>
 
-      {/* Top Left Menu Row: Menu Box + Hovering Arrow Navigation Hint */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 z-20">
-        {/* Retro Menu Box */}
-        <div className="relative border-4 border-white bg-black/65 backdrop-blur-xs p-5 sm:p-6 font-retro text-white text-sm sm:text-base leading-loose tracking-widest uppercase inline-block shadow-[4px_4px_0px_0px_rgba(0,0,0,0.6)]">
-          {menuItems.map((item, idx) => (
-            <div 
-              key={item} 
-              className="flex items-center gap-4 cursor-pointer mb-4 last:mb-0 select-none group"
-              onClick={() => {
-                setSelectedIndex(idx);
-                handleSelect(idx);
-              }}
-              onMouseEnter={() => setSelectedIndex(idx)}
-            >
-              <span 
-                className={`transition-opacity duration-100 text-yellow-300 ${
-                  selectedIndex === idx ? "opacity-100 animate-pulse" : "opacity-0"
-                }`}
+      {/* Title screen menu. One window: the rows and the key hint that
+          explains them belong to the same object, so they share a frame. */}
+      <div className="z-20">
+        <PixelWindow title="MAIN MENU" variant="pink" contentClassName="!p-0">
+          <ul
+            className="gb-menu list-none m-0 p-0 min-w-[240px]"
+            role="listbox"
+            aria-label="Main menu"
+            aria-activedescendant={`gb-menu-${selectedIndex}`}
+            tabIndex={0}
+          >
+            {menuItems.map((item, idx) => (
+              <li
+                key={item}
+                id={`gb-menu-${idx}`}
+                role="option"
+                aria-selected={selectedIndex === idx}
+                className="gb-menu-item"
+                onClick={() => {
+                  setSelectedIndex(idx);
+                  handleSelect();
+                }}
+                onMouseEnter={() => setSelectedIndex(idx)}
               >
-                ▶
-              </span>
-              <span 
-                className={`transition-colors duration-100 ${
-                  selectedIndex === idx ? "text-yellow-200 font-bold" : "text-white/60 group-hover:text-white"
-                }`}
-              >
-                {item}
-              </span>
-            </div>
-          ))}
-        </div>
+                <span className="gb-menu-item__caret animate-blink">&#9654;</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
 
-        {/* Hovering / Floating Navigation Hint beside the menu */}
-        <div className="animate-retro-float flex items-center gap-2.5 px-3.5 py-2.5 bg-black/75 border-2 border-yellow-300 text-yellow-300 font-retro text-xs sm:text-sm tracking-wider uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,0.7)] backdrop-blur-xs rounded-sm select-none">
-          <span className="text-yellow-400 text-sm animate-pulse">▲▼</span>
-          <span className="text-white drop-shadow">USE ARROWS TO NAVIGATE</span>
-          <span className="text-pink-300 text-[10px] bg-white/10 px-2 py-0.5 border border-white/20">ENTER ⏎</span>
-        </div>
+          <div className="flex items-center gap-2 border-t-2 border-dashed border-border/30 px-3 py-2.5 select-none">
+            <span className="gb-key">&#9650;</span>
+            <span className="gb-key">&#9660;</span>
+            <span className="font-retro text-[8px] text-dark-muted tracking-wider">MOVE</span>
+            <span className="gb-key ml-2">ENTER</span>
+            <span className="font-retro text-[8px] text-dark-muted tracking-wider">SELECT</span>
+          </div>
+        </PixelWindow>
       </div>
 
-      {/* Popup for "Continue" */}
-      {showPopup && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-50 backdrop-blur-sm">
-          <div className="animate-slide-up">
-            <PixelWindow title="OOPS" variant="pink">
-              <div className="p-8 text-center flex flex-col items-center gap-6 min-w-[280px]">
-                <span className="text-5xl animate-bounce-soft">🥺</span>
-                <p className="font-pixel text-3xl text-dark font-bold leading-relaxed">
-                  press new game <br/>
-                  <span className="text-pink">bestie ♡</span>
-                </p>
-                <button 
-                  className="pixel-btn pixel-btn--pink px-8 py-3 text-lg mt-4 w-full"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowPopup(false);
-                    setSelectedIndex(0); // Reset selection to New Game
-                  }}
-                >
-                  OKAY
-                </button>
-              </div>
-            </PixelWindow>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
