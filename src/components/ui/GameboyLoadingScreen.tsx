@@ -2,639 +2,23 @@
 
 import React, { useState, useEffect } from "react";
 import PixelWindow from "./PixelWindow";
+import IndiePixelWindow from "./IndiePixelWindow";
+import HelloKittyAlertModal from "./HelloKittyAlertModal";
 
 interface GameboyLoadingScreenProps {
   onComplete: () => void;
 }
 
-/* ═══════════════════════════════════════════════════════
-   CHILL PIXEL FLOWERS (Feebly waving in the gentle breeze)
-   ═══════════════════════════════════════════════════════ */
 
-/* Pixel-art flora. Colours sampled from loading_bg.jpg; drawn as integer
-   rects with shapeRendering="crispEdges" so they sit on the same pixel
-   grid as the background art instead of reading as smooth vector stickers. */
 
-/* Pixel-art flora. Colours sampled from loading_bg.jpg; drawn as integer
-   rects with shapeRendering="crispEdges" so they sit on the same pixel
-   grid as the background art instead of reading as smooth vector stickers. */
-
-function DaisyFlower({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg viewBox="0 0 7 18" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
-      <rect x="3" y="0" width="1" height="1" fill="#034910" />
-      <rect x="2" y="1" width="3" height="1" fill="#fefde8" />
-      <rect x="1" y="2" width="5" height="1" fill="#fefde8" />
-      <rect x="0" y="3" width="3" height="1" fill="#fefde8" />
-      <rect x="3" y="3" width="2" height="1" fill="#ffda36" />
-      <rect x="5" y="3" width="2" height="1" fill="#fefde8" />
-      <rect x="0" y="4" width="2" height="1" fill="#fefde8" />
-      <rect x="2" y="4" width="3" height="1" fill="#ffda36" />
-      <rect x="5" y="4" width="2" height="1" fill="#fefde8" />
-      <rect x="0" y="5" width="3" height="1" fill="#fefde8" />
-      <rect x="3" y="5" width="2" height="1" fill="#ffda36" />
-      <rect x="5" y="5" width="2" height="1" fill="#fefde8" />
-      <rect x="1" y="6" width="5" height="1" fill="#fefde8" />
-      <rect x="2" y="7" width="3" height="1" fill="#fefde8" />
-      <rect x="3" y="8" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="9" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="10" width="1" height="1" fill="#034910" />
-      <rect x="3" y="10" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="11" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="12" width="1" height="1" fill="#034910" />
-      <rect x="3" y="13" width="1" height="1" fill="#034910" />
-      <rect x="1" y="14" width="1" height="1" fill="#5ea92f" />
-      <rect x="5" y="14" width="1" height="1" fill="#5ea92f" />
-      <rect x="1" y="15" width="1" height="1" fill="#367224" />
-      <rect x="2" y="15" width="3" height="1" fill="#1a6a11" />
-      <rect x="5" y="15" width="1" height="1" fill="#367224" />
-      <rect x="0" y="16" width="1" height="1" fill="#367224" />
-      <rect x="1" y="16" width="5" height="1" fill="#1a6a11" />
-      <rect x="6" y="16" width="1" height="1" fill="#367224" />
-      <rect x="0" y="17" width="1" height="1" fill="#1a6a11" />
-      <rect x="1" y="17" width="5" height="1" fill="#034910" />
-      <rect x="6" y="17" width="1" height="1" fill="#1a6a11" />
-    </svg>
-  );
-}
-
-function ButtercupFlower({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg viewBox="0 0 7 16" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
-      <rect x="3" y="0" width="2" height="1" fill="#fade3c" />
-      <rect x="2" y="1" width="1" height="1" fill="#fade3c" />
-      <rect x="3" y="1" width="2" height="1" fill="#ffda36" />
-      <rect x="5" y="1" width="1" height="1" fill="#fade3c" />
-      <rect x="1" y="2" width="1" height="1" fill="#fade3c" />
-      <rect x="2" y="2" width="4" height="1" fill="#ffda36" />
-      <rect x="6" y="2" width="1" height="1" fill="#fade3c" />
-      <rect x="1" y="3" width="1" height="1" fill="#fade3c" />
-      <rect x="2" y="3" width="1" height="1" fill="#ffda36" />
-      <rect x="3" y="3" width="2" height="1" fill="#f8b566" />
-      <rect x="5" y="3" width="1" height="1" fill="#ffda36" />
-      <rect x="6" y="3" width="1" height="1" fill="#fade3c" />
-      <rect x="2" y="4" width="1" height="1" fill="#fade3c" />
-      <rect x="3" y="4" width="2" height="1" fill="#ffda36" />
-      <rect x="5" y="4" width="1" height="1" fill="#fade3c" />
-      <rect x="3" y="5" width="2" height="1" fill="#f8b566" />
-      <rect x="3" y="6" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="7" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="8" width="1" height="1" fill="#034910" />
-      <rect x="3" y="8" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="9" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="10" width="1" height="1" fill="#034910" />
-      <rect x="3" y="11" width="1" height="1" fill="#034910" />
-      <rect x="1" y="12" width="1" height="1" fill="#5ea92f" />
-      <rect x="5" y="12" width="1" height="1" fill="#5ea92f" />
-      <rect x="1" y="13" width="1" height="1" fill="#367224" />
-      <rect x="2" y="13" width="3" height="1" fill="#1a6a11" />
-      <rect x="5" y="13" width="1" height="1" fill="#367224" />
-      <rect x="0" y="14" width="1" height="1" fill="#367224" />
-      <rect x="1" y="14" width="5" height="1" fill="#1a6a11" />
-      <rect x="6" y="14" width="1" height="1" fill="#367224" />
-      <rect x="0" y="15" width="1" height="1" fill="#1a6a11" />
-      <rect x="1" y="15" width="5" height="1" fill="#034910" />
-      <rect x="6" y="15" width="1" height="1" fill="#1a6a11" />
-    </svg>
-  );
-}
-
-function PinkWildflower({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg viewBox="0 0 7 15" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
-      <rect x="3" y="0" width="1" height="1" fill="#fd9ee0" />
-      <rect x="2" y="1" width="1" height="1" fill="#fd9ee0" />
-      <rect x="3" y="1" width="1" height="1" fill="#ff9be1" />
-      <rect x="4" y="1" width="1" height="1" fill="#fd9ee0" />
-      <rect x="1" y="2" width="1" height="1" fill="#fd9ee0" />
-      <rect x="2" y="2" width="2" height="1" fill="#ff9be1" />
-      <rect x="4" y="2" width="2" height="1" fill="#fd9ee0" />
-      <rect x="2" y="3" width="1" height="1" fill="#fd9ee0" />
-      <rect x="3" y="3" width="1" height="1" fill="#ff9be1" />
-      <rect x="4" y="3" width="1" height="1" fill="#fd9ee0" />
-      <rect x="3" y="4" width="1" height="1" fill="#fd9ee0" />
-      <rect x="3" y="5" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="6" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="7" width="1" height="1" fill="#034910" />
-      <rect x="3" y="7" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="8" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="9" width="1" height="1" fill="#034910" />
-      <rect x="3" y="10" width="1" height="1" fill="#034910" />
-      <rect x="1" y="11" width="1" height="1" fill="#5ea92f" />
-      <rect x="5" y="11" width="1" height="1" fill="#5ea92f" />
-      <rect x="1" y="12" width="1" height="1" fill="#367224" />
-      <rect x="2" y="12" width="3" height="1" fill="#1a6a11" />
-      <rect x="5" y="12" width="1" height="1" fill="#367224" />
-      <rect x="0" y="13" width="1" height="1" fill="#367224" />
-      <rect x="1" y="13" width="5" height="1" fill="#1a6a11" />
-      <rect x="6" y="13" width="1" height="1" fill="#367224" />
-      <rect x="0" y="14" width="1" height="1" fill="#1a6a11" />
-      <rect x="1" y="14" width="5" height="1" fill="#034910" />
-      <rect x="6" y="14" width="1" height="1" fill="#1a6a11" />
-    </svg>
-  );
-}
-
-function CloverPlant({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg viewBox="0 0 10 18" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
-      <rect x="2" y="0" width="2" height="1" fill="#5ea92f" />
-      <rect x="6" y="0" width="2" height="1" fill="#5ea92f" />
-      <rect x="1" y="1" width="8" height="1" fill="#5ea92f" />
-      <rect x="0" y="2" width="2" height="1" fill="#5ea92f" />
-      <rect x="2" y="2" width="1" height="1" fill="#367224" />
-      <rect x="3" y="2" width="4" height="1" fill="#5ea92f" />
-      <rect x="7" y="2" width="1" height="1" fill="#367224" />
-      <rect x="8" y="2" width="2" height="1" fill="#5ea92f" />
-      <rect x="0" y="3" width="1" height="1" fill="#5ea92f" />
-      <rect x="1" y="3" width="3" height="1" fill="#367224" />
-      <rect x="4" y="3" width="2" height="1" fill="#5ea92f" />
-      <rect x="6" y="3" width="3" height="1" fill="#367224" />
-      <rect x="9" y="3" width="1" height="1" fill="#5ea92f" />
-      <rect x="1" y="4" width="1" height="1" fill="#5ea92f" />
-      <rect x="2" y="4" width="2" height="1" fill="#367224" />
-      <rect x="6" y="4" width="2" height="1" fill="#367224" />
-      <rect x="8" y="4" width="1" height="1" fill="#5ea92f" />
-      <rect x="3" y="5" width="4" height="1" fill="#5ea92f" />
-      <rect x="3" y="6" width="1" height="1" fill="#5ea92f" />
-      <rect x="4" y="6" width="2" height="1" fill="#367224" />
-      <rect x="6" y="6" width="1" height="1" fill="#5ea92f" />
-      <rect x="4" y="7" width="2" height="1" fill="#1a6a11" />
-      <rect x="4" y="8" width="2" height="1" fill="#1a6a11" />
-      <rect x="3" y="9" width="1" height="1" fill="#034910" />
-      <rect x="4" y="9" width="2" height="1" fill="#1a6a11" />
-      <rect x="4" y="10" width="2" height="1" fill="#1a6a11" />
-      <rect x="4" y="11" width="1" height="1" fill="#034910" />
-      <rect x="5" y="11" width="1" height="1" fill="#1a6a11" />
-      <rect x="4" y="12" width="1" height="1" fill="#034910" />
-      <rect x="4" y="13" width="1" height="1" fill="#034910" />
-      <rect x="2" y="14" width="1" height="1" fill="#5ea92f" />
-      <rect x="6" y="14" width="1" height="1" fill="#5ea92f" />
-      <rect x="2" y="15" width="1" height="1" fill="#367224" />
-      <rect x="3" y="15" width="3" height="1" fill="#1a6a11" />
-      <rect x="6" y="15" width="1" height="1" fill="#367224" />
-      <rect x="1" y="16" width="1" height="1" fill="#367224" />
-      <rect x="2" y="16" width="5" height="1" fill="#1a6a11" />
-      <rect x="7" y="16" width="1" height="1" fill="#367224" />
-      <rect x="1" y="17" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="17" width="5" height="1" fill="#034910" />
-      <rect x="7" y="17" width="1" height="1" fill="#1a6a11" />
-    </svg>
-  );
-}
-
-function BluebellFlower({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg viewBox="0 0 7 15" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
-      <rect x="3" y="0" width="1" height="1" fill="#7270d1" />
-      <rect x="2" y="1" width="1" height="1" fill="#7270d1" />
-      <rect x="3" y="1" width="1" height="1" fill="#6f6dce" />
-      <rect x="4" y="1" width="1" height="1" fill="#7270d1" />
-      <rect x="2" y="2" width="1" height="1" fill="#7270d1" />
-      <rect x="3" y="2" width="2" height="1" fill="#6f6dce" />
-      <rect x="5" y="2" width="1" height="1" fill="#7270d1" />
-      <rect x="2" y="3" width="2" height="1" fill="#7270d1" />
-      <rect x="4" y="3" width="1" height="1" fill="#6f6dce" />
-      <rect x="5" y="3" width="1" height="1" fill="#7270d1" />
-      <rect x="3" y="4" width="2" height="1" fill="#7270d1" />
-      <rect x="3" y="5" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="6" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="7" width="1" height="1" fill="#034910" />
-      <rect x="3" y="7" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="8" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="9" width="1" height="1" fill="#034910" />
-      <rect x="3" y="10" width="1" height="1" fill="#034910" />
-      <rect x="1" y="11" width="1" height="1" fill="#5ea92f" />
-      <rect x="5" y="11" width="1" height="1" fill="#5ea92f" />
-      <rect x="1" y="12" width="1" height="1" fill="#367224" />
-      <rect x="2" y="12" width="3" height="1" fill="#1a6a11" />
-      <rect x="5" y="12" width="1" height="1" fill="#367224" />
-      <rect x="0" y="13" width="1" height="1" fill="#367224" />
-      <rect x="1" y="13" width="5" height="1" fill="#1a6a11" />
-      <rect x="6" y="13" width="1" height="1" fill="#367224" />
-      <rect x="0" y="14" width="1" height="1" fill="#1a6a11" />
-      <rect x="1" y="14" width="5" height="1" fill="#034910" />
-      <rect x="6" y="14" width="1" height="1" fill="#1a6a11" />
-    </svg>
-  );
-}
-
-function GoldenPoppyFlower({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg viewBox="0 0 7 16" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
-      <rect x="3" y="0" width="2" height="1" fill="#fade3c" />
-      <rect x="2" y="1" width="1" height="1" fill="#fade3c" />
-      <rect x="3" y="1" width="2" height="1" fill="#ffda36" />
-      <rect x="5" y="1" width="1" height="1" fill="#fade3c" />
-      <rect x="1" y="2" width="1" height="1" fill="#fade3c" />
-      <rect x="2" y="2" width="1" height="1" fill="#ffda36" />
-      <rect x="3" y="2" width="1" height="1" fill="#f8b566" />
-      <rect x="4" y="2" width="1" height="1" fill="#d48e50" />
-      <rect x="5" y="2" width="1" height="1" fill="#ffda36" />
-      <rect x="6" y="2" width="1" height="1" fill="#fade3c" />
-      <rect x="1" y="3" width="1" height="1" fill="#fade3c" />
-      <rect x="2" y="3" width="1" height="1" fill="#ffda36" />
-      <rect x="3" y="3" width="2" height="1" fill="#f8b566" />
-      <rect x="5" y="3" width="1" height="1" fill="#ffda36" />
-      <rect x="6" y="3" width="1" height="1" fill="#fade3c" />
-      <rect x="2" y="4" width="1" height="1" fill="#fade3c" />
-      <rect x="3" y="4" width="2" height="1" fill="#ffda36" />
-      <rect x="5" y="4" width="1" height="1" fill="#fade3c" />
-      <rect x="3" y="5" width="2" height="1" fill="#fade3c" />
-      <rect x="3" y="6" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="7" width="1" height="1" fill="#1a6a11" />
-      <rect x="2" y="8" width="1" height="1" fill="#034910" />
-      <rect x="3" y="8" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="9" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="10" width="1" height="1" fill="#034910" />
-      <rect x="3" y="11" width="1" height="1" fill="#034910" />
-      <rect x="1" y="12" width="1" height="1" fill="#5ea92f" />
-      <rect x="5" y="12" width="1" height="1" fill="#5ea92f" />
-      <rect x="1" y="13" width="1" height="1" fill="#367224" />
-      <rect x="2" y="13" width="3" height="1" fill="#1a6a11" />
-      <rect x="5" y="13" width="1" height="1" fill="#367224" />
-      <rect x="0" y="14" width="1" height="1" fill="#367224" />
-      <rect x="1" y="14" width="5" height="1" fill="#1a6a11" />
-      <rect x="6" y="14" width="1" height="1" fill="#367224" />
-      <rect x="0" y="15" width="1" height="1" fill="#1a6a11" />
-      <rect x="1" y="15" width="5" height="1" fill="#034910" />
-      <rect x="6" y="15" width="1" height="1" fill="#1a6a11" />
-    </svg>
-  );
-}
-
-function LushForegroundClover({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg viewBox="0 0 15 20" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
-      <rect x="3" y="0" width="2" height="1" fill="#5ea92f" />
-      <rect x="9" y="0" width="2" height="1" fill="#5ea92f" />
-      <rect x="2" y="1" width="4" height="1" fill="#5ea92f" />
-      <rect x="8" y="1" width="4" height="1" fill="#5ea92f" />
-      <rect x="1" y="2" width="6" height="1" fill="#5ea92f" />
-      <rect x="8" y="2" width="6" height="1" fill="#5ea92f" />
-      <rect x="0" y="3" width="2" height="1" fill="#5ea92f" />
-      <rect x="2" y="3" width="1" height="1" fill="#367224" />
-      <rect x="3" y="3" width="4" height="1" fill="#5ea92f" />
-      <rect x="8" y="3" width="4" height="1" fill="#5ea92f" />
-      <rect x="12" y="3" width="1" height="1" fill="#367224" />
-      <rect x="13" y="3" width="2" height="1" fill="#5ea92f" />
-      <rect x="0" y="4" width="1" height="1" fill="#5ea92f" />
-      <rect x="1" y="4" width="3" height="1" fill="#367224" />
-      <rect x="4" y="4" width="6" height="1" fill="#5ea92f" />
-      <rect x="10" y="4" width="3" height="1" fill="#367224" />
-      <rect x="13" y="4" width="1" height="1" fill="#5ea92f" />
-      <rect x="1" y="5" width="1" height="1" fill="#5ea92f" />
-      <rect x="2" y="5" width="2" height="1" fill="#367224" />
-      <rect x="5" y="5" width="4" height="1" fill="#5ea92f" />
-      <rect x="10" y="5" width="2" height="1" fill="#367224" />
-      <rect x="12" y="5" width="1" height="1" fill="#5ea92f" />
-      <rect x="3" y="6" width="1" height="1" fill="#5ea92f" />
-      <rect x="5" y="6" width="1" height="1" fill="#5ea92f" />
-      <rect x="6" y="6" width="2" height="1" fill="#367224" />
-      <rect x="8" y="6" width="1" height="1" fill="#5ea92f" />
-      <rect x="10" y="6" width="1" height="1" fill="#5ea92f" />
-      <rect x="4" y="7" width="2" height="1" fill="#5ea92f" />
-      <rect x="6" y="7" width="2" height="1" fill="#367224" />
-      <rect x="8" y="7" width="2" height="1" fill="#5ea92f" />
-      <rect x="5" y="8" width="3" height="1" fill="#1a6a11" />
-      <rect x="4" y="9" width="1" height="1" fill="#034910" />
-      <rect x="5" y="9" width="3" height="1" fill="#1a6a11" />
-      <rect x="5" y="10" width="3" height="1" fill="#1a6a11" />
-      <rect x="4" y="11" width="1" height="1" fill="#034910" />
-      <rect x="5" y="11" width="2" height="1" fill="#1a6a11" />
-      <rect x="5" y="12" width="2" height="1" fill="#1a6a11" />
-      <rect x="5" y="13" width="1" height="1" fill="#034910" />
-      <rect x="6" y="13" width="1" height="1" fill="#1a6a11" />
-      <rect x="5" y="14" width="1" height="1" fill="#034910" />
-      <rect x="5" y="15" width="1" height="1" fill="#034910" />
-      <rect x="3" y="16" width="1" height="1" fill="#5ea92f" />
-      <rect x="7" y="16" width="1" height="1" fill="#5ea92f" />
-      <rect x="3" y="17" width="1" height="1" fill="#367224" />
-      <rect x="4" y="17" width="3" height="1" fill="#1a6a11" />
-      <rect x="7" y="17" width="1" height="1" fill="#367224" />
-      <rect x="2" y="18" width="1" height="1" fill="#367224" />
-      <rect x="3" y="18" width="5" height="1" fill="#1a6a11" />
-      <rect x="8" y="18" width="1" height="1" fill="#367224" />
-      <rect x="2" y="19" width="1" height="1" fill="#1a6a11" />
-      <rect x="3" y="19" width="5" height="1" fill="#034910" />
-      <rect x="8" y="19" width="1" height="1" fill="#1a6a11" />
-    </svg>
-  );
-}
-
-function GrassTuft({ className = "", style = {} }: { className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg viewBox="0 0 32 42" shapeRendering="crispEdges" fill="none" className={`pointer-events-none select-none ${className}`} style={style}>
-      <g className="grass-blade" style={{ animationDelay: "0s", animationDuration: "4.2s" }}>
-        <rect x="6" y="4" width="2" height="1" fill="#5ea92f" />
-        <rect x="6" y="5" width="3" height="1" fill="#5ea92f" />
-        <rect x="7" y="6" width="2" height="1" fill="#5ea92f" />
-        <rect x="7" y="7" width="2" height="1" fill="#5ea92f" />
-        <rect x="7" y="8" width="3" height="1" fill="#5ea92f" />
-        <rect x="8" y="9" width="2" height="1" fill="#5ea92f" />
-        <rect x="8" y="10" width="2" height="1" fill="#5ea92f" />
-        <rect x="8" y="11" width="3" height="1" fill="#5ea92f" />
-        <rect x="9" y="12" width="2" height="1" fill="#5ea92f" />
-        <rect x="9" y="13" width="2" height="1" fill="#367224" />
-        <rect x="9" y="14" width="3" height="1" fill="#367224" />
-        <rect x="10" y="15" width="2" height="1" fill="#367224" />
-        <rect x="10" y="16" width="2" height="1" fill="#367224" />
-        <rect x="10" y="17" width="3" height="1" fill="#367224" />
-        <rect x="11" y="18" width="2" height="1" fill="#367224" />
-        <rect x="11" y="19" width="2" height="1" fill="#367224" />
-        <rect x="11" y="20" width="3" height="1" fill="#367224" />
-        <rect x="12" y="21" width="2" height="1" fill="#367224" />
-        <rect x="12" y="22" width="2" height="1" fill="#1a6a11" />
-        <rect x="12" y="23" width="2" height="1" fill="#1a6a11" />
-        <rect x="12" y="24" width="3" height="1" fill="#1a6a11" />
-        <rect x="13" y="25" width="3" height="1" fill="#1a6a11" />
-        <rect x="13" y="26" width="3" height="1" fill="#1a6a11" />
-        <rect x="13" y="27" width="3" height="1" fill="#1a6a11" />
-        <rect x="13" y="28" width="4" height="1" fill="#1a6a11" />
-        <rect x="14" y="29" width="3" height="1" fill="#1a6a11" />
-        <rect x="14" y="30" width="3" height="1" fill="#1a6a11" />
-        <rect x="14" y="31" width="3" height="1" fill="#1a6a11" />
-        <rect x="14" y="32" width="3" height="1" fill="#034910" />
-        <rect x="14" y="33" width="4" height="1" fill="#034910" />
-        <rect x="15" y="34" width="3" height="1" fill="#034910" />
-        <rect x="15" y="35" width="3" height="1" fill="#034910" />
-        <rect x="15" y="36" width="3" height="1" fill="#034910" />
-        <rect x="15" y="37" width="3" height="1" fill="#034910" />
-        <rect x="15" y="38" width="3" height="1" fill="#034910" />
-        <rect x="16" y="39" width="3" height="1" fill="#034910" />
-        <rect x="16" y="40" width="3" height="1" fill="#034910" />
-        <rect x="16" y="41" width="3" height="1" fill="#034910" />
-        <rect x="16" y="42" width="3" height="1" fill="#034910" />
-      </g>
-      <g className="grass-blade grass-blade--gust" style={{ animationDelay: "0.5s", animationDuration: "4.9s" }}>
-        <rect x="27" y="7" width="2" height="1" fill="#5ea92f" />
-        <rect x="26" y="8" width="3" height="1" fill="#5ea92f" />
-        <rect x="26" y="9" width="2" height="1" fill="#5ea92f" />
-        <rect x="25" y="10" width="3" height="1" fill="#5ea92f" />
-        <rect x="25" y="11" width="2" height="1" fill="#5ea92f" />
-        <rect x="25" y="12" width="2" height="1" fill="#5ea92f" />
-        <rect x="24" y="13" width="2" height="1" fill="#5ea92f" />
-        <rect x="24" y="14" width="2" height="1" fill="#5ea92f" />
-        <rect x="23" y="15" width="1" height="1" fill="#367224" />
-        <rect x="24" y="15" width="2" height="1" fill="#5ea92f" />
-        <rect x="23" y="16" width="2" height="1" fill="#367224" />
-        <rect x="23" y="17" width="2" height="1" fill="#367224" />
-        <rect x="22" y="18" width="2" height="1" fill="#367224" />
-        <rect x="22" y="19" width="2" height="1" fill="#367224" />
-        <rect x="22" y="20" width="2" height="1" fill="#367224" />
-        <rect x="21" y="21" width="2" height="1" fill="#367224" />
-        <rect x="21" y="22" width="2" height="1" fill="#367224" />
-        <rect x="20" y="23" width="1" height="1" fill="#1a6a11" />
-        <rect x="21" y="23" width="2" height="1" fill="#367224" />
-        <rect x="20" y="24" width="2" height="1" fill="#1a6a11" />
-        <rect x="20" y="25" width="2" height="1" fill="#1a6a11" />
-        <rect x="20" y="26" width="3" height="1" fill="#1a6a11" />
-        <rect x="19" y="27" width="3" height="1" fill="#1a6a11" />
-        <rect x="19" y="28" width="3" height="1" fill="#1a6a11" />
-        <rect x="19" y="29" width="3" height="1" fill="#1a6a11" />
-        <rect x="18" y="30" width="4" height="1" fill="#1a6a11" />
-        <rect x="18" y="31" width="3" height="1" fill="#1a6a11" />
-        <rect x="18" y="32" width="3" height="1" fill="#1a6a11" />
-        <rect x="18" y="33" width="3" height="1" fill="#034910" />
-        <rect x="17" y="34" width="4" height="1" fill="#034910" />
-        <rect x="17" y="35" width="3" height="1" fill="#034910" />
-        <rect x="17" y="36" width="3" height="1" fill="#034910" />
-        <rect x="17" y="37" width="3" height="1" fill="#034910" />
-        <rect x="17" y="38" width="3" height="1" fill="#034910" />
-        <rect x="16" y="39" width="4" height="1" fill="#034910" />
-        <rect x="16" y="40" width="3" height="1" fill="#034910" />
-        <rect x="16" y="41" width="3" height="1" fill="#034910" />
-        <rect x="16" y="42" width="3" height="1" fill="#034910" />
-      </g>
-      <g className="grass-blade" style={{ animationDelay: "1.1s", animationDuration: "3.7s" }}>
-        <rect x="2" y="14" width="1" height="1" fill="#5ea92f" />
-        <rect x="2" y="15" width="2" height="1" fill="#5ea92f" />
-        <rect x="3" y="16" width="2" height="1" fill="#5ea92f" />
-        <rect x="4" y="17" width="1" height="1" fill="#5ea92f" />
-        <rect x="5" y="18" width="1" height="1" fill="#5ea92f" />
-        <rect x="5" y="19" width="2" height="1" fill="#5ea92f" />
-        <rect x="6" y="20" width="1" height="1" fill="#5ea92f" />
-        <rect x="7" y="21" width="1" height="1" fill="#367224" />
-        <rect x="7" y="22" width="2" height="1" fill="#367224" />
-        <rect x="8" y="23" width="1" height="1" fill="#367224" />
-        <rect x="8" y="24" width="2" height="1" fill="#367224" />
-        <rect x="9" y="25" width="1" height="1" fill="#367224" />
-        <rect x="10" y="26" width="1" height="1" fill="#367224" />
-        <rect x="10" y="27" width="1" height="1" fill="#1a6a11" />
-        <rect x="11" y="28" width="1" height="1" fill="#1a6a11" />
-        <rect x="11" y="29" width="1" height="1" fill="#1a6a11" />
-        <rect x="12" y="30" width="2" height="1" fill="#1a6a11" />
-        <rect x="12" y="31" width="2" height="1" fill="#1a6a11" />
-        <rect x="12" y="32" width="3" height="1" fill="#1a6a11" />
-        <rect x="13" y="33" width="2" height="1" fill="#1a6a11" />
-        <rect x="13" y="34" width="2" height="1" fill="#1a6a11" />
-        <rect x="15" y="34" width="1" height="1" fill="#034910" />
-        <rect x="14" y="35" width="2" height="1" fill="#034910" />
-        <rect x="14" y="36" width="2" height="1" fill="#034910" />
-        <rect x="14" y="37" width="3" height="1" fill="#034910" />
-        <rect x="15" y="38" width="2" height="1" fill="#034910" />
-        <rect x="15" y="39" width="2" height="1" fill="#034910" />
-        <rect x="15" y="40" width="3" height="1" fill="#034910" />
-        <rect x="16" y="41" width="2" height="1" fill="#034910" />
-        <rect x="16" y="42" width="2" height="1" fill="#034910" />
-      </g>
-      <g className="grass-blade" style={{ animationDelay: "0.3s", animationDuration: "5.4s" }}>
-        <rect x="30" y="16" width="1" height="1" fill="#5ea92f" />
-        <rect x="29" y="17" width="1" height="1" fill="#5ea92f" />
-        <rect x="28" y="18" width="2" height="1" fill="#5ea92f" />
-        <rect x="27" y="19" width="2" height="1" fill="#5ea92f" />
-        <rect x="27" y="20" width="1" height="1" fill="#5ea92f" />
-        <rect x="26" y="21" width="1" height="1" fill="#5ea92f" />
-        <rect x="25" y="22" width="1" height="1" fill="#367224" />
-        <rect x="26" y="22" width="1" height="1" fill="#5ea92f" />
-        <rect x="25" y="23" width="1" height="1" fill="#367224" />
-        <rect x="24" y="24" width="1" height="1" fill="#367224" />
-        <rect x="23" y="25" width="2" height="1" fill="#367224" />
-        <rect x="23" y="26" width="1" height="1" fill="#367224" />
-        <rect x="22" y="27" width="2" height="1" fill="#367224" />
-        <rect x="22" y="28" width="1" height="1" fill="#367224" />
-        <rect x="21" y="29" width="1" height="1" fill="#1a6a11" />
-        <rect x="21" y="30" width="2" height="1" fill="#1a6a11" />
-        <rect x="20" y="31" width="2" height="1" fill="#1a6a11" />
-        <rect x="20" y="32" width="2" height="1" fill="#1a6a11" />
-        <rect x="19" y="33" width="2" height="1" fill="#1a6a11" />
-        <rect x="19" y="34" width="2" height="1" fill="#1a6a11" />
-        <rect x="18" y="35" width="1" height="1" fill="#034910" />
-        <rect x="19" y="35" width="2" height="1" fill="#1a6a11" />
-        <rect x="18" y="36" width="2" height="1" fill="#034910" />
-        <rect x="17" y="37" width="3" height="1" fill="#034910" />
-        <rect x="17" y="38" width="2" height="1" fill="#034910" />
-        <rect x="17" y="39" width="2" height="1" fill="#034910" />
-        <rect x="16" y="40" width="3" height="1" fill="#034910" />
-        <rect x="16" y="41" width="2" height="1" fill="#034910" />
-        <rect x="16" y="42" width="2" height="1" fill="#034910" />
-      </g>
-      <g className="grass-blade grass-blade--gust" style={{ animationDelay: "1.6s", animationDuration: "4.0s" }}>
-        <rect x="16" y="2" width="2" height="1" fill="#5ea92f" />
-        <rect x="16" y="3" width="2" height="1" fill="#5ea92f" />
-        <rect x="16" y="4" width="2" height="1" fill="#5ea92f" />
-        <rect x="16" y="5" width="2" height="1" fill="#5ea92f" />
-        <rect x="16" y="6" width="2" height="1" fill="#5ea92f" />
-        <rect x="16" y="7" width="2" height="1" fill="#5ea92f" />
-        <rect x="16" y="8" width="2" height="1" fill="#5ea92f" />
-        <rect x="16" y="9" width="2" height="1" fill="#5ea92f" />
-        <rect x="16" y="10" width="2" height="1" fill="#5ea92f" />
-        <rect x="16" y="11" width="2" height="1" fill="#5ea92f" />
-        <rect x="16" y="12" width="2" height="1" fill="#367224" />
-        <rect x="16" y="13" width="2" height="1" fill="#367224" />
-        <rect x="16" y="14" width="2" height="1" fill="#367224" />
-        <rect x="16" y="15" width="2" height="1" fill="#367224" />
-        <rect x="16" y="16" width="2" height="1" fill="#367224" />
-        <rect x="16" y="17" width="2" height="1" fill="#367224" />
-        <rect x="16" y="18" width="2" height="1" fill="#367224" />
-        <rect x="16" y="19" width="2" height="1" fill="#367224" />
-        <rect x="16" y="20" width="2" height="1" fill="#367224" />
-        <rect x="16" y="21" width="2" height="1" fill="#1a6a11" />
-        <rect x="16" y="22" width="2" height="1" fill="#1a6a11" />
-        <rect x="16" y="23" width="2" height="1" fill="#1a6a11" />
-        <rect x="16" y="24" width="3" height="1" fill="#1a6a11" />
-        <rect x="16" y="25" width="3" height="1" fill="#1a6a11" />
-        <rect x="16" y="26" width="3" height="1" fill="#1a6a11" />
-        <rect x="16" y="27" width="3" height="1" fill="#1a6a11" />
-        <rect x="16" y="28" width="3" height="1" fill="#1a6a11" />
-        <rect x="16" y="29" width="3" height="1" fill="#1a6a11" />
-        <rect x="16" y="30" width="3" height="1" fill="#1a6a11" />
-        <rect x="16" y="31" width="3" height="1" fill="#1a6a11" />
-        <rect x="16" y="32" width="3" height="1" fill="#034910" />
-        <rect x="16" y="33" width="3" height="1" fill="#034910" />
-        <rect x="16" y="34" width="3" height="1" fill="#034910" />
-        <rect x="16" y="35" width="3" height="1" fill="#034910" />
-        <rect x="16" y="36" width="3" height="1" fill="#034910" />
-        <rect x="16" y="37" width="3" height="1" fill="#034910" />
-        <rect x="16" y="38" width="3" height="1" fill="#034910" />
-        <rect x="16" y="39" width="3" height="1" fill="#034910" />
-        <rect x="16" y="40" width="3" height="1" fill="#034910" />
-        <rect x="16" y="41" width="3" height="1" fill="#034910" />
-        <rect x="16" y="42" width="3" height="1" fill="#034910" />
-      </g>
-      <g className="grass-blade" style={{ animationDelay: "0.8s", animationDuration: "6.1s" }}>
-        <rect x="9" y="9" width="1" height="1" fill="#5ea92f" />
-        <rect x="9" y="10" width="1" height="1" fill="#5ea92f" />
-        <rect x="10" y="11" width="1" height="1" fill="#5ea92f" />
-        <rect x="10" y="12" width="1" height="1" fill="#5ea92f" />
-        <rect x="10" y="13" width="1" height="1" fill="#5ea92f" />
-        <rect x="10" y="14" width="2" height="1" fill="#5ea92f" />
-        <rect x="11" y="15" width="1" height="1" fill="#5ea92f" />
-        <rect x="11" y="16" width="1" height="1" fill="#5ea92f" />
-        <rect x="11" y="17" width="1" height="1" fill="#367224" />
-        <rect x="12" y="18" width="1" height="1" fill="#367224" />
-        <rect x="12" y="19" width="1" height="1" fill="#367224" />
-        <rect x="12" y="20" width="1" height="1" fill="#367224" />
-        <rect x="12" y="21" width="1" height="1" fill="#367224" />
-        <rect x="13" y="22" width="1" height="1" fill="#367224" />
-        <rect x="13" y="23" width="1" height="1" fill="#367224" />
-        <rect x="13" y="24" width="1" height="1" fill="#367224" />
-        <rect x="13" y="25" width="1" height="1" fill="#1a6a11" />
-        <rect x="13" y="26" width="2" height="1" fill="#1a6a11" />
-        <rect x="14" y="27" width="2" height="1" fill="#1a6a11" />
-        <rect x="14" y="28" width="2" height="1" fill="#1a6a11" />
-        <rect x="14" y="29" width="2" height="1" fill="#1a6a11" />
-        <rect x="14" y="30" width="2" height="1" fill="#1a6a11" />
-        <rect x="14" y="31" width="3" height="1" fill="#1a6a11" />
-        <rect x="15" y="32" width="2" height="1" fill="#1a6a11" />
-        <rect x="15" y="33" width="2" height="1" fill="#1a6a11" />
-        <rect x="15" y="34" width="2" height="1" fill="#034910" />
-        <rect x="15" y="35" width="2" height="1" fill="#034910" />
-        <rect x="15" y="36" width="2" height="1" fill="#034910" />
-        <rect x="15" y="37" width="2" height="1" fill="#034910" />
-        <rect x="15" y="38" width="3" height="1" fill="#034910" />
-        <rect x="16" y="39" width="2" height="1" fill="#034910" />
-        <rect x="16" y="40" width="2" height="1" fill="#034910" />
-        <rect x="16" y="41" width="2" height="1" fill="#034910" />
-        <rect x="16" y="42" width="2" height="1" fill="#034910" />
-      </g>
-      <g className="grass-blade" style={{ animationDelay: "2.1s", animationDuration: "3.4s" }}>
-        <rect x="24" y="20" width="1" height="1" fill="#5ea92f" />
-        <rect x="23" y="21" width="2" height="1" fill="#5ea92f" />
-        <rect x="23" y="22" width="1" height="1" fill="#5ea92f" />
-        <rect x="22" y="23" width="2" height="1" fill="#5ea92f" />
-        <rect x="22" y="24" width="1" height="1" fill="#5ea92f" />
-        <rect x="21" y="25" width="1" height="1" fill="#367224" />
-        <rect x="22" y="25" width="1" height="1" fill="#5ea92f" />
-        <rect x="21" y="26" width="1" height="1" fill="#367224" />
-        <rect x="20" y="27" width="2" height="1" fill="#367224" />
-        <rect x="20" y="28" width="1" height="1" fill="#367224" />
-        <rect x="20" y="29" width="1" height="1" fill="#367224" />
-        <rect x="19" y="30" width="1" height="1" fill="#367224" />
-        <rect x="19" y="31" width="1" height="1" fill="#1a6a11" />
-        <rect x="19" y="32" width="2" height="1" fill="#1a6a11" />
-        <rect x="18" y="33" width="2" height="1" fill="#1a6a11" />
-        <rect x="18" y="34" width="2" height="1" fill="#1a6a11" />
-        <rect x="18" y="35" width="2" height="1" fill="#1a6a11" />
-        <rect x="17" y="36" width="2" height="1" fill="#1a6a11" />
-        <rect x="17" y="37" width="2" height="1" fill="#034910" />
-        <rect x="17" y="38" width="2" height="1" fill="#034910" />
-        <rect x="17" y="39" width="2" height="1" fill="#034910" />
-        <rect x="16" y="40" width="2" height="1" fill="#034910" />
-        <rect x="16" y="41" width="2" height="1" fill="#034910" />
-        <rect x="16" y="42" width="2" height="1" fill="#034910" />
-      </g>
-      <g className="grass-blade" style={{ animationDelay: "1.3s", animationDuration: "5.7s" }}>
-        <rect x="11" y="22" width="1" height="1" fill="#5ea92f" />
-        <rect x="11" y="23" width="1" height="1" fill="#5ea92f" />
-        <rect x="12" y="24" width="1" height="1" fill="#5ea92f" />
-        <rect x="12" y="25" width="1" height="1" fill="#5ea92f" />
-        <rect x="12" y="26" width="2" height="1" fill="#5ea92f" />
-        <rect x="13" y="27" width="1" height="1" fill="#367224" />
-        <rect x="13" y="28" width="1" height="1" fill="#367224" />
-        <rect x="13" y="29" width="1" height="1" fill="#367224" />
-        <rect x="14" y="30" width="1" height="1" fill="#367224" />
-        <rect x="14" y="31" width="1" height="1" fill="#367224" />
-        <rect x="14" y="32" width="1" height="1" fill="#1a6a11" />
-        <rect x="14" y="33" width="2" height="1" fill="#1a6a11" />
-        <rect x="15" y="34" width="2" height="1" fill="#1a6a11" />
-        <rect x="15" y="35" width="2" height="1" fill="#1a6a11" />
-        <rect x="15" y="36" width="2" height="1" fill="#1a6a11" />
-        <rect x="15" y="37" width="2" height="1" fill="#034910" />
-        <rect x="15" y="38" width="2" height="1" fill="#034910" />
-        <rect x="16" y="39" width="2" height="1" fill="#034910" />
-        <rect x="16" y="40" width="2" height="1" fill="#034910" />
-        <rect x="16" y="41" width="2" height="1" fill="#034910" />
-        <rect x="16" y="42" width="2" height="1" fill="#034910" />
-      </g>
-    </svg>
-  );
-}
-
-/* Game Boy blips synthesised on the fly -- square waves are what the
-   original hardware had, and a few oscillators beat shipping wav files. */
-let audioCtx: AudioContext | null = null;
-
-function blip(notes: number[], dur = 0.07, volume = 0.05) {
-  try {
-    audioCtx ??= new AudioContext();
-    if (audioCtx.state === "suspended") void audioCtx.resume();
-    const ctx = audioCtx;
-    notes.forEach((freq, i) => {
-      const t = ctx.currentTime + i * dur;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "square";
-      osc.frequency.setValueAtTime(freq, t);
-      gain.gain.setValueAtTime(volume, t);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(t);
-      osc.stop(t + dur);
-    });
-  } catch {
-    /* no audio device / blocked autoplay: the menu still works silently */
-  }
-}
-
-const sfx = {
-  move: () => blip([660]),
-  select: () => blip([784, 988, 1319], 0.08, 0.06),
-};
+import { sfx, getAudioContext } from "@/lib/audio";
 
 export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScreenProps) {
-  const [selectedIndex, setSelectedIndex] = useState(0); // 0 = New Game, 1 = Continue
+  const [selectedIndex, setSelectedIndex] = useState(0); // 0 = Continue, 1 = Start New Game
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [popupError, setPopupError] = useState(false);
+  const [shakeKey, setShakeKey] = useState(0);
+  const [showKittyModal, setShowKittyModal] = useState(false);
 
   // Parallax cursor tracking with smooth lerp damping.
   // The lerp writes --mx/--my straight to the DOM instead of setState:
@@ -660,25 +44,27 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const updateParallax = () => {
+      if (reduced) return;
       const current = currentOffsetRef.current;
       const target = targetOffsetRef.current;
-      const dx = target.x - current.x;
-      const dy = target.y - current.y;
-      // Park the loop once settled; it restarts on the next mousemove.
-      if (Math.abs(dx) < 0.0005 && Math.abs(dy) < 0.0005) {
-        animFrameRef.current = null;
-        return;
-      }
-      current.x += dx * 0.08;
-      current.y += dy * 0.08;
+
+      current.x += (target.x - current.x) * 0.05;
+      current.y += (target.y - current.y) * 0.05;
+
+      // $10M-quality Premium Camera Float
+      const time = performance.now() * 0.001;
+      const idleX = Math.sin(time * 0.4) * 0.03 + Math.sin(time * 0.25) * 0.015;
+      const idleY = Math.cos(time * 0.3) * 0.03 + Math.sin(time * 0.2) * 0.015;
+
+      const finalX = current.x + idleX;
+      const finalY = current.y + idleY;
+
       const el = rootRef.current;
       if (el) {
-        el.style.setProperty("--mx", current.x.toFixed(4));
-        el.style.setProperty("--my", current.y.toFixed(4));
-        // --lean rotates ~35 flora SVGs (~1700 rects). A fresh value every
-        // frame re-rasterizes all of them; stepping it keeps the tilt while
-        // only repainting when it visibly changes.
-        const lean = Math.round(current.x * 8) / 8;
+        el.style.setProperty("--mx", finalX.toFixed(4));
+        el.style.setProperty("--my", finalY.toFixed(4));
+
+        const lean = Math.round(finalX * 8) / 8;
         if (lean !== lastLeanRef.current) {
           lastLeanRef.current = lean;
           el.style.setProperty("--lean-x", String(lean));
@@ -687,34 +73,37 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
       animFrameRef.current = requestAnimationFrame(updateParallax);
     };
 
-    const onMove = (e: MouseEvent) => {
-      if (reduced) return;
-      handleMouseMove(e);
-      if (animFrameRef.current === null) {
-        animFrameRef.current = requestAnimationFrame(updateParallax);
-      }
-    };
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
 
-    window.addEventListener("mousemove", onMove, { passive: true });
+    if (!reduced) {
+      animFrameRef.current = requestAnimationFrame(updateParallax);
+    }
 
     return () => {
-      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mousemove", handleMouseMove);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, []);
 
-  const menuItems = ["START NEW GAME", "CONTINUE"];
+  const menuItems = ["CONTINUE", "START NEW GAME"];
 
-  // Both rows open the story: CONTINUE picks up exactly where START does,
-  // so it fades straight through instead of scolding you in a popup.
   const handleSelect = () => {
     if (isTransitioning) return;
+    if (selectedIndex === 0) {
+      // "CONTINUE" clicked/pressed -> Trigger funny retro location error!
+      sfx.error();
+      setPopupError(true);
+      setShakeKey((k) => k + 1);
+      setShowKittyModal(true);
+      return;
+    }
+    // "START NEW GAME" clicked/pressed -> Launch game!
     sfx.select();
     setIsTransitioning(true);
     setTimeout(onComplete, 700);
   };
 
-  // One place covers both hover and arrow keys changing the row.
+  // One place covers arrow keys changing the row.
   const firstRenderRef = React.useRef(true);
   useEffect(() => {
     if (firstRenderRef.current) {
@@ -722,167 +111,151 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
       return;
     }
     sfx.move();
+    if (selectedIndex === 1) {
+      // Clear error when navigating to START NEW GAME
+      setPopupError(false);
+    }
   }, [selectedIndex]);
 
-  // Keyboard navigation
+  // Keyboard navigation: forces arrow keys (and W/S) to toggle menu
   useEffect(() => {
-    if (isTransitioning) return;
+    if (isTransitioning || showKittyModal) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp") {
-        setSelectedIndex(0);
-      } else if (e.key === "ArrowDown") {
-        setSelectedIndex(1);
-      } else if (e.key === "Enter") {
+      // Ensure audio context is ready on user input
+      getAudioContext();
+
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev === 0 ? 1 : 0));
+      } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev === 1 ? 0 : 1));
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
         handleSelect();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIndex, isTransitioning]);
+  }, [selectedIndex, isTransitioning, showKittyModal]);
+
+  const closeKittyModal = () => {
+    setShowKittyModal(false);
+    // Play a click or move sound when dismissing
+    sfx.move();
+  };
 
   return (
-    <div 
+    <div
       ref={rootRef}
-      className={`fixed inset-0 z-50 flex items-start justify-start p-8 sm:p-12 transition-all duration-700 ease-in ${
-        isTransitioning ? "opacity-0 scale-105 blur-sm pointer-events-none" : "opacity-100 scale-100"
-      }`}
-      style={{ ["--mx" as string]: "0", ["--my" as string]: "0" } as React.CSSProperties}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-8 sm:p-12 transition-all duration-700 ease-in cursor-none [&_*]:cursor-none select-none ${isTransitioning ? "opacity-0 scale-105 blur-sm pointer-events-none" : "opacity-100 scale-100"
+        }`}
+      style={{ ["--mx" as string]: "0", ["--my" as string]: "0", cursor: "none" } as React.CSSProperties}
     >
       {/* Background Scene Container with Locked 16:9 Aspect Ratio */}
       <div className="absolute inset-0 -z-10 overflow-hidden flex items-center justify-center bg-[#8db356]">
-        <div 
+        <div
           className="relative flex-shrink-0 select-none"
           style={{
             width: 'max(100vw, calc(100vh * 16 / 9))',
             height: 'max(100vh, calc(100vw * 9 / 16))',
           }}
         >
-          {/* Base 16:9 Image (z-0) */}
-          <img 
-            src="/images/loading_bg.jpg" 
-            alt="Retro Meadow" 
-            className="w-full h-full object-fill pixelated pointer-events-none will-change-transform"
+          {/* Base 16:9 Video (z-0) */}
+          <video
+            src="/videos/real_vid.mp4"
+            autoPlay
+            loop
+            className="w-full h-full object-cover pointer-events-none will-change-transform"
             style={{
-              transform: "scale(1.06) translate3d(calc(var(--mx, 0) * -9px), calc(var(--my, 0) * -4px), 0)",
+              transform: "scale(1.02) translate3d(calc(var(--mx, 0) * -15px), calc(var(--my, 0) * -10px), 0)",
             }}
           />
 
-          {/* ═══════════════════════════════════════════════════════
-              IN-PLACE ANIMATIONS FOR PIXEL MEMES (z-10)
-              Subtle midground parallax: x * -12px, y * -6px
-              ═══════════════════════════════════════════════════════ */}
+          {/* Glowing Overlays to animate the baked-in painted butterflies */}
+          <div className="absolute top-[41%] right-[24%] w-12 h-12 bg-[#ffe875]/40 rounded-full mix-blend-overlay blur-md animate-pulse z-[1] pointer-events-none" style={{ animationDuration: '0.4s' }} />
+          <div className="absolute top-[39%] right-[8%] w-10 h-10 bg-[#ffe875]/50 rounded-full mix-blend-overlay blur-sm animate-pulse z-[1] pointer-events-none" style={{ animationDuration: '0.3s', animationDelay: '0.1s' }} />
+          <div className="absolute top-[31%] left-[29%] w-10 h-10 bg-[#ffb975]/40 rounded-full mix-blend-overlay blur-md animate-pulse z-[1] pointer-events-none" style={{ animationDuration: '0.5s', animationDelay: '0.2s' }} />
+          <div className="absolute bottom-[35%] left-[38%] w-8 h-8 bg-[#ffee75]/50 rounded-full mix-blend-overlay blur-sm animate-pulse z-[1] pointer-events-none" style={{ animationDuration: '0.35s' }} />
+
+          {/* ═══ OPAQUE ROTATING COPYRIGHT BADGE (Covers Watermark) ═══ */}
           <div 
-            className="absolute inset-0 pointer-events-none z-10 will-change-transform"
-            style={{
-              transform: "translate3d(calc(var(--mx, 0) * -13px), calc(var(--my, 0) * -6px), 0)",
+            className="absolute z-[60] flex items-center justify-center pointer-events-none drop-shadow-xl will-change-transform"
+            style={{ 
+              right: '5%', 
+              bottom: '8.5%', 
+              width: '140px', 
+              height: '140px',
+              transform: "translate3d(calc(var(--mx, 0) * -15px), calc(var(--my, 0) * -10px), 0)"
             }}
           >
-            {/* 1. Grass Nyan Cat (Bottom Right): Animated pixel stars & rainbow sparkles */}
-            <div 
-              className="absolute pointer-events-none flex flex-col items-center"
-              style={{ left: '80.0%', top: '66.0%' }}
+            {/* Frosted Glass Background Plate (Blurs out the watermark naturally) */}
+            <div className="absolute inset-0 bg-[#0C0A15]/70 backdrop-blur-lg rounded-full shadow-[inset_0_0_25px_rgba(0,0,0,0.9),0_4px_10px_rgba(0,0,0,0.3)] z-0" />
+            
+            {/* Rotating Text */}
+            <svg 
+              className="w-[130px] h-[130px] absolute z-10 opacity-90" 
+              viewBox="0 0 100 100"
+              style={{ animation: 'spin 15s linear infinite' }}
             >
-              <span className="text-yellow-200 text-xs sm:text-sm animate-sparkle" style={{ animationDelay: '0s' }}>
-                ✨
-              </span>
-              <span className="text-pink-300 text-[10px] animate-bounce-soft -mt-1" style={{ animationDelay: '0.4s' }}>
-                ✦
-              </span>
-            </div>
-
-            {/* 2. Pop Cat in the grass: Animated POP! speech bubble & mouth bounce */}
-            <div 
-              className="absolute flex flex-col items-center pointer-events-auto cursor-pointer group"
-              style={{ left: '69.0%', top: '78.0%' }}
-              title="Pop Cat!"
-            >
-              <span className="font-retro text-[8px] sm:text-[9px] text-white bg-black/80 px-2 py-0.5 border border-yellow-300/80 rounded shadow-md group-hover:scale-110 animate-bounce">
-                POP!
-              </span>
-              <span className="text-yellow-300 text-xs animate-pulse -mt-1">
-                ▼
-              </span>
-            </div>
-
-            {/* 3. Smudge Cat at the Table: Steam rising from salad plate */}
-            <div 
-              className="absolute pointer-events-none flex flex-col items-center"
-              style={{ left: '74.5%', top: '46.0%', width: '8.5%' }}
-            >
-              <span className="text-yellow-300 font-retro text-[10px] sm:text-xs animate-bounce-soft">
-                ?_?
-              </span>
-              <div className="flex gap-1 -mt-0.5 opacity-75">
-                <span className="text-white text-xs animate-steam-rise" style={{ animationDelay: '0s' }}>~</span>
-                <span className="text-white text-xs animate-steam-rise" style={{ animationDelay: '0.6s' }}>~</span>
-                <span className="text-white text-xs animate-steam-rise" style={{ animationDelay: '1.2s' }}>~</span>
-              </div>
-            </div>
-
-            {/* 4. Hello Kitty in the Meadow: Floating sparkles & pulsing heart */}
-            <div 
-              className="absolute pointer-events-none flex flex-col items-center animate-chill-breathe"
-              style={{ left: '63.5%', top: '44.5%', width: '6.0%' }}
-            >
-              <span className="text-pink-300 text-sm sm:text-base animate-bounce-soft">
-                💖
-              </span>
-              <span className="text-yellow-200 text-xs animate-sparkle -mt-1" style={{ animationDelay: '0.5s' }}>
-                ✨
-              </span>
-            </div>
-
-            {/* 5. Screaming Cat in the Mid-Ground: Soundwave scream */}
-            <div 
-              className="absolute pointer-events-none flex flex-col items-center"
-              style={{ left: '54.0%', top: '43.0%' }}
-            >
-              <span className="font-retro text-[8px] sm:text-[9px] text-white bg-black/70 px-1 py-0.5 border border-white/40 rounded shadow animate-pulse">
-                AAA!
+              <defs>
+                <path
+                  id="circlePath"
+                  d="M 50, 50
+                     m -38, 0
+                     a 38,38 0 1,1 76,0
+                     a 38,38 0 1,1 -76,0"
+                />
+              </defs>
+              <text className="font-retro text-[9px] fill-[#FFEBB3] tracking-[0.2em] uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                <textPath href="#circlePath" startOffset="0%">
+                  © VPN COPYRIGHT • VPN COPYRIGHT • 
+                </textPath>
+              </text>
+            </svg>
+            
+            {/* Center Logo */}
+            <div className="absolute inset-0 flex items-center justify-center z-20">
+              <span className="text-[#FFEBB3] text-4xl font-retro leading-none mt-1 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,1)] opacity-80">
+                V
               </span>
             </div>
           </div>
+
+          {/* Vignette to blend AI edges and make it feel more cinematic / indie */}
+          <div className="absolute inset-0 pointer-events-none z-[2] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0)_30%,rgba(0,0,0,0.5)_100%)]" />
+
+          {/* IN-PLACE ANIMATIONS FOR PIXEL MEMES REMOVED FOR REAL VIDEO */}
 
           {/* ═══════════════════════════════════════════════════════
               PARALLAX LAYER 3 (z-[22]): Foreground Blooming Flowers & Clovers
-              Strong parallax: x * -44px, y * -20px
-              Lower screen framing with swaying wildflowers
+              (Removed per user request)
               ═══════════════════════════════════════════════════════ */}
-          <div 
-            className="fixed inset-0 pointer-events-none rooted-flora z-[22] will-change-transform"
-            style={{
-              transform: "translate3d(calc(var(--mx, 0) * -20px), calc(22px + var(--my, 0) * -7px), 0)",
-            }}
-          >
-            {/* Left lower meadow clovers & blossoms */}
-            <CloverPlant className="absolute bottom-[0%] left-[4%] w-9 h-12 animate-flower-sway-slow" style={{ animationDelay: '0.2s' }} />
-            <DaisyFlower className="absolute bottom-[0%] left-[9%] w-8 h-12 animate-flower-sway" style={{ animationDelay: '1.2s' }} />
-            <ButtercupFlower className="absolute bottom-[0%] left-[15%] w-7 h-10 animate-flower-sway-fast" style={{ animationDelay: '0.6s' }} />
-            <CloverPlant className="absolute bottom-[0%] left-[21%] w-10 h-13 animate-flower-sway" style={{ animationDelay: '2.1s' }} />
-
-            {/* Center lower framing */}
-            <GoldenPoppyFlower className="absolute bottom-[0%] left-[40%] w-8 h-11 animate-flower-sway-slow" style={{ animationDelay: '1.1s' }} />
-            <PinkWildflower className="absolute bottom-[0%] left-[47%] w-8 h-11 animate-flower-sway-fast" style={{ animationDelay: '2.5s' }} />
-            <BluebellFlower className="absolute bottom-[0%] left-[55%] w-7 h-10 animate-flower-sway" style={{ animationDelay: '0.7s' }} />
-
-            {/* Right lower meadow */}
-            <DaisyFlower className="absolute bottom-[0%] right-[12%] w-9 h-13 animate-flower-sway" style={{ animationDelay: '1.4s' }} />
-            <PinkWildflower className="absolute bottom-[0%] right-[6%] w-7 h-11 animate-flower-sway-slow" style={{ animationDelay: '2.0s' }} />
-            <CloverPlant className="absolute bottom-[0%] right-[2%] w-10 h-13 animate-flower-sway-fast" style={{ animationDelay: '0.7s' }} />
-          </div>
 
           {/* ═══════════════════════════════════════════════════════
-              PARALLAX LAYER 4 (z-[28]): Atmospheric Petals, Dandelions & Pollen
-              Drifting air parallax: x * -30px, y * -14px
+              PARALLAX LAYER 4 (z-[28]): Atmospheric Effects, Butterflies & Pollen
+              Drifting air parallax: x * -25px, y * -12px
               ═══════════════════════════════════════════════════════ */}
-          <div 
+          <div
             className="absolute inset-0 pointer-events-none overflow-hidden z-[28] will-change-transform"
             style={{
-              transform: "translate3d(calc(var(--mx, 0) * -30px), calc(var(--my, 0) * -14px), 0)",
+              transform: "translate3d(calc(var(--mx, 0) * -25px), calc(var(--my, 0) * -12px), 0)",
             }}
           >
+            {/* Background Petals (Tiny, sharp, slow) */}
+            {[...Array(8)].map((_, i) => (
+              <span key={`bg-petal-${i}`} className={`absolute w-[4px] h-[3px] bg-[#ffb7d5] rounded-full animate-petal-drift-bg delay-${i * 100}`} style={{ top: `${10 + i * 12}%`, left: `${-5 + (i % 3) * 10}%`, animationDelay: `${i * 1.5}s` }} />
+            ))}
+
+            {/* Midground Petals (Normal-sized, drifting across the scene) */}
+            {[...Array(10)].map((_, i) => (
+              <span key={`mid-petal-${i}`} className={`absolute w-[8px] h-[5px] bg-[#ff8eb4] rounded-[40%_60%_70%_30%] shadow-[0_0_4px_rgba(255,142,180,0.4)] animate-petal-drift`} style={{ top: `${5 + i * 9}%`, left: `${-10 + (i % 4) * 15}%`, animationDelay: `${i * 1.1 + 0.5}s` }} />
+            ))}
+
+            {/* Organic Wandering Butterflies - Removed to use pre-existing painted ones instead */}
+
             {/* Wind Gust Breeze Lines */}
             <div className="absolute top-[28%] left-0 w-64 sm:w-96 h-1 bg-gradient-to-r from-transparent via-white/50 via-yellow-100/40 to-transparent rounded-full animate-wind-gust" style={{ animationDelay: '0s' }} />
             <div className="absolute top-[48%] left-0 w-72 sm:w-[28rem] h-1.5 bg-gradient-to-r from-transparent via-white/60 via-emerald-100/40 to-transparent rounded-full animate-wind-gust-fast" style={{ animationDelay: '2.8s' }} />
@@ -892,106 +265,41 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
             <span className="absolute top-[20%] left-0 w-3 h-3 bg-white/95 rounded-full shadow-[0_0_8px_#ffffff] animate-dandelion-float" style={{ animationDelay: '0s' }} />
             <span className="absolute top-[35%] left-0 w-2.5 h-2.5 bg-white/90 rounded-full shadow-[0_0_6px_#ffffff] animate-dandelion-float" style={{ animationDelay: '3.8s' }} />
             <span className="absolute top-[50%] left-0 w-3 h-3 bg-white/95 rounded-full shadow-[0_0_8px_#ffffff] animate-dandelion-float" style={{ animationDelay: '7.5s' }} />
-            <span className="absolute top-[65%] left-0 w-2.5 h-2.5 bg-white/90 rounded-full shadow-[0_0_6px_#ffffff] animate-dandelion-float" style={{ animationDelay: '11.2s' }} />
-            <span className="absolute top-[80%] left-0 w-3 h-3 bg-white/95 rounded-full shadow-[0_0_8px_#ffffff] animate-dandelion-float" style={{ animationDelay: '14.5s' }} />
-
-            {/* Golden Sunlit Pollen Motes */}
-            <span className="absolute top-[24%] left-0 w-2.5 h-2.5 bg-yellow-300 rounded-full shadow-[0_0_10px_#fde047,0_0_16px_#ca8a04] animate-pollen-swirl" style={{ animationDelay: '0.8s' }} />
-            <span className="absolute top-[38%] left-0 w-2 h-2 bg-amber-200 rounded-full shadow-[0_0_8px_#fde047] animate-pollen-swirl" style={{ animationDelay: '2.5s' }} />
-            <span className="absolute top-[46%] left-0 w-2.5 h-2.5 bg-yellow-200 rounded-full shadow-[0_0_10px_#fef08a] animate-pollen-swirl" style={{ animationDelay: '5.4s' }} />
-            <span className="absolute top-[62%] left-0 w-3 h-3 bg-yellow-300 rounded-full shadow-[0_0_12px_#fde047,0_0_20px_#eab308] animate-pollen-swirl" style={{ animationDelay: '7.8s' }} />
-            <span className="absolute top-[76%] left-0 w-2 h-2 bg-amber-300 rounded-full shadow-[0_0_8px_#fde047] animate-pollen-swirl" style={{ animationDelay: '4.1s' }} />
-
-            {/* Wildflower & cherry petals fluttering across */}
-            <span className="absolute top-[26%] left-0 w-3.5 h-2.5 bg-pink-200/90 rounded-[40%_60%_70%_30%] shadow-[0_0_6px_rgba(255,182,193,0.6)] animate-petal-drift" style={{ animationDelay: '1.2s' }} />
-            <span className="absolute top-[42%] left-0 w-4 h-2.5 bg-yellow-200/95 rounded-[50%_50%_30%_70%] shadow-[0_0_6px_rgba(254,240,138,0.7)] animate-petal-drift" style={{ animationDelay: '5.0s' }} />
-            <span className="absolute top-[56%] left-0 w-3 h-2 bg-white/95 rounded-[60%_40%_50%_50%] shadow-[0_0_6px_rgba(255,255,255,0.8)] animate-petal-drift" style={{ animationDelay: '8.8s' }} />
-            <span className="absolute top-[72%] left-0 w-3.5 h-2.5 bg-pink-300/85 rounded-[30%_70%_60%_40%] shadow-[0_0_6px_rgba(244,114,182,0.6)] animate-petal-drift" style={{ animationDelay: '12.4s' }} />
           </div>
 
           {/* ═══════════════════════════════════════════════════════
-              PARALLAX LAYER 5 (z-[35]): Extreme Foreground Lens Framing
-              Dramatic parallax: x * -72px, y * -32px
-              Lush oversized corner plants closest to the camera lens
+              PARALLAX LAYER 5 & 6: Foreground Lens Framing & Side Grass
+              (Removed per user request)
               ═══════════════════════════════════════════════════════ */}
-          <div 
-            className="fixed inset-0 pointer-events-none rooted-flora z-[35] will-change-transform"
-            style={{
-              transform: "translate3d(calc(var(--mx, 0) * -26px), calc(26px + var(--my, 0) * -8px), 0)",
-              ["--lean" as string]: "calc(var(--lean-x, 0) * 0.9deg)",
-            } as React.CSSProperties}
-          >
-            {/* Left corner close-up framing */}
-            <LushForegroundClover className="absolute bottom-[0%] -left-[1%] w-16 h-24 sm:w-24 sm:h-33 opacity-95 animate-flower-sway-slow" style={{ animationDelay: '0.5s' }} />
-            <DaisyFlower className="absolute bottom-[0%] left-[4%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.7s' }} />
-            <GoldenPoppyFlower className="absolute bottom-[0%] left-[9%] w-11 h-19 animate-flower-sway-fast" style={{ animationDelay: '0.9s' }} />
-            <PinkWildflower className="absolute bottom-[0%] left-[14%] w-10 h-18 animate-flower-sway-slow" style={{ animationDelay: '2.6s' }} />
-            <BluebellFlower className="absolute bottom-[0%] left-[19%] w-10 h-18 animate-flower-sway" style={{ animationDelay: '1.1s' }} />
-            <DaisyFlower className="absolute bottom-[0%] left-[25%] w-9 h-17 animate-flower-sway-fast" style={{ animationDelay: '3.1s' }} />
-
-            {/* Right corner close-up framing */}
-            <ButtercupFlower className="absolute bottom-[0%] right-[7%] w-12 h-20 animate-flower-sway" style={{ animationDelay: '1.3s' }} />
-            <PinkWildflower className="absolute bottom-[0%] right-[13%] w-10 h-18 animate-flower-sway-fast" style={{ animationDelay: '0.4s' }} />
-            <GoldenPoppyFlower className="absolute bottom-[0%] right-[19%] w-11 h-19 animate-flower-sway-slow" style={{ animationDelay: '2.3s' }} />
-            <DaisyFlower className="absolute bottom-[0%] right-[25%] w-9 h-17 animate-flower-sway" style={{ animationDelay: '1.9s' }} />
-            <LushForegroundClover className="absolute bottom-[0%] -right-[1%] w-16 h-24 sm:w-24 sm:h-33 opacity-95 animate-flower-sway-fast" style={{ animationDelay: '2.1s' }} />
-          </div>
-
-          {/* ═══════════════════════════════════════════════════════
-              PARALLAX LAYER 6 (z-[40]): Side grass right against the lens
-              Strongest parallax: x * -110px, y * -44px
-              ═══════════════════════════════════════════════════════ */}
-          <div
-            className="fixed inset-0 pointer-events-none rooted-flora z-[40] will-change-transform"
-            style={{
-              transform: "translate3d(calc(var(--mx, 0) * -36px), calc(30px + var(--my, 0) * -10px), 0)",
-              ["--lean" as string]: "calc(var(--lean-x, 0) * 1.4deg)",
-            } as React.CSSProperties}
-          >
-            {/* Left edge */}
-            <GrassTuft className="absolute bottom-[1%] -left-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95 animate-flower-sway-slow" />
-            <GrassTuft className="absolute bottom-[1%] left-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90 animate-flower-sway" />
-            <GrassTuft className="absolute bottom-[0%] left-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85 animate-flower-sway-fast" />
-            <GoldenPoppyFlower className="absolute bottom-[0%] left-[2%] w-12 h-21 animate-flower-sway-fast" style={{ animationDelay: '0.7s' }} />
-            <PinkWildflower className="absolute bottom-[0%] left-[10%] w-11 h-19 animate-flower-sway-slow" style={{ animationDelay: '2.2s' }} />
-            <DaisyFlower className="absolute bottom-[0%] left-[19%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.4s' }} />
-
-            {/* Right edge */}
-            <GrassTuft className="absolute bottom-[1%] -right-[5%] w-44 h-56 sm:w-60 sm:h-72 opacity-95 animate-flower-sway" />
-            <GrassTuft className="absolute bottom-[1%] right-[5%] w-36 h-48 sm:w-48 sm:h-60 opacity-90 animate-flower-sway-fast" />
-            <GrassTuft className="absolute bottom-[0%] right-[14%] w-28 h-40 sm:w-36 sm:h-48 opacity-85 animate-flower-sway-slow" />
-            <BluebellFlower className="absolute bottom-[0%] right-[2%] w-12 h-21 animate-flower-sway" style={{ animationDelay: '1.8s' }} />
-            <DaisyFlower className="absolute bottom-[0%] right-[10%] w-11 h-19 animate-flower-sway-fast" style={{ animationDelay: '0.5s' }} />
-            <ButtercupFlower className="absolute bottom-[0%] right-[20%] w-12 h-21 animate-flower-sway-slow" style={{ animationDelay: '2.7s' }} />
-          </div>
         </div>
       </div>
 
-      {/* ═══ FLYING LEAVES (z-[45]): right in front of the lens ═══
-          Blurred on purpose -- anything this close to the camera is out of
-          focus, and the gust carries them faster than the pollen behind. */}
+      {/* ═══ EXTREME FOREGROUND CAMERA PETALS (z-[45]) ═══
+          Blurred on purpose -- passing very close to the camera lens. */}
       <div
         className="fixed inset-0 pointer-events-none overflow-hidden z-[45] will-change-transform"
         style={{
-          transform: "translate3d(calc(var(--mx, 0) * -46px), calc(var(--my, 0) * -16px), 0)",
+          transform: "translate3d(calc(var(--mx, 0) * -85px), calc(var(--my, 0) * -40px), 0)",
         }}
       >
+        {/* Foreground Petals (Large, fast, blurred) */}
+        {[...Array(6)].map((_, i) => (
+          <span key={`fg-petal-${i}`} className={`absolute w-[18px] h-[12px] bg-[#ffd6e6]/95 rounded-[50%_50%_30%_70%] shadow-[0_0_12px_rgba(255,255,255,0.6)] animate-petal-drift-fg blur-[4px]`} style={{ top: `${10 + i * 15}%`, left: `${-15 + (i % 2) * 20}%`, animationDelay: `${i * 1.8 + 0.2}s` }} />
+        ))}
+
+        {/* Flying Leaves */}
         <span className="gb-leaf gb-leaf--big animate-leaf-gust-fast" style={{ top: "12%", animationDelay: "0s" }} />
         <span className="gb-leaf animate-leaf-gust" style={{ top: "31%", animationDelay: "1.8s" }} />
         <span className="gb-leaf gb-leaf--small animate-leaf-gust-slow" style={{ top: "44%", animationDelay: "3.4s" }} />
-        <span className="gb-leaf gb-leaf--big animate-leaf-gust" style={{ top: "58%", animationDelay: "5.1s" }} />
-        <span className="gb-leaf animate-leaf-gust-fast" style={{ top: "72%", animationDelay: "2.6s" }} />
-        <span className="gb-leaf gb-leaf--small animate-leaf-gust" style={{ top: "86%", animationDelay: "6.3s" }} />
       </div>
 
-      {/* Animated Scanlines / Screen Effect */}
-      <div className="absolute inset-0 pointer-events-none bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQIW2NkYGD4z8DAwMgAI0AMDA4wBBE/wDAAAAAASUVORK5CYII=')] opacity-20 mix-blend-overlay -z-10" />
+      {/* Animated Scanlines removed to preserve real video quality */}
 
       {/* Flying Nyan Cat across the sky (enlarged, natural rainbow without extra block) */}
       <div className="absolute top-6 sm:top-10 left-0 pointer-events-none z-10 animate-nyan-fly flex items-center">
-        <img 
-          src="/images/nyan-cat.gif" 
-          alt="Nyan Cat" 
+        <img
+          src="/images/nyan-cat.gif"
+          alt="Nyan Cat"
           className="w-32 h-20 sm:w-48 sm:h-28 md:w-56 md:h-32 pixelated object-contain drop-shadow-xl"
         />
       </div>
@@ -1015,46 +323,154 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
         <span className="absolute bottom-[48%] right-[32%] w-2.5 h-2.5 bg-yellow-100 rounded-full shadow-[0_0_10px_#fef08a] animate-firefly-prominent" style={{ animationDelay: '4.8s' }} />
       </div>
 
-      {/* Title screen menu. One window: the rows and the key hint that
-          explains them belong to the same object, so they share a frame. */}
-      <div className="z-20">
-        <PixelWindow title="MAIN MENU" variant="pink" contentClassName="!p-0">
-          <ul
-            className="gb-menu list-none m-0 p-0 min-w-[240px]"
-            role="listbox"
-            aria-label="Main menu"
-            aria-activedescendant={`gb-menu-${selectedIndex}`}
-            tabIndex={0}
-          >
-            {menuItems.map((item, idx) => (
-              <li
-                key={item}
-                id={`gb-menu-${idx}`}
-                role="option"
-                aria-selected={selectedIndex === idx}
-                className="gb-menu-item"
-                onClick={() => {
-                  setSelectedIndex(idx);
-                  handleSelect();
-                }}
-                onMouseEnter={() => setSelectedIndex(idx)}
-              >
-                <span className="gb-menu-item__caret animate-blink">&#9654;</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
+      {/* Title screen menu: Handcrafted Indie RPG Game Frame */}
+      <div className="absolute top-8 sm:top-12 left-8 sm:left-12 origin-top-left z-50 flex flex-col items-start scale-95 sm:scale-100">
+        <div className="absolute inset-0 bg-[#100f1f]/30 blur-[15px] rounded-lg -z-10" />
+        <IndiePixelWindow title="MAIN MENU" className="min-w-[275px] sm:min-w-[315px] shadow-[0_15px_40px_rgba(0,0,0,0.8)] bg-[#100f1f]/95 backdrop-blur-sm">
+          <div className="p-2 sm:p-2.5">
+            <ul
+              className="list-none m-0 p-0 flex flex-col gap-1.5 focus-visible:outline-none"
+              role="listbox"
+              aria-label="Main menu"
+              aria-activedescendant={`gb-menu-${selectedIndex}`}
+              tabIndex={0}
+            >
+              {menuItems.map((item, idx) => {
+                const isSelected = selectedIndex === idx;
+                return (
+                  <li
+                    key={item}
+                    id={`gb-menu-${idx}`}
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => {
+                      setSelectedIndex(idx);
+                      handleSelect();
+                    }}
+                    className={`group relative flex items-center gap-3 px-3 py-2 select-none transition-all duration-150 ${isSelected
+                        ? "bg-gradient-to-r from-[#FF8FB3]/25 via-[#FFD166]/15 to-transparent border-l-4 border-[#FF8FB3] border-t border-b border-r border-[#FF8FB3]/30 shadow-[inset_0_0_12px_rgba(255,143,179,0.15)]"
+                        : "border-l-4 border-transparent hover:bg-[#252244]/70 border border-transparent"
+                      }`}
+                  >
+                    {/* Animated 8-bit RPG Cursor */}
+                    <div className="w-3.5 flex items-center justify-center flex-shrink-0">
+                      {isSelected ? (
+                        <span className="text-[#FF8FB3] text-[11px] font-bold drop-shadow-[0_0_6px_#FF8FB3] animate-pulse">
+                          ▶
+                        </span>
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-none bg-[#383359] group-hover:bg-[#FFD166]/60 transition-colors" />
+                      )}
+                    </div>
 
-          <div className="flex items-center gap-2 border-t-2 border-dashed border-border/30 px-3 py-2.5 select-none">
-            <span className="gb-key">&#9650;</span>
-            <span className="gb-key">&#9660;</span>
-            <span className="font-retro text-[8px] text-dark-muted tracking-wider">MOVE</span>
-            <span className="gb-key ml-2">ENTER</span>
-            <span className="font-retro text-[8px] text-dark-muted tracking-wider">SELECT</span>
+                    {/* Menu Item Label */}
+                    <span
+                      className={`text-[10px] sm:text-[11px] tracking-[1.2px] transition-colors ${isSelected
+                          ? "text-[#FFF3D8] font-bold drop-shadow-[0_2px_0px_#100E21] drop-shadow-[0_0_8px_rgba(255,209,102,0.6)]"
+                          : "text-[#D2CBE6] group-hover:text-[#FFF3D8] drop-shadow-[0_1px_0px_#0C0B17]"
+                        }`}
+                    >
+                      {item}
+                    </span>
+
+                    {/* Trailing RPG Sparkle Pip */}
+                    {isSelected && (
+                      <span className="ml-auto text-[#FFD166] text-[8px] animate-bounce-soft">
+                        ✦
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
-        </PixelWindow>
+
+          {/* ═══ ORNATE FILIGREE DIVIDER ═══ */}
+          <div className="flex items-center gap-2 px-4 py-0.5">
+            <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-[#E5B25D]/50 to-[#E5B25D]/10" />
+            <span className="text-[#FFE27A] text-[6px] opacity-80">◆</span>
+            <div className="h-[2px] flex-1 bg-gradient-to-l from-transparent via-[#E5B25D]/50 to-[#E5B25D]/10" />
+          </div>
+
+          {/* ═══ 3D SHADED RPG CONTROLLER KEYS ═══ */}
+          <div className="flex items-center justify-between px-3.5 py-2 bg-[#100F1F]/60 select-none">
+            {/* Move Keys */}
+            <div className="flex items-center gap-1.5">
+              <span className="inline-flex items-center justify-center min-w-[19px] h-[19px] bg-[#EBE4D8] border-t-2 border-l-2 border-white border-b-2 border-r-2 border-[#8A7F73] shadow-[2px_2px_0px_#0B0A14] text-[8px] font-retro font-bold text-[#2A2338]">
+                ▲
+              </span>
+              <span className="inline-flex items-center justify-center min-w-[19px] h-[19px] bg-[#EBE4D8] border-t-2 border-l-2 border-white border-b-2 border-r-2 border-[#8A7F73] shadow-[2px_2px_0px_#0B0A14] text-[8px] font-retro font-bold text-[#2A2338]">
+                ▼
+              </span>
+              <span className="text-[7px] text-[#FFD166] tracking-wider ml-1 drop-shadow-[0_1px_0px_#0A0912]">
+                MOVE
+              </span>
+            </div>
+
+            {/* Select Key */}
+            <div className="flex items-center gap-1.5">
+              <span className="inline-flex items-center justify-center h-[19px] px-2 bg-[#EBE4D8] border-t-2 border-l-2 border-white border-b-2 border-r-2 border-[#8A7F73] shadow-[2px_2px_0px_#0B0A14] text-[8px] font-retro font-bold text-[#2A2338]">
+                ENTER
+              </span>
+              <span className="text-[7px] text-[#FFD166] tracking-wider drop-shadow-[0_1px_0px_#0A0912]">
+                SELECT
+              </span>
+            </div>
+          </div>
+        </IndiePixelWindow>
+
+        {/* ═══ SMALL INDIE POPUP BOX (HINT & LOCATION ERROR) ═══ */}
+        <div
+          key={shakeKey}
+          className={`relative mt-2.5 w-full max-w-[275px] sm:max-w-[315px] p-[2px] rounded-sm select-none transition-all duration-200 ${popupError
+              ? "bg-[#FF5C77] animate-pixel-shake shadow-[0_0_14px_rgba(255,92,119,0.5),3px_3px_0px_#100E1C]"
+              : "bg-gradient-to-r from-[#E5B25D] via-[#FFE27A] to-[#E5B25D] shadow-[3px_3px_0px_rgba(16,14,28,0.6)]"
+            }`}
+        >
+          <div
+            className={`relative px-3 py-2 flex items-center gap-2 rounded-[1px] ${popupError
+                ? "bg-[#280E1C] border border-[#FF5C77]/60"
+                : "bg-gradient-to-b from-[#1C1A33] via-[#16152B] to-[#121124] border border-[#383359]"
+              }`}
+          >
+            {/* Top pointing speech pip */}
+            <div
+              className={`absolute -top-1.5 left-7 w-2.5 h-2.5 rotate-45 border-t border-l ${popupError
+                  ? "bg-[#280E1C] border-[#FF5C77]/60"
+                  : "bg-[#1C1A33] border-[#383359]"
+                }`}
+            />
+
+            {/* Status Icon */}
+            <span
+              className={`text-[9px] flex-shrink-0 ${popupError ? "text-[#FF5C77] font-bold animate-pulse" : "text-[#FFD166]"
+                }`}
+            >
+              {popupError ? "⚠" : "✦"}
+            </span>
+
+            {/* Message Text */}
+            <span
+              className={`font-retro text-[8px] leading-relaxed tracking-wider ${popupError
+                  ? "text-[#FFD6DD] font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+                  : selectedIndex === 1
+                    ? "text-[#FFEBB3] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+                    : "text-[#FFEBB3] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+                }`}
+            >
+              {popupError
+                ? "ERROR: player has changed location"
+                : selectedIndex === 1
+                  ? "PRESS ENTER TO BEGIN"
+                  : "USE ARROW KEYS TO TOGGLE"}
+            </span>
+          </div>
+        </div>
       </div>
 
+
+
+      <HelloKittyAlertModal isOpen={showKittyModal} onClose={closeKittyModal} />
     </div>
   );
 }
