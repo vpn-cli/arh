@@ -2,7 +2,8 @@
 
 import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
-import PixelWindow from "./PixelWindow";
+import IndiePixelWindow from "./IndiePixelWindow";
+import { sfx } from "@/lib/audio";
 
 interface StoryCardProps {
   title: string;
@@ -39,12 +40,13 @@ export default function StoryCard({
   if (!isActive) return null;
 
   return (
-    <div ref={containerRef} className="w-full max-w-lg mx-auto relative z-10">
-      <PixelWindow title={title} variant={variant}>
-        <div className="flex flex-col items-center text-center p-4 min-h-[300px] justify-between">
+    <div ref={containerRef} className="w-full max-w-2xl mx-auto relative z-10 p-4">
+      <IndiePixelWindow title={title}>
+        {/* Main Content Area */}
+        <div className="flex flex-col w-full bg-[#0C0A15]/80">
           {children}
         </div>
-      </PixelWindow>
+      </IndiePixelWindow>
     </div>
   );
 }

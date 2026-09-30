@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import confetti from "canvas-confetti";
 import StoryCard from "../ui/StoryCard";
 import HamsterSticker from "../ui/HamsterSticker";
+import { sfx } from "@/lib/audio";
 
 interface StoryStep {
   id: string;
@@ -40,25 +41,35 @@ export default function StoryFlow() {
   };
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto min-h-[600px] flex items-center justify-center p-4">
+    <div className="relative w-full max-w-2xl mx-auto flex items-center justify-center p-4 pt-10">
+      
       {/* 1. LANDING */}
       <StoryCard
         title={STORY_STEPS[0].title}
         variant={STORY_STEPS[0].variant}
         isActive={currentStep === 0}
       >
-        <h2 className="font-pixel text-4xl text-dark font-bold mt-4">WAIT!</h2>
-        <div className="flex-1 flex items-center justify-center relative w-full h-full my-6">
-          <HamsterSticker
-            src="/images/hampters/hampter_00.png"
-            speech="before you go any further..."
-            className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            scale={1.2}
-          />
+        <div className="w-full h-[180px] shrink-0 relative bg-[#1A1625] flex items-center justify-center overflow-hidden p-3 border-b border-[#2E2A52]">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,143,179,0.1)_0%,transparent_70%)] pointer-events-none" />
+          <img src="/hampter/AWWAAAAAHAHA.jpeg" alt="hamster" className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] relative z-10" />
         </div>
-        <button className="pixel-btn pixel-btn--pink pixel-btn--large w-full mt-auto" onClick={nextStep}>
-          OKAY?
-        </button>
+        <div className="w-full p-4 flex flex-col items-center justify-center text-center bg-[#100F1F]">
+           <h2 className="font-pixel text-xl md:text-2xl text-[#FF8FB3] font-bold mb-2 tracking-wider drop-shadow-[0_2px_0_#100E1C]">WAIT!</h2>
+           <p className="font-retro text-xs text-[#D2CBE6] tracking-[2px] mb-4">before you go any further...</p>
+           
+           <button 
+             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             onMouseEnter={() => sfx.move()}
+             onClick={() => {
+               sfx.select();
+               nextStep();
+             }}
+           >
+             <span className="font-retro text-[#FFD166] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFEBB3] transition-colors">
+               OKAY?
+             </span>
+           </button>
+        </div>
       </StoryCard>
 
       {/* 2. REALIZATION */}
@@ -68,19 +79,27 @@ export default function StoryFlow() {
         isActive={currentStep === 1}
         onEnter={triggerConfetti}
       >
-        <h2 className="font-pixel text-2xl text-dark mt-2">Oh...</h2>
-        <h2 className="font-pixel text-4xl text-dark font-bold">IT'S YOUR BIRTHDAY?!</h2>
-        <div className="flex-1 flex items-center justify-center relative w-full h-full my-6">
-          <HamsterSticker
-            src="/images/hampters/hampter_08.png"
-            className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            scale={1.4}
-            rotate={-5}
-          />
+        <div className="w-full h-[180px] shrink-0 relative bg-[#FFE27A]/10 flex items-center justify-center overflow-hidden p-3 border-b border-[#2E2A52]">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,209,102,0.1)_0%,transparent_70%)] pointer-events-none" />
+          <img src="/hampter/Hamster smirk.jpeg" alt="hamster smirk" className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] relative z-10" />
         </div>
-        <button className="pixel-btn pixel-btn--yellow pixel-btn--large w-full mt-auto" onClick={nextStep}>
-          NO WAY!!
-        </button>
+        <div className="w-full p-4 flex flex-col items-center justify-center text-center bg-[#100F1F]">
+           <h2 className="font-pixel text-base text-[#FFD166] mb-1 drop-shadow-[0_2px_0_#100E1C]">Oh...</h2>
+           <h2 className="font-pixel text-xl md:text-2xl text-[#FFD166] font-bold mb-4 leading-tight drop-shadow-[0_2px_0_#100E1C] tracking-wide">IT'S YOUR BIRTHDAY?!</h2>
+           
+           <button 
+             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             onMouseEnter={() => sfx.move()}
+             onClick={() => {
+               sfx.select();
+               nextStep();
+             }}
+           >
+             <span className="font-retro text-[#FF8FB3] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFD6DD] transition-colors">
+               NO WAY!!
+             </span>
+           </button>
+        </div>
       </StoryCard>
 
       {/* 3. INVESTIGATION */}
@@ -89,26 +108,33 @@ export default function StoryFlow() {
         variant={STORY_STEPS[2].variant}
         isActive={currentStep === 2}
       >
-        <h2 className="font-pixel text-2xl text-dark mt-2 mb-4">I did some research on you...</h2>
-        <div className="flex-1 flex flex-row items-center justify-between relative w-full h-full text-left font-terminal text-lg">
-          <div className="relative w-1/2 h-full min-h-[150px]">
-             <HamsterSticker
-              src="/images/hampters/hampter_11.png"
-              className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-              scale={1.2}
-            />
-          </div>
-          <div className="w-1/2 space-y-2">
-            <p>Age: <span className="font-handwriting font-bold text-pink text-xl">classified</span></p>
-            <p>Chaos: <span className="font-handwriting font-bold text-pink text-xl">high</span></p>
-            <p>Good decisions: <span className="font-handwriting font-bold text-pink text-xl">?</span></p>
-            <p>Coolness: <span className="font-handwriting font-bold text-pink text-xl">100%</span></p>
-            <p>Friendship lvl: <span className="font-handwriting font-bold text-pink text-xl">∞</span></p>
-          </div>
+        <div className="w-full h-[180px] shrink-0 relative bg-[#1A1625] flex items-center justify-center overflow-hidden p-3 border-b border-[#2E2A52]">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.05)_0%,transparent_70%)] pointer-events-none" />
+          <img src="/hampter/YAAAA hamster.jpeg" alt="investigation hamster" className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] relative z-10" />
         </div>
-        <button className="pixel-btn pixel-btn--mint pixel-btn--large w-full mt-4" onClick={nextStep}>
-          WOW
-        </button>
+        <div className="w-full p-4 flex flex-col items-center text-left bg-[#100F1F]">
+           <h2 className="font-pixel text-lg md:text-xl text-[#FFD166] font-bold mb-3 text-center w-full drop-shadow-[0_2px_0_#100E1C]">I did some research...</h2>
+           
+           <div className="w-full max-w-sm space-y-1.5 font-retro text-[9px] md:text-[10px] mx-auto mb-5 bg-[#1C1A33]/50 p-3 border border-[#383359] shadow-[inset_0_4px_12px_rgba(0,0,0,0.4)]">
+             <p className="flex justify-between border-b border-[#383359] pb-1 text-[#8C7A99]"><span>AGE:</span> <span className="font-pixel font-bold text-[#FF8FB3]">CLASSIFIED</span></p>
+             <p className="flex justify-between border-b border-[#383359] pb-1 pt-1 text-[#8C7A99]"><span>CHAOS LEVEL:</span> <span className="font-pixel font-bold text-[#FF8FB3]">EXTREME</span></p>
+             <p className="flex justify-between border-b border-[#383359] pb-1 pt-1 text-[#8C7A99]"><span>COOLNESS:</span> <span className="font-pixel font-bold text-[#FF8FB3]">100%</span></p>
+             <p className="flex justify-between pt-1 text-[#8C7A99]"><span>FRIENDSHIP LVL:</span> <span className="font-pixel font-bold text-[#FFD166]">MAX</span></p>
+           </div>
+
+           <button 
+             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             onMouseEnter={() => sfx.move()}
+             onClick={() => {
+               sfx.select();
+               nextStep();
+             }}
+           >
+             <span className="font-retro text-[#FFD166] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFEBB3] transition-colors">
+               WOW
+             </span>
+           </button>
+        </div>
       </StoryCard>
 
       {/* 4. MEME JOURNEY */}
@@ -117,19 +143,28 @@ export default function StoryFlow() {
         variant={STORY_STEPS[3].variant}
         isActive={currentStep === 3}
       >
-        <h2 className="font-pixel text-2xl text-dark mt-2 mb-4">A few facts...</h2>
-        <div className="flex-1 flex items-center justify-center relative w-full h-full my-6 bg-bg-cream border-2 border-dashed border-dark/20">
-          <p className="font-handwriting text-dark-muted">Swipe/click through multiple hamster meme templates (Placeholder for meme gallery)</p>
-          <HamsterSticker
-            src="/images/hampters/hampter_22.png"
-            className="bottom-2 right-2"
-            scale={0.8}
-            rotate={10}
-          />
+        <div className="w-full h-[180px] shrink-0 relative bg-[#1A1625] flex items-center justify-center overflow-hidden p-4 border-b border-[#2E2A52]">
+           <div className="absolute inset-0 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQIW2NkYGD4z8DAwMgAI0AMDA4wBBE/wDAAAAAASUVORK5CYII=')] opacity-30 mix-blend-overlay pointer-events-none" />
+           <img src="/hampter/Squirtle Pikachu dancing.gif" alt="dancing" className="w-full h-full object-contain relative z-10 rounded-sm shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-[#383359]" />
+           <HamsterSticker src="/hampter/devious hamster doodle.jpeg" className="absolute bottom-2 right-2 z-20" scale={0.5} rotate={12} />
         </div>
-        <button className="pixel-btn pixel-btn--pink pixel-btn--large w-full mt-auto" onClick={nextStep}>
-          NEXT
-        </button>
+        <div className="w-full p-4 flex flex-col items-center justify-center text-center bg-[#100F1F]">
+           <h2 className="font-pixel text-lg md:text-xl text-[#FF8FB3] font-bold mb-2 drop-shadow-[0_2px_0_#100E1C] tracking-wide">A FEW FACTS...</h2>
+           <p className="font-retro text-[9px] md:text-[10px] text-[#D2CBE6] mb-4 leading-relaxed tracking-[2px]">It is scientifically proven that looking at memes makes birthdays 400% better.</p>
+           
+           <button 
+             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             onMouseEnter={() => sfx.move()}
+             onClick={() => {
+               sfx.select();
+               nextStep();
+             }}
+           >
+             <span className="font-retro text-[#FFD166] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFEBB3] transition-colors">
+               NEXT
+             </span>
+           </button>
+        </div>
       </StoryCard>
 
       {/* 5. CELEBRATION */}
@@ -142,22 +177,30 @@ export default function StoryFlow() {
           setTimeout(triggerConfetti, 500);
         }}
       >
-        <h2 className="font-pixel text-4xl text-pink font-bold mt-2 mb-2 animate-bounce-soft drop-shadow-sm">HAPPY BIRTHDAY!</h2>
-        <div className="flex-1 flex items-center justify-center relative w-full h-full my-6">
-          <HamsterSticker
-            src="/images/hampters/hampter_14.png"
-            className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            scale={1.5}
-            speech="LET'S PARTY!!"
-          />
-          <div className="absolute top-0 left-4 text-3xl animate-float">🎈</div>
-          <div className="absolute top-4 right-8 text-3xl animate-float delay-200">🎈</div>
-          <div className="absolute bottom-4 left-8 text-3xl animate-pulse">✨</div>
-          <div className="absolute bottom-0 right-4 text-3xl animate-bounce-soft delay-300">🎁</div>
+        <div className="w-full h-[180px] shrink-0 relative bg-[#1A1625] flex items-center justify-center overflow-hidden p-3 border-b border-[#2E2A52]">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,209,102,0.15)_0%,transparent_70%)] pointer-events-none" />
+          <img src="/hampter/so cuteee i love it frrr.jpeg" alt="celebration" className="w-full h-full object-contain opacity-90 drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)] relative z-10" />
+          <div className="absolute top-4 left-4 text-2xl animate-float z-20">🎈</div>
+          <div className="absolute top-6 right-6 text-2xl animate-float delay-200 z-20">🎈</div>
+          <div className="absolute bottom-4 right-6 text-3xl animate-bounce-soft z-20">🎁</div>
         </div>
-        <button className="pixel-btn pixel-btn--lavender pixel-btn--large w-full mt-auto" onClick={nextStep}>
-          LET'S GOOOO
-        </button>
+        <div className="w-full p-4 flex flex-col items-center justify-center text-center bg-[#100F1F]">
+           <h2 className="font-pixel text-xl md:text-2xl text-[#FFD166] font-bold mb-2 animate-pulse drop-shadow-[0_4px_0_#100E1C] tracking-wide">HAPPY BIRTHDAY!</h2>
+           <p className="font-retro text-xs text-[#FF8FB3] tracking-[3px] font-bold mb-4 drop-shadow-[0_2px_0_#100E1C]">LET'S PARTY!!</p>
+           
+           <button 
+             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             onMouseEnter={() => sfx.move()}
+             onClick={() => {
+               sfx.select();
+               nextStep();
+             }}
+           >
+             <span className="font-retro text-[#FFD166] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFEBB3] transition-colors">
+               LET'S GOOOO
+             </span>
+           </button>
+        </div>
       </StoryCard>
 
       {/* 6. THE LETTER */}
@@ -166,20 +209,29 @@ export default function StoryFlow() {
         variant={STORY_STEPS[5].variant}
         isActive={currentStep === 5}
       >
-        <h2 className="font-pixel text-2xl text-dark mt-2 mb-6">A small letter for a big friend.</h2>
-        <div className="flex-1 flex items-center justify-center relative w-full h-full">
-           <HamsterSticker
-            src="/images/hampters/hampter_03.png"
-            className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            scale={1.2}
-          />
-          <div className="absolute top-10 right-10 transform rotate-12 bg-[#FFF9E6] p-4 border border-dark/20 shadow-md">
-            <span className="text-4xl">✉️</span>
-          </div>
+        <div className="w-full h-[180px] shrink-0 relative bg-[#1A1625] flex items-center justify-center overflow-hidden p-4 border-b border-[#2E2A52]">
+           <img src="/hampter/whimsycap.jpeg" alt="whimsy" className="w-full h-full object-contain shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-[#383359] relative z-10" />
+           <div className="absolute top-4 right-4 transform rotate-12 bg-[#1C1A33] p-2 border border-[#383359] shadow-[0_8px_16px_rgba(0,0,0,0.8)] z-20">
+             <span className="text-2xl drop-shadow-xl">✉️</span>
+           </div>
         </div>
-        <button className="pixel-btn pixel-btn--pink pixel-btn--large w-full mt-auto" onClick={nextStep}>
-          READ &lt;3
-        </button>
+        <div className="w-full p-4 flex flex-col items-center justify-center text-center bg-[#100F1F]">
+           <h2 className="font-pixel text-lg md:text-xl text-[#FF8FB3] font-bold mb-2 drop-shadow-[0_2px_0_#100E1C] tracking-wide">A SMALL LETTER...</h2>
+           <p className="font-retro text-[9px] md:text-[10px] text-[#D2CBE6] tracking-[2px] mb-4">...for a really big friend.</p>
+           
+           <button 
+             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             onMouseEnter={() => sfx.move()}
+             onClick={() => {
+               sfx.select();
+               nextStep();
+             }}
+           >
+             <span className="font-retro text-[#FFD166] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFEBB3] transition-colors">
+               OPEN LETTER
+             </span>
+           </button>
+        </div>
       </StoryCard>
 
       {/* 7. END */}
@@ -188,21 +240,29 @@ export default function StoryFlow() {
         variant={STORY_STEPS[6].variant}
         isActive={currentStep === 6}
       >
-        <h2 className="font-pixel text-3xl text-dark mt-4 mb-2">Thanks for being you</h2>
-        <h2 className="font-pixel text-3xl text-pink font-bold">&lt;3</h2>
-        <div className="flex-1 flex items-center justify-center relative w-full h-full my-6">
-          <HamsterSticker
-            src="/images/hampters/hampter_05.png"
-            className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            scale={1.3}
-          />
-          <div className="absolute top-4 left-1/4 text-2xl text-pink animate-heart-pop">♡</div>
-          <div className="absolute top-1/4 right-1/4 text-3xl text-pink animate-heart-pop delay-200">♥</div>
-          <div className="absolute bottom-1/4 left-1/3 text-xl text-pink animate-heart-pop delay-300">♡</div>
+        <div className="w-full h-[180px] shrink-0 relative bg-[#1A1625] flex items-center justify-center overflow-hidden p-3 border-b border-[#2E2A52]">
+           <img src="/hampter/almarts27 hamster sticker.jpeg" alt="end hamster" className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] relative z-10" />
+           <div className="absolute top-6 left-1/4 text-xl text-[#FF8FB3] animate-heart-pop z-20">♡</div>
+           <div className="absolute top-1/4 right-1/4 text-2xl text-[#FFD166] animate-heart-pop delay-200 z-20">♥</div>
+           <div className="absolute bottom-1/4 left-1/3 text-lg text-[#FF8FB3] animate-heart-pop delay-300 z-20">♡</div>
         </div>
-        <button className="pixel-btn pixel-btn--mint pixel-btn--large w-full mt-auto" onClick={() => setCurrentStep(0)}>
-          REPLAY?
-        </button>
+        <div className="w-full p-4 flex flex-col items-center justify-center text-center bg-[#100F1F]">
+           <h2 className="font-retro text-xs md:text-sm text-[#D2CBE6] tracking-[2px] font-bold mb-1">Thanks for being you.</h2>
+           <h2 className="font-pixel text-xl text-[#FF8FB3] font-bold mb-4 drop-shadow-[0_2px_0_#100E1C]">&lt;3</h2>
+           
+           <button 
+             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             onMouseEnter={() => sfx.move()}
+             onClick={() => {
+               sfx.select();
+               setCurrentStep(0);
+             }}
+           >
+             <span className="font-retro text-[#FFD166] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFEBB3] transition-colors">
+               REPLAY?
+             </span>
+           </button>
+        </div>
       </StoryCard>
 
     </div>

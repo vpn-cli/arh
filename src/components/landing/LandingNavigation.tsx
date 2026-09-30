@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { sfx } from "@/lib/audio";
 
 interface NavItem {
   id: string;
@@ -80,14 +81,17 @@ export default function LandingNavigation() {
   };
 
   return (
-    <header className="w-full bg-bg-cream border-b-3 border-border px-3 sm:px-6 py-2 select-none z-30 sticky top-0 shadow-sm">
-      <div className="w-full flex flex-wrap items-center justify-between gap-2">
+    <header className="w-full bg-[#100F1F]/90 backdrop-blur-md border-b-2 border-[#2E2A52] px-3 sm:px-6 py-2 select-none z-30 sticky top-0 shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
+      <div className="w-full max-w-[1200px] mx-auto flex flex-wrap items-center justify-between gap-2">
         {/* Left — Pixel heart logo */}
         <div className="flex items-center gap-2">
-          <span className="text-pink text-xl font-bold hover:scale-110 transition-transform cursor-pointer drop-shadow-[1px_1px_0_#3A2E50]">
+          <span 
+            className="text-[#FF8FB3] text-xl font-bold hover:scale-110 transition-transform cursor-pointer drop-shadow-[0_2px_0_#100E1C]"
+            onMouseEnter={() => sfx.hover()}
+          >
             ♡
           </span>
-          <span className="font-retro text-[8px] text-dark hidden sm:inline tracking-wide">
+          <span className="font-retro text-[8px] text-[#D2CBE6] hidden sm:inline tracking-wide drop-shadow-[0_1px_0_#000]">
             BIRTHDAY_OS
           </span>
         </div>
@@ -105,18 +109,21 @@ export default function LandingNavigation() {
                 <button
                   type="button"
                   onClick={() => {
+                    sfx.pop();
                     if (!isActive) {
+                      sfx.error();
                       setActiveTooltip(item.tooltip || "Coming soon!");
                       setTimeout(() => setActiveTooltip(null), 2500);
                     }
                   }}
+                  onMouseEnter={() => sfx.hover()}
                   className={`
-                    text-xs sm:text-sm font-pixel tracking-wider lowercase transition-colors cursor-pointer pb-0.5
+                    text-xs sm:text-[10px] font-retro tracking-[2px] transition-colors cursor-pointer pb-0.5
                     ${isActive
-                      ? "text-dark font-bold border-b-2 border-pink"
+                      ? "text-[#FFD166] font-bold border-b-2 border-[#FFD166] drop-shadow-[0_1px_0_#000]"
                       : isMystery
-                        ? "text-lavender hover:text-dark"
-                        : "text-dark/50 hover:text-dark/80"
+                        ? "text-[#FF8FB3] hover:text-[#FFD6DD]"
+                        : "text-[#8C7A99] hover:text-[#D2CBE6]"
                     }
                   `}
                   aria-current={isActive ? "page" : undefined}
@@ -125,8 +132,8 @@ export default function LandingNavigation() {
                 </button>
 
                 {activeTooltip && activeTooltip === item.tooltip && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-dark text-yellow-warm text-[10px] font-terminal whitespace-nowrap border border-yellow-warm shadow-[1px_1px_0_0_#000] z-40">
-                    [ {item.tooltip} ]
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-2 bg-[#280E1C] text-[#FFD6DD] text-[8px] font-retro tracking-widest whitespace-nowrap border border-[#FF5C77]/60 shadow-[3px_3px_0_rgba(16,14,28,0.8)] z-40">
+                    {item.tooltip}
                   </div>
                 )}
               </div>
@@ -136,20 +143,24 @@ export default function LandingNavigation() {
 
         {/* Right — Music player */}
         <button
-          onClick={toggleSong}
-          className="pixel-btn pixel-btn--yellow flex items-center gap-2 px-2 py-1 text-[10px]"
+          onClick={() => {
+            sfx.select();
+            toggleSong();
+          }}
+          onMouseEnter={() => sfx.hover()}
+          className="relative group px-3 py-1.5 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_2px_0_#100E1C] active:translate-y-[2px] active:shadow-none flex items-center gap-2 rounded-sm"
           aria-label={isPlaying ? "Pause music" : "Play song for you"}
         >
-          <span className="text-dark">{isPlaying ? "❚❚" : "►"}</span>
-          <span className="font-pixel text-xs text-dark hidden sm:inline">
-            a song for you
+          <span className="text-[#FFD166] text-[10px] drop-shadow-[0_1px_0_#000]">{isPlaying ? "❚❚" : "▶"}</span>
+          <span className="font-retro text-[8px] text-[#FFEBB3] tracking-widest hidden sm:inline drop-shadow-[0_1px_0_#000]">
+            AUDIO
           </span>
-          <div className="flex items-end gap-0.5 h-3 ml-1">
+          <div className="flex items-end gap-[1px] h-2.5 ml-1 opacity-80">
             {soundbars.map((h, i) => (
               <span
                 key={i}
-                className="w-0.5 bg-dark transition-all duration-150"
-                style={{ height: isPlaying ? `${h * 1.3}px` : "3px" }}
+                className={`w-[2px] transition-all duration-150 ${isPlaying ? "bg-[#FF8FB3]" : "bg-[#524B7A]"}`}
+                style={{ height: isPlaying ? `${Math.max(2, h * 1.5)}px` : "2px" }}
               />
             ))}
           </div>
