@@ -85,5 +85,22 @@ export const sfx = {
     if (!ctx) return;
     const now = ctx.currentTime;
     playSquareTone(1200, now, 0.04, 0.1);
-  }
+  },
+  // Resilient click sound handler supporting both sfx.click() and sfx.click.play()
+  click: Object.assign(
+    () => {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      playSquareTone(523, now, 0.04, 0.12);
+    },
+    {
+      play: () => {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        playSquareTone(523, now, 0.04, 0.12);
+      }
+    }
+  )
 };

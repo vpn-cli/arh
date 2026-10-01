@@ -24,6 +24,24 @@ export default function LandingPage() {
   const [introFinished, setIntroFinished] = useState(false);
   const [storyComplete, setStoryComplete] = useState(false);
 
+  React.useEffect(() => {
+    // If we are returning from Spotify Auth or already completed the story in a previous session
+    if (
+      window.location.search.includes("code=") || 
+      window.localStorage.getItem("spotify_auth_return") === "true" ||
+      window.localStorage.getItem("story_complete") === "true"
+    ) {
+      setHasEntered(true);
+      setIntroFinished(true);
+      setStoryComplete(true);
+    }
+  }, []);
+
+  const completeStory = () => {
+    setStoryComplete(true);
+    window.localStorage.setItem("story_complete", "true");
+  };
+
   return (
     <div className="relative min-h-screen w-full bg-[#0C0A15] text-[#FFEBB3] flex flex-col overflow-x-hidden selection:bg-[#FF8FB3]/40">
       {/* Ambient particle layer (always present) */}
@@ -67,7 +85,7 @@ export default function LandingPage() {
               className="w-full flex-1 flex items-center justify-center min-h-[85vh] animate-slide-up"
               id="story-section"
             >
-              <StoryFlow onComplete={() => setStoryComplete(true)} />
+              <StoryFlow onComplete={completeStory} />
             </div>
           </main>
         </div>
