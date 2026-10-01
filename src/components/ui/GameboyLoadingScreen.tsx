@@ -25,10 +25,18 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
   // this subtree is ~1700 SVG rects, and re-rendering it every frame was
   // the whole source of the lag. Layers read the vars via calc().
   const rootRef = React.useRef<HTMLDivElement>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
   const targetOffsetRef = React.useRef({ x: 0, y: 0 });
   const currentOffsetRef = React.useRef({ x: 0, y: 0 });
   const animFrameRef = React.useRef<number | null>(null);
   const lastLeanRef = React.useRef(0);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(() => { });
+    }
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -100,6 +108,18 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
     // "START NEW GAME" clicked/pressed -> Launch game!
     sfx.select();
     setIsTransitioning(true);
+
+    // Mute and pause the landing video audio immediately upon entering the game
+    try {
+      const videos = document.querySelectorAll<HTMLVideoElement>("video");
+      videos.forEach((v) => {
+        v.muted = true;
+        v.pause();
+      });
+    } catch {
+      // ignore
+    }
+
     setTimeout(onComplete, 700);
   };
 
@@ -165,9 +185,12 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
         >
           {/* Base 16:9 Video (z-0) */}
           <video
+            ref={videoRef}
             src="/videos/real_vid.mp4"
             autoPlay
             loop
+            muted
+            playsInline
             className="w-full h-full object-cover pointer-events-none will-change-transform"
             style={{
               transform: "scale(1.02) translate3d(calc(var(--mx, 0) * -15px), calc(var(--my, 0) * -10px), 0)",
@@ -181,22 +204,22 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           <div className="absolute bottom-[35%] left-[38%] w-8 h-8 bg-[#ffee75]/50 rounded-full mix-blend-overlay blur-sm animate-pulse z-[1] pointer-events-none" style={{ animationDuration: '0.35s' }} />
 
           {/* ═══ OPAQUE ROTATING COPYRIGHT BADGE (Covers Watermark) ═══ */}
-          <div 
+          <div
             className="absolute z-[60] flex items-center justify-center pointer-events-none drop-shadow-xl will-change-transform"
-            style={{ 
-              right: '5%', 
-              bottom: '8.5%', 
-              width: '140px', 
+            style={{
+              right: '4.85%',
+              bottom: '9.0%',
+              width: '140px',
               height: '140px',
               transform: "translate3d(calc(var(--mx, 0) * -15px), calc(var(--my, 0) * -10px), 0)"
             }}
           >
             {/* Frosted Glass Background Plate (Blurs out the watermark naturally) */}
             <div className="absolute inset-0 bg-[#0C0A15]/70 backdrop-blur-lg rounded-full shadow-[inset_0_0_25px_rgba(0,0,0,0.9),0_4px_10px_rgba(0,0,0,0.3)] z-0" />
-            
+
             {/* Rotating Text */}
-            <svg 
-              className="w-[130px] h-[130px] absolute z-10 opacity-90" 
+            <svg
+              className="w-[130px] h-[130px] absolute z-10 opacity-90"
               viewBox="0 0 100 100"
               style={{ animation: 'spin 15s linear infinite' }}
             >
@@ -211,11 +234,11 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
               </defs>
               <text className="font-retro text-[9px] fill-[#FFEBB3] tracking-[0.2em] uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                 <textPath href="#circlePath" startOffset="0%">
-                  © VPN COPYRIGHT • VPN COPYRIGHT • 
+                  © VPN COPYRIGHT • VPN COPYRIGHT •
                 </textPath>
               </text>
             </svg>
-            
+
             {/* Center Logo */}
             <div className="absolute inset-0 flex items-center justify-center z-20">
               <span className="text-[#FFEBB3] text-4xl font-retro leading-none mt-1 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,1)] opacity-80">
@@ -348,8 +371,8 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
                       handleSelect();
                     }}
                     className={`group relative flex items-center gap-3 px-3 py-2 select-none transition-all duration-150 ${isSelected
-                        ? "bg-gradient-to-r from-[#FF8FB3]/25 via-[#FFD166]/15 to-transparent border-l-4 border-[#FF8FB3] border-t border-b border-r border-[#FF8FB3]/30 shadow-[inset_0_0_12px_rgba(255,143,179,0.15)]"
-                        : "border-l-4 border-transparent hover:bg-[#252244]/70 border border-transparent"
+                      ? "bg-gradient-to-r from-[#FF8FB3]/25 via-[#FFD166]/15 to-transparent border-l-4 border-[#FF8FB3] border-t border-b border-r border-[#FF8FB3]/30 shadow-[inset_0_0_12px_rgba(255,143,179,0.15)]"
+                      : "border-l-4 border-transparent hover:bg-[#252244]/70 border border-transparent"
                       }`}
                   >
                     {/* Animated 8-bit RPG Cursor */}
@@ -366,8 +389,8 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
                     {/* Menu Item Label */}
                     <span
                       className={`text-[10px] sm:text-[11px] tracking-[1.2px] transition-colors ${isSelected
-                          ? "text-[#FFF3D8] font-bold drop-shadow-[0_2px_0px_#100E21] drop-shadow-[0_0_8px_rgba(255,209,102,0.6)]"
-                          : "text-[#D2CBE6] group-hover:text-[#FFF3D8] drop-shadow-[0_1px_0px_#0C0B17]"
+                        ? "text-[#FFF3D8] font-bold drop-shadow-[0_2px_0px_#100E21] drop-shadow-[0_0_8px_rgba(255,209,102,0.6)]"
+                        : "text-[#D2CBE6] group-hover:text-[#FFF3D8] drop-shadow-[0_1px_0px_#0C0B17]"
                         }`}
                     >
                       {item}
@@ -423,21 +446,21 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
         <div
           key={shakeKey}
           className={`relative mt-2.5 w-full max-w-[275px] sm:max-w-[315px] p-[2px] rounded-sm select-none transition-all duration-200 ${popupError
-              ? "bg-[#FF5C77] animate-pixel-shake shadow-[0_0_14px_rgba(255,92,119,0.5),3px_3px_0px_#100E1C]"
-              : "bg-gradient-to-r from-[#E5B25D] via-[#FFE27A] to-[#E5B25D] shadow-[3px_3px_0px_rgba(16,14,28,0.6)]"
+            ? "bg-[#FF5C77] animate-pixel-shake shadow-[0_0_14px_rgba(255,92,119,0.5),3px_3px_0px_#100E1C]"
+            : "bg-gradient-to-r from-[#E5B25D] via-[#FFE27A] to-[#E5B25D] shadow-[3px_3px_0px_rgba(16,14,28,0.6)]"
             }`}
         >
           <div
             className={`relative px-3 py-2 flex items-center gap-2 rounded-[1px] ${popupError
-                ? "bg-[#280E1C] border border-[#FF5C77]/60"
-                : "bg-gradient-to-b from-[#1C1A33] via-[#16152B] to-[#121124] border border-[#383359]"
+              ? "bg-[#280E1C] border border-[#FF5C77]/60"
+              : "bg-gradient-to-b from-[#1C1A33] via-[#16152B] to-[#121124] border border-[#383359]"
               }`}
           >
             {/* Top pointing speech pip */}
             <div
               className={`absolute -top-1.5 left-7 w-2.5 h-2.5 rotate-45 border-t border-l ${popupError
-                  ? "bg-[#280E1C] border-[#FF5C77]/60"
-                  : "bg-[#1C1A33] border-[#383359]"
+                ? "bg-[#280E1C] border-[#FF5C77]/60"
+                : "bg-[#1C1A33] border-[#383359]"
                 }`}
             />
 
@@ -452,10 +475,10 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
             {/* Message Text */}
             <span
               className={`font-retro text-[8px] leading-relaxed tracking-wider ${popupError
-                  ? "text-[#FFD6DD] font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
-                  : selectedIndex === 1
-                    ? "text-[#FFEBB3] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
-                    : "text-[#FFEBB3] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+                ? "text-[#FFD6DD] font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+                : selectedIndex === 1
+                  ? "text-[#FFEBB3] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+                  : "text-[#FFEBB3] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
                 }`}
             >
               {popupError
