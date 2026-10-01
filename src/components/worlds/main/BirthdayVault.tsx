@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import ReactDOM from "react-dom";
 import IndiePixelWindow from "@/components/ui/IndiePixelWindow";
 import { sfx } from "@/lib/audio";
 import gsap from "gsap";
@@ -8,6 +9,12 @@ import gsap from "gsap";
 export default function BirthdayVault() {
   const [isOpen, setIsOpen] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
+
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleOpen = () => {
     if (isOpen || isUnlocking) return;
@@ -32,6 +39,63 @@ export default function BirthdayVault() {
     sfx.hover();
     setIsOpen(false);
   };
+
+  // Prevent background scrolling when vault modal is open
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  const modalContent = isOpen && mounted ? (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-[#0C0A15]/90 backdrop-blur-md" onClick={handleClose} />
+      
+      <div className="relative w-full max-w-3xl animate-slide-up">
+        <IndiePixelWindow title="THE VAULT IS OPEN" onClose={handleClose}>
+          <div className="p-8 sm:p-12 bg-gradient-to-b from-[#1C1A33] to-[#100E1C] flex flex-col items-center text-center">
+            <span className="text-6xl mb-6 animate-bounce-soft drop-shadow-[0_0_20px_rgba(255,209,102,0.5)]">🎂</span>
+            <h2 className="font-pixel text-3xl sm:text-5xl font-bold text-[#FFD166] mb-4 drop-shadow-[0_4px_0_#100E1C]">
+              HAPPY BIRTHDAY!
+            </h2>
+            <div className="h-[2px] w-48 bg-gradient-to-r from-transparent via-[#FF8FB3]/60 to-transparent mb-6" />
+            <p className="font-retro text-xs sm:text-sm text-[#D2CBE6] tracking-[2px] leading-relaxed max-w-lg mb-8">
+              You cracked the code! Wishing you the most incredible year ahead. Filled with joy, endless snacks, and exactly zero bugs in your code.
+            </p>
+            <button 
+              onClick={handleClose}
+              className="px-6 py-3 bg-[#FF8FB3] text-[#141224] font-retro font-bold text-sm tracking-widest rounded-sm shadow-[3px_3px_0_#C85A7F] active:translate-y-1 active:shadow-none transition-all hover:bg-[#FFB6C1]"
+            >
+              RETURN TO ADVENTURE
+            </button>
+          </div>
+        </IndiePixelWindow>
+        
+        {/* Celebration particles */}
+        <div className="absolute -inset-10 pointer-events-none -z-10 overflow-hidden">
+          {[...Array(20)].map((_, i) => (
+            <div 
+              key={i}
+              className="absolute w-2 h-2 rounded-full animate-firefly"
+              style={{
+                backgroundColor: ['#FFD166', '#FF8FB3', '#B9D7C0', '#C8B8F1'][i % 4],
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${2 + Math.random() * 3}s`
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="w-full max-w-2xl mx-auto my-32 px-4 relative z-10 flex flex-col items-center">
@@ -72,50 +136,10 @@ export default function BirthdayVault() {
         </IndiePixelWindow>
       </div>
 
-      {/* The Opened Vault Experience (Overlay) */}
-      {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#0C0A15]/90 backdrop-blur-md" onClick={handleClose} />
-          
-          <div className="relative w-full max-w-3xl animate-slide-up">
-            <IndiePixelWindow title="THE VAULT IS OPEN" onClose={handleClose}>
-              <div className="p-8 sm:p-12 bg-gradient-to-b from-[#1C1A33] to-[#100E1C] flex flex-col items-center text-center">
-                <span className="text-6xl mb-6 animate-bounce-soft drop-shadow-[0_0_20px_rgba(255,209,102,0.5)]">🎂</span>
-                <h2 className="font-pixel text-3xl sm:text-5xl font-bold text-[#FFD166] mb-4 drop-shadow-[0_4px_0_#100E1C]">
-                  HAPPY BIRTHDAY!
-                </h2>
-                <div className="h-[2px] w-48 bg-gradient-to-r from-transparent via-[#FF8FB3]/60 to-transparent mb-6" />
-                <p className="font-retro text-xs sm:text-sm text-[#D2CBE6] tracking-[2px] leading-relaxed max-w-lg mb-8">
-                  You cracked the code! Wishing you the most incredible year ahead. Filled with joy, endless snacks, and exactly zero bugs in your code.
-                </p>
-                <button 
-                  onClick={handleClose}
-                  className="px-6 py-3 bg-[#FF8FB3] text-[#141224] font-retro font-bold text-sm tracking-widest rounded-sm shadow-[3px_3px_0_#C85A7F] active:translate-y-1 active:shadow-none transition-all hover:bg-[#FFB6C1]"
-                >
-                  RETURN TO ADVENTURE
-                </button>
-              </div>
-            </IndiePixelWindow>
-            
-            {/* Celebration particles */}
-            <div className="absolute -inset-10 pointer-events-none -z-10 overflow-hidden">
-              {[...Array(20)].map((_, i) => (
-                <div 
-                  key={i}
-                  className="absolute w-2 h-2 rounded-full animate-firefly"
-                  style={{
-                    backgroundColor: ['#FFD166', '#FF8FB3', '#B9D7C0', '#C8B8F1'][i % 4],
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                    animationDelay: `${Math.random() * 2}s`,
-                    animationDuration: `${2 + Math.random() * 3}s`
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* The Opened Vault Experience (Overlay via Portal) */}
+      {mounted && typeof document !== 'undefined' 
+        ? ReactDOM.createPortal(modalContent, document.body) 
+        : modalContent}
     </div>
   );
 }

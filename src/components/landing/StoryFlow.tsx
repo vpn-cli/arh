@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
 import StoryCard from "../ui/StoryCard";
 import HamsterSticker from "../ui/HamsterSticker";
@@ -44,8 +44,35 @@ export default function StoryFlow({ onComplete }: StoryFlowProps) {
     });
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sfx.select();
+        if (currentStep < STORY_STEPS.length - 1) {
+          nextStep();
+        } else {
+          if (onComplete) onComplete();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentStep, onComplete]);
+
   return (
     <div className="relative w-full max-w-2xl mx-auto flex items-center justify-center p-4 pt-10">
+      
+      {/* SKIP BUTTON */}
+      <button
+        onClick={() => {
+          sfx.select();
+          if (onComplete) onComplete();
+        }}
+        className="absolute top-2 right-4 z-50 text-[10px] font-retro text-[#8C7A99] hover:text-[#FF8FB3] transition-colors border-b border-transparent hover:border-[#FF8FB3] tracking-[2px]"
+      >
+        SKIP SEQUENCE
+      </button>
       
       {/* 1. LANDING */}
       <StoryCard

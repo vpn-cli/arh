@@ -1097,3 +1097,20 @@ html {
   pointer-events: none;
   z-index: 15;
 }
+
+/* Custom Scrollbar for Playlists Sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #FFF0F5;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #FFB6C1;
+  border-radius: 10px;
+  border: 2px solid #FFF0F5;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #FF69B4;
+}

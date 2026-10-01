@@ -27,12 +27,43 @@ export interface GameActions {
 const GameStateContext = createContext<(GameState & GameActions) | null>(null);
 
 export function GameStateProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<GameState>({
-    currentWorld: "home",
-    previousWorld: null,
-    isTransitioning: false,
-    mainWorldScrollY: 0,
+  const [state, setState] = useState<GameState>(() => {
+    // Only access localStorage if we are in the browser
+    let initialWorld: WorldId = "home";
+    if (typeof window !== "undefined") {
+      const returnToMusic = window.localStorage.getItem("spotify_auth_return");
+      if (returnToMusic === "true") {
+        initialWorld = "music";
+      }
+    }
+    return {
+      currentWorld: initialWorld,
+      previousWorld: null,
+      isTransitioning: false,
+      mainWorldScrollY: 0,
+    };
   });
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
+    const returnToMusic = window.localStorage.getItem("spotify_auth_return");
+
+    if (code) {
+      import("./spotifyAuth").then(({ exchangeToken }) => {
+        exchangeToken(code).then(() => {
+          window.history.replaceState({}, document.title, "/");
+          window.localStorage.removeItem("spotify_auth_return");
+          if (returnToMusic) {
+            setState((prev) => ({ ...prev, currentWorld: "music" }));
+          }
+        });
+      });
+    } else if (returnToMusic) {
+      window.localStorage.removeItem("spotify_auth_return");
+    }
+  }, []);
 
   const goToWorld = useCallback((world: WorldId) => {
     setState((prev) => ({
