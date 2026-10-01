@@ -22,7 +22,11 @@ const STORY_STEPS: StoryStep[] = [
   { id: "step-7", title: "END", variant: "blue" },
 ];
 
-export default function StoryFlow() {
+interface StoryFlowProps {
+  onComplete?: () => void;
+}
+
+export default function StoryFlow({ onComplete }: StoryFlowProps) {
   const [currentStep, setCurrentStep] = useState(0);
 
   const nextStep = () => {
@@ -58,14 +62,14 @@ export default function StoryFlow() {
            <p className="font-retro text-xs text-[#D2CBE6] tracking-[2px] mb-4">before you go any further...</p>
            
            <button 
-             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             className="relative group w-full md:w-[80%] px-4 py-3 bg-gradient-to-b from-[#E5B25D] to-[#8C6226] rounded-sm shadow-[0_6px_0_#523A12,0_12px_20px_rgba(0,0,0,0.5)] active:translate-y-[6px] active:shadow-[0_0_0_#523A12] transition-all duration-100"
              onMouseEnter={() => sfx.move()}
              onClick={() => {
                sfx.select();
                nextStep();
              }}
            >
-             <span className="font-retro text-[#FFD166] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFEBB3] transition-colors">
+             <span className="font-retro font-bold text-xs sm:text-sm text-[#141224] tracking-[3px] group-hover:text-white drop-shadow-[0_1px_0_rgba(255,255,255,0.4)] group-hover:drop-shadow-[0_1px_0_rgba(0,0,0,0.4)] transition-colors">
                OKAY?
              </span>
            </button>
@@ -88,7 +92,7 @@ export default function StoryFlow() {
            <h2 className="font-pixel text-xl md:text-2xl text-[#FFD166] font-bold mb-4 leading-tight drop-shadow-[0_2px_0_#100E1C] tracking-wide">IT'S YOUR BIRTHDAY?!</h2>
            
            <button 
-             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             className="relative group w-full md:w-[80%] px-4 py-3 bg-gradient-to-b from-[#E5B25D] to-[#8C6226] rounded-sm shadow-[0_6px_0_#523A12,0_12px_20px_rgba(0,0,0,0.5)] active:translate-y-[6px] active:shadow-[0_0_0_#523A12] transition-all duration-100"
              onMouseEnter={() => sfx.move()}
              onClick={() => {
                sfx.select();
@@ -123,14 +127,14 @@ export default function StoryFlow() {
            </div>
 
            <button 
-             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             className="relative group w-full md:w-[80%] px-4 py-3 bg-gradient-to-b from-[#E5B25D] to-[#8C6226] rounded-sm shadow-[0_6px_0_#523A12,0_12px_20px_rgba(0,0,0,0.5)] active:translate-y-[6px] active:shadow-[0_0_0_#523A12] transition-all duration-100"
              onMouseEnter={() => sfx.move()}
              onClick={() => {
                sfx.select();
                nextStep();
              }}
            >
-             <span className="font-retro text-[#FFD166] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFEBB3] transition-colors">
+             <span className="font-retro font-bold text-xs sm:text-sm text-[#141224] tracking-[3px] group-hover:text-white drop-shadow-[0_1px_0_rgba(255,255,255,0.4)] group-hover:drop-shadow-[0_1px_0_rgba(0,0,0,0.4)] transition-colors">
                WOW
              </span>
            </button>
@@ -153,14 +157,14 @@ export default function StoryFlow() {
            <p className="font-retro text-[9px] md:text-[10px] text-[#D2CBE6] mb-4 leading-relaxed tracking-[2px]">It is scientifically proven that looking at memes makes birthdays 400% better.</p>
            
            <button 
-             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             className="relative group w-full md:w-[80%] px-4 py-3 bg-gradient-to-b from-[#E5B25D] to-[#8C6226] rounded-sm shadow-[0_6px_0_#523A12,0_12px_20px_rgba(0,0,0,0.5)] active:translate-y-[6px] active:shadow-[0_0_0_#523A12] transition-all duration-100"
              onMouseEnter={() => sfx.move()}
              onClick={() => {
                sfx.select();
                nextStep();
              }}
            >
-             <span className="font-retro text-[#FFD166] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFEBB3] transition-colors">
+             <span className="font-retro font-bold text-xs sm:text-sm text-[#141224] tracking-[3px] group-hover:text-white drop-shadow-[0_1px_0_rgba(255,255,255,0.4)] group-hover:drop-shadow-[0_1px_0_rgba(0,0,0,0.4)] transition-colors">
                NEXT
              </span>
            </button>
@@ -189,14 +193,14 @@ export default function StoryFlow() {
            <p className="font-retro text-xs text-[#FF8FB3] tracking-[3px] font-bold mb-4 drop-shadow-[0_2px_0_#100E1C]">LET'S PARTY!!</p>
            
            <button 
-             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             className="relative group w-full md:w-[80%] px-4 py-3 bg-gradient-to-b from-[#E5B25D] to-[#8C6226] rounded-sm shadow-[0_6px_0_#523A12,0_12px_20px_rgba(0,0,0,0.5)] active:translate-y-[6px] active:shadow-[0_0_0_#523A12] transition-all duration-100"
              onMouseEnter={() => sfx.move()}
              onClick={() => {
                sfx.select();
                nextStep();
              }}
            >
-             <span className="font-retro text-[#FFD166] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFEBB3] transition-colors">
+             <span className="font-retro font-bold text-xs sm:text-sm text-[#141224] tracking-[3px] group-hover:text-white drop-shadow-[0_1px_0_rgba(255,255,255,0.4)] group-hover:drop-shadow-[0_1px_0_rgba(0,0,0,0.4)] transition-colors">
                LET'S GOOOO
              </span>
            </button>
@@ -220,14 +224,14 @@ export default function StoryFlow() {
            <p className="font-retro text-[9px] md:text-[10px] text-[#D2CBE6] tracking-[2px] mb-4">...for a really big friend.</p>
            
            <button 
-             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             className="relative group w-full md:w-[80%] px-4 py-3 bg-gradient-to-b from-[#E5B25D] to-[#8C6226] rounded-sm shadow-[0_6px_0_#523A12,0_12px_20px_rgba(0,0,0,0.5)] active:translate-y-[6px] active:shadow-[0_0_0_#523A12] transition-all duration-100"
              onMouseEnter={() => sfx.move()}
              onClick={() => {
                sfx.select();
                nextStep();
              }}
            >
-             <span className="font-retro text-[#FFD166] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFEBB3] transition-colors">
+             <span className="font-retro font-bold text-xs sm:text-sm text-[#141224] tracking-[3px] group-hover:text-white drop-shadow-[0_1px_0_rgba(255,255,255,0.4)] group-hover:drop-shadow-[0_1px_0_rgba(0,0,0,0.4)] transition-colors">
                OPEN LETTER
              </span>
            </button>
@@ -251,15 +255,15 @@ export default function StoryFlow() {
            <h2 className="font-pixel text-xl text-[#FF8FB3] font-bold mb-4 drop-shadow-[0_2px_0_#100E1C]">&lt;3</h2>
            
            <button 
-             className="relative group w-full md:w-[80%] px-4 py-2 bg-gradient-to-b from-[#1C1A33] to-[#121124] border border-[#383359] shadow-[0_4px_0_#0C0A15] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+             className="relative group w-full md:w-[80%] px-4 py-3 bg-gradient-to-b from-[#E5B25D] to-[#8C6226] rounded-sm shadow-[0_6px_0_#523A12,0_12px_20px_rgba(0,0,0,0.5)] active:translate-y-[6px] active:shadow-[0_0_0_#523A12] transition-all duration-100"
              onMouseEnter={() => sfx.move()}
              onClick={() => {
                sfx.select();
-               setCurrentStep(0);
+               if (onComplete) onComplete();
              }}
            >
-             <span className="font-retro text-[#FFD166] text-lg tracking-[3px] font-bold drop-shadow-[0_1px_0_#000] group-hover:text-[#FFEBB3] transition-colors">
-               REPLAY?
+             <span className="font-retro font-bold text-xs sm:text-sm text-[#141224] tracking-[3px] group-hover:text-white drop-shadow-[0_1px_0_rgba(255,255,255,0.4)] group-hover:drop-shadow-[0_1px_0_rgba(0,0,0,0.4)] transition-colors">
+               ENTER THE WORLDS
              </span>
            </button>
         </div>
