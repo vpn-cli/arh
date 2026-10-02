@@ -1119,3 +1119,17 @@ html {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #FF69B4;
 }
+
+@keyframes marquee-bounce-left {
+  0%, 15% { transform: translateX(0); }
+  45%, 55% { transform: translateX(min(0px, calc(150px - 100%))); }
+  85%, 100% { transform: translateX(0); }
+}
+.hover-marquee-bounce {
+  display: inline-block;
+  white-space: nowrap;
+}
+.group-hover\/playlist:hover .hover-marquee-bounce {
+  animation: marquee-bounce-left 5s ease-in-out infinite;
+}
+

@@ -7,6 +7,7 @@ import PlaceholderWorld from "./PlaceholderWorld";
 
 import MainWorld from "./main/MainWorld";
 import MusicWorld from "./music/MusicWorld";
+import ScrapbookWorld from "./scrapbook/ScrapbookWorld";
 
 /* ═══════════════════════════════════════════════════════
    WORLD ROUTER — Renders the current world with
@@ -38,7 +39,7 @@ export default function WorldRouter() {
         {currentWorld === "home" && <HomeWorld />}
         {currentWorld === "main" && <MainWorld />}
         {currentWorld === "music" && <MusicWorld />}
-        {currentWorld === "scrapbook" && <PlaceholderWorld worldId="scrapbook" />}
+        {currentWorld === "scrapbook" && <ScrapbookWorld />}
       </div>
     </div>
   );

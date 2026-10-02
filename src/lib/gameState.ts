@@ -31,8 +31,11 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     // Only access localStorage if we are in the browser
     let initialWorld: WorldId = "home";
     if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get("code");
       const returnToMusic = window.localStorage.getItem("spotify_auth_return");
-      if (returnToMusic === "true") {
+      // If we have a code, we are exchanging a token, so wait before entering music world
+      if (returnToMusic === "true" && !code) {
         initialWorld = "music";
       }
     }
@@ -47,21 +50,19 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get("code");
+    const authStatus = urlParams.get("spotify_auth");
     const returnToMusic = window.localStorage.getItem("spotify_auth_return");
 
-    if (code) {
-      import("./spotifyAuth").then(({ exchangeToken }) => {
-        exchangeToken(code).then(() => {
-          window.history.replaceState({}, document.title, "/");
-          window.localStorage.removeItem("spotify_auth_return");
-          if (returnToMusic) {
-            setState((prev) => ({ ...prev, currentWorld: "music" }));
-          }
-        });
-      });
-    } else if (returnToMusic) {
+    if (authStatus === "success") {
+      window.history.replaceState({}, document.title, window.location.pathname);
       window.localStorage.removeItem("spotify_auth_return");
+      if (returnToMusic) {
+        setState((prev) => ({ ...prev, currentWorld: "music" }));
+      }
+    } else if (authStatus === "error") {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      window.localStorage.removeItem("spotify_auth_return");
+      console.error("Spotify authentication failed.");
     }
   }, []);
 
