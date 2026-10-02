@@ -19,6 +19,11 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
   const [popupError, setPopupError] = useState(false);
   const [shakeKey, setShakeKey] = useState(0);
   const [showKittyModal, setShowKittyModal] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Parallax cursor tracking with smooth lerp damping.
   // The lerp writes --mx/--my straight to the DOM instead of setState:
@@ -182,20 +187,23 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
             width: 'max(100vw, calc(100vh * 16 / 9))',
             height: 'max(100vh, calc(100vw * 9 / 16))',
           }}
+          suppressHydrationWarning
         >
           {/* Base 16:9 Video (z-0) */}
-          <video
-            ref={videoRef}
-            src="/videos/real_vid.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover pointer-events-none will-change-transform"
-            style={{
-              transform: "scale(1.02) translate3d(calc(var(--mx, 0) * -15px), calc(var(--my, 0) * -10px), 0)",
-            }}
-          />
+          {isMounted && (
+            <video
+              ref={videoRef}
+              src="/videos/real_vid.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover pointer-events-none will-change-transform"
+              style={{
+                transform: "scale(1.02) translate3d(calc(var(--mx, 0) * -15px), calc(var(--my, 0) * -10px), 0)",
+              }}
+            />
+          )}
 
           {/* Glowing Overlays to animate the baked-in painted butterflies */}
           <div className="absolute top-[41%] right-[24%] w-12 h-12 bg-[#ffe875]/40 rounded-full mix-blend-overlay blur-md animate-pulse z-[1] pointer-events-none" style={{ animationDuration: '0.4s' }} />
