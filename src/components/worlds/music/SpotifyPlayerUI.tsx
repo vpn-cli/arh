@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getAccessToken, redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
+import { getAccessToken, redirectToSpotifyAuth } from "@/lib/spotifyAuth";
 import { sfx } from "@/lib/audio";
 
 declare global {
@@ -24,6 +24,8 @@ export default function SpotifyPlayerUI() {
 
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const progressBarRef = React.useRef<HTMLDivElement>(null);
 
   // Initialize
   useEffect(() => {
@@ -33,7 +35,7 @@ export default function SpotifyPlayerUI() {
   // Update position every second if playing using player.getCurrentState()
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (player && !isPaused) {
+    if (player && !isPaused && !isDragging) {
       interval = setInterval(() => {
         player.getCurrentState().then((state: any) => {
           if (!state) return;
@@ -45,7 +47,7 @@ export default function SpotifyPlayerUI() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [player, isPaused]);
+  }, [player, isPaused, isDragging]);
 
   // Load SDK and initialize
   useEffect(() => {
@@ -96,8 +98,7 @@ export default function SpotifyPlayerUI() {
     };
   }, [token]);
 
-  // Fetch Playlists
-  useEffect(() => {
+  const fetchPlaylists = () => {
     if (!token) return;
     fetch('https://api.spotify.com/v1/me/playlists', {
       headers: { Authorization: `Bearer ${token}` }
@@ -107,6 +108,11 @@ export default function SpotifyPlayerUI() {
       if (data.items) setPlaylists(data.items);
     })
     .catch(err => console.error(err));
+  };
+
+  // Fetch Playlists
+  useEffect(() => {
+    fetchPlaylists();
   }, [token]);
 
   const playPlaylist = async (uri: string) => {
@@ -159,12 +165,34 @@ export default function SpotifyPlayerUI() {
     }
   };
 
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+  const updatePositionFromPointer = (clientX: number) => {
+    if (!progressBarRef.current || duration === 0) return;
+    const bounds = progressBarRef.current.getBoundingClientRect();
+    const percent = Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width));
+    setPosition(percent * duration);
+    return percent;
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!player || duration === 0) return;
-    const bounds = e.currentTarget.getBoundingClientRect();
-    const percent = (e.clientX - bounds.left) / bounds.width;
-    const newPosition = percent * duration;
-    player.seek(newPosition);
+    setIsDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    updatePositionFromPointer(e.clientX);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || !player || duration === 0) return;
+    updatePositionFromPointer(e.clientX);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || !player || duration === 0) return;
+    setIsDragging(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    const percent = updatePositionFromPointer(e.clientX);
+    if (percent !== undefined) {
+      player.seek(percent * duration);
+    }
   };
 
   const formatTime = (ms: number) => {
@@ -206,19 +234,19 @@ export default function SpotifyPlayerUI() {
   }
 
   return (
-    <div className="w-full flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-3">
       
       {/* Top Section: Playlists + Visualizer */}
-      <div className="w-full flex flex-col sm:flex-row gap-6 h-[460px]">
+      <div className="w-full flex flex-col sm:flex-row gap-3 h-[460px]">
         
         {/* Playlists Sidebar */}
         <div className="w-full sm:w-1/3 bg-[#FFFFFF] rounded-3xl border-4 border-[#FFB6C1] shadow-[0_10px_30px_rgba(255,182,193,0.3)] p-4 flex flex-col h-full">
           <h4 className="font-pixel text-sm text-[#D81B60] tracking-widest mb-4 flex items-center justify-between border-b-2 border-[#FFE4E1] pb-3 shrink-0">
             <span>YOUR PLAYLISTS</span>
             <button 
-              onClick={() => logoutSpotify()}
+              onClick={() => fetchPlaylists()}
               className="text-[#FFFFFF] text-[10px] bg-[#D81B60] hover:bg-[#C2185B] transition-colors px-3 py-1 rounded-full shadow-sm cursor-pointer active:scale-95"
-              title="Click to re-authenticate and fix missing track counts!"
+              title="Click to refresh your playlists!"
             >
               RE-SYNC
             </button>
@@ -298,7 +326,7 @@ export default function SpotifyPlayerUI() {
       </div>
 
       {/* Bottom Bar: Full Width Playback Controls */}
-      <div className="w-full bg-gradient-to-r from-[#FFE4E1] via-[#FFF0F5] to-[#FFE4E1] border-4 border-[#FFB6C1] rounded-3xl px-6 py-4 flex flex-col sm:flex-row items-center justify-between shadow-[0_10px_25px_rgba(255,182,193,0.4)] relative shrink-0 overflow-hidden mt-2">
+      <div className="w-full bg-gradient-to-r from-[#FFE4E1] via-[#FFF0F5] to-[#FFE4E1] border-4 border-[#FFB6C1] rounded-3xl px-6 py-4 flex flex-col sm:flex-row items-center justify-between shadow-[0_10px_25px_rgba(255,182,193,0.4)] relative shrink-0 overflow-hidden">
         
         {/* Decorative subtle grid background */}
         <div 
@@ -377,14 +405,25 @@ export default function SpotifyPlayerUI() {
           </div>
           
           {/* Progress Bar */}
-          <div className="w-full flex items-center gap-3 group/slider cursor-pointer" onClick={handleSeek}>
+          <div className="w-full flex items-center gap-3 group/slider">
             <span className="font-retro text-[8px] text-[#7A2871] font-bold w-8 text-right opacity-80">{currentTrack ? formatTime(position) : "-:--"}</span>
-            <div className="flex-1 h-2 bg-[#FFFFFF] rounded-full overflow-hidden border-2 border-[#FFB6C1] shadow-inner relative">
+            <div 
+              ref={progressBarRef}
+              className="flex-1 h-2 group-hover/slider:h-4 transition-all duration-300 bg-[#FFFFFF] rounded-full border-2 border-[#FFB6C1] shadow-inner relative flex items-center cursor-pointer touch-none" 
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+            >
               <div 
-                className="h-full bg-gradient-to-r from-[#FF99B9] to-[#FF69B4] transition-all duration-100 ease-linear relative rounded-r-full"
+                className={`h-full bg-gradient-to-r from-[#FF99B9] to-[#FF69B4] relative rounded-full pointer-events-none ${isDragging ? 'transition-none' : 'transition-all duration-100 ease-linear'}`}
                 style={{ width: `${currentTrack && duration > 0 ? (position / duration) * 100 : 0}%` }}
               >
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full border border-[#FF69B4] translate-x-1.5 opacity-0 group-hover/slider:opacity-100 transition-opacity shadow-sm" />
+                <img 
+                  src="/hampter/hello_kitty_pin.png"
+                  alt="Kitty Pin"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 w-12 h-12 max-w-none object-contain translate-x-1/2 transition-all z-10 drop-shadow-md" 
+                />
               </div>
             </div>
             <span className="font-retro text-[8px] text-[#7A2871] font-bold w-8 text-left opacity-80">{currentTrack ? formatTime(duration) : "-:--"}</span>
