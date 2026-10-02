@@ -9,6 +9,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import AsciiSection from "./AsciiSection";
 import BirthdayVault from "./BirthdayVault";
 import TheEdit from "./TheEdit";
+import Scrapbook from "./Scrapbook";
 import TheLetter from "./TheLetter";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -45,23 +46,23 @@ export default function MainWorld() {
 
       {/* ═══ WORLD AMBIENCE & BACKGROUND ═══ */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Base dark purple background */}
-        <div className="absolute inset-0 bg-[#161324]" />
+        {/* Base cute dark pink/purple background */}
+        <div className="absolute inset-0 bg-[#2D1B36]" />
 
         {/* Animated gradient blobs for richness */}
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#FF8FB3]/10 blur-[100px] animate-pulse" style={{ animationDuration: '7s' }} />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#FFD166]/10 blur-[100px] animate-pulse" style={{ animationDuration: '10s' }} />
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#FF82B8]/30 blur-[120px] animate-pulse" style={{ animationDuration: '7s' }} />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#FFD6E7]/30 blur-[120px] animate-pulse" style={{ animationDuration: '10s' }} />
 
-        {/* User-Uploaded ASCII Pattern Background */}
+        {/* User-Uploaded ASCII Pattern Background - tinted pink */}
         <div
-          className="absolute inset-0 opacity-[0.15] mix-blend-screen"
+          className="absolute inset-0 opacity-[0.25] mix-blend-screen"
           style={{
             backgroundImage: `url('/ref/download (9).jpeg')`,
             backgroundSize: "cover",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "center",
             backgroundAttachment: "fixed",
-            filter: "invert(1) contrast(1.5)",
+            filter: "invert(1) sepia(1) saturate(3) hue-rotate(290deg) opacity(0.5)",
           }}
         />
 
@@ -82,16 +83,16 @@ export default function MainWorld() {
             goHome();
           }}
           onMouseEnter={() => sfx.hover()}
-          className="pointer-events-auto group px-4 py-2 bg-[#1C1A33]/80 backdrop-blur-md border border-[#383359] rounded-sm flex items-center gap-2 hover:bg-[#2E2A52] transition-colors"
+          className="pointer-events-auto group px-4 py-2 bg-[#FFB6C1] border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440] rounded-sm flex items-center gap-2 hover:bg-[#FF82B8] hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-[1px_1px_0_#3A2440] transition-all active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
         >
-          <span className="text-[#FFD166] text-xs font-pixel mt-1 group-hover:-translate-x-1 transition-transform">◀</span>
-          <span className="font-retro text-[8px] sm:text-[10px] text-[#D2CBE6] tracking-[2px] uppercase group-hover:text-white transition-colors">
+          <span className="text-[#3A2440] text-xs font-pixel mt-1 group-hover:-translate-x-1 transition-transform">◀</span>
+          <span className="font-retro text-[8px] sm:text-[10px] text-[#3A2440] tracking-[2px] uppercase font-bold">
             HOME WORLD
           </span>
         </button>
 
-        <div className="px-3 py-1.5 bg-[#E5B25D]/10 border border-[#E5B25D]/30 rounded-sm">
-          <span className="font-retro text-[8px] text-[#FFD166] tracking-[2px]">MAIN WORLD</span>
+        <div className="px-3 py-1.5 bg-[#FFF0F5] border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440] rounded-sm">
+          <span className="font-retro text-[8px] text-[#9B2C61] tracking-[2px] font-bold">MAIN WORLD 🎀</span>
         </div>
       </div>
 
@@ -120,24 +121,25 @@ export default function MainWorld() {
 
         {/* 1. HERO SECTION */}
         <div ref={heroRef} className="w-full max-w-4xl px-4 flex flex-col items-center text-center mb-16 relative z-10">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 mb-10 rounded-full border-4 border-[#FFD166]/50 shadow-[0_0_30px_rgba(255,209,102,0.3)] overflow-hidden bg-[#1C1A33] animate-float relative group">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 mb-10 rounded-full border-4 border-[#FF82B8] shadow-[0_0_30px_rgba(255,130,184,0.5)] overflow-hidden bg-[#FFF0F5] animate-float relative group">
             <img src="/hampter/YAAAA hamster.jpeg" alt="Guide" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-            <div className="absolute inset-0 rounded-full shadow-[inset_0_0_15px_rgba(0,0,0,0.8)] pointer-events-none" />
+            <div className="absolute inset-0 rounded-full shadow-[inset_0_0_15px_rgba(255,130,184,0.8)] pointer-events-none" />
           </div>
-          <h1 className="font-pixel text-4xl sm:text-6xl md:text-7xl font-bold text-[#FFD166] tracking-wider drop-shadow-[4px_4px_0_#100E1C,0_0_20px_rgba(255,209,102,0.3)] mb-6">
+          <h1 className="font-pixel text-4xl sm:text-6xl md:text-7xl font-bold text-[#FFF9F4] tracking-wider drop-shadow-[4px_4px_0_#3A2440,0_0_20px_rgba(255,130,184,0.6)] mb-6" style={{ WebkitTextStroke: '2px #FF4F9A' }}>
             THE ADVENTURE
           </h1>
-          <p className="font-retro text-xs sm:text-sm text-[#D2CBE6] tracking-[3px] max-w-xl leading-relaxed bg-[#1C1A33]/50 p-6 rounded-xl border border-[#383359] backdrop-blur-sm shadow-xl relative">
+          <p className="font-retro text-xs sm:text-sm text-[#3A2440] font-bold tracking-[3px] max-w-xl leading-relaxed bg-[#FFF0F5] p-6 rounded-xl border-4 border-[#FF82B8] shadow-[6px_6px_0_#FF4F9A] relative">
             welcome to the main narrative. scroll down to explore memories, memes, and a few surprises along the way.
-            <span className="absolute -top-4 -right-4 font-pixel text-3xl text-[#FF8FB3] rotate-12">♥</span>
+            <span className="absolute -top-6 -right-6 font-pixel text-4xl text-[#FF8FB3] rotate-12 drop-shadow-[2px_2px_0_#3A2440]">🎀</span>
+            <span className="absolute -bottom-4 -left-4 font-pixel text-3xl text-[#FFD166] -rotate-12 drop-shadow-[2px_2px_0_#3A2440]">⭐</span>
           </p>
-          <div className="mt-16 animate-bounce-soft opacity-70">
-            <span className="text-[#524B7A] text-2xl font-pixel drop-shadow-[0_2px_0_#100E1C]">▼</span>
+          <div className="mt-16 animate-bounce opacity-80">
+            <span className="text-[#FFB6C1] text-3xl font-pixel drop-shadow-[0_2px_0_#3A2440]">▼</span>
           </div>
         </div>
 
         {/* Central dashed line connecting the worlds */}
-        <div className="absolute top-[20%] bottom-[20%] left-1/2 -translate-x-1/2 border-l-4 border-dashed border-[#FF8FB3]/10 z-0 pointer-events-none" />
+        <div className="absolute top-[20%] bottom-[20%] left-1/2 -translate-x-1/2 border-l-4 border-dashed border-[#FF82B8]/40 z-0 pointer-events-none" />
 
         <div className="w-full relative flex flex-col items-center gap-16 md:gap-24 px-4 z-10 pb-16">
           {/* 2. ASCII SECTION */}
@@ -153,6 +155,11 @@ export default function MainWorld() {
           {/* 4. THE EDIT */}
           <div className="w-full relative z-20">
             <TheEdit />
+          </div>
+
+          {/* 4.5. THE SCRAPBOOK */}
+          <div className="w-full relative z-20">
+            <Scrapbook />
           </div>
 
           {/* 5. THE LETTER */}

@@ -447,6 +447,11 @@ body {
   }
 }
 
+@keyframes pulse-height {
+  from { height: 10%; }
+  to { height: 100%; }
+}
+
 @keyframes slide-up {
   from {
     opacity: 0;
