@@ -9,7 +9,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import AsciiSection from "./AsciiSection";
 import BirthdayVault from "./BirthdayVault";
 import TheEdit from "./TheEdit";
-import Scrapbook from "./Scrapbook";
 import TheLetter from "./TheLetter";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -155,11 +154,6 @@ export default function MainWorld() {
           {/* 4. THE EDIT */}
           <div className="w-full relative z-20">
             <TheEdit />
-          </div>
-
-          {/* 4.5. THE SCRAPBOOK */}
-          <div className="w-full relative z-20">
-            <Scrapbook />
           </div>
 
           {/* 5. THE LETTER */}

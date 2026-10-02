@@ -25,12 +25,16 @@ export default function LandingPage() {
   const [storyComplete, setStoryComplete] = useState(false);
 
   React.useEffect(() => {
-    // If we are returning from Spotify Auth or already completed the story in a previous session
-    if (
-      window.location.search.includes("code=") || 
-      window.localStorage.getItem("spotify_auth_return") === "true" ||
-      window.localStorage.getItem("story_complete") === "true"
-    ) {
+    // If we are returning from Spotify Auth, skip straight to the world
+    if (window.location.search.includes("code=")) {
+      setHasEntered(true);
+      setIntroFinished(true);
+      setStoryComplete(true);
+      return;
+    }
+
+    // If the story was completed in a previous session, skip to the world
+    if (window.localStorage.getItem("story_complete") === "true") {
       setHasEntered(true);
       setIntroFinished(true);
       setStoryComplete(true);
