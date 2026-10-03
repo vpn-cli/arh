@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
 const sfx: any = { select: () => {}, hover: () => {}, pop: () => {}, move: () => {}, error: () => {} };
 import { useSpotifySession, usePlaylists, useDevices, useBirthdayMix, useSpotifySearch, useTrackSavedStatus, useSpotifyMutations } from "@/hooks/useSpotify";
+import { useLikedTracks } from "@/hooks/useLikedTracks";
+import { TrackList } from "./TrackList";
 
 declare global {
   interface Window {
@@ -34,7 +36,7 @@ export default function SpotifyPlayerUI() {
   const progressBarRef = React.useRef<HTMLDivElement>(null);
 
   // New Feature States
-  const [activeTab, setActiveTab] = useState<'mix' | 'playlists' | 'search'>('mix');
+  const [activeTab, setActiveTab] = useState<'library' | 'mix' | 'playlists' | 'search'>('library');
   
   
   
@@ -48,8 +50,10 @@ export default function SpotifyPlayerUI() {
 
   
   const [selectedDevice, setSelectedDevice] = useState<string>("");
+  const [libraryPage, setLibraryPage] = useState(0);
   
   const { data: playlists = [], isLoading: isPlaylistsLoading, isError: isPlaylistsError, error: playlistsError } = usePlaylists();
+  const { data: likedData, isLoading: isLikedLoading, isError: isLikedError, error: likedError } = useLikedTracks(libraryPage);
   const { data: devices = [], refetch: fetchDevices } = useDevices();
   const { data: birthdayMixTracks = [], isLoading: isMixLoading, isError: isMixError, error: mixError } = useBirthdayMix();
   
@@ -71,10 +75,13 @@ export default function SpotifyPlayerUI() {
   useEffect(() => {
     const pError = playlistsError as any;
     const mError = mixError as any;
+    const lError = likedError as any;
     if (pError?.status === 429 && pError?.retryAfter && rateLimitTimer === null) {
       setRateLimitTimer(pError.retryAfter);
     } else if (mError?.status === 429 && mError?.retryAfter && rateLimitTimer === null) {
       setRateLimitTimer(mError.retryAfter);
+    } else if (lError?.status === 429 && lError?.retryAfter && rateLimitTimer === null) {
+      setRateLimitTimer(lError.retryAfter);
     }
   }, [playlistsError, mixError, rateLimitTimer]);
 
@@ -181,6 +188,7 @@ export default function SpotifyPlayerUI() {
 
 
   const playTrack = async (uri: string) => {
+    console.log('[DEBUG] playTrack called with uri:', uri);
     if (!token) return;
     sfx?.select?.();
     const targetDevice = selectedDevice || deviceId;
@@ -352,6 +360,12 @@ export default function SpotifyPlayerUI() {
         <div className="flex flex-wrap items-center justify-between mb-4 border-b-2 border-[#FFE4E1] pb-2 shrink-0">
           <div className="flex gap-2">
             <button 
+              onClick={() => setActiveTab('library')}
+              className={`font-pixel text-[10px] px-2 py-1 rounded-md transition-colors ${activeTab === 'library' ? 'bg-[#FFB6C1] text-[#FFFFFF]' : 'text-[#FFB6C1] hover:bg-[#FFE4E1]'}`}
+            >
+              LIKED
+            </button>
+            <button 
               onClick={() => setActiveTab('playlists')}
               className={`font-pixel text-[10px] px-2 py-1 rounded-md transition-colors ${activeTab === 'playlists' ? 'bg-[#FFB6C1] text-[#FFFFFF]' : 'text-[#FFB6C1] hover:bg-[#FFE4E1]'}`}
             >
@@ -440,6 +454,32 @@ export default function SpotifyPlayerUI() {
             </>
           )}
 
+          {activeTab === 'library' && (
+            <div className="flex flex-col h-full">
+              <div className="flex items-center justify-between mb-2 shrink-0">
+                <span className="font-pixel text-[10px] text-[#D81B60]">LIKED SONGS</span>
+                <div className="flex gap-2">
+                  <button onClick={() => setLibraryPage(p => Math.max(0, p - 1))} disabled={libraryPage === 0} className="text-[10px] text-[#7A2871] disabled:opacity-50 hover:text-[#D81B60] cursor-pointer">◀</button>
+                  <span className="text-[10px] text-[#7A2871]">{libraryPage + 1}</span>
+                  <button onClick={() => setLibraryPage(p => p + 1)} disabled={!likedData?.next} className="text-[10px] text-[#7A2871] disabled:opacity-50 hover:text-[#D81B60] cursor-pointer">▶</button>
+                </div>
+              </div>
+              <button 
+                onClick={() => playTracks(likedData?.tracks?.map((t:any) => t.uri) || [])}
+                disabled={!likedData?.tracks?.length}
+                className={`w-full mb-3 shrink-0 bg-gradient-to-r from-[#FF99B9] to-[#FF69B4] text-white py-3 rounded-xl shadow-[0_4px_12px_rgba(255,105,180,0.4)] transition-all flex flex-col items-center justify-center gap-1 ${!likedData?.tracks?.length ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
+              >
+                <span className="font-pixel text-sm font-bold tracking-widest">
+                  ✨ PLAY LIKED ✨
+                </span>
+              </button>
+              {(() => {
+                if (isLikedError && (likedError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#FF4500] font-pixel text-xs text-center px-4">RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((likedError as any)?.retryAfter ?? 60)} SECONDS.</div>;
+                return <TrackList tracks={likedData?.tracks || []} isLoading={isLikedLoading} onPlayTrack={playTrack} emptyMessage="NO LIKED SONGS" />;
+              })()}
+            </div>
+          )}
+
           {activeTab === 'mix' && (
             <>
               <input 
@@ -466,30 +506,7 @@ export default function SpotifyPlayerUI() {
                 const filteredMix = birthdayMixTracks.filter((t: any) => t.name.toLowerCase().includes(mixSearch.toLowerCase()) || t.artists.some((a:any) => a.name.toLowerCase().includes(mixSearch.toLowerCase())));
                 if (filteredMix.length === 0) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs">NO MATCHES FOUND</div>;
                 
-                return filteredMix.map((t: any, i: number) => (
-                <button
-                  key={t.id}
-                  onClick={() => playTrack(t.uri)}
-                  className="group flex items-center gap-3 p-2 rounded-xl hover:bg-[#FFF0F5] transition-all text-left border border-transparent hover:border-[#FFB6C1] shrink-0 active:scale-95"
-                >
-                  <span className="font-pixel text-[#FFB6C1] text-xs w-4 shrink-0">{i + 1}</span>
-                  {t.album.images && t.album.images[0] ? (
-                    <img src={t.album.images[0].url} alt={t.name} className="w-10 h-10 rounded-lg shadow-sm object-cover transition-transform duration-200 group-hover:scale-110 group-hover:shadow-md shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-lg bg-[#FFB6C1]/30 flex items-center justify-center shadow-sm shrink-0" />
-                  )}
-                  <div className="flex-1 overflow-hidden z-10 relative">
-                    <div className="w-full relative overflow-hidden whitespace-nowrap">
-                      <span className="font-pixel text-sm uppercase text-[#7A2871] transition-colors pr-2 truncate block w-full" title={t.name}>
-                        {t.name}
-                      </span>
-                    </div>
-                    <div className="font-retro text-[9px] text-[#D81B60] mt-0.5 opacity-80 transition-opacity truncate w-full" title={t.artists.map((a:any)=>a.name).join(', ')}>
-                      {t.artists.map((a:any)=>a.name).join(', ')}
-                    </div>
-                  </div>
-                </button>
-              ));
+                return <TrackList tracks={filteredMix} isLoading={isMixLoading} onPlayTrack={playTrack} />;
               })()}
             </>
           )}
@@ -507,27 +524,7 @@ export default function SpotifyPlayerUI() {
                 if (!globalSearch) return <div className="text-center text-[#FFB6C1] font-pixel text-xs mt-4">TYPE TO SEARCH</div>;
                 if (isSearchLoading) return <div className="text-center text-[#FFB6C1] font-pixel text-xs mt-4 animate-pulse">SEARCHING...</div>;
                 if (searchResults.length === 0) return <div className="text-center text-[#FFB6C1] font-pixel text-xs mt-4">NO MATCHES FOUND</div>;
-                return (
-                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1">
-                    {searchResults.map((t: any) => (
-                      <button
-                        key={t.id}
-                        onClick={() => playTrack(t.uri)}
-                        className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[#FFF0F5] transition-colors text-left border border-transparent hover:border-[#FFB6C1] shrink-0"
-                      >
-                        {t.album.images && t.album.images[0] ? (
-                          <img src={t.album.images[0].url} alt={t.name} className="w-8 h-8 rounded-lg shadow-sm object-cover shrink-0" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-lg bg-[#FFB6C1]/30 flex items-center justify-center shadow-sm shrink-0" />
-                        )}
-                        <div className="flex flex-col flex-1 min-w-0">
-                          <span className="font-retro text-[10px] font-bold text-[#7A2871] truncate block w-full" title={t.name}>{t.name}</span>
-                          <span className="text-[8px] text-[#9B4F96] truncate block w-full" title={t.artists.map((a:any)=>a.name).join(', ')}>{t.artists.map((a:any)=>a.name).join(', ')}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                );
+                return <TrackList tracks={searchResults} isLoading={isSearchLoading} onPlayTrack={playTrack} variant="compact" />;
               })()}
             </div>
           )}

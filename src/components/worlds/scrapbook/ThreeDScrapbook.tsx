@@ -775,10 +775,20 @@ export default function ThreeDScrapbook() {
           transition: "transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)"
         }}
       >
-        {/* Right Book Base */}
+        {/* Right Book Base (Thick Stack of Pages) */}
         <div
-          className="absolute right-0 top-0 bottom-0 w-1/2 bg-[#FFB6C1] rounded-r-sm shadow-[10px_20px_40px_rgba(20,10,30,0.15)]"
-          style={{ transform: "translateZ(-3px)" }}
+          className="absolute right-0 top-0 bottom-0 w-1/2 bg-[#FFB6C1] rounded-r-xl border-y-2 border-r-2 border-white/40"
+          style={{ 
+            transform: "translateZ(-3px)",
+            boxShadow: `
+              inset -2px 0 6px rgba(0,0,0,0.05),
+              2px 1px 0px #FDFBF7, 2px 2px 0px #E5E0D8, 
+              4px 3px 0px #FDFBF7, 4px 4px 0px #E5E0D8, 
+              6px 5px 0px #FDFBF7, 6px 6px 0px #E5E0D8, 
+              8px 7px 0px #FDFBF7, 8px 8px 0px #E5E0D8,
+              10px 9px 0px #FDFBF7, 10px 10px 0px #E5E0D8,
+              18px 25px 45px rgba(20,10,30,0.2)`
+          }}
         />
 
         {/* Left Book Base Container */}
@@ -790,10 +800,20 @@ export default function ThreeDScrapbook() {
             transformStyle: "preserve-3d"
           }}
         >
-          {/* Left Base Background with shadow */}
+          {/* Left Base Background with shadow (Thick Stack of Pages) */}
           <div
-            className="absolute inset-0 bg-[#FFB6C1] rounded-l-sm shadow-[-10px_20px_40px_rgba(20,10,30,0.15)]"
-            style={{ transform: "translateZ(-3px)" }}
+            className="absolute inset-0 bg-[#FFB6C1] rounded-l-xl border-y-2 border-l-2 border-white/40"
+            style={{ 
+              transform: "translateZ(-3px)",
+              boxShadow: `
+                inset 2px 0 6px rgba(0,0,0,0.05),
+                -2px 1px 0px #FDFBF7, -2px 2px 0px #E5E0D8, 
+                -4px 3px 0px #FDFBF7, -4px 4px 0px #E5E0D8, 
+                -6px 5px 0px #FDFBF7, -6px 6px 0px #E5E0D8, 
+                -8px 7px 0px #FDFBF7, -8px 8px 0px #E5E0D8,
+                -10px 9px 0px #FDFBF7, -10px 10px 0px #E5E0D8,
+                -18px 25px 45px rgba(20,10,30,0.2)`
+            }}
           />
 
           {/* Static Base Left (Spread 0 Left) */}
