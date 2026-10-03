@@ -3,9 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
 const sfx: any = { select: () => {}, hover: () => {}, pop: () => {}, move: () => {}, error: () => {} };
-import { useSpotifySession, usePlaylists, useDevices, useBirthdayMix, useSpotifySearch, useTrackSavedStatus, useSpotifyMutations } from "@/hooks/useSpotify";
+import { useSpotifySession, usePlaylists, useDevices, useBirthdayMix, useTrackSavedStatus, useSpotifyMutations } from "@/hooks/useSpotify";
 import { useLikedTracks } from "@/hooks/useLikedTracks";
 import { TrackList } from "./TrackList";
+import { SearchResults } from "./SearchResults";
 
 declare global {
   interface Window {
@@ -62,7 +63,6 @@ export default function SpotifyPlayerUI() {
     const t = setTimeout(() => setDebouncedSearch(globalSearch), 500);
     return () => clearTimeout(t);
   }, [globalSearch]);
-  const { data: searchResults = [], isLoading: isSearchLoading } = useSpotifySearch(debouncedSearch);
   
   const { data: isSaved = false } = useTrackSavedStatus(currentTrack?.id);
   const { play, toggleSave: toggleSaveMutation, toggleShuffle: toggleShuffleMutation } = useSpotifyMutations();
@@ -520,12 +520,7 @@ export default function SpotifyPlayerUI() {
                 placeholder="Search Spotify..."
                 className="w-full bg-[#FFF0F5] border-2 border-[#FFB6C1] rounded-xl px-2 py-2 mb-3 font-retro text-[10px] text-[#7A2871] focus:outline-none focus:border-[#FF69B4] shrink-0"
               />
-              {(() => {
-                if (!globalSearch) return <div className="text-center text-[#FFB6C1] font-pixel text-xs mt-4">TYPE TO SEARCH</div>;
-                if (isSearchLoading) return <div className="text-center text-[#FFB6C1] font-pixel text-xs mt-4 animate-pulse">SEARCHING...</div>;
-                if (searchResults.length === 0) return <div className="text-center text-[#FFB6C1] font-pixel text-xs mt-4">NO MATCHES FOUND</div>;
-                return <TrackList tracks={searchResults} isLoading={isSearchLoading} onPlayTrack={playTrack} variant="compact" />;
-              })()}
+              <SearchResults query={debouncedSearch} onPlayTrack={playTrack} onPlayPlaylist={playPlaylist} />
             </div>
           )}
         </div>
