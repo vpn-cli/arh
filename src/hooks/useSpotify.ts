@@ -110,7 +110,7 @@ export function useSpotifyMutations() {
   const toggleSave = useMutation({
     mutationFn: async ({ trackId, isSaved }: { trackId: string, isSaved: boolean }) => {
       const method = isSaved ? 'DELETE' : 'PUT';
-      await proxyFetch(`/me/tracks?ids=${trackId}`, { method });
+      await proxyFetch(`/me/library?uris=spotify:track:${trackId}`, { method });
       return { trackId, newStatus: !isSaved };
     },
     onSuccess: (data) => {
