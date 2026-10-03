@@ -1,0 +1,8 @@
+{"type":"error","data":"Uncaught ReferenceError: mounted is not defined"}
+{"type":"error","data":"Uncaught ReferenceError: mounted is not defined"}
+{"type":"error","data":"Uncaught ReferenceError: debugLogs is not defined"}
+{"type":"error","data":"Uncaught ReferenceError: debugLogs is not defined"}
+{"type":"error","data":"Uncaught ReferenceError: debugLogs is not defined"}
+{"type":"error","data":"Uncaught ReferenceError: debugLogs is not defined"}
+{"type":"error","data":"Uncaught ReferenceError: debugLogs is not defined"}
+{"type":"error","data":"Uncaught ReferenceError: debugLogs is not defined"}

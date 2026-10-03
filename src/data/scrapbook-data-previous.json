@@ -1,0 +1,737 @@
+[
+  {
+    "left": {
+      "pageTitle": "FAVORITE SNAPSHOTS",
+      "items": [
+        {
+          "src": "/arh/IMG-20241127-WA0084(1).jpg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": -4,
+          "sticker": "sparkle",
+          "pos": "20% 45.75%"
+        },
+        {
+          "src": "/arh/worthy/IMG_20250303_001446.jpg",
+          "col": 2,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": 5,
+          "sticker": "star",
+          "pos": "40.25% 17.25%"
+        },
+        {
+          "src": "/arh/IMG-20241016-WA0005.jpg",
+          "col": 2,
+          "row": 1,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": -3,
+          "pos": "75% 100%"
+        },
+        {
+          "src": "/arh/worthy/IMG-20241101-WA0219.jpg",
+          "col": 0,
+          "row": 2,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": 6,
+          "pos": "21.75% 48.75%"
+        },
+        {
+          "src": "/arh/IMG-20240928-WA0048.jpg",
+          "col": 1,
+          "row": 2,
+          "colSpan": 2,
+          "rowSpan": 1,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": -2,
+          "sticker": "heart",
+          "pos": "62.75% 40.25%"
+        }
+      ]
+    },
+    "right": {
+      "pageTitle": "GOLDEN DAYS",
+      "items": [
+        {
+          "src": "/arh/worthy/IMG-20240930-WA0088.jpg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": 4
+        },
+        {
+          "src": "/arh/IMG-20241101-WA0224.jpg",
+          "col": 1,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": -5,
+          "sticker": "sparkle",
+          "pos": "100% 100%"
+        },
+        {
+          "src": "/arh/IMG_20240924_010327.jpg",
+          "col": 0,
+          "row": 1,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": -3,
+          "sticker": "flower"
+        },
+        {
+          "src": "/arh/IMG-20260122-WA0006.jpg",
+          "col": 0,
+          "row": 2,
+          "colSpan": 2,
+          "rowSpan": 1,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": 3,
+          "pos": "24% 32%"
+        },
+        {
+          "src": "/arh/IMG-20250311-WA0066.jpg",
+          "col": 2,
+          "row": 2,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": -4,
+          "sticker": "star",
+          "pos": "40% 5%"
+        }
+      ]
+    }
+  },
+  {
+    "left": {
+      "pageTitle": "GOOD VIBES ONLY",
+      "items": [
+        {
+          "src": "/arh/worthy/IMG_20250621_222805.jpg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 1,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": 3,
+          "sticker": "heart"
+        },
+        {
+          "src": "/arh/worthy/IMG_20250724_202916.jpg",
+          "col": 2,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 2,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": -6,
+          "pos": "54.75% 13%"
+        },
+        {
+          "src": "/arh/IMG-20250325-WA0153.jpg",
+          "col": 0,
+          "row": 1,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": 4,
+          "sticker": "sparkle",
+          "pos": "40.5% 38%"
+        },
+        {
+          "src": "/arh/worthy/IMG_20241020_013013.jpg",
+          "col": 2,
+          "row": 2,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": -2,
+          "sticker": "star",
+          "pos": "52.25% 41.5%"
+        }
+      ]
+    },
+    "right": {
+      "pageTitle": "THE ARCHIVE",
+      "items": [
+        {
+          "src": "/arh/IMG-20251102-WA0028.jpg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": -4,
+          "sticker": "flower",
+          "pos": "0% 88%"
+        },
+        {
+          "src": "/arh/IMG-20250701-WA0008.jpg",
+          "col": 2,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": 5
+        },
+        {
+          "src": "/arh/worthy/IMG20250301065115.jpg",
+          "col": 2,
+          "row": 1,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": -3,
+          "sticker": "heart"
+        },
+        {
+          "src": "/arh/IMG-20250303-WA0010.jpg",
+          "col": 0,
+          "row": 2,
+          "colSpan": 2,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": 2,
+          "pos": "67% 50.75%"
+        },
+        {
+          "src": "/arh/IMG-20251218-WA0023.jpg",
+          "col": 2,
+          "row": 2,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": -5,
+          "sticker": "sparkle",
+          "pos": "18% 43.25%"
+        }
+      ]
+    }
+  },
+  {
+    "left": {
+      "pageTitle": "UNFILTERED MOMENTS",
+      "items": [
+        {
+          "src": "/arh/worthy/IMG_20260924_033018.jpg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": -3,
+          "sticker": "star"
+        },
+        {
+          "src": "/arh/IMG20240406002757.jpg",
+          "col": 2,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": 4,
+          "pos": "52.5% 40%"
+        },
+        {
+          "src": "/arh/IMG-20260507-WA0008.jpg",
+          "col": 2,
+          "row": 1,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": -4,
+          "sticker": "flower",
+          "pos": "54.75% 19.5%"
+        },
+        {
+          "src": "/arh/IMG-20241101-WA0235.jpg",
+          "col": 0,
+          "row": 2,
+          "colSpan": 2,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": 2,
+          "pos": "56% 46%"
+        },
+        {
+          "src": "/arh/worthy/IMG20240427175950.jpg",
+          "col": 2,
+          "row": 2,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": -5,
+          "sticker": "heart",
+          "pos": "100% 48.25%"
+        }
+      ]
+    },
+    "right": {
+      "pageTitle": "TIME CAPSULE",
+      "items": [
+        {
+          "src": "/arh/worthy/IMG-20241127-WA0002.jpg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": 3,
+          "sticker": "sparkle",
+          "pos": "68% 50.5%"
+        },
+        {
+          "src": "/arh/worthy/IMG-20250118-WA0009.jpg",
+          "col": 1,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": -4,
+          "pos": "48.5% 41.25%"
+        },
+        {
+          "src": "/arh/IMG20250325225353.jpg",
+          "col": 0,
+          "row": 1,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": -2,
+          "sticker": "star",
+          "pos": "47.25% 58%"
+        },
+        {
+          "src": "/arh/IMG-20260101-WA0004.jpg",
+          "col": 0,
+          "row": 2,
+          "colSpan": 2,
+          "rowSpan": 1,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": 4,
+          "pos": "49% 45%"
+        },
+        {
+          "src": "/arh/IMG_20240409_021609.jpg",
+          "col": 2,
+          "row": 2,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": -3,
+          "sticker": "flower",
+          "pos": "49.75% 54.5%"
+        }
+      ]
+    }
+  },
+  {
+    "left": {
+      "pageTitle": "RANDOM ADVENTURES",
+      "items": [
+        {
+          "src": "/arh/IMG-20241101-WA0178.jpg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": -3,
+          "sticker": "heart",
+          "pos": "24.5% 42%"
+        },
+        {
+          "src": "/arh/IMG-20251207-WA0053.jpg",
+          "col": 2,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": 4
+        },
+        {
+          "src": "/arh/IMG20250924002702.jpg",
+          "col": 2,
+          "row": 1,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": -4,
+          "sticker": "sparkle"
+        },
+        {
+          "src": "/arh/IMG-20250719-WA0011.jpg",
+          "col": 0,
+          "row": 2,
+          "colSpan": 2,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": 3,
+          "pos": "2% 0%"
+        },
+        {
+          "src": "/arh/IMG-20250311-WA0068.jpg",
+          "col": 2,
+          "row": 2,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": -2,
+          "sticker": "star",
+          "pos": "25.75% 0%"
+        }
+      ]
+    },
+    "right": {
+      "pageTitle": "CHAOS & SMILES",
+      "items": [
+        {
+          "src": "/arh/IMG20250301114906.jpg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": 3
+        },
+        {
+          "src": "/arh/IMG-20260712-WA0006.jpg",
+          "col": 1,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": -4,
+          "sticker": "flower",
+          "pos": "30.25% 100%"
+        },
+        {
+          "src": "/arh/IMG20251020234739.jpg",
+          "col": 0,
+          "row": 1,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": -3,
+          "sticker": "sparkle"
+        },
+        {
+          "src": "/arh/IMG_20250112_030247.jpg",
+          "col": 0,
+          "row": 2,
+          "colSpan": 2,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": 2
+        },
+        {
+          "src": "/arh/worthy/IMG_20240907_00235820.jpeg",
+          "col": 2,
+          "row": 2,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": -4,
+          "sticker": "heart",
+          "pos": "49% 0%"
+        }
+      ]
+    }
+  },
+  {
+    "left": {
+      "pageTitle": "MEMORIES & MORE",
+      "items": [
+        {
+          "src": "/arh/Screenshot_2026-09-13-16-33-45-66_6012fa4d4ddec268fc5c7112cbb265e7.jpg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": -3,
+          "sticker": "star",
+          "pos": "65% 9%"
+        },
+        {
+          "src": "/arh/Screenshot_2026-09-13-15-14-19-25_6012fa4d4ddec268fc5c7112cbb265e7.jpg",
+          "col": 2,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": 4,
+          "pos": "77% 78%"
+        },
+        {
+          "src": "/arh/Screenshot_2026-03-06-01-43-35-36_6012fa4d4ddec268fc5c7112cbb265e7.jpg",
+          "col": 2,
+          "row": 1,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": -2,
+          "sticker": "heart",
+          "pos": "0% 60%"
+        },
+        {
+          "src": "/arh/worthy/IMG-20260210-WA0004.jpg",
+          "col": 0,
+          "row": 2,
+          "colSpan": 2,
+          "rowSpan": 1,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": 3,
+          "pos": "34% 37%"
+        },
+        {
+          "src": "/arh/Screenshot_2026-09-14-12-57-33-77_6012fa4d4ddec268fc5c7112cbb265e7.jpg",
+          "col": 2,
+          "row": 2,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": -4,
+          "sticker": "sparkle",
+          "pos": "47.5% 76.75%"
+        }
+      ]
+    },
+    "right": {
+      "pageTitle": "SPECIAL DAYS",
+      "items": [
+        {
+          "src": "/arh/worthy/_storage_emulated_0_DCIM_.convert_tmp_files_IMG20240928212639_20260929185757.jpg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": 3
+        },
+        {
+          "src": "/arh/a70f8250-73fc-4fb0-aff9-5f85e237c3f2.JPG",
+          "col": 1,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": -4,
+          "sticker": "flower",
+          "pos": "57% 63%"
+        },
+        {
+          "src": "/arh/_storage_emulated_0_DCIM_.convert_tmp_files_IMG20240901185634_20260929185757.jpg",
+          "col": 0,
+          "row": 1,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": -3,
+          "sticker": "star"
+        },
+        {
+          "src": "/arh/_storage_emulated_0_DCIM_.convert_tmp_files_IMG20240818224123_20260929185759.jpg",
+          "col": 0,
+          "row": 2,
+          "colSpan": 2,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": 4,
+          "pos": "58% 49.75%"
+        },
+        {
+          "src": "/arh/_storage_emulated_0_DCIM_.convert_tmp_files_IMG20240928213108_20260929185757.jpg",
+          "col": 2,
+          "row": 2,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": -3,
+          "sticker": "heart"
+        }
+      ]
+    }
+  },
+  {
+    "left": {
+      "pageTitle": "MORE MEMORIES",
+      "items": [
+        {
+          "src": "/arh/IMG_1914.PNG",
+          "col": 0,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": -3,
+          "sticker": "heart",
+          "pos": "50% 0%"
+        },
+        {
+          "src": "/arh/id.jpg",
+          "col": 2,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": 4
+        },
+        {
+          "src": "/arh/b7525aff-5c10-407d-8f19-e502b0350bda.JPG",
+          "col": 2,
+          "row": 1,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": -4,
+          "sticker": "sparkle",
+          "pos": "32% 31%"
+        },
+        {
+          "src": "/arh/lp_image (4).jpg",
+          "col": 0,
+          "row": 2,
+          "colSpan": 2,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": 3,
+          "pos": "56% 63%"
+        },
+        {
+          "src": "/arh/lp_image (1).jpg",
+          "col": 2,
+          "row": 2,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": -2,
+          "sticker": "star"
+        }
+      ]
+    },
+    "right": {
+      "pageTitle": "THE ARCHIVE CONTINUES",
+      "items": [
+        {
+          "src": "/arh/worthy/_storage_emulated_0_DCIM_.convert_tmp_files_IMG20240906220404_20260929185757.jpg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": 3,
+          "pos": "44.5% 100%"
+        },
+        {
+          "src": "/arh/lp_image (5).jpg",
+          "col": 1,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": -4,
+          "sticker": "flower",
+          "pos": "7% 41%"
+        },
+        {
+          "src": "/arh/lp_image (8).jpg",
+          "col": 0,
+          "row": 1,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": -3,
+          "sticker": "sparkle",
+          "pos": "51% 37%"
+        },
+        {
+          "src": "/arh/lp_image (2).jpg",
+          "col": 0,
+          "row": 2,
+          "colSpan": 2,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": 2,
+          "pos": "52% 72%"
+        },
+        {
+          "src": "/arh/worthy/lp_image (3).jpg",
+          "col": 2,
+          "row": 2,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": -4,
+          "sticker": "heart",
+          "pos": "73% 100%"
+        }
+      ]
+    }
+  },
+  {
+    "left": {
+      "pageTitle": "FINAL SNAPS",
+      "items": [
+        {
+          "src": "/arh/worthy/lp_image (6).jpg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 2,
+          "rowSpan": 2,
+          "tapeColor": "#B8E6D0",
+          "tapeAngle": -3,
+          "sticker": "star",
+          "pos": "66% 100%"
+        },
+        {
+          "src": "/arh/worthy/lp_image (7).jpg",
+          "col": 2,
+          "row": 0,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": 4,
+          "pos": "62% 100%"
+        },
+        {
+          "src": "/arh/worthy/lp_image (9).jpg",
+          "col": 2,
+          "row": 1,
+          "colSpan": 1,
+          "rowSpan": 1,
+          "tapeColor": "#DFD5F5",
+          "tapeAngle": -2,
+          "sticker": "heart",
+          "pos": "63% 100%"
+        },
+        {
+          "src": "/arh/worthy/lp_image.jpg",
+          "col": 0,
+          "row": 2,
+          "colSpan": 3,
+          "rowSpan": 1,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": 3,
+          "pos": "100% 62%"
+        }
+      ]
+    },
+    "right": {
+      "pageTitle": "THE END ✦",
+      "items": []
+    }
+  }
+]
