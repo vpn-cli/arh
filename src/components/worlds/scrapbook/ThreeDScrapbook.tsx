@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
 const sfx: any = { select: () => { }, hover: () => { }, pop: () => { }, move: () => { }, error: () => { } };
@@ -328,21 +328,21 @@ function PageContent({
               />
 
               {item.tapeColor && (
-                 <div 
-                   className="absolute -top-3 left-1/2 w-12 sm:w-16 h-5 z-20 opacity-80 mix-blend-multiply drop-shadow-sm pointer-events-none"
-                   style={{ 
-                     backgroundColor: item.tapeColor, 
-                     transform: `translateX(-50%) rotate(${item.tapeAngle || 0}deg)`,
-                     borderLeft: '3px dotted rgba(255,255,255,0.7)',
-                     borderRight: '3px dotted rgba(255,255,255,0.7)'
-                   }}
-                 />
+                <div
+                  className="absolute -top-3 left-1/2 w-12 sm:w-16 h-5 z-20 opacity-80 mix-blend-multiply drop-shadow-sm pointer-events-none"
+                  style={{
+                    backgroundColor: item.tapeColor,
+                    transform: `translateX(-50%) rotate(${item.tapeAngle || 0}deg)`,
+                    borderLeft: '3px dotted rgba(255,255,255,0.7)',
+                    borderRight: '3px dotted rgba(255,255,255,0.7)'
+                  }}
+                />
               )}
 
               {item.sticker && (
-                 <div className="absolute -bottom-5 -right-5 z-20 drop-shadow-[0_4px_8px_rgba(0,0,0,0.15)] group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300 pointer-events-none">
-                   <Sticker type={item.sticker} />
-                 </div>
+                <div className="absolute -bottom-5 -right-5 z-20 drop-shadow-[0_4px_8px_rgba(0,0,0,0.15)] group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300 pointer-events-none">
+                  <Sticker type={item.sticker} />
+                </div>
               )}
             </div>
           ))}
@@ -401,6 +401,7 @@ export default function ThreeDScrapbook() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const [inspectVisible, setInspectVisible] = useState(false);
+  const [carouselReady, setCarouselReady] = useState(false);
 
   const allImages = React.useMemo(() => {
     return appSpreads.flatMap(s => [...s.left.items, ...s.right.items].map(i => i.src));
@@ -408,22 +409,30 @@ export default function ThreeDScrapbook() {
 
   const openInspect = useCallback((src: string | null) => {
     if (!src) return;
+    setCarouselReady(false);
     setInspectImage(src);
     setInspectVisible(true);
+  }, []);
 
-    // Position carousel to the correct image after it renders
-    setTimeout(() => {
-      if (carouselRef.current) {
-        const idx = allImages.indexOf(src);
-        if (idx !== -1) {
-          const el = carouselRef.current.children[idx + 1] as HTMLElement; // +1 to skip style tag
-          if (el) {
-            carouselRef.current.scrollLeft = el.offsetLeft - (window.innerWidth / 2) + (el.offsetWidth / 2);
-          }
+  useLayoutEffect(() => {
+    if (inspectVisible && inspectImage && carouselRef.current) {
+      const idx = allImages.indexOf(inspectImage);
+      if (idx !== -1) {
+        const el = carouselRef.current.children[idx + 1] as HTMLElement; // +1 to skip style tag
+        if (el) {
+          carouselRef.current.scrollLeft = el.offsetLeft - (window.innerWidth / 2) + (el.offsetWidth / 2);
         }
       }
-    }, 50);
-  }, [allImages]);
+      
+      // Request exactly two animation frames to ensure the browser has fully calculated
+      // and applied the invisible layout scroll before we apply the visible CSS animations.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setCarouselReady(true);
+        });
+      });
+    }
+  }, [inspectVisible, inspectImage, allImages]);
 
   const closeInspect = useCallback(() => {
     if (overlayRef.current) {
@@ -432,10 +441,12 @@ export default function ThreeDScrapbook() {
       setTimeout(() => {
         setInspectVisible(false);
         setInspectImage(null);
+        setCarouselReady(false);
       }, 300);
     } else {
       setInspectVisible(false);
       setInspectImage(null);
+      setCarouselReady(false);
     }
   }, []);
 
@@ -604,9 +615,14 @@ export default function ThreeDScrapbook() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentSpread, flippingIndex, inspectVisible, navigateInspect, closeInspect]);
 
-  // Fix Next.js hydration issues with CSS 3D
+  // Fix Next.js hydration issues with CSS 3D & give images/transforms time to load
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!mounted) {
     return (
@@ -623,14 +639,14 @@ export default function ThreeDScrapbook() {
   const totalLeaves = appSpreads.length - 1;
 
   return (
-    <div 
+    <div
       className="relative w-full h-[85vh] min-h-[600px] flex flex-col items-center justify-center pt-8 overflow-visible"
     >
       {/* Fullscreen Image Inspect Modal — Native Scroll Carousel via Portal */}
       {inspectVisible && inspectImage && typeof document !== 'undefined' && createPortal(
         <div
           ref={overlayRef}
-          className="fixed inset-0 z-[99999] bg-[#101223]/95 flex items-center justify-center cursor-zoom-out"
+          className={`fixed inset-0 z-[99999] bg-[#101223]/95 flex items-center justify-center cursor-zoom-out transition-all duration-300 ${carouselReady ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
           onClick={() => { sfx.select(); closeInspect(); }}
           style={{ overscrollBehaviorX: 'none', overscrollBehaviorY: 'none' }}
         >
@@ -657,7 +673,7 @@ export default function ThreeDScrapbook() {
 
           <div
             ref={carouselRef}
-            className="w-full h-full flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth items-center px-[50vw] gap-2 sm:gap-4"
+            className="w-full h-full flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory items-center px-[50vw] gap-2 sm:gap-4"
             style={{ overscrollBehaviorX: 'none', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             <style>{`
@@ -773,10 +789,10 @@ export default function ThreeDScrapbook() {
               {/* Front of Leaf (Spread i Right) */}
               <div
                 className="absolute inset-0 bg-[#FDFBF7] shadow-sm"
-                style={{ 
-                  backfaceVisibility: 'hidden', 
+                style={{
+                  backfaceVisibility: 'hidden',
                   transform: 'rotateY(0deg) translateZ(1px)',
-                  pointerEvents: isFlipped ? 'none' : 'auto' 
+                  pointerEvents: isFlipped ? 'none' : 'auto'
                 }}
               >
                 {/* Spine crease shadow on the left side of the right page */}
@@ -788,10 +804,10 @@ export default function ThreeDScrapbook() {
               {/* Back of Leaf (Spread i+1 Left) */}
               <div
                 className="absolute inset-0 bg-[#FDFBF7] shadow-sm"
-                style={{ 
-                  backfaceVisibility: 'hidden', 
+                style={{
+                  backfaceVisibility: 'hidden',
                   transform: 'rotateY(180deg) translateZ(1px)',
-                  pointerEvents: !isFlipped ? 'none' : 'auto' 
+                  pointerEvents: !isFlipped ? 'none' : 'auto'
                 }}
               >
                 {/* Spine crease shadow on the right side of the left page */}
