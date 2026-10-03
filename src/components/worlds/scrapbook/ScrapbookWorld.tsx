@@ -92,7 +92,7 @@ export default function ScrapbookWorld() {
         >
           <span className="text-[#FF8FB3] text-xs font-pixel mt-0.5 group-hover:-translate-x-1 transition-transform">◀</span>
           <span className="font-retro text-[8px] sm:text-[9px] text-[#FF8FB3] tracking-[2px] uppercase font-bold">
-            HUB WORLD
+            RETURN TO MAIN HUB
           </span>
         </button>
 

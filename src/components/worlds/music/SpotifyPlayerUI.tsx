@@ -11,22 +11,25 @@ declare global {
     Spotify?: any;
   }
 }
+import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 
 export default function SpotifyPlayerUI() {
   const { data: sessionData, isError: sessionError } = useSpotifySession();
   const token = sessionData?.accessToken || null;
   const isSessionExpired = sessionError;
-  const [deviceId, setDeviceId] = useState<string | null>(null);
-  const [player, setPlayer] = useState<any>(null);
   
-  const [currentTrack, setCurrentTrack] = useState<any>(null);
-  const [isPaused, setIsPaused] = useState(true);
-  const [isReady, setIsReady] = useState(false);
-  const [isShuffle, setIsShuffle] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    player, setPlayer,
+    deviceId, setDeviceId,
+    isReady, setIsReady,
+    currentTrack, setCurrentTrack,
+    isPaused, setIsPaused,
+    isShuffle, setIsShuffle,
+    position, setPosition,
+    duration, setDuration,
+    error, setError
+  } = useSpotifyPlayerStore();
 
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const progressBarRef = React.useRef<HTMLDivElement>(null);
 
@@ -47,7 +50,7 @@ export default function SpotifyPlayerUI() {
   const [selectedDevice, setSelectedDevice] = useState<string>("");
   
   const { data: playlists = [], isLoading: isPlaylistsLoading, isError: isPlaylistsError, error: playlistsError } = usePlaylists();
-  const { data: devices = [] } = useDevices();
+  const { data: devices = [], refetch: fetchDevices } = useDevices();
   const { data: birthdayMixTracks = [], isLoading: isMixLoading, isError: isMixError, error: mixError } = useBirthdayMix();
   
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -107,7 +110,26 @@ export default function SpotifyPlayerUI() {
     const initializePlayer = () => {
       const spotifyPlayer = new window.Spotify.Player({
         name: "Kawaii Web Player",
-        getOAuthToken: (cb: (token: string) => void) => { cb(token); },
+        getOAuthToken: async (cb: (token: string) => void) => {
+          try {
+            const res = await fetch('/api/spotify/session', {
+              credentials: 'include',
+              cache: 'no-store'
+            });
+            if (!res.ok) {
+              console.error('[Spotify SDK] Failed to obtain current token:', res.status);
+              return;
+            }
+            const data = await res.json();
+            if (!data.accessToken) {
+              console.error('[Spotify SDK] Session returned no access token');
+              return;
+            }
+            cb(data.accessToken);
+          } catch (error) {
+            console.error('[Spotify SDK] Failed to obtain current token', error);
+          }
+        },
         volume: 0.5
       });
 
@@ -281,14 +303,20 @@ export default function SpotifyPlayerUI() {
         </p>
 
         <button
-          onClick={() => redirectToSpotifyAuth()}
+          onClick={() => {
+            if (isLocalhost) {
+              window.location.href = window.location.href.replace('localhost', '127.0.0.1');
+            } else {
+              redirectToSpotifyAuth();
+            }
+          }}
           className="group relative px-8 py-4 bg-gradient-to-r from-[#1DB954] to-[#1ed760] rounded-full font-pixel text-white shadow-[0_6px_20px_rgba(29,185,84,0.4)] hover:scale-105 active:scale-95 transition-all overflow-hidden flex items-center gap-3"
         >
           <div className="absolute inset-0 bg-white/20 -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
           <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
             <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.24 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.44-.48.18-1.02-.06-1.141-.54-.12-.48.06-1.021.54-1.141 4.26-1.26 9.6-0.6 13.5 1.86.42.24.54.78.3 1.26zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
           </svg>
-          {isLocalhost ? 'URL MISMATCH' : 'LOGIN TO SPOTIFY'}
+          {isLocalhost ? 'CLICK TO FIX URL' : 'LOGIN TO SPOTIFY'}
         </button>
       </div>
     );
@@ -646,7 +674,7 @@ export default function SpotifyPlayerUI() {
                 </div>
               ) : (
                 <button 
-                  onClick={() => {}}
+                  onClick={() => fetchDevices()}
                   className="bg-[#FFFFFF]/60 hover:bg-[#FFF0F5] transition-colors border border-[#FFB6C1] rounded-full px-4 py-1.5 font-retro text-[8px] text-[#7A2871] shadow-sm flex items-center gap-2"
                 >
                   <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">

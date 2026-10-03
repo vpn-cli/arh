@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || "";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Missing code' }, { status: 400 });
   }
 
-  const codeVerifier = request.headers.get('cookie')?.match(/spotify_code_verifier=([^;]+)/)?.[1];
+  const codeVerifier = request.cookies.get('spotify_code_verifier')?.value;
 
   if (!codeVerifier) {
     return NextResponse.json({ error: 'Missing code_verifier cookie' }, { status: 400 });

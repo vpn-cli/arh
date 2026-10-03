@@ -368,6 +368,7 @@ export default function ThreeDScrapbook() {
   // Fullscreen image inspect refs & state
   const overlayRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const carouselDragRef = useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
   const [inspectVisible, setInspectVisible] = useState(false);
   const [carouselReady, setCarouselReady] = useState(false);
   const [showScrollHint, setShowScrollHint] = useState(false);
@@ -447,6 +448,13 @@ export default function ThreeDScrapbook() {
       }
       return newSpreads;
     });
+
+    // Clear the temporary drag position so it doesn't interfere with swaps
+    setPositions(prev => {
+      const next = { ...prev };
+      delete next[src];
+      return next;
+    });
   };
 
   const handleFrameClick = (spreadIdx: number, side: 'left' | 'right', itemIdx: number) => {
@@ -476,20 +484,7 @@ export default function ThreeDScrapbook() {
   };
 
   const handleSave = async () => {
-    // Apply all crop positions from the drag state into the spreads
     const newSpreads = JSON.parse(JSON.stringify(appSpreads));
-    let appliedPositions = 0;
-    for (let sIdx = 0; sIdx < newSpreads.length; sIdx++) {
-      for (const side of ['left', 'right'] as const) {
-        for (const item of newSpreads[sIdx][side].items) {
-          if (positions[item.src]) {
-            item.pos = `${Math.round(positions[item.src].x)}% ${Math.round(positions[item.src].y)}%`;
-            appliedPositions++;
-          }
-        }
-      }
-    }
-    console.log(`Applied ${appliedPositions} crop positions from state.`);
 
     // Update local state instantly
     setAppSpreads(newSpreads);
@@ -520,52 +515,14 @@ export default function ThreeDScrapbook() {
   };
 
   const handleExportCode = () => {
-    // Build finalized spreads with all current crop positions baked in
     const finalSpreads = JSON.parse(JSON.stringify(appSpreads));
-    for (let sIdx = 0; sIdx < finalSpreads.length; sIdx++) {
-      for (const side of ['left', 'right'] as const) {
-        for (const item of finalSpreads[sIdx][side].items) {
-          if (positions[item.src]) {
-            item.pos = `${Math.round(positions[item.src].x)}% ${Math.round(positions[item.src].y)}%`;
-          }
-        }
-      }
-    }
+    const dataToExport = finalSpreads.length > 0 && finalSpreads[0].right?.pageTitle === "COVER"
+      ? finalSpreads.slice(1)
+      : finalSpreads;
 
-    // Pretty-print as a TypeScript constant ready to paste into source
-    const lines: string[] = ['const SPREADS: SpreadData[] = ['];
-    finalSpreads.forEach((spread: SpreadData, sIdx: number) => {
-      lines.push(`  // Spread ${sIdx + 1}`);
-      lines.push('  {');
-      for (const side of ['left', 'right'] as const) {
-        const page = spread[side];
-        lines.push(`    ${side}: {`);
-        if (page.pageTitle) lines.push(`      pageTitle: "${page.pageTitle}",`);
-        lines.push('      items: [');
-        page.items.forEach((item: any) => {
-          const parts: string[] = [
-            `src: "${item.src}"`,
-            `col: ${item.col}`,
-            `row: ${item.row}`,
-            `colSpan: ${item.colSpan}`,
-            `rowSpan: ${item.rowSpan}`,
-          ];
-          if (item.tapeColor) parts.push(`tapeColor: "${item.tapeColor}"`);
-          if (item.tapeAngle !== undefined) parts.push(`tapeAngle: ${item.tapeAngle}`);
-          if (item.sticker) parts.push(`sticker: "${item.sticker}"`);
-          if (item.pos) parts.push(`pos: "${item.pos}"`);
-          lines.push(`        { ${parts.join(', ')} },`);
-        });
-        lines.push('      ]');
-        lines.push('    },');
-      }
-      lines.push(`  }${sIdx < finalSpreads.length - 1 ? ',' : ''}`);
-    });
-    lines.push('];');
-
-    const code = lines.join('\n');
+    const code = JSON.stringify(dataToExport, null, 2);
     navigator.clipboard.writeText(code).then(() => {
-      alert('✅ SPREADS code copied to clipboard!\n\nPaste it over the const SPREADS array in ThreeDScrapbook.tsx before deploying to Vercel.');
+      alert('✅ JSON data copied to clipboard!\n\nPaste it into src/data/scrapbook-data.json before deploying.');
     }).catch(() => {
       // Fallback: open in a new window
       const win = window.open('');
@@ -626,27 +583,13 @@ export default function ThreeDScrapbook() {
             0%, 100% { transform: translateY(0px); opacity: 0.5; }
             50%       { transform: translateY(-6px); opacity: 1; }
           }
-          @keyframes vp-border-top {
-            0% { width: 0; }
-            25% { width: 100vw; }
-            100% { width: 100vw; }
+          @keyframes border-draw-h {
+            from { width: 0; }
+            to { width: 100%; }
           }
-          @keyframes vp-border-right {
-            0% { height: 0; }
-            25% { height: 0; }
-            50% { height: 100vh; }
-            100% { height: 100vh; }
-          }
-          @keyframes vp-border-bottom {
-            0% { width: 0; }
-            50% { width: 0; }
-            75% { width: 100vw; }
-            100% { width: 100vw; }
-          }
-          @keyframes vp-border-left {
-            0% { height: 0; }
-            75% { height: 0; }
-            100% { height: 100vh; }
+          @keyframes border-draw-v {
+            from { height: 0; }
+            to { height: 100%; }
           }
           .scrapbook-loader-card {
             position: relative;
@@ -664,10 +607,10 @@ export default function ThreeDScrapbook() {
 
         {/* Viewport borders progress bar */}
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
-          <div className="absolute top-0 left-0 h-2 sm:h-3 bg-[#FFB6C1] w-0" style={{ animation: 'vp-border-top 2.5s linear forwards' }} />
-          <div className="absolute top-0 right-0 w-2 sm:w-3 bg-[#FFE4A1] h-0" style={{ animation: 'vp-border-right 2.5s linear forwards' }} />
-          <div className="absolute bottom-0 right-0 h-2 sm:h-3 bg-[#A1C4FD] w-0" style={{ animation: 'vp-border-bottom 2.5s linear forwards' }} />
-          <div className="absolute bottom-0 left-0 w-2 sm:w-3 bg-[#B8E6D0] h-0" style={{ animation: 'vp-border-left 2.5s linear forwards' }} />
+          <div className="absolute top-0 left-0 h-2 sm:h-3 bg-[#FFB6C1] w-0" style={{ animation: 'border-draw-h 0.625s linear forwards' }} />
+          <div className="absolute top-0 right-0 w-2 sm:w-3 bg-[#FFE4A1] h-0" style={{ animation: 'border-draw-v 0.625s linear 0.625s forwards' }} />
+          <div className="absolute bottom-0 right-0 h-2 sm:h-3 bg-[#A1C4FD] w-0" style={{ animation: 'border-draw-h 0.625s linear 1.25s forwards' }} />
+          <div className="absolute bottom-0 left-0 w-2 sm:w-3 bg-[#B8E6D0] h-0" style={{ animation: 'border-draw-v 0.625s linear 1.875s forwards' }} />
         </div>
 
         <div className="scrapbook-loader-card">
@@ -722,8 +665,49 @@ export default function ThreeDScrapbook() {
 
           <div
             ref={carouselRef}
-            className={`w-full h-full flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory items-center px-[50vw] gap-2 sm:gap-4 ${carouselReady ? 'scroll-smooth' : ''}`}
+            className={`w-full h-full flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory items-center px-[50vw] gap-2 sm:gap-4 ${carouselReady ? 'scroll-smooth' : ''} cursor-grab active:cursor-grabbing`}
             style={{ overscrollBehaviorX: 'none', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            onWheel={(e) => {
+              if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                if (carouselRef.current) {
+                  carouselRef.current.scrollBy({ left: e.deltaY, behavior: 'auto' });
+                }
+              }
+            }}
+            onPointerDown={(e) => {
+              carouselDragRef.current.isDragging = true;
+              carouselDragRef.current.startX = e.pageX - (carouselRef.current?.offsetLeft || 0);
+              carouselDragRef.current.scrollLeft = carouselRef.current?.scrollLeft || 0;
+              if (carouselRef.current) {
+                carouselRef.current.style.scrollSnapType = 'none';
+                carouselRef.current.style.scrollBehavior = 'auto';
+              }
+            }}
+            onPointerLeave={() => {
+              if (!carouselDragRef.current.isDragging) return;
+              carouselDragRef.current.isDragging = false;
+              if (carouselRef.current) {
+                carouselRef.current.style.scrollSnapType = '';
+                carouselRef.current.style.scrollBehavior = '';
+              }
+            }}
+            onPointerUp={() => {
+              if (!carouselDragRef.current.isDragging) return;
+              carouselDragRef.current.isDragging = false;
+              if (carouselRef.current) {
+                carouselRef.current.style.scrollSnapType = '';
+                carouselRef.current.style.scrollBehavior = '';
+              }
+            }}
+            onPointerMove={(e) => {
+              if (!carouselDragRef.current.isDragging) return;
+              e.preventDefault();
+              if (carouselRef.current) {
+                const x = e.pageX - carouselRef.current.offsetLeft;
+                const walk = (x - carouselDragRef.current.startX) * 1.5;
+                carouselRef.current.scrollLeft = carouselDragRef.current.scrollLeft - walk;
+              }
+            }}
           >
             <style>{`
               div::-webkit-scrollbar { display: none; }
