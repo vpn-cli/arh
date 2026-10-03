@@ -32,7 +32,7 @@ export function useDevices() {
       const data = await proxyFetch('/me/player/devices');
       return data?.devices || [];
     },
-    refetchInterval: 10000, // Poll every 10s for new devices
+    enabled: false, // Only fetch when user explicitly clicks LOAD DEVICES
   });
 }
 
@@ -81,7 +81,7 @@ export function useTrackSavedStatus(trackId?: string) {
     queryKey: ['spotify', 'saved', trackId],
     queryFn: async () => {
       if (!trackId) return false;
-      const data = await proxyFetch(`/me/tracks/contains?ids=${trackId}`);
+      const data = await proxyFetch(`/me/library/contains?uris=spotify:track:${trackId}`);
       return data && data.length > 0 ? data[0] : false;
     },
     enabled: !!trackId,

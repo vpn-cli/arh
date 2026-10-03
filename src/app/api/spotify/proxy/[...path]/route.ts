@@ -4,10 +4,11 @@ import { cookies } from 'next/headers';
 
 const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || "";
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || 'todo',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || 'todo',
-});
+const isRedisConfigured = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_URL !== 'todo';
+const redis = isRedisConfigured ? new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+}) : null;
 
 // Cache TTL in seconds (1 hour)
 const CACHE_TTL = 3600;
@@ -24,7 +25,11 @@ async function refreshAccessToken(refreshToken: string, redirectUri: string) {
   };
 
   const body = await fetch("https://accounts.spotify.com/api/token", payload);
-  if (!body.ok) return null;
+  if (!body.ok) {
+    const errorText = await body.text();
+    console.error("Token refresh failed with status", body.status, "and body:", errorText);
+    return null;
+  }
   const response = await body.json();
   return response;
 }
@@ -36,20 +41,31 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
   const spotifyUrl = `https://api.spotify.com/v1/${pathString}${url.search}`;
 
   const cookieStore = await cookies();
-  const accessToken = cookieStore.get('spotify_access_token')?.value;
+  let accessToken = cookieStore.get('spotify_access_token')?.value;
   const refreshToken = cookieStore.get('spotify_refresh_token')?.value;
 
-  if (!accessToken) {
+  if (!accessToken && !refreshToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // If we have no access token but we have a refresh token, we want to trigger the 401 refresh flow below.
+  // Sending 'Bearer undefined' might cause a 400 Bad Request instead of 401 Unauthorized.
+  if (!accessToken && refreshToken) {
+    accessToken = 'invalid_token';
   }
 
   try {
     // 1. Check Circuit Breaker
-    const isLocked = await redis.get('spotify_api_lock');
-    if (isLocked) {
-      const ttl = await redis.ttl('spotify_api_lock');
-      // TODO: Sentry.captureException(new Error('Spotify API circuit breaker active (429)'))
-      return NextResponse.json({ error: 'Too Many Requests (Circuit Breaker)', retryAfter: Math.max(1, ttl) }, { status: 429 });
+    if (redis) {
+      try {
+        const isLocked = await redis.get('spotify_api_lock');
+        if (isLocked) {
+          const ttl = await redis.ttl('spotify_api_lock');
+          return NextResponse.json({ error: 'Too Many Requests (Circuit Breaker)', retryAfter: Math.max(1, ttl) }, { status: 429 });
+        }
+      } catch (e) {
+        console.error("Redis error checking circuit breaker:", e);
+      }
     }
 
     // 2. Check Cache for read-heavy endpoints (GET requests)
@@ -57,22 +73,26 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
       (pathString.startsWith('me/playlists') || 
        pathString.startsWith('search') || 
        pathString.startsWith('me/tracks') ||
+       pathString.startsWith('me/library') ||
        pathString.startsWith('playlists/'));
        
     const cacheKey = `spotify_cache:${accessToken}:${spotifyUrl}`;
-    if (isCacheable) {
-      const cachedData = await redis.get(cacheKey);
-      if (cachedData) {
-        return NextResponse.json(cachedData, { status: 200, headers: { 'X-Cache': 'HIT' } });
+    if (isCacheable && redis) {
+      try {
+        const cachedData = await redis.get(cacheKey);
+        if (cachedData) {
+          return NextResponse.json(cachedData, { status: 200, headers: { 'X-Cache': 'HIT' } });
+        }
+      } catch (e) {
+        console.error("Redis error checking cache:", e);
       }
     }
 
     // 3. Make Spotify Request
-    const headers = new Headers(request.headers);
+    const headers = new Headers();
     headers.set('Authorization', `Bearer ${accessToken}`);
-    // Clean up headers that shouldn't be forwarded
-    headers.delete('host');
-    headers.delete('cookie');
+    const contentType = request.headers.get('content-type');
+    if (contentType) headers.set('Content-Type', contentType);
 
     const options: RequestInit = {
       method: request.method,
@@ -134,16 +154,21 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
       let retryAfter = retryAfterStr ? parseInt(retryAfterStr, 10) : 60;
       if (isNaN(retryAfter)) retryAfter = 60;
       
-      await redis.set('spotify_api_lock', 'locked', { ex: retryAfter });
-      // TODO: Sentry.captureException(new Error(`Spotify API 429 Rate Limit. Locked for ${retryAfter}s.`))
+      if (redis) {
+        try {
+          await redis.set('spotify_api_lock', 'locked', { ex: retryAfter });
+        } catch (e) {
+          console.error("Redis error setting circuit breaker:", e);
+        }
+      }
       
       return NextResponse.json({ error: 'Too Many Requests', retryAfter }, { status: 429 });
     }
 
     // 7. Parse and Cache Success Responses
     if (response.ok && isCacheable) {
-      // We parse as text because it could be anything, but we expect JSON
-      const text = await response.text();
+      const clonedResponse = response.clone();
+      const text = await clonedResponse.text();
       let data;
       try {
         data = text ? JSON.parse(text) : null;
@@ -152,12 +177,16 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
       }
       if (data) {
         // Asynchronously write to Redis
-        redis.set(cacheKey, data, { ex: CACHE_TTL }).catch(console.error);
+        if (redis) redis.set(cacheKey, data, { ex: CACHE_TTL }).catch(console.error);
         return NextResponse.json(data, { status: 200, headers: { 'X-Cache': 'MISS' } });
       }
     }
 
-    // Forward non-JSON or uncacheable responses
+    if (response.status === 204) {
+      return new NextResponse(null, { status: 204 });
+    }
+
+    // Forward non-JSON or uncacheable responses (use the unconsumed response)
     const responseBody = await response.arrayBuffer();
     const proxyResponse = new NextResponse(responseBody, {
       status: response.status,
@@ -176,7 +205,7 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
   } catch (error: any) {
     console.error("Proxy error:", error);
     // TODO: Sentry.captureException(error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error', details: error?.message || String(error) }, { status: 500 });
   }
 }
 

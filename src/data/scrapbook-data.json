@@ -12,7 +12,7 @@
           "tapeColor": "#FFD0DC",
           "tapeAngle": -4,
           "sticker": "sparkle",
-          "pos": "20% 45.75%"
+          "pos": "29% 47%"
         },
         {
           "src": "/arh/worthy/IMG_20250303_001446.jpg",
@@ -23,7 +23,7 @@
           "tapeColor": "#FFE4A1",
           "tapeAngle": 5,
           "sticker": "star",
-          "pos": "40.25% 17.25%"
+          "pos": "47% 24%"
         },
         {
           "src": "/arh/IMG-20241016-WA0005.jpg",
@@ -33,7 +33,7 @@
           "rowSpan": 1,
           "tapeColor": "#B8E6D0",
           "tapeAngle": -3,
-          "pos": "75% 100%"
+          "pos": "77% 100%"
         },
         {
           "src": "/arh/worthy/IMG-20241101-WA0219.jpg",
@@ -43,7 +43,7 @@
           "rowSpan": 1,
           "tapeColor": "#DFD5F5",
           "tapeAngle": 6,
-          "pos": "21.75% 48.75%"
+          "pos": "5% 32%"
         },
         {
           "src": "/arh/IMG-20240928-WA0048.jpg",
@@ -54,7 +54,7 @@
           "tapeColor": "#FFD0DC",
           "tapeAngle": -2,
           "sticker": "heart",
-          "pos": "62.75% 40.25%"
+          "pos": "65% 42%"
         }
       ]
     },
@@ -68,7 +68,8 @@
           "colSpan": 1,
           "rowSpan": 1,
           "tapeColor": "#FFE4A1",
-          "tapeAngle": 4
+          "tapeAngle": 4,
+          "pos": "57% 51%"
         },
         {
           "src": "/arh/IMG-20241101-WA0224.jpg",
@@ -82,24 +83,25 @@
           "pos": "100% 100%"
         },
         {
-          "src": "/arh/IMG_20240924_010327.jpg",
+          "src": "/arh/IMG-20260122-WA0006.jpg",
           "col": 0,
           "row": 1,
           "colSpan": 1,
           "rowSpan": 1,
           "tapeColor": "#DFD5F5",
           "tapeAngle": -3,
-          "sticker": "flower"
+          "sticker": "flower",
+          "pos": "23% 86%"
         },
         {
-          "src": "/arh/IMG-20260122-WA0006.jpg",
+          "src": "/arh/IMG_20240924_010327.jpg",
           "col": 0,
           "row": 2,
           "colSpan": 2,
           "rowSpan": 1,
           "tapeColor": "#FFD0DC",
           "tapeAngle": 3,
-          "pos": "24% 32%"
+          "pos": "49% 47%"
         },
         {
           "src": "/arh/IMG-20250311-WA0066.jpg",
@@ -110,7 +112,7 @@
           "tapeColor": "#FFE4A1",
           "tapeAngle": -4,
           "sticker": "star",
-          "pos": "40% 5%"
+          "pos": "49% 43%"
         }
       ]
     }
@@ -127,7 +129,8 @@
           "rowSpan": 1,
           "tapeColor": "#B8E6D0",
           "tapeAngle": 3,
-          "sticker": "heart"
+          "sticker": "heart",
+          "pos": "55% 60%"
         },
         {
           "src": "/arh/worthy/IMG_20250724_202916.jpg",
@@ -137,7 +140,7 @@
           "rowSpan": 2,
           "tapeColor": "#FFD0DC",
           "tapeAngle": -6,
-          "pos": "54.75% 13%"
+          "pos": "58% 13%"
         },
         {
           "src": "/arh/IMG-20250325-WA0153.jpg",
@@ -148,7 +151,7 @@
           "tapeColor": "#FFE4A1",
           "tapeAngle": 4,
           "sticker": "sparkle",
-          "pos": "40.5% 38%"
+          "pos": "38% 39%"
         },
         {
           "src": "/arh/worthy/IMG_20241020_013013.jpg",
@@ -159,7 +162,7 @@
           "tapeColor": "#DFD5F5",
           "tapeAngle": -2,
           "sticker": "star",
-          "pos": "52.25% 41.5%"
+          "pos": "51% 53%"
         }
       ]
     },
@@ -175,7 +178,7 @@
           "tapeColor": "#DFD5F5",
           "tapeAngle": -4,
           "sticker": "flower",
-          "pos": "0% 88%"
+          "pos": "17% 92%"
         },
         {
           "src": "/arh/IMG-20250701-WA0008.jpg",
@@ -184,7 +187,8 @@
           "colSpan": 1,
           "rowSpan": 1,
           "tapeColor": "#B8E6D0",
-          "tapeAngle": 5
+          "tapeAngle": 5,
+          "pos": "36% 53%"
         },
         {
           "src": "/arh/worthy/IMG20250301065115.jpg",
@@ -194,7 +198,8 @@
           "rowSpan": 1,
           "tapeColor": "#FFD0DC",
           "tapeAngle": -3,
-          "sticker": "heart"
+          "sticker": "heart",
+          "pos": "47% 100%"
         },
         {
           "src": "/arh/IMG-20250303-WA0010.jpg",
@@ -204,7 +209,7 @@
           "rowSpan": 1,
           "tapeColor": "#FFE4A1",
           "tapeAngle": 2,
-          "pos": "67% 50.75%"
+          "pos": "89% 52%"
         },
         {
           "src": "/arh/IMG-20251218-WA0023.jpg",
@@ -215,7 +220,7 @@
           "tapeColor": "#DFD5F5",
           "tapeAngle": -5,
           "sticker": "sparkle",
-          "pos": "18% 43.25%"
+          "pos": "18% 48%"
         }
       ]
     }
@@ -232,7 +237,8 @@
           "rowSpan": 2,
           "tapeColor": "#FFD0DC",
           "tapeAngle": -3,
-          "sticker": "star"
+          "sticker": "star",
+          "pos": "14% 85%"
         },
         {
           "src": "/arh/IMG20240406002757.jpg",
@@ -242,7 +248,7 @@
           "rowSpan": 1,
           "tapeColor": "#FFE4A1",
           "tapeAngle": 4,
-          "pos": "52.5% 40%"
+          "pos": "50% 72%"
         },
         {
           "src": "/arh/IMG-20260507-WA0008.jpg",
@@ -253,7 +259,7 @@
           "tapeColor": "#B8E6D0",
           "tapeAngle": -4,
           "sticker": "flower",
-          "pos": "54.75% 19.5%"
+          "pos": "83% 14%"
         },
         {
           "src": "/arh/IMG-20241101-WA0235.jpg",
@@ -263,7 +269,7 @@
           "rowSpan": 1,
           "tapeColor": "#DFD5F5",
           "tapeAngle": 2,
-          "pos": "56% 46%"
+          "pos": "55% 50%"
         },
         {
           "src": "/arh/worthy/IMG20240427175950.jpg",
@@ -274,7 +280,7 @@
           "tapeColor": "#FFE4A1",
           "tapeAngle": -5,
           "sticker": "heart",
-          "pos": "100% 48.25%"
+          "pos": "100% 15%"
         }
       ]
     },
@@ -290,7 +296,7 @@
           "tapeColor": "#FFE4A1",
           "tapeAngle": 3,
           "sticker": "sparkle",
-          "pos": "68% 50.5%"
+          "pos": "76% 77%"
         },
         {
           "src": "/arh/worthy/IMG-20250118-WA0009.jpg",
@@ -300,7 +306,7 @@
           "rowSpan": 2,
           "tapeColor": "#FFD0DC",
           "tapeAngle": -4,
-          "pos": "48.5% 41.25%"
+          "pos": "51% 68%"
         },
         {
           "src": "/arh/IMG20250325225353.jpg",
@@ -311,7 +317,7 @@
           "tapeColor": "#DFD5F5",
           "tapeAngle": -2,
           "sticker": "star",
-          "pos": "47.25% 58%"
+          "pos": "22% 54%"
         },
         {
           "src": "/arh/IMG-20260101-WA0004.jpg",
@@ -321,7 +327,7 @@
           "rowSpan": 1,
           "tapeColor": "#B8E6D0",
           "tapeAngle": 4,
-          "pos": "49% 45%"
+          "pos": "47% 47%"
         },
         {
           "src": "/arh/IMG_20240409_021609.jpg",
@@ -332,7 +338,7 @@
           "tapeColor": "#FFE4A1",
           "tapeAngle": -3,
           "sticker": "flower",
-          "pos": "49.75% 54.5%"
+          "pos": "59% 100%"
         }
       ]
     }
@@ -369,7 +375,8 @@
           "rowSpan": 1,
           "tapeColor": "#B8E6D0",
           "tapeAngle": -4,
-          "sticker": "sparkle"
+          "sticker": "sparkle",
+          "pos": "48% 48%"
         },
         {
           "src": "/arh/IMG-20250719-WA0011.jpg",
@@ -379,7 +386,7 @@
           "rowSpan": 1,
           "tapeColor": "#DFD5F5",
           "tapeAngle": 3,
-          "pos": "2% 0%"
+          "pos": "49% 10%"
         },
         {
           "src": "/arh/IMG-20250311-WA0068.jpg",
@@ -390,7 +397,7 @@
           "tapeColor": "#FFE4A1",
           "tapeAngle": -2,
           "sticker": "star",
-          "pos": "25.75% 0%"
+          "pos": "32% 0%"
         }
       ]
     },
@@ -404,7 +411,8 @@
           "colSpan": 1,
           "rowSpan": 1,
           "tapeColor": "#FFD0DC",
-          "tapeAngle": 3
+          "tapeAngle": 3,
+          "pos": "61% 100%"
         },
         {
           "src": "/arh/IMG-20260712-WA0006.jpg",
@@ -415,7 +423,7 @@
           "tapeColor": "#B8E6D0",
           "tapeAngle": -4,
           "sticker": "flower",
-          "pos": "30.25% 100%"
+          "pos": "28% 100%"
         },
         {
           "src": "/arh/IMG20251020234739.jpg",
@@ -425,7 +433,8 @@
           "rowSpan": 1,
           "tapeColor": "#FFE4A1",
           "tapeAngle": -3,
-          "sticker": "sparkle"
+          "sticker": "sparkle",
+          "pos": "45% 61%"
         },
         {
           "src": "/arh/IMG_20250112_030247.jpg",
@@ -434,7 +443,8 @@
           "colSpan": 2,
           "rowSpan": 1,
           "tapeColor": "#DFD5F5",
-          "tapeAngle": 2
+          "tapeAngle": 2,
+          "pos": "50% 35%"
         },
         {
           "src": "/arh/worthy/IMG_20240907_00235820.jpeg",
@@ -445,7 +455,7 @@
           "tapeColor": "#FFD0DC",
           "tapeAngle": -4,
           "sticker": "heart",
-          "pos": "52% 1%"
+          "pos": "48% 4%"
         }
       ]
     }
@@ -463,7 +473,7 @@
           "tapeColor": "#B8E6D0",
           "tapeAngle": -3,
           "sticker": "star",
-          "pos": "65% 9%"
+          "pos": "65% 7%"
         },
         {
           "src": "/arh/Screenshot_2026-09-13-15-14-19-25_6012fa4d4ddec268fc5c7112cbb265e7.jpg",
@@ -484,7 +494,7 @@
           "tapeColor": "#DFD5F5",
           "tapeAngle": -2,
           "sticker": "heart",
-          "pos": "0% 60%"
+          "pos": "46% 59%"
         },
         {
           "src": "/arh/worthy/IMG-20260210-WA0004.jpg",
@@ -494,7 +504,7 @@
           "rowSpan": 1,
           "tapeColor": "#FFD0DC",
           "tapeAngle": 3,
-          "pos": "34% 37%"
+          "pos": "46% 17%"
         },
         {
           "src": "/arh/Screenshot_2026-09-14-12-57-33-77_6012fa4d4ddec268fc5c7112cbb265e7.jpg",
@@ -505,7 +515,7 @@
           "tapeColor": "#FFE4A1",
           "tapeAngle": -4,
           "sticker": "sparkle",
-          "pos": "47.5% 76.75%"
+          "pos": "43% 88%"
         }
       ]
     },
@@ -540,7 +550,8 @@
           "rowSpan": 1,
           "tapeColor": "#B8E6D0",
           "tapeAngle": -3,
-          "sticker": "star"
+          "sticker": "star",
+          "pos": "64% 100%"
         },
         {
           "src": "/arh/_storage_emulated_0_DCIM_.convert_tmp_files_IMG20240818224123_20260929185759.jpg",
@@ -578,7 +589,7 @@
           "tapeColor": "#FFE4A1",
           "tapeAngle": -3,
           "sticker": "heart",
-          "pos": "50% 0%"
+          "pos": "51% 9%"
         },
         {
           "src": "/arh/id.jpg",
@@ -587,7 +598,8 @@
           "colSpan": 1,
           "rowSpan": 1,
           "tapeColor": "#FFD0DC",
-          "tapeAngle": 4
+          "tapeAngle": 4,
+          "pos": "72% 10%"
         },
         {
           "src": "/arh/b7525aff-5c10-407d-8f19-e502b0350bda.JPG",
@@ -598,7 +610,7 @@
           "tapeColor": "#B8E6D0",
           "tapeAngle": -4,
           "sticker": "sparkle",
-          "pos": "32% 31%"
+          "pos": "42% 37%"
         },
         {
           "src": "/arh/lp_image (4).jpg",
@@ -618,7 +630,8 @@
           "rowSpan": 1,
           "tapeColor": "#FFE4A1",
           "tapeAngle": -2,
-          "sticker": "star"
+          "sticker": "star",
+          "pos": "77% 49%"
         }
       ]
     },
@@ -633,7 +646,7 @@
           "rowSpan": 1,
           "tapeColor": "#FFD0DC",
           "tapeAngle": 3,
-          "pos": "44.5% 100%"
+          "pos": "38% 100%"
         },
         {
           "src": "/arh/lp_image (5).jpg",
@@ -644,7 +657,7 @@
           "tapeColor": "#B8E6D0",
           "tapeAngle": -4,
           "sticker": "flower",
-          "pos": "7% 41%"
+          "pos": "0% 33%"
         },
         {
           "src": "/arh/lp_image (8).jpg",
@@ -655,7 +668,7 @@
           "tapeColor": "#FFE4A1",
           "tapeAngle": -3,
           "sticker": "sparkle",
-          "pos": "51% 37%"
+          "pos": "78% 34%"
         },
         {
           "src": "/arh/lp_image (2).jpg",
@@ -665,7 +678,7 @@
           "rowSpan": 1,
           "tapeColor": "#DFD5F5",
           "tapeAngle": 2,
-          "pos": "52% 72%"
+          "pos": "58% 74%"
         },
         {
           "src": "/arh/worthy/lp_image (3).jpg",
@@ -676,7 +689,7 @@
           "tapeColor": "#FFD0DC",
           "tapeAngle": -4,
           "sticker": "heart",
-          "pos": "73% 100%"
+          "pos": "77% 100%"
         }
       ]
     }
@@ -694,7 +707,7 @@
           "tapeColor": "#B8E6D0",
           "tapeAngle": -3,
           "sticker": "star",
-          "pos": "66% 100%"
+          "pos": "88% 100%"
         },
         {
           "src": "/arh/worthy/lp_image (7).jpg",
@@ -704,7 +717,7 @@
           "rowSpan": 1,
           "tapeColor": "#FFE4A1",
           "tapeAngle": 4,
-          "pos": "62% 100%"
+          "pos": "63% 100%"
         },
         {
           "src": "/arh/worthy/lp_image (9).jpg",
@@ -715,7 +728,7 @@
           "tapeColor": "#DFD5F5",
           "tapeAngle": -2,
           "sticker": "heart",
-          "pos": "63% 100%"
+          "pos": "74% 100%"
         },
         {
           "src": "/arh/worthy/lp_image.jpg",

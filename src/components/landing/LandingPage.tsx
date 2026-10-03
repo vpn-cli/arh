@@ -26,19 +26,25 @@ export default function LandingPage() {
 
   React.useEffect(() => {
     // If we are returning from Spotify Auth, skip straight to the world
+    // [DEV] Commented out so the Hello Kitty screen ALWAYS shows
+    /*
     if (window.location.search.includes("code=")) {
       setHasEntered(true);
       setIntroFinished(true);
       setStoryComplete(true);
       return;
     }
+    */
 
     // If the story was completed in a previous session, skip to the world
+    // [DEV] Commented out so the Hello Kitty screen ALWAYS shows
+    /*
     if (window.localStorage.getItem("story_complete") === "true") {
       setHasEntered(true);
       setIntroFinished(true);
       setStoryComplete(true);
     }
+    */
   }, []);
 
   const completeStory = () => {
