@@ -2,7 +2,7 @@ import React from 'react';
 
 interface PlaylistCardProps {
   playlist: any;
-  onClick: (uri: string) => void;
+  onClick: () => void;
   variant?: 'default' | 'compact';
 }
 
@@ -13,7 +13,7 @@ export function PlaylistCard({ playlist, onClick, variant = 'default' }: Playlis
 
   return (
     <button
-      onClick={() => onClick(playlist.uri)}
+      onClick={onClick}
       className="group w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[#FFF0F5] transition-all text-left border border-transparent hover:border-[#FFB6C1] shrink-0 active:scale-95"
     >
       {playlist.images && playlist.images[0] ? (

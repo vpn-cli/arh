@@ -23,34 +23,28 @@ export default function LandingPage() {
   const [hasEntered, setHasEntered] = useState(false);
   const [introFinished, setIntroFinished] = useState(false);
   const [storyComplete, setStoryComplete] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   React.useEffect(() => {
-    // If we are returning from Spotify Auth, skip straight to the world
-    // [DEV] Commented out so the Hello Kitty screen ALWAYS shows
-    /*
-    if (window.location.search.includes("code=")) {
-      setHasEntered(true);
-      setIntroFinished(true);
-      setStoryComplete(true);
-      return;
-    }
-    */
+    const isAuthReturn = window.location.search.includes("spotify_auth=");
+    const isStoryComplete = window.localStorage.getItem("story_complete") === "true";
 
-    // If the story was completed in a previous session, skip to the world
-    // [DEV] Commented out so the Hello Kitty screen ALWAYS shows
-    /*
-    if (window.localStorage.getItem("story_complete") === "true") {
+    if (isAuthReturn || isStoryComplete) {
       setHasEntered(true);
       setIntroFinished(true);
       setStoryComplete(true);
     }
-    */
+    setIsReady(true);
   }, []);
 
   const completeStory = () => {
     setStoryComplete(true);
     window.localStorage.setItem("story_complete", "true");
   };
+
+  if (!isReady) {
+    return <div className="min-h-screen w-full bg-[#0C0A15]" />;
+  }
 
   return (
     <div className="relative min-h-screen w-full bg-[#0C0A15] text-[#FFEBB3] flex flex-col overflow-x-hidden selection:bg-[#FF8FB3]/40">

@@ -6,9 +6,10 @@ export const getRedirectUri = () => {
 };
 
 export function redirectToSpotifyAuth() {
+  window.localStorage.setItem('spotify_auth_return', 'true');
   window.location.href = '/api/spotify/login';
 }
 
-export function logoutSpotify() {
-  window.location.href = '/'; // In a real app we'd have an /api/spotify/logout route
+export async function logoutSpotify() {
+  await fetch('/api/spotify/logout', { method: 'POST' });
 }
