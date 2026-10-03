@@ -63,19 +63,6 @@ export function useBirthdayMix() {
   });
 }
 
-export function useSpotifySearch(query: string) {
-  return useQuery({
-    queryKey: ['spotify', 'search', query],
-    queryFn: async () => {
-      if (!query.trim()) return [];
-      const data = await proxyFetch(`/search?q=${encodeURIComponent(query.trim())}&type=track&limit=20`);
-      return data?.tracks?.items || [];
-    },
-    enabled: !!query.trim(),
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
 export function useTrackSavedStatus(trackId?: string) {
   return useQuery({
     queryKey: ['spotify', 'saved', trackId],
