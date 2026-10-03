@@ -6,6 +6,7 @@ import AmbientParticles from "./AmbientParticles";
 import PixelCursor from "../ui/PixelCursor";
 import GameboyLoadingScreen from "../ui/GameboyLoadingScreen";
 import ClickToEnterScreen from "../ui/ClickToEnterScreen";
+import AuthLoadingOverlay from "../ui/AuthLoadingOverlay";
 import StoryFlow from "./StoryFlow";
 import WorldRouter from "../worlds/WorldRouter";
 
@@ -24,12 +25,18 @@ export default function LandingPage() {
   const [introFinished, setIntroFinished] = useState(false);
   const [storyComplete, setStoryComplete] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   React.useEffect(() => {
     const isAuthReturn = window.location.search.includes("spotify_auth=");
     const isStoryComplete = window.localStorage.getItem("story_complete") === "true";
 
-    if (isAuthReturn || isStoryComplete) {
+    if (isAuthReturn) {
+      setIsAuthLoading(true);
+      setHasEntered(true);
+      setIntroFinished(true);
+      setStoryComplete(true);
+    } else if (isStoryComplete) {
       setHasEntered(true);
       setIntroFinished(true);
       setStoryComplete(true);
@@ -48,6 +55,9 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-screen w-full bg-[#0C0A15] text-[#FFEBB3] flex flex-col overflow-x-hidden selection:bg-[#FF8FB3]/40">
+      {/* Auth Loading Overlay */}
+      {isAuthLoading && <AuthLoadingOverlay onComplete={() => setIsAuthLoading(false)} />}
+      
       {/* Ambient particle layer (always present) */}
       <AmbientParticles />
 

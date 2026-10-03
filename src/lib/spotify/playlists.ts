@@ -1,16 +1,16 @@
 import { proxyFetch } from '@/lib/spotifyClient';
-import { normalizeSavedTrack } from './library';
+import { normalizeSavedTrack, normalizePlaylistItem } from './library';
 
 export async function getPlaylist(id: string) {
   return await proxyFetch(`/playlists/${id}`);
 }
 
 export async function getPlaylistItems(id: string) {
-  const data = await proxyFetch(`/playlists/${id}/tracks?limit=100`);
+  const data = await proxyFetch(`/playlists/${id}/items?limit=50`);
   if (!data || !data.items) return null;
   
-  // Normalize track items using the same logic as library tracks
-  const items = data.items.map((item: any) => normalizeSavedTrack(item)).filter(Boolean);
+  // Normalize track items using the specific playlist item logic
+  const items = data.items.map((item: any) => normalizePlaylistItem(item)).filter(Boolean);
   return {
     ...data,
     items
