@@ -16,24 +16,24 @@ export default function ScrapbookWorld() {
         2. Uncomment the <img> tag below and change the src.
         3. That's it! It will loop automatically in the background.
       */}
-      <img 
-        src="/background.jpeg" 
-        alt="background" 
-        className="absolute inset-0 w-full h-full object-cover z-0 opacity-100 pointer-events-none" 
+      <img
+        src="/background.jpeg"
+        alt="background"
+        className="absolute inset-0 w-full h-full object-cover z-0 opacity-100 pointer-events-none"
       />
 
       {/* Aesthetic Cozy Wallpaper Pattern with warm pastel dots & faint grid */}
-      <div 
-        className="absolute inset-0 pointer-events-none z-0" 
-        style={{ 
+      <div
+        className="absolute inset-0 pointer-events-none z-0"
+        style={{
           backgroundImage: `
             radial-gradient(#FFB6C1 2px, transparent 2px),
             linear-gradient(to right, rgba(255, 182, 193, 0.1) 1px, transparent 1px),
             linear-gradient(to bottom, rgba(255, 182, 193, 0.1) 1px, transparent 1px)
-          `, 
+          `,
           backgroundSize: '24px 24px, 48px 48px, 48px 48px',
           opacity: 0.85
-        }} 
+        }}
       />
 
       {/* Floating Sparkles ✨ */}
@@ -76,7 +76,7 @@ export default function ScrapbookWorld() {
           ☕
         </div>
         <div className="px-3 py-1.5 bg-[#FFFFFF] border-2 border-[#FFB6C1] rounded-xl shadow-[2px_2px_0_#FFB6C1] font-pixel text-[11px] text-[#FF8FB3] font-bold">
-          COZY ALBUM ✦ EST. 2024
+          FREN CONTRACT ✦ EST. 2024
         </div>
       </div>
 
@@ -98,7 +98,7 @@ export default function ScrapbookWorld() {
 
         <div className="px-4 py-2 bg-[#FFFFFF] rounded-2xl border-3 border-[#FFB6C1] shadow-[4px_4px_0_#FFB6C1] flex items-center gap-2">
           <span className="font-retro text-[8px] sm:text-[9px] text-[#FF8FB3] tracking-[2px] font-bold">
-            ✦ 3D SCRAPBOOK ✦
+            ✦ FAKE JAIN SHOTS ✦
           </span>
         </div>
       </header>

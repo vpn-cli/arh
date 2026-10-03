@@ -45,6 +45,42 @@ export function playSquareTone(freq: number, startTime: number, duration: number
   }
 }
 
+export function playNoise(startTime: number, duration: number, volume = 0.2) {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  try {
+    const bufferSize = ctx.sampleRate * duration;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    // Generate white noise
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noiseSource = ctx.createBufferSource();
+    noiseSource.buffer = buffer;
+
+    // Use a lowpass filter to muffle the harsh static into a soft paper rustle
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(600, startTime); 
+    filter.frequency.exponentialRampToValueAtTime(1800, startTime + duration * 0.5);
+    filter.frequency.exponentialRampToValueAtTime(400, startTime + duration);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, startTime);
+    // Paper flip envelope: quick sharp rustle (attack), sustain during flip, soft landing fade
+    gain.gain.linearRampToValueAtTime(volume, startTime + duration * 0.1);
+    gain.gain.linearRampToValueAtTime(volume * 0.6, startTime + duration * 0.4);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+    noiseSource.connect(filter).connect(gain).connect(ctx.destination);
+    noiseSource.start(startTime);
+    noiseSource.stop(startTime + duration);
+  } catch {
+    /* safely ignore audio errors */
+  }
+}
+
 export const sfx = {
   // Snappy Game Boy menu cursor chirp (dual rapid square blip: 740Hz -> 988Hz)
   move: () => {
@@ -102,5 +138,12 @@ export const sfx = {
         playSquareTone(523, now, 0.04, 0.12);
       }
     }
-  )
+  ),
+  // Procedurally generated realistic paper flip sound using white noise
+  paper: () => {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    playNoise(now, 0.45, 0.8);
+  }
 };
