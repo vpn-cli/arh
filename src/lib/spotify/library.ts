@@ -37,3 +37,22 @@ export function normalizeSavedTrack(item: any) {
   
   return track;
 }
+
+export function normalizePlaylistItem(playlistItem: any) {
+  if (!playlistItem || !playlistItem.item) return null;
+  
+  const item = playlistItem.item;
+  
+  // Only accept playable track items
+  if (item.type !== "track") return null;
+
+  // Guarantee a URI is present for playback
+  if (!item.uri && item.id) {
+    item.uri = `spotify:track:${item.id}`;
+  }
+
+  // Only return valid tracks
+  if (!item.uri) return null;
+  
+  return item;
+}

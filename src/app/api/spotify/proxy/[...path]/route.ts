@@ -143,8 +143,8 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
 
     // 5. Handle 403 (Pass directly to client, no retry)
     if (response.status === 403) {
-      // TODO: Sentry.captureException(new Error(`Spotify API 403 Forbidden: ${spotifyUrl}`))
       const data = await response.json().catch(() => ({}));
+      console.error(`[Spotify API 403 Forbidden] URL: ${spotifyUrl}`, JSON.stringify(data, null, 2));
       return NextResponse.json(data, { status: 403 });
     }
 
