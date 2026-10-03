@@ -344,7 +344,7 @@ export default function ThreeDScrapbook() {
 
         setTimeout(() => {
           if (!isCancelled) setMounted(true);
-        }, 500);
+        }, 2500);
       }
     };
 
@@ -621,12 +621,78 @@ export default function ThreeDScrapbook() {
   if (!mounted) {
     return (
       <div className="w-full h-[85vh] min-h-[600px] flex flex-col items-center justify-center font-pixel text-[#20233F]">
-        <div className="relative">
-          <div className="text-5xl text-[#FFD0DC] animate-spin mb-6" style={{ animationDuration: '3s' }}>✿</div>
-          <div className="absolute inset-0 flex items-center justify-center text-2xl text-[#FFE4A1] animate-ping" style={{ animationDuration: '2s' }}>✦</div>
-        </div>
-        <div className="animate-pulse tracking-widest font-bold text-lg">KRIPYA SABR RAKHE...</div>
+        <style>{`
+          @keyframes scrapbook-dot-wave {
+            0%, 100% { transform: translateY(0px); opacity: 0.5; }
+            50%       { transform: translateY(-6px); opacity: 1; }
+          }
+          @keyframes vp-border-top {
+            0% { width: 0; }
+            25% { width: 100vw; }
+            100% { width: 100vw; }
+          }
+          @keyframes vp-border-right {
+            0% { height: 0; }
+            25% { height: 0; }
+            50% { height: 100vh; }
+            100% { height: 100vh; }
+          }
+          @keyframes vp-border-bottom {
+            0% { width: 0; }
+            50% { width: 0; }
+            75% { width: 100vw; }
+            100% { width: 100vw; }
+          }
+          @keyframes vp-border-left {
+            0% { height: 0; }
+            75% { height: 0; }
+            100% { height: 100vh; }
+          }
+          .scrapbook-loader-card {
+            position: relative;
+            background: #FFFBFD;
+            border-radius: 24px;
+            padding: 52px 72px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 8px 32px rgba(255,182,193,0.18);
+            border: 4px solid #FFE4E8;
+          }
+        `}</style>
 
+        {/* Viewport borders progress bar */}
+        <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+          <div className="absolute top-0 left-0 h-2 sm:h-3 bg-[#FFB6C1] w-0" style={{ animation: 'vp-border-top 2.5s linear forwards' }} />
+          <div className="absolute top-0 right-0 w-2 sm:w-3 bg-[#FFE4A1] h-0" style={{ animation: 'vp-border-right 2.5s linear forwards' }} />
+          <div className="absolute bottom-0 right-0 h-2 sm:h-3 bg-[#A1C4FD] w-0" style={{ animation: 'vp-border-bottom 2.5s linear forwards' }} />
+          <div className="absolute bottom-0 left-0 w-2 sm:w-3 bg-[#B8E6D0] h-0" style={{ animation: 'vp-border-left 2.5s linear forwards' }} />
+        </div>
+
+        <div className="scrapbook-loader-card">
+          {/* Spinning flower + ping star */}
+          <div className="relative w-16 h-16 flex items-center justify-center">
+            <div className="text-5xl text-[#FFD0DC] animate-spin select-none" style={{ animationDuration: '3s' }}>✿</div>
+            <div className="absolute inset-0 flex items-center justify-center text-2xl text-[#FFE4A1] animate-ping select-none" style={{ animationDuration: '2s' }}>✦</div>
+          </div>
+
+          {/* Label */}
+          <div className="animate-pulse tracking-widest font-bold text-base text-[#20233F]">
+            ちょっと待って...
+          </div>
+
+          {/* Dots row */}
+          <div className="flex gap-2">
+            {[0,1,2,3,4].map((i) => (
+              <div
+                key={i}
+                className="w-2.5 h-2.5 rounded-full bg-[#FFB6C1]"
+                style={{ animation: `scrapbook-dot-wave 1.2s ease-in-out ${i * 0.15}s infinite` }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

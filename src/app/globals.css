@@ -48,6 +48,8 @@ body {
   background-color: #FFFFFF;
   color: var(--color-dark, #20233F);
   font-family: 'Pixelify Sans', sans-serif;
+  font-weight: 700;
+  font-optical-sizing: auto;
   overflow-x: clip;
   margin: 0;
   padding: 0;
@@ -57,6 +59,13 @@ body {
 ::selection {
   background: var(--color-pink, #FF8FB3);
   color: var(--color-dark, #20233F);
+}
+
+/* Force Pixelify Sans bold for readability everywhere it's used as .font-pixel */
+.font-pixel {
+  font-weight: 700 !important;
+  font-optical-sizing: auto;
+  letter-spacing: 0.01em;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -261,7 +270,7 @@ body {
 
 .pixel-btn {
   font-family: 'Pixelify Sans', sans-serif;
-  font-weight: 600;
+  font-weight: 700;
   border: 2.5px solid var(--color-border, #20233F);
   cursor: pointer;
   user-select: none;
@@ -337,7 +346,7 @@ body {
   position: relative;
   padding: 10px 14px;
   font-family: 'Pixelify Sans', sans-serif;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-dark, #20233F);
   line-height: 1.4;
 }
