@@ -1,7 +1,10 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { searchSpotify } from '@/lib/spotify/search';
+import { useSpotifySession } from './useSpotify';
 
 export function useSearch(query: string, types: ('track' | 'artist' | 'album' | 'playlist')[] = ['track', 'artist', 'album', 'playlist']) {
+  const { isSuccess, data: sessionData } = useSpotifySession();
+  const isAuthenticated = isSuccess && !!sessionData?.accessToken;
   return useInfiniteQuery({
     queryKey: ['spotify', 'search', query, types],
     queryFn: async ({ pageParam = 0 }) => {
@@ -35,7 +38,7 @@ export function useSearch(query: string, types: ('track' | 'artist' | 'album' | 
       }
       return undefined;
     },
-    enabled: !!query.trim(),
+    enabled: isAuthenticated && !!query.trim(),
     staleTime: 5 * 60 * 1000,
   });
 }

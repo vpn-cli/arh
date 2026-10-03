@@ -15,12 +15,16 @@ export function useSpotifySession() {
 }
 
 export function usePlaylists() {
+  const { isSuccess, data: sessionData } = useSpotifySession();
+  const isAuthenticated = isSuccess && !!sessionData?.accessToken;
+
   return useQuery({
     queryKey: ['spotify', 'playlists'],
     queryFn: async () => {
       const data = await proxyFetch('/me/playlists');
       return data?.items || [];
     },
+    enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -37,6 +41,9 @@ export function useDevices() {
 }
 
 export function useBirthdayMix() {
+  const { isSuccess, data: sessionData } = useSpotifySession();
+  const isAuthenticated = isSuccess && !!sessionData?.accessToken;
+
   return useQuery({
     queryKey: ['spotify', 'birthdayMix'],
     queryFn: async () => {
@@ -59,11 +66,15 @@ export function useBirthdayMix() {
       }
       return merged.slice(0, 30);
     },
+    enabled: isAuthenticated,
     staleTime: 60 * 60 * 1000,
   });
 }
 
 export function useTrackSavedStatus(trackId?: string) {
+  const { isSuccess, data: sessionData } = useSpotifySession();
+  const isAuthenticated = isSuccess && !!sessionData?.accessToken;
+
   return useQuery({
     queryKey: ['spotify', 'saved', trackId],
     queryFn: async () => {
@@ -71,7 +82,7 @@ export function useTrackSavedStatus(trackId?: string) {
       const data = await proxyFetch(`/me/library/contains?uris=spotify:track:${trackId}`);
       return data && data.length > 0 ? data[0] : false;
     },
-    enabled: !!trackId,
+    enabled: isAuthenticated && !!trackId,
   });
 }
 

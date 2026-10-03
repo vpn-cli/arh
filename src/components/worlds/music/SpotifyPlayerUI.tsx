@@ -4,9 +4,12 @@ import React, { useEffect, useState } from "react";
 import { redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
 const sfx: any = { select: () => {}, hover: () => {}, pop: () => {}, move: () => {}, error: () => {} };
 import { useSpotifySession, usePlaylists, useDevices, useBirthdayMix, useTrackSavedStatus, useSpotifyMutations } from "@/hooks/useSpotify";
+import { useQueryClient } from '@tanstack/react-query';
 import { useLikedTracks } from "@/hooks/useLikedTracks";
 import { TrackList } from "./TrackList";
 import { SearchResults } from "./SearchResults";
+import { PlaylistDetail } from "./PlaylistDetail";
+import { PlaylistCard } from "./PlaylistCard";
 
 declare global {
   interface Window {
@@ -17,6 +20,7 @@ declare global {
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 
 export default function SpotifyPlayerUI() {
+  const queryClient = useQueryClient();
   const { data: sessionData, isError: sessionError } = useSpotifySession();
   const token = sessionData?.accessToken || null;
   const isSessionExpired = sessionError;
@@ -38,6 +42,7 @@ export default function SpotifyPlayerUI() {
 
   // New Feature States
   const [activeTab, setActiveTab] = useState<'library' | 'mix' | 'playlists' | 'search'>('library');
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   
   
   
@@ -366,7 +371,7 @@ export default function SpotifyPlayerUI() {
               LIKED
             </button>
             <button 
-              onClick={() => setActiveTab('playlists')}
+              onClick={() => { setActiveTab('playlists'); setSelectedPlaylistId(null); }}
               className={`font-pixel text-[10px] px-2 py-1 rounded-md transition-colors ${activeTab === 'playlists' ? 'bg-[#FFB6C1] text-[#FFFFFF]' : 'text-[#FFB6C1] hover:bg-[#FFE4E1]'}`}
             >
               PLAYLISTS
@@ -386,10 +391,9 @@ export default function SpotifyPlayerUI() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => {
-                window.localStorage.removeItem('spotify_access_token');
-                window.localStorage.removeItem('spotify_refresh_token');
-                window.location.reload();
+              onClick={async () => {
+                await logoutSpotify();
+                queryClient.invalidateQueries({ queryKey: ['spotifySession'] });
               }}
               className="text-[#FFFFFF] text-[9px] bg-[#9B4F96] hover:bg-[#7A2871] transition-colors px-2 py-1 rounded-full shadow-sm cursor-pointer active:scale-95 font-pixel"
               title="Logout / Re-Login"
@@ -409,49 +413,42 @@ export default function SpotifyPlayerUI() {
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-2 relative">
           {activeTab === 'playlists' && (
-            <>
-              <input 
-                type="text"
-                value={playlistSearch}
-                onChange={(e) => setPlaylistSearch(e.target.value)}
-                placeholder="Filter playlists..."
-                className="w-full bg-[#FFF0F5] border-2 border-[#FFB6C1] rounded-xl px-2 py-2 mb-2 font-retro text-[10px] text-[#7A2871] focus:outline-none focus:border-[#FF69B4] shrink-0"
+            selectedPlaylistId ? (
+              <PlaylistDetail
+                playlistId={selectedPlaylistId}
+                onBack={() => setSelectedPlaylistId(null)}
+                onPlayPlaylist={playPlaylist}
+                onPlayTrack={playTrack}
+                onShufflePlay={async (uri) => {
+                  if (!isShuffle) {
+                    await toggleShuffle();
+                  }
+                  playPlaylist(uri);
+                }}
               />
-              {(() => {
-                if (isPlaylistsError && (playlistsError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#FF4500] font-pixel text-xs text-center px-4">RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((playlistsError as any)?.retryAfter ?? 60)} SECONDS.</div>;
-                if (isPlaylistsLoading) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs animate-pulse">LOADING LIBRARY...</div>;
-                if (playlists.length === 0) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs">NO PLAYLISTS FOUND</div>;
-                
-                const filteredPlaylists = playlists.filter((p: any) => p.name.toLowerCase().includes(playlistSearch.toLowerCase()));
-                if (filteredPlaylists.length === 0) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs">NO MATCHES FOUND</div>;
-                
-                return filteredPlaylists.map((p: any) => (
-                <button
-                  key={p.id}
-                  onClick={() => playPlaylist(p.uri)}
-                  className="group flex items-center gap-3 p-2 rounded-xl hover:bg-[#FFF0F5] transition-all text-left border border-transparent hover:border-[#FFB6C1] shrink-0 active:scale-95"
-                >
-                  {p.images && p.images[0] ? (
-                    <img src={p.images[0].url} alt={p.name} className="w-10 h-10 rounded-lg shadow-sm object-cover transition-transform duration-200 group-hover:scale-110 group-hover:shadow-md" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-lg bg-[#FFB6C1]/30 flex items-center justify-center shadow-sm">
-                      <span className="text-[#FF69B4]">♪</span>
-                    </div>
-                  )}
-                  <div className="flex-1 overflow-hidden z-10 relative">
-                    <div className="w-full relative overflow-hidden whitespace-nowrap">
-                      <span className="font-pixel text-sm uppercase text-[#7A2871] transition-colors pr-2 truncate block w-full" title={p.name}>
-                        {p.name}
-                      </span>
-                    </div>
-                    <div className="font-retro text-[9px] text-[#D81B60] mt-0.5 opacity-80 transition-opacity truncate">
-                      {p.tracks?.total ?? p.items?.total ?? '0'} TRACKS
-                    </div>
-                  </div>
-                </button>
-              ));
-              })()}
-            </>
+            ) : (
+              <>
+                <input 
+                  type="text"
+                  value={playlistSearch}
+                  onChange={(e) => setPlaylistSearch(e.target.value)}
+                  placeholder="Filter playlists..."
+                  className="w-full bg-[#FFF0F5] border-2 border-[#FFB6C1] rounded-xl px-2 py-2 mb-2 font-retro text-[10px] text-[#7A2871] focus:outline-none focus:border-[#FF69B4] shrink-0"
+                />
+                {(() => {
+                  if (isPlaylistsError && (playlistsError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#FF4500] font-pixel text-xs text-center px-4">RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((playlistsError as any)?.retryAfter ?? 60)} SECONDS.</div>;
+                  if (isPlaylistsLoading) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs animate-pulse">LOADING LIBRARY...</div>;
+                  if (playlists.length === 0) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs">NO PLAYLISTS FOUND</div>;
+                  
+                  const filteredPlaylists = playlists.filter((p: any) => p.name.toLowerCase().includes(playlistSearch.toLowerCase()));
+                  if (filteredPlaylists.length === 0) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs">NO MATCHES FOUND</div>;
+                  
+                  return filteredPlaylists.map((p: any) => (
+                    <PlaylistCard key={p.id} playlist={p} onClick={() => setSelectedPlaylistId(p.id)} />
+                  ));
+                })()}
+              </>
+            )
           )}
 
           {activeTab === 'library' && (
@@ -520,7 +517,10 @@ export default function SpotifyPlayerUI() {
                 placeholder="Search Spotify..."
                 className="w-full bg-[#FFF0F5] border-2 border-[#FFB6C1] rounded-xl px-2 py-2 mb-3 font-retro text-[10px] text-[#7A2871] focus:outline-none focus:border-[#FF69B4] shrink-0"
               />
-              <SearchResults query={debouncedSearch} onPlayTrack={playTrack} onPlayPlaylist={playPlaylist} />
+              <SearchResults query={debouncedSearch} onPlayTrack={playTrack} onClickPlaylist={(id) => {
+                setActiveTab('playlists');
+                setSelectedPlaylistId(id);
+              }} />
             </div>
           )}
         </div>
