@@ -14,17 +14,23 @@ export function useSpotifySession() {
   });
 }
 
-export function usePlaylists() {
+export function usePlaylists(options?: { enabled?: boolean }) {
   const { isSuccess, data: sessionData } = useSpotifySession();
   const isAuthenticated = isSuccess && !!sessionData?.accessToken;
+  const isEnabled = options?.enabled !== false && isAuthenticated;
 
   return useQuery({
     queryKey: ['spotify', 'playlists'],
     queryFn: async () => {
-      const data = await proxyFetch('/me/playlists');
-      return data?.items || [];
+      const [meData, playlistsData] = await Promise.all([
+        proxyFetch('/me'),
+        proxyFetch('/me/playlists')
+      ]);
+      const currentUserId = meData?.id;
+      const allPlaylists = playlistsData?.items || [];
+      return allPlaylists.filter((p: any) => p?.owner?.id === currentUserId);
     },
-    enabled: isAuthenticated,
+    enabled: isEnabled,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -40,9 +46,10 @@ export function useDevices() {
   });
 }
 
-export function useBirthdayMix() {
+export function useBirthdayMix(options?: { enabled?: boolean }) {
   const { isSuccess, data: sessionData } = useSpotifySession();
   const isAuthenticated = isSuccess && !!sessionData?.accessToken;
+  const isEnabled = options?.enabled !== false && isAuthenticated;
 
   return useQuery({
     queryKey: ['spotify', 'birthdayMix'],
@@ -66,7 +73,7 @@ export function useBirthdayMix() {
       }
       return merged.slice(0, 30);
     },
-    enabled: isAuthenticated,
+    enabled: isEnabled,
     staleTime: 60 * 60 * 1000,
   });
 }
@@ -83,6 +90,7 @@ export function useTrackSavedStatus(trackId?: string) {
       return data && data.length > 0 ? data[0] : false;
     },
     enabled: isAuthenticated && !!trackId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -90,12 +98,13 @@ export function useSpotifyMutations() {
   const queryClient = useQueryClient();
 
   const play = useMutation({
-    mutationFn: async ({ uris, context_uri, device_id }: { uris?: string[], context_uri?: string, device_id?: string }) => {
+    mutationFn: async ({ uris, context_uri, offset, device_id }: { uris?: string[], context_uri?: string, offset?: { uri?: string, position?: number }, device_id?: string }) => {
       let url = '/me/player/play';
       if (device_id) url += `?device_id=${device_id}`;
       const body: Record<string, unknown> = {};
       if (uris) body.uris = uris;
       if (context_uri) body.context_uri = context_uri;
+      if (offset) body.offset = offset;
       
       await proxyFetch(url, {
         method: 'PUT',

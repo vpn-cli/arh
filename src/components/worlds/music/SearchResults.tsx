@@ -9,9 +9,10 @@ interface SearchResultsProps {
   query: string;
   onPlayTrack: (uri: string) => void;
   onClickPlaylist: (id: string) => void;
+  onClickAlbum: (id: string) => void;
 }
 
-export function SearchResults({ query, onPlayTrack, onClickPlaylist }: SearchResultsProps) {
+export function SearchResults({ query, onPlayTrack, onClickPlaylist, onClickAlbum }: SearchResultsProps) {
   const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useSearch(query);
 
   if (!query.trim()) {
@@ -58,11 +59,7 @@ export function SearchResults({ query, onPlayTrack, onClickPlaylist }: SearchRes
   };
 
   const handleAlbumClick = (id: string) => {
-    // Requirements state:
-    // 13. Clicking an album should navigate/open the album detail flow, if that route already exists.
-    // If it does not exist yet, provide the appropriate navigation structure without implementing the full Album phase prematurely.
-    console.log("Navigating to album detail flow (placeholder):", id);
-    alert(`Album detail flow for ID: ${id} (Future Phase)`);
+    onClickAlbum(id);
   };
 
   return (
