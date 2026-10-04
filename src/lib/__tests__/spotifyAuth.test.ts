@@ -11,11 +11,11 @@ describe('spotifyAuth utils', () => {
       ...originalLocation,
       origin: 'http://localhost:3000',
       href: '',
-    };
+    } as any;
   });
 
   afterEach(() => {
-    window.location = originalLocation;
+    window.location = originalLocation as any;
   });
 
   it('getRedirectUri should return origin + /api/spotify/callback', () => {
