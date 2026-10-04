@@ -1,29 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { useArtist, useArtistAlbums } from '@/hooks/useArtist';
+import { useArtist, useArtistAlbums, useArtistTopTracks } from '@/hooks/useArtist';
 import { ArtistHeader } from './ArtistHeader';
 import { AlbumCard } from './AlbumCard';
+import { TrackList } from './TrackList';
 
 interface ArtistDetailProps {
   artistId: string;
   onBack: () => void;
   onClickAlbum: (id: string) => void;
+  onPlayTrack?: (uri: string, contextUri?: string) => void;
 }
 
-export function ArtistDetail({ artistId, onBack, onClickAlbum }: ArtistDetailProps) {
+export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack }: ArtistDetailProps) {
   const { data: artist, isLoading: isLoadingArtist, isError: isArtistError, error: artistError } = useArtist(artistId);
   const { data: albumsData, isLoading: isLoadingAlbums, isError: isAlbumsError, error: albumsError } = useArtistAlbums(artistId);
+  const { data: topTracksData, isLoading: isLoadingTopTracks, isError: isTopTracksError, error: topTracksError } = useArtistTopTracks(artistId);
   
   const [rateLimitTimer, setRateLimitTimer] = useState<number | null>(null);
   
   useEffect(() => {
     const aError = artistError as Record<string, unknown>;
     const alError = albumsError as Record<string, unknown>;
+    const ttError = topTracksError as Record<string, unknown>;
     if (aError?.status === 429 && aError?.retryAfter && rateLimitTimer === null) {
-      setRateLimitTimer(aError.retryAfter);
+      setRateLimitTimer(aError.retryAfter as number);
     } else if (alError?.status === 429 && alError?.retryAfter && rateLimitTimer === null) {
-      setRateLimitTimer(alError.retryAfter);
+      setRateLimitTimer(alError.retryAfter as number);
+    } else if (ttError?.status === 429 && ttError?.retryAfter && rateLimitTimer === null) {
+      setRateLimitTimer(ttError.retryAfter as number);
     }
-  }, [artistError, albumsError, rateLimitTimer]);
+  }, [artistError, albumsError, topTracksError, rateLimitTimer]);
 
   useEffect(() => {
     if (rateLimitTimer === null || rateLimitTimer <= 0) return;
@@ -97,6 +103,31 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum }: ArtistDetailPro
           </div>
         ) : (
           <>
+            {/* Top Tracks Section */}
+            {isTopTracksError && (topTracksError as Record<string, unknown>)?.status === 429 ? (
+              <div className="flex items-center justify-center text-[#FF4500] font-pixel text-xs text-center px-4 h-20">
+                RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((topTracksError as Record<string, unknown>)?.retryAfter as number ?? 60)} SECONDS.
+              </div>
+            ) : isTopTracksError ? (
+              <div className="flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2 h-20">
+                <span className="text-[#FF4500]">TOP TRACKS UNAVAILABLE</span>
+              </div>
+            ) : (topTracksData?.tracks && topTracksData.tracks.length > 0) ? (
+              <div className="flex flex-col gap-3">
+                <h3 className="font-pixel text-[12px] text-[#D81B60]">TOP TRACKS</h3>
+                <TrackList 
+                  tracks={topTracksData.tracks.slice(0, 5)} 
+                  isLoading={isLoadingTopTracks} 
+                  onPlayTrack={(uri) => onPlayTrack?.(uri, artist?.uri)} 
+                  variant="compact"
+                />
+              </div>
+            ) : isLoadingTopTracks ? (
+              <div className="flex items-center justify-center text-[#FFB6C1] font-pixel text-xs animate-pulse h-20">
+                LOADING TOP TRACKS...
+              </div>
+            ) : null}
+
             {albums.length > 0 && (
               <div className="flex flex-col gap-3">
                 <h3 className="font-pixel text-[12px] text-[#D81B60]">ALBUMS</h3>
