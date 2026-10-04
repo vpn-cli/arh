@@ -30,7 +30,7 @@ export function TrackRow({ index, track, onPlay, onAddToQueue, onAddToPlaylist, 
         ) : (
           <div className={`${imgSize} rounded-lg bg-[#FFB6C1]/30 flex items-center justify-center shadow-sm shrink-0`} />
         )}
-        <div className={`flex-1 overflow-hidden z-10 relative ${isCompact ? 'flex flex-col min-w-0' : ''}`}>
+        <div className={`flex-1 overflow-hidden z-10 relative min-w-0 ${isCompact ? 'flex flex-col' : ''}`}>
           <div className="w-full relative overflow-hidden whitespace-nowrap">
             <span className={`${titleSize} text-[#7A2871] transition-colors pr-2 truncate block w-full`} title={track.name}>
               {track.name}

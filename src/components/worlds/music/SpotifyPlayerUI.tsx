@@ -11,6 +11,7 @@ import { PlaylistDetail } from "./PlaylistDetail";
 import { PlaylistCard } from "./PlaylistCard";
 import { AlbumDetail } from "./AlbumDetail";
 import { ArtistDetail } from "./ArtistDetail";
+import { MixSection } from "./MixSection";
 import { AddToPlaylistModal, CreatePlaylistModal, RemovePlaylistModal } from "./PlaylistModals";
 import { usePlaylistMutations } from "@/hooks/usePlaylistMutations";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
@@ -384,7 +385,7 @@ export default function SpotifyPlayerUI() {
   }
 
   return (
-    <div className="w-full flex flex-col sm:flex-row gap-4 h-[650px] sm:h-[580px] relative">
+    <div className="w-full flex flex-col sm:flex-row gap-4 h-[650px] sm:h-[580px] relative min-h-0">
 
       {/* Re-Login Popup Overlay */}
       {isSessionExpired && (
@@ -407,7 +408,7 @@ export default function SpotifyPlayerUI() {
       )}
 
       {/* Sidebar: Tabs and Content */}
-      <div className="w-full sm:w-1/3 bg-[#FFFFFF] rounded-3xl border-4 border-[#FFB6C1] shadow-[0_10px_30px_rgba(255,182,193,0.3)] p-4 flex flex-col h-full z-10">
+      <div className="w-full sm:w-[45%] md:w-[40%] bg-[#FFFFFF] rounded-3xl border-4 border-[#FFB6C1] shadow-[0_10px_30px_rgba(255,182,193,0.3)] p-4 flex flex-col h-full z-10 overflow-hidden min-h-0">
         
         {/* Tabs */}
         <div className="flex flex-wrap items-center justify-between mb-4 border-b-2 border-[#FFE4E1] pb-2 shrink-0 gap-y-2">
@@ -471,7 +472,7 @@ export default function SpotifyPlayerUI() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-2 relative">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-2 pb-4 custom-scrollbar flex flex-col gap-2 relative">
           {activeTab === 'queue' && (
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between mb-4 shrink-0">
@@ -486,7 +487,7 @@ export default function SpotifyPlayerUI() {
                   <div className="text-[#7A2871] font-retro text-[10px] mt-2">ADD TRACKS FROM ANYWHERE</div>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 pb-4">
+                <div className="flex flex-col gap-2">
                   {queue.map((item, idx) => (
                     <div 
                       key={`${item.track.id}-${idx}`} 
@@ -625,8 +626,8 @@ export default function SpotifyPlayerUI() {
           )}
 
           {activeTab === 'recent' && (
-            <div className="absolute inset-0 flex flex-col p-4 bg-[#FFFFFF]/95 overflow-y-auto">
-              <div className="flex justify-between items-center mb-2">
+            <div className="flex flex-col h-full min-h-0">
+              <div className="flex justify-between items-center mb-2 shrink-0">
                 <span className="font-pixel text-[10px] text-[#D81B60]">RECENTLY PLAYED</span>
               </div>
               {(() => {
@@ -663,34 +664,21 @@ export default function SpotifyPlayerUI() {
           )}
 
           {activeTab === 'mix' && (
-            <>
-              <input 
-                type="text"
-                value={mixSearch}
-                onChange={(e) => setMixSearch(e.target.value)}
-                placeholder="Filter birthday mix..."
-                className="w-full bg-[#FFF0F5] border-2 border-[#FFB6C1] rounded-xl px-2 py-2 mb-2 font-retro text-[10px] text-[#7A2871] focus:outline-none focus:border-[#FF69B4] shrink-0"
-              />
-              <button 
-                onClick={() => playTracks(birthdayMixTracks.map(t => t.uri))}
-                disabled={birthdayMixTracks.length === 0}
-                className={`w-full mb-3 shrink-0 bg-gradient-to-r from-[#FF99B9] to-[#FF69B4] text-white py-3 rounded-xl shadow-[0_4px_12px_rgba(255,105,180,0.4)] transition-all flex flex-col items-center justify-center gap-1 ${birthdayMixTracks.length === 0 ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
-              >
-                <span className="font-pixel text-sm font-bold tracking-widest">
-                  ✨ PLAY ENTIRE MIX ✨
-                </span>
-              </button>
-              {(() => {
-                if (isMixError && (mixError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#FF4500] font-pixel text-xs text-center px-4">RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((mixError as any)?.retryAfter ?? 60)} SECONDS.</div>;
-                if (isMixLoading) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs animate-pulse">GENERATING MIX...</div>;
-                if (birthdayMixTracks.length === 0) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs">NO MIX GENERATED</div>;
-                
-                const filteredMix = birthdayMixTracks.filter((t: any) => t.name.toLowerCase().includes(mixSearch.toLowerCase()) || t.artists.some((a:any) => a.name.toLowerCase().includes(mixSearch.toLowerCase())));
-                if (filteredMix.length === 0) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs">NO MATCHES FOUND</div>;
-                
-                return <TrackList tracks={filteredMix} isLoading={isMixLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} />;
-              })()}
-            </>
+            <MixSection
+              onPlayTrack={playTrack}
+              onPlayTracks={playTracks}
+              onAddToQueue={addToQueue}
+              onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
+              onClickArtist={(id) => {
+                setActiveTab('artist');
+                setSelectedArtistId(id);
+              }}
+              onClickPlaylist={(id) => {
+                setActiveTab('playlists');
+                setSelectedPlaylistId(id);
+              }}
+              rateLimitTimer={rateLimitTimer}
+            />
           )}
 
           {activeTab === 'search' && (
@@ -769,7 +757,7 @@ export default function SpotifyPlayerUI() {
       </div>
 
       {/* Main Player Area */}
-      <div className="w-full sm:w-2/3 bg-gradient-to-b from-[#FFE4E1] via-[#FFF0F5] to-[#FFC0CB] rounded-3xl border-4 border-[#FFB6C1] shadow-[0_10px_30px_rgba(255,182,193,0.3)] flex flex-col items-center justify-center text-center relative overflow-hidden h-full p-6">
+      <div className="w-full sm:flex-1 bg-gradient-to-b from-[#FFE4E1] via-[#FFF0F5] to-[#FFC0CB] rounded-3xl border-4 border-[#FFB6C1] shadow-[0_10px_30px_rgba(255,182,193,0.3)] flex flex-col items-center justify-center text-center relative overflow-hidden h-full p-6">
 
         {/* Subtle animated background pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,182,193,0.4)_50%,transparent_75%)] bg-[length:40px_40px] opacity-50" />

@@ -109,7 +109,7 @@ export default function MusicWorld() {
         </div>
 
         {/* Custom Retro Spotify Player UI */}
-        <div className="w-full max-w-5xl bg-[#FFFFFF]/90 backdrop-blur-md border-4 border-[#FFB6C1] rounded-3xl shadow-[0_10px_30px_rgba(255,182,193,0.3)] overflow-hidden relative group">
+        <div className="w-full max-w-6xl xl:max-w-7xl bg-[#FFFFFF]/90 backdrop-blur-md border-4 border-[#FFB6C1] rounded-3xl shadow-[0_10px_30px_rgba(255,182,193,0.3)] overflow-hidden relative group">
           
           {/* Mac-OS Classic Style Header */}
           <div className="bg-[#FFF0F5] px-4 py-3 flex items-center justify-between border-b-4 border-[#FFE4E1]">

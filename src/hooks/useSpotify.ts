@@ -150,3 +150,35 @@ export function useRecentlyPlayed(options?: { enabled?: boolean }) {
     staleTime: 2 * 60 * 1000, // 2 minutes (recently played can update frequently)
   });
 }
+
+export function useTopTracks(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', options?: { enabled?: boolean }) {
+  const { isSuccess, data: sessionData } = useSpotifySession();
+  const isAuthenticated = isSuccess && !!sessionData?.accessToken;
+  const isEnabled = options?.enabled !== false && isAuthenticated;
+
+  return useQuery({
+    queryKey: ['spotify', 'topTracks', timeRange],
+    queryFn: async () => {
+      const data = await proxyFetch(`/me/top/tracks?limit=10&time_range=${timeRange}`);
+      return data?.items || [];
+    },
+    enabled: isEnabled,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useTopArtists(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', options?: { enabled?: boolean }) {
+  const { isSuccess, data: sessionData } = useSpotifySession();
+  const isAuthenticated = isSuccess && !!sessionData?.accessToken;
+  const isEnabled = options?.enabled !== false && isAuthenticated;
+
+  return useQuery({
+    queryKey: ['spotify', 'topArtists', timeRange],
+    queryFn: async () => {
+      const data = await proxyFetch(`/me/top/artists?limit=10&time_range=${timeRange}`);
+      return data?.items || [];
+    },
+    enabled: isEnabled,
+    staleTime: 5 * 60 * 1000,
+  });
+}
