@@ -151,15 +151,16 @@ export function useRecentlyPlayed(options?: { enabled?: boolean }) {
   });
 }
 
-export function useTopTracks(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', options?: { enabled?: boolean }) {
+export function useTopTracks(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', options?: { enabled?: boolean, limit?: number }) {
   const { isSuccess, data: sessionData } = useSpotifySession();
   const isAuthenticated = isSuccess && !!sessionData?.accessToken;
   const isEnabled = options?.enabled !== false && isAuthenticated;
+  const limit = options?.limit || 10;
 
   return useQuery({
-    queryKey: ['spotify', 'topTracks', timeRange],
+    queryKey: ['spotify', 'topTracks', timeRange, limit],
     queryFn: async () => {
-      const data = await proxyFetch(`/me/top/tracks?limit=10&time_range=${timeRange}`);
+      const data = await proxyFetch(`/me/top/tracks?limit=${limit}&time_range=${timeRange}`);
       return data?.items || [];
     },
     enabled: isEnabled,
@@ -167,15 +168,16 @@ export function useTopTracks(timeRange: 'short_term' | 'medium_term' | 'long_ter
   });
 }
 
-export function useTopArtists(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', options?: { enabled?: boolean }) {
+export function useTopArtists(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', options?: { enabled?: boolean, limit?: number }) {
   const { isSuccess, data: sessionData } = useSpotifySession();
   const isAuthenticated = isSuccess && !!sessionData?.accessToken;
   const isEnabled = options?.enabled !== false && isAuthenticated;
+  const limit = options?.limit || 10;
 
   return useQuery({
-    queryKey: ['spotify', 'topArtists', timeRange],
+    queryKey: ['spotify', 'topArtists', timeRange, limit],
     queryFn: async () => {
-      const data = await proxyFetch(`/me/top/artists?limit=10&time_range=${timeRange}`);
+      const data = await proxyFetch(`/me/top/artists?limit=${limit}&time_range=${timeRange}`);
       return data?.items || [];
     },
     enabled: isEnabled,
