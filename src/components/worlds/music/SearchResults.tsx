@@ -9,12 +9,14 @@ interface SearchResultsProps {
   query: string;
   onPlayTrack: (uri: string) => void;
   onAddToQueue?: (track: any) => void;
+  onAddToPlaylist?: (uri: string) => void;
+  onPlayPlaylist?: (uri: string) => void;
   onClickPlaylist: (id: string) => void;
   onClickAlbum: (id: string) => void;
   onClickArtist?: (id: string) => void;
 }
 
-export function SearchResults({ query, onPlayTrack, onAddToQueue, onClickPlaylist, onClickAlbum, onClickArtist }: SearchResultsProps) {
+export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue, onAddToPlaylist, onClickPlaylist, onClickAlbum, onClickArtist }: SearchResultsProps) {
   const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useSearch(query);
 
   if (!query.trim()) {

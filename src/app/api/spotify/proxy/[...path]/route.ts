@@ -165,6 +165,21 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
       return NextResponse.json({ error: 'Too Many Requests', retryAfter }, { status: 429 });
     }
 
+    // 6b. Bust playlist cache after successful write operations
+    if (response.ok && request.method !== 'GET' && request.method !== 'HEAD' && redis) {
+      const isPlaylistWrite = pathString.startsWith('me/playlists') || pathString.startsWith('playlists/');
+      if (isPlaylistWrite) {
+        try {
+          // Delete the cached GET /me/playlists response so the next fetch gets fresh data
+          const playlistCacheUrl = `https://api.spotify.com/v1/me/playlists`;
+          const playlistCacheKey = `spotify_cache:${accessToken}:${playlistCacheUrl}`;
+          await redis.del(playlistCacheKey);
+        } catch (e) {
+          console.error("Redis error busting playlist cache:", e);
+        }
+      }
+    }
+
     // 7. Parse and Cache Success Responses
     if (response.ok && isCacheable) {
       const clonedResponse = response.clone();

@@ -5,10 +5,12 @@ interface TrackRowProps {
   track: any;
   onPlay: (uri: string) => void;
   onAddToQueue?: (track: any) => void;
+  onAddToPlaylist?: (uri: string) => void;
+  onRemoveFromPlaylist?: (uri: string) => void;
   variant?: 'default' | 'compact';
 }
 
-export function TrackRow({ index, track, onPlay, onAddToQueue, variant = 'default' }: TrackRowProps) {
+export function TrackRow({ index, track, onPlay, onAddToQueue, onAddToPlaylist, onRemoveFromPlaylist, variant = 'default' }: TrackRowProps) {
   const isCompact = variant === 'compact';
   const imgSize = isCompact ? 'w-8 h-8' : 'w-10 h-10';
   const titleSize = isCompact ? 'text-[10px] font-bold font-retro' : 'text-sm font-pixel uppercase';
@@ -39,6 +41,36 @@ export function TrackRow({ index, track, onPlay, onAddToQueue, variant = 'defaul
           </div>
         </div>
       </button>
+
+      {onAddToPlaylist && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddToPlaylist(track.uri);
+          }}
+          className="opacity-0 group-hover:opacity-100 p-2 text-[#FFB6C1] hover:text-[#D81B60] transition-opacity shrink-0 rounded-full hover:bg-[#FFE4E1]"
+          title="Add to Playlist"
+        >
+          <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z" />
+          </svg>
+        </button>
+      )}
+
+      {onRemoveFromPlaylist && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemoveFromPlaylist(track.uri);
+          }}
+          className="opacity-0 group-hover:opacity-100 p-2 text-[#FFB6C1] hover:text-[#FF4500] transition-opacity shrink-0 rounded-full hover:bg-[#FFE4E1]"
+          title="Remove from Playlist"
+        >
+          <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+          </svg>
+        </button>
+      )}
 
       {onAddToQueue && (
         <button

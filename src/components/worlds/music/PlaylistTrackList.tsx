@@ -6,12 +6,15 @@ interface PlaylistTrackListProps {
   isLoading: boolean;
   onPlayTrack: (uri: string) => void;
   onAddToQueue?: (track: any) => void;
+  onAddToPlaylist?: (uri: string) => void;
+  onRemoveFromPlaylist?: (uri: string) => void;
+  onReorder?: (startIndex: number, endIndex: number) => void;
 }
 
-export function PlaylistTrackList({ tracks, isLoading, onPlayTrack, onAddToQueue }: PlaylistTrackListProps) {
+export function PlaylistTrackList({ tracks, isLoading, onPlayTrack, onAddToQueue, onAddToPlaylist, onRemoveFromPlaylist, onReorder }: PlaylistTrackListProps) {
   return (
     <div className="flex-1 overflow-hidden flex flex-col px-2 pb-2">
-      <TrackList tracks={tracks} isLoading={isLoading} onPlayTrack={onPlayTrack} onAddToQueue={onAddToQueue} emptyMessage="NO TRACKS IN PLAYLIST" />
+      <TrackList tracks={tracks} isLoading={isLoading} onPlayTrack={onPlayTrack} onAddToQueue={onAddToQueue} onAddToPlaylist={onAddToPlaylist} onRemoveFromPlaylist={onRemoveFromPlaylist} onReorder={onReorder} emptyMessage="NO TRACKS IN PLAYLIST" />
     </div>
   );
 }

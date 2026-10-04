@@ -11,9 +11,13 @@ interface PlaylistDetailProps {
   onPlayTrack: (uri: string, contextUri?: string) => void;
   onAddToQueue?: (track: any, contextUri?: string) => void;
   onShufflePlay?: (uri: string) => void;
+  onAddToPlaylist?: (uri: string) => void;
+  onRemoveFromPlaylist?: (uri: string) => void;
+  onReorder?: (startIndex: number, endIndex: number) => void;
+  onEdit?: () => void;
 }
 
-export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack, onAddToQueue, onShufflePlay }: PlaylistDetailProps) {
+export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack, onAddToQueue, onShufflePlay, onAddToPlaylist, onRemoveFromPlaylist, onReorder, onEdit }: PlaylistDetailProps) {
   const { data: playlist, isLoading: isLoadingPlaylist, isError: isPlaylistError, error: playlistError } = usePlaylist(playlistId);
   const { data: itemsData, isLoading: isLoadingItems, isError: isItemsError, error: itemsError } = usePlaylistItems(playlistId);
 
@@ -83,6 +87,7 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
         playlist={playlist} 
         onBack={onBack} 
         isRestricted={isItemsError && (itemsError as any)?.status === 403}
+        onEdit={onEdit}
       />
       <PlaylistActions 
         onPlay={handlePlay} 
@@ -104,6 +109,9 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
           isLoading={isLoadingItems} 
           onPlayTrack={(uri) => onPlayTrack(uri, playlist?.uri)} 
           onAddToQueue={(track) => onAddToQueue && onAddToQueue(track, playlist?.uri)}
+          onAddToPlaylist={onAddToPlaylist}
+          onRemoveFromPlaylist={onRemoveFromPlaylist}
+          onReorder={onReorder}
         />
       )}
     </div>

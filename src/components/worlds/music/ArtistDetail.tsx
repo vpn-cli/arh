@@ -10,9 +10,10 @@ interface ArtistDetailProps {
   onClickAlbum: (id: string) => void;
   onPlayTrack?: (uri: string, contextUri?: string) => void;
   onAddToQueue?: (track: any, contextUri?: string) => void;
+  onAddToPlaylist?: (uri: string) => void;
 }
 
-export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAddToQueue }: ArtistDetailProps) {
+export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAddToQueue, onAddToPlaylist }: ArtistDetailProps) {
   const { data: artist, isLoading: isLoadingArtist, isError: isArtistError, error: artistError } = useArtist(artistId);
   const { data: albumsData, isLoading: isLoadingAlbums, isError: isAlbumsError, error: albumsError } = useArtistAlbums(artistId);
   const { data: featuredTracksData, isLoading: isLoadingFeaturedTracks, isError: isFeaturedTracksError, error: featuredTracksError } = useArtistFeaturedTracks(artist?.name);
