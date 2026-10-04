@@ -15,6 +15,8 @@ import { MixSection } from "./MixSection";
 import { FrequenciesSection } from "./FrequenciesSection";
 import { VibesSection } from "./VibesSection";
 import { AddToPlaylistModal, CreatePlaylistModal, RemovePlaylistModal } from "./PlaylistModals";
+import { MemoriesSection } from "./MemoriesSection";
+import { MemoryEditorModal } from "./MemoryEditorModal";
 import { usePlaylistMutations } from "@/hooks/usePlaylistMutations";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 
@@ -53,7 +55,7 @@ export default function SpotifyPlayerUI() {
   const progressBarRef = React.useRef<HTMLDivElement>(null);
 
   // New Feature States
-  const [activeTab, setActiveTab] = useState<'library' | 'recent' | 'mix' | 'playlists' | 'search' | 'album' | 'artist' | 'queue' | 'frequencies' | 'vibes'>('library');
+  const [activeTab, setActiveTab] = useState<'library' | 'recent' | 'mix' | 'playlists' | 'search' | 'album' | 'artist' | 'queue' | 'frequencies' | 'vibes' | 'memories'>('library');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
@@ -70,6 +72,9 @@ export default function SpotifyPlayerUI() {
   const [editingPlaylist, setEditingPlaylist] = useState<any>(null);
   const [removingPlaylist, setRemovingPlaylist] = useState<any>(null);
   const [addingTrackUri, setAddingTrackUri] = useState<string | null>(null);
+  const [memoryEditorEntity, setMemoryEditorEntity] = useState<any>(null);
+  const [memoryEditorType, setMemoryEditorType] = useState<'track' | 'artist' | 'playlist' | null>(null);
+  const [memoryEditorMemoryId, setMemoryEditorMemoryId] = useState<string | null>(null);
 
   const { removeItems, reorderItems } = usePlaylistMutations();  
   const [selectedDevice, setSelectedDevice] = useState<string>("");
@@ -463,6 +468,12 @@ export default function SpotifyPlayerUI() {
             >
               VIBES
             </button>
+            <button 
+              onClick={() => setActiveTab('memories')}
+              className={`font-pixel text-[10px] px-2 py-1 rounded-md transition-colors ${activeTab === 'memories' ? 'bg-[#FFB6C1] text-[#FFFFFF]' : 'text-[#FFB6C1] hover:bg-[#FFE4E1]'}`}
+            >
+              MEMORIES
+            </button>
           </div>
           <div className="flex gap-2">
             <button
@@ -587,6 +598,10 @@ export default function SpotifyPlayerUI() {
                     await removeItems.mutateAsync({ playlistId: selectedPlaylistId, uri });
                   }
                 }}
+                onAddMemory={(entity, type) => {
+                  setMemoryEditorEntity(entity);
+                  setMemoryEditorType(type);
+                }}
                 onReorder={async (startIndex, endIndex) => {
                   if (selectedPlaylistId) {
                     // Spotify's API for reorder: 
@@ -646,7 +661,7 @@ export default function SpotifyPlayerUI() {
               </div>
               {(() => {
                 if (isRecentError && (recentError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#FF4500] font-pixel text-xs text-center px-4">RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((recentError as any)?.retryAfter ?? 60)} SECONDS.</div>;
-                return <TrackList tracks={recentTracks.map((item: any) => item.track)} isLoading={isRecentLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} emptyMessage="NO RECENTLY PLAYED TRACKS" />;
+                return <TrackList tracks={recentTracks.map((item: any) => item.track)} isLoading={isRecentLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} onAddMemory={(track) => { setMemoryEditorEntity(track); setMemoryEditorType('track'); }} emptyMessage="NO RECENTLY PLAYED TRACKS" />;
               })()}
             </div>
           )}
@@ -672,7 +687,7 @@ export default function SpotifyPlayerUI() {
               </button>
               {(() => {
                 if (isLikedError && (likedError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#FF4500] font-pixel text-xs text-center px-4">RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((likedError as any)?.retryAfter ?? 60)} SECONDS.</div>;
-                return <TrackList tracks={likedData?.tracks || []} isLoading={isLikedLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} emptyMessage="NO LIKED SONGS" />;
+                return <TrackList tracks={likedData?.tracks || []} isLoading={isLikedLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} onAddMemory={(track) => { setMemoryEditorEntity(track); setMemoryEditorType('track'); }} emptyMessage="NO LIKED SONGS" />;
               })()}
             </div>
           )}
@@ -691,6 +706,10 @@ export default function SpotifyPlayerUI() {
                 setActiveTab('playlists');
                 setSelectedPlaylistId(id);
               }}
+              onAddMemory={(entity, type) => {
+                setMemoryEditorEntity(entity);
+                setMemoryEditorType(type);
+              }}
               rateLimitTimer={rateLimitTimer}
             />
           )}
@@ -704,6 +723,10 @@ export default function SpotifyPlayerUI() {
               onClickArtist={(id) => {
                 setActiveTab('artist');
                 setSelectedArtistId(id);
+              }}
+              onAddMemory={(entity, type) => {
+                setMemoryEditorEntity(entity);
+                setMemoryEditorType(type);
               }}
               rateLimitTimer={rateLimitTimer}
             />
@@ -719,7 +742,34 @@ export default function SpotifyPlayerUI() {
                 setActiveTab('artist');
                 setSelectedArtistId(id);
               }}
+              onAddMemory={(entity, type) => {
+                setMemoryEditorEntity(entity);
+                setMemoryEditorType(type);
+                setMemoryEditorMemoryId(null);
+              }}
               rateLimitTimer={rateLimitTimer}
+            />
+          )}
+
+          {activeTab === 'memories' && (
+            <MemoriesSection
+              onPlayTrack={playTrack}
+              onPlayPlaylist={playPlaylist}
+              onAddToQueue={addToQueue}
+              onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
+              onClickArtist={(id) => {
+                setActiveTab('artist');
+                setSelectedArtistId(id);
+              }}
+              onClickPlaylist={(id) => {
+                setActiveTab('playlists');
+                setSelectedPlaylistId(id);
+              }}
+              onEditMemory={(entity, type, memoryId) => {
+                setMemoryEditorEntity(entity);
+                setMemoryEditorType(type);
+                setMemoryEditorMemoryId(memoryId || null);
+              }}
             />
           )}
 
@@ -749,6 +799,10 @@ export default function SpotifyPlayerUI() {
                   setActiveTab('artist');
                   setSelectedArtistId(id);
                 }}
+                onAddMemory={(entity, type) => {
+                  setMemoryEditorEntity(entity);
+                  setMemoryEditorType(type);
+                }}
               />
             </div>
           )}
@@ -767,6 +821,10 @@ export default function SpotifyPlayerUI() {
               }}
               onAddToQueue={addToQueue}
               onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
+              onAddMemory={(entity, type) => {
+                setMemoryEditorEntity(entity);
+                setMemoryEditorType(type);
+              }}
               onShufflePlay={async (uri) => {
                 if (!isShuffle) {
                   await toggleShuffle();
@@ -793,10 +851,23 @@ export default function SpotifyPlayerUI() {
               }}
               onAddToQueue={addToQueue}
               onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
+              onAddMemory={(entity, type) => {
+                setMemoryEditorEntity(entity);
+                setMemoryEditorType(type);
+                setMemoryEditorMemoryId(null);
+              }}
             />
           )}
         </div>
       </div>
+
+      <MemoryEditorModal
+        isOpen={!!memoryEditorEntity || !!memoryEditorMemoryId}
+        onClose={() => { setMemoryEditorEntity(null); setMemoryEditorType(null); setMemoryEditorMemoryId(null); }}
+        entity={memoryEditorEntity}
+        entityType={memoryEditorType}
+        memoryId={memoryEditorMemoryId}
+      />
 
       {/* Main Player Area */}
       <div className="w-full sm:flex-1 bg-gradient-to-b from-[#FFE4E1] via-[#FFF0F5] to-[#FFC0CB] rounded-3xl border-4 border-[#FFB6C1] shadow-[0_10px_30px_rgba(255,182,193,0.3)] flex flex-col items-center justify-center text-center relative overflow-hidden h-full p-6">

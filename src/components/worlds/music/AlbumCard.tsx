@@ -12,10 +12,13 @@ export function AlbumCard({ album, onClick, variant = 'default' }: AlbumCardProp
   const titleSize = isCompact ? 'text-[10px] font-bold font-retro' : 'text-sm font-pixel uppercase';
 
   return (
-    <button
-      onClick={() => onClick(album.id)}
-      className="group w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[#FFF0F5] transition-all text-left border border-transparent hover:border-[#FFB6C1] shrink-0 active:scale-95"
+    <div
+      className="group w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[#FFF0F5] transition-all text-left border border-transparent hover:border-[#FFB6C1] shrink-0"
     >
+      <button
+        onClick={() => onClick(album.id)}
+        className="flex-1 flex items-center gap-3 active:scale-95 text-left truncate min-w-0"
+      >
       {album.images && album.images[0] ? (
         <img src={album.images[0].url} alt={album.name} className={`${imgSize} rounded-lg shadow-sm object-cover transition-transform duration-200 group-hover:scale-110 group-hover:shadow-md shrink-0`} />
       ) : (
@@ -31,6 +34,7 @@ export function AlbumCard({ album, onClick, variant = 'default' }: AlbumCardProp
           ALBUM • {album.artists?.map((a:any)=>a.name).join(', ')}
         </div>
       </div>
-    </button>
+      </button>
+    </div>
   );
 }

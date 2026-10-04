@@ -7,10 +7,11 @@ interface TrackRowProps {
   onAddToQueue?: (track: any) => void;
   onAddToPlaylist?: (uri: string) => void;
   onRemoveFromPlaylist?: (uri: string) => void;
+  onAddMemory?: (track: any) => void;
   variant?: 'default' | 'compact';
 }
 
-export function TrackRow({ index, track, onPlay, onAddToQueue, onAddToPlaylist, onRemoveFromPlaylist, variant = 'default' }: TrackRowProps) {
+export function TrackRow({ index, track, onPlay, onAddToQueue, onAddToPlaylist, onRemoveFromPlaylist, onAddMemory, variant = 'default' }: TrackRowProps) {
   const isCompact = variant === 'compact';
   const imgSize = isCompact ? 'w-8 h-8' : 'w-10 h-10';
   const titleSize = isCompact ? 'text-[10px] font-bold font-retro' : 'text-sm font-pixel uppercase';
@@ -83,6 +84,20 @@ export function TrackRow({ index, track, onPlay, onAddToQueue, onAddToPlaylist, 
         >
           <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
             <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+          </svg>
+        </button>
+      )}
+      {onAddMemory && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddMemory(track);
+          }}
+          className="opacity-0 group-hover:opacity-100 p-2 text-[#FFB6C1] hover:text-[#D81B60] transition-opacity shrink-0 rounded-full hover:bg-[#FFE4E1]"
+          title="Add Memory"
+        >
+          <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z" />
           </svg>
         </button>
       )}

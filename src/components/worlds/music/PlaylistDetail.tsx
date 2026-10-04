@@ -16,9 +16,10 @@ interface PlaylistDetailProps {
   onReorder?: (startIndex: number, endIndex: number) => void;
   onEdit?: () => void;
   onRemove?: () => void;
+  onAddMemory?: (entity: any, type: 'track' | 'artist' | 'playlist') => void;
 }
 
-export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack, onAddToQueue, onShufflePlay, onAddToPlaylist, onRemoveFromPlaylist, onReorder, onEdit, onRemove }: PlaylistDetailProps) {
+export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack, onAddToQueue, onShufflePlay, onAddToPlaylist, onRemoveFromPlaylist, onReorder, onEdit, onRemove, onAddMemory }: PlaylistDetailProps) {
   const { data: playlist, isLoading: isLoadingPlaylist, isError: isPlaylistError, error: playlistError } = usePlaylist(playlistId);
   const { data: itemsData, isLoading: isLoadingItems, isError: isItemsError, error: itemsError } = usePlaylistItems(playlistId);
 
@@ -114,6 +115,7 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
           onAddToPlaylist={onAddToPlaylist}
           onRemoveFromPlaylist={onRemoveFromPlaylist}
           onReorder={onReorder}
+          onAddMemory={onAddMemory ? (track) => onAddMemory(track, 'track') : undefined}
         />
       )}
     </div>

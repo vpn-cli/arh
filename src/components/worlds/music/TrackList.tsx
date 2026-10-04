@@ -7,13 +7,14 @@ interface TrackListProps {
   onAddToQueue?: (track: any) => void;
   onAddToPlaylist?: (uri: string) => void;
   onRemoveFromPlaylist?: (uri: string) => void;
+  onAddMemory?: (track: any) => void;
   onReorder?: (startIndex: number, endIndex: number) => void;
   emptyMessage?: string;
   isLoading?: boolean;
   variant?: 'default' | 'compact';
 }
 
-export function TrackList({ tracks, onPlayTrack, onAddToQueue, onAddToPlaylist, onRemoveFromPlaylist, onReorder, emptyMessage = "NO TRACKS FOUND", isLoading = false, variant = 'default' }: TrackListProps) {
+export function TrackList({ tracks, onPlayTrack, onAddToQueue, onAddToPlaylist, onRemoveFromPlaylist, onAddMemory, onReorder, emptyMessage = "NO TRACKS FOUND", isLoading = false, variant = 'default' }: TrackListProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
@@ -70,7 +71,7 @@ export function TrackList({ tracks, onPlayTrack, onAddToQueue, onAddToPlaylist, 
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <TrackRow index={i} track={t} onPlay={onPlayTrack} onAddToQueue={onAddToQueue} onAddToPlaylist={onAddToPlaylist} onRemoveFromPlaylist={onRemoveFromPlaylist} variant={variant} />
+            <TrackRow index={i} track={t} onPlay={onPlayTrack} onAddToQueue={onAddToQueue} onAddToPlaylist={onAddToPlaylist} onRemoveFromPlaylist={onRemoveFromPlaylist} onAddMemory={onAddMemory} variant={variant} />
           </div>
         </div>
       ))}
