@@ -11,6 +11,7 @@ import { PlaylistDetail } from "./PlaylistDetail";
 import { PlaylistCard } from "./PlaylistCard";
 import { AlbumDetail } from "./AlbumDetail";
 import { ArtistDetail } from "./ArtistDetail";
+import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 
 const sfx: any = { select: () => {}, hover: () => {}, pop: () => {}, move: () => {}, error: () => {} };
 
@@ -20,7 +21,6 @@ declare global {
     Spotify?: any;
   }
 }
-import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 
 export default function SpotifyPlayerUI() {
   const queryClient = useQueryClient();
