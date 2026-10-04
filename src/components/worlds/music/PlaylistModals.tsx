@@ -159,3 +159,54 @@ export function CreatePlaylistModal({ onClose, trackUriToAdd, onComplete, playli
     </div>
   );
 }
+
+interface RemovePlaylistModalProps {
+  playlist: any;
+  onClose: () => void;
+  onComplete?: () => void;
+}
+
+export function RemovePlaylistModal({ playlist, onClose, onComplete }: RemovePlaylistModalProps) {
+  const { removePlaylist } = usePlaylistMutations();
+
+  const handleRemove = () => {
+    if (!playlist?.id) return;
+    removePlaylist.mutate(playlist.id, {
+      onSuccess: () => {
+        onClose();
+        if (onComplete) onComplete();
+      }
+    });
+  };
+
+  const isPending = removePlaylist.isPending;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div className="bg-[#FFF0F5] border-2 border-[#FFB6C1] rounded-2xl w-full max-w-sm flex flex-col shadow-xl">
+        <div className="p-4 border-b border-[#FFB6C1]/30 flex justify-between items-center bg-white/50 rounded-t-2xl">
+          <h2 className="font-pixel text-xs text-[#FF69B4]">REMOVE PLAYLIST?</h2>
+          <button onClick={onClose} className="text-[#FFB6C1] hover:text-[#FF69B4]" disabled={isPending}>&times;</button>
+        </div>
+        <div className="p-6 flex flex-col items-center text-center gap-4">
+          <p className="font-retro text-xs text-[#7A2871] leading-relaxed">
+            "{playlist?.name}" will be removed<br />from your Spotify playlists.
+          </p>
+          {removePlaylist.isError && (
+            <p className="font-pixel text-[10px] text-[#FF4500]">
+              FAILED TO REMOVE. {((removePlaylist.error as any)?.status === 403) ? 'NOT AUTHORIZED.' : ''}
+            </p>
+          )}
+          <div className="flex gap-2 w-full mt-2">
+            <button type="button" onClick={onClose} className="flex-1 bg-white border border-[#FFB6C1] text-[#FF69B4] rounded-xl py-2 font-pixel text-[10px] hover:bg-[#FFE4E1] transition-colors" disabled={isPending}>
+              CANCEL
+            </button>
+            <button type="button" onClick={handleRemove} className="flex-1 bg-[#D81B60] text-white rounded-xl py-2 font-pixel text-[10px] hover:bg-[#FF69B4] transition-colors disabled:opacity-50" disabled={isPending}>
+              {isPending ? 'REMOVING...' : 'REMOVE'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

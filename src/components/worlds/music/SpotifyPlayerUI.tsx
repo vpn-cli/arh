@@ -11,7 +11,7 @@ import { PlaylistDetail } from "./PlaylistDetail";
 import { PlaylistCard } from "./PlaylistCard";
 import { AlbumDetail } from "./AlbumDetail";
 import { ArtistDetail } from "./ArtistDetail";
-import { AddToPlaylistModal, CreatePlaylistModal } from "./PlaylistModals";
+import { AddToPlaylistModal, CreatePlaylistModal, RemovePlaylistModal } from "./PlaylistModals";
 import { usePlaylistMutations } from "@/hooks/usePlaylistMutations";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 
@@ -65,6 +65,7 @@ export default function SpotifyPlayerUI() {
   const [isGeneratingMix, setIsGeneratingMix] = useState(false);
   const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<any>(null);
+  const [removingPlaylist, setRemovingPlaylist] = useState<any>(null);
   const [addingTrackUri, setAddingTrackUri] = useState<string | null>(null);
 
   const { removeItems, reorderItems } = usePlaylistMutations();  
@@ -545,6 +546,10 @@ export default function SpotifyPlayerUI() {
                   const p = playlists.find((pl: any) => pl.id === selectedPlaylistId);
                   if (p) setEditingPlaylist(p);
                 }}
+                onRemove={() => {
+                  const p = playlists.find((pl: any) => pl.id === selectedPlaylistId);
+                  if (p) setRemovingPlaylist(p);
+                }}
                 onPlayPlaylist={playPlaylist}
                 onPlayTrack={(uri, contextUri) => {
                   if (contextUri) playContextTrack(contextUri, uri);
@@ -917,6 +922,28 @@ export default function SpotifyPlayerUI() {
         <CreatePlaylistModal 
           onClose={() => setEditingPlaylist(null)} 
           playlistToEdit={editingPlaylist}
+        />
+      )}
+      {removingPlaylist && (
+        <RemovePlaylistModal 
+          playlist={removingPlaylist} 
+          onClose={() => setRemovingPlaylist(null)} 
+          onComplete={() => {
+            if (selectedPlaylistId === removingPlaylist.id) {
+              setSelectedPlaylistId(null);
+            }
+          }} 
+        />
+      )}
+      {removingPlaylist && (
+        <RemovePlaylistModal 
+          playlist={removingPlaylist} 
+          onClose={() => setRemovingPlaylist(null)} 
+          onComplete={() => {
+            if (selectedPlaylistId === removingPlaylist.id) {
+              setSelectedPlaylistId(null);
+            }
+          }} 
         />
       )}
     </div>
