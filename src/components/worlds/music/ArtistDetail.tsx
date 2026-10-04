@@ -6,20 +6,18 @@ import { AlbumCard } from './AlbumCard';
 interface ArtistDetailProps {
   artistId: string;
   onBack: () => void;
-  onPlayTrack: (uri: string, contextUri?: string) => void;
-  onPlayAlbum: (uri: string) => void;
   onClickAlbum: (id: string) => void;
 }
 
-export function ArtistDetail({ artistId, onBack, onPlayTrack, onPlayAlbum, onClickAlbum }: ArtistDetailProps) {
+export function ArtistDetail({ artistId, onBack, onClickAlbum }: ArtistDetailProps) {
   const { data: artist, isLoading: isLoadingArtist, isError: isArtistError, error: artistError } = useArtist(artistId);
   const { data: albumsData, isLoading: isLoadingAlbums, isError: isAlbumsError, error: albumsError } = useArtistAlbums(artistId);
   
   const [rateLimitTimer, setRateLimitTimer] = useState<number | null>(null);
   
   useEffect(() => {
-    const aError = artistError as any;
-    const alError = albumsError as any;
+    const aError = artistError as Record<string, unknown>;
+    const alError = albumsError as Record<string, unknown>;
     if (aError?.status === 429 && aError?.retryAfter && rateLimitTimer === null) {
       setRateLimitTimer(aError.retryAfter);
     } else if (alError?.status === 429 && alError?.retryAfter && rateLimitTimer === null) {
@@ -35,7 +33,7 @@ export function ArtistDetail({ artistId, onBack, onPlayTrack, onPlayAlbum, onCli
     return () => clearInterval(interval);
   }, [rateLimitTimer]);
 
-  if (isArtistError && (artistError as any)?.status === 429) {
+  if (isArtistError && (artistError as Record<string, unknown>)?.status === 429) {
     return (
       <div className="flex flex-col h-full items-center justify-center">
         <div className="text-[#FF4500] font-pixel text-xs text-center px-4">
@@ -67,6 +65,7 @@ export function ArtistDetail({ artistId, onBack, onPlayTrack, onPlayAlbum, onCli
   
   // Deduplicate by name (sometimes API returns same album from different regions)
   const uniqueItems = items.reduce((acc: any[], item: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (!acc.some(x => x.name === item.name)) {
       acc.push(item);
     }
@@ -84,9 +83,9 @@ export function ArtistDetail({ artistId, onBack, onPlayTrack, onPlayAlbum, onCli
       />
       
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar flex flex-col gap-6">
-        {isAlbumsError && (albumsError as any)?.status === 429 ? (
+        {isAlbumsError && (albumsError as Record<string, unknown>)?.status === 429 ? (
           <div className="flex items-center justify-center text-[#FF4500] font-pixel text-xs text-center px-4 h-20">
-            RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((albumsError as any)?.retryAfter ?? 60)} SECONDS.
+            RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((albumsError as Record<string, unknown>)?.retryAfter as number ?? 60)} SECONDS.
           </div>
         ) : isAlbumsError ? (
           <div className="flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2 h-20">

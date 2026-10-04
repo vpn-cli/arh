@@ -583,11 +583,6 @@ export default function SpotifyPlayerUI() {
                 setActiveTab('search');
                 setSelectedArtistId(null);
               }}
-              onPlayTrack={(uri, contextUri) => {
-                if (contextUri) playContextTrack(contextUri, uri);
-                else playTrack(uri);
-              }}
-              onPlayAlbum={playPlaylist}
               onClickAlbum={(id) => {
                 setActiveTab('album');
                 setSelectedAlbumId(id);
