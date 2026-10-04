@@ -9,6 +9,7 @@ interface VibesSectionProps {
   onAddToQueue: (uri: string) => void;
   onAddToPlaylist: (uri: string) => void;
   onClickArtist: (id: string) => void;
+  onAddMemory: (entity: any, type: 'track' | 'artist' | 'playlist') => void;
   rateLimitTimer: number | null;
 }
 
@@ -28,6 +29,7 @@ export function VibesSection({
   onAddToQueue,
   onAddToPlaylist,
   onClickArtist,
+  onAddMemory,
   rateLimitTimer
 }: VibesSectionProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('medium_term');
@@ -215,6 +217,7 @@ export function VibesSection({
                     key={artist.id} 
                     artist={artist} 
                     onClick={onClickArtist} 
+                    onAddMemory={(artist) => onAddMemory(artist, 'artist')}
                     variant="compact"
                   />
                 ))}
@@ -230,6 +233,7 @@ export function VibesSection({
                 onPlayTrack={onPlayTrack} 
                 onAddToQueue={onAddToQueue} 
                 onAddToPlaylist={onAddToPlaylist} 
+                onAddMemory={(track) => onAddMemory(track, 'track')}
               />
             </section>
           )}

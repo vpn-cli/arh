@@ -11,9 +11,10 @@ interface ArtistDetailProps {
   onPlayTrack?: (uri: string, contextUri?: string) => void;
   onAddToQueue?: (track: any, contextUri?: string) => void;
   onAddToPlaylist?: (uri: string) => void;
+  onAddMemory?: (entity: any, type: 'track' | 'artist' | 'playlist') => void;
 }
 
-export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAddToQueue, onAddToPlaylist }: ArtistDetailProps) {
+export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAddToQueue, onAddToPlaylist, onAddMemory }: ArtistDetailProps) {
   const { data: artist, isLoading: isLoadingArtist, isError: isArtistError, error: artistError } = useArtist(artistId);
   const { data: albumsData, isLoading: isLoadingAlbums, isError: isAlbumsError, error: albumsError } = useArtistAlbums(artistId);
   const { data: featuredTracksData, isLoading: isLoadingFeaturedTracks, isError: isFeaturedTracksError, error: featuredTracksError } = useArtistFeaturedTracks(artist?.name);
@@ -122,6 +123,7 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
                   isLoading={isLoadingFeaturedTracks} 
                   onPlayTrack={(uri) => onPlayTrack?.(uri)} 
                   onAddToQueue={(track) => onAddToQueue && onAddToQueue(track)}
+                  onAddMemory={onAddMemory ? (track) => onAddMemory(track, 'track') : undefined}
                   variant="compact"
                 />
               </div>

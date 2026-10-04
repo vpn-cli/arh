@@ -14,9 +14,10 @@ interface SearchResultsProps {
   onClickPlaylist: (id: string) => void;
   onClickAlbum: (id: string) => void;
   onClickArtist?: (id: string) => void;
+  onAddMemory: (entity: any, type: 'track' | 'artist' | 'playlist') => void;
 }
 
-export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue, onAddToPlaylist, onClickPlaylist, onClickAlbum, onClickArtist }: SearchResultsProps) {
+export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue, onAddToPlaylist, onClickPlaylist, onClickAlbum, onClickArtist, onAddMemory }: SearchResultsProps) {
   const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useSearch(query);
 
   if (!query.trim()) {
@@ -71,7 +72,7 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
         <div className="flex flex-col gap-2">
           <h4 className="font-pixel text-[10px] text-[#D81B60]">TRACKS</h4>
           {tracks.map(t => (
-            <TrackRow key={t.id} track={t} onPlay={onPlayTrack} onAddToQueue={onAddToQueue} variant="compact" />
+            <TrackRow key={t.id} track={t} onPlay={onPlayTrack} onAddToQueue={onAddToQueue} onAddMemory={(track) => onAddMemory(track, 'track')} variant="compact" />
           ))}
         </div>
       )}
@@ -80,7 +81,7 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
         <div className="flex flex-col gap-2">
           <h4 className="font-pixel text-[10px] text-[#D81B60]">ARTISTS</h4>
           {artists.map(a => (
-            <ArtistCard key={a.id} artist={a} onClick={handleArtistClick} variant="compact" />
+            <ArtistCard key={a.id} artist={a} onClick={handleArtistClick} onAddMemory={(artist) => onAddMemory(artist, 'artist')} variant="compact" />
           ))}
         </div>
       )}
@@ -98,7 +99,7 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
         <div className="flex flex-col gap-2">
           <h4 className="font-pixel text-[10px] text-[#D81B60]">PLAYLISTS</h4>
           {playlists.map(p => (
-            <PlaylistCard key={p.id} playlist={p} onClick={() => onClickPlaylist(p.id)} variant="compact" />
+            <PlaylistCard key={p.id} playlist={p} onClick={() => onClickPlaylist(p.id)} onAddMemory={(playlist) => onAddMemory(playlist, 'playlist')} variant="compact" />
           ))}
         </div>
       )}

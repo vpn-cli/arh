@@ -11,6 +11,7 @@ interface MixSectionProps {
   onAddToPlaylist: (uri: string) => void;
   onClickArtist: (id: string) => void;
   onClickPlaylist: (id: string) => void;
+  onAddMemory: (entity: any, type: 'track' | 'artist' | 'playlist') => void;
   rateLimitTimer: number | null;
 }
 
@@ -21,6 +22,7 @@ export function MixSection({
   onAddToPlaylist,
   onClickArtist,
   onClickPlaylist,
+  onAddMemory,
   rateLimitTimer
 }: MixSectionProps) {
   const { data: recentData, isLoading: isRecentLoading, isError: isRecentError, error: recentError } = useRecentlyPlayed({ enabled: true });
@@ -63,6 +65,7 @@ export function MixSection({
              onPlayTrack={onPlayTrack} 
              onAddToQueue={onAddToQueue} 
              onAddToPlaylist={onAddToPlaylist} 
+             onAddMemory={(track) => onAddMemory(track, 'track')}
            />
          ) : (
            <div className="text-[#FFB6C1] font-pixel text-[10px] px-1">NOTHING RECENTLY PLAYED</div>
@@ -90,6 +93,7 @@ export function MixSection({
              onPlayTrack={onPlayTrack} 
              onAddToQueue={onAddToQueue} 
              onAddToPlaylist={onAddToPlaylist} 
+             onAddMemory={(track) => onAddMemory(track, 'track')}
            />
          ) : (
            <div className="text-[#FFB6C1] font-pixel text-[10px] px-1">NO TOP TRACKS</div>
@@ -109,6 +113,7 @@ export function MixSection({
                  key={artist.id} 
                  artist={artist} 
                  onClick={onClickArtist} 
+                 onAddMemory={(artist) => onAddMemory(artist, 'artist')}
                  variant="compact"
                />
              ))}
@@ -131,6 +136,7 @@ export function MixSection({
                  key={playlist.id} 
                  playlist={playlist} 
                  onClick={() => onClickPlaylist(playlist.id)} 
+                 onAddMemory={(playlist) => onAddMemory(playlist, 'playlist')}
                  variant="compact"
                />
              ))}

@@ -9,6 +9,7 @@ interface FrequenciesSectionProps {
   onAddToQueue: (uri: string) => void;
   onAddToPlaylist: (uri: string) => void;
   onClickArtist: (id: string) => void;
+  onAddMemory: (entity: any, type: 'track' | 'artist' | 'playlist') => void;
   rateLimitTimer: number | null;
 }
 
@@ -20,6 +21,7 @@ export function FrequenciesSection({
   onAddToQueue,
   onAddToPlaylist,
   onClickArtist,
+  onAddMemory,
   rateLimitTimer
 }: FrequenciesSectionProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('medium_term');
@@ -161,6 +163,7 @@ export function FrequenciesSection({
                  key={artist.id} 
                  artist={artist} 
                  onClick={onClickArtist} 
+                 onAddMemory={(artist) => onAddMemory(artist, 'artist')}
                  variant="compact"
                />
              ))}
@@ -191,6 +194,7 @@ export function FrequenciesSection({
              onPlayTrack={onPlayTrack} 
              onAddToQueue={onAddToQueue} 
              onAddToPlaylist={onAddToPlaylist} 
+             onAddMemory={(track) => onAddMemory(track, 'track')}
            />
          ) : (
            <div className="text-[#FFB6C1] font-pixel text-[10px] px-1">NO TOP TRACKS</div>
