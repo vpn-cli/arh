@@ -1,0 +1,7 @@
+URL: https://api.spotify.com/v1/tracks?ids=7pXA1BKgq0tROI4aPBT9Dg%2C4cOdK2wGLETKBW3PvgPWqT
+{
+  "error": {
+    "status": 403,
+    "message": "Forbidden"
+  }
+}
