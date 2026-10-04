@@ -10,9 +10,10 @@ interface SearchResultsProps {
   onPlayTrack: (uri: string) => void;
   onClickPlaylist: (id: string) => void;
   onClickAlbum: (id: string) => void;
+  onClickArtist?: (id: string) => void;
 }
 
-export function SearchResults({ query, onPlayTrack, onClickPlaylist, onClickAlbum }: SearchResultsProps) {
+export function SearchResults({ query, onPlayTrack, onClickPlaylist, onClickAlbum, onClickArtist }: SearchResultsProps) {
   const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useSearch(query);
 
   if (!query.trim()) {
@@ -52,10 +53,9 @@ export function SearchResults({ query, onPlayTrack, onClickPlaylist, onClickAlbu
   }
 
   const handleArtistClick = (id: string) => {
-    // Requirements state:
-    // 14. Clicking an artist should similarly use the future artist route/structure without implementing the full Artist phase.
-    console.log("Navigating to artist detail flow (placeholder):", id);
-    alert(`Artist detail flow for ID: ${id} (Future Phase)`);
+    if (onClickArtist) {
+      onClickArtist(id);
+    }
   };
 
   const handleAlbumClick = (id: string) => {
