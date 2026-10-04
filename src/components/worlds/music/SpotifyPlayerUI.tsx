@@ -11,6 +11,8 @@ import { PlaylistDetail } from "./PlaylistDetail";
 import { PlaylistCard } from "./PlaylistCard";
 import { AlbumDetail } from "./AlbumDetail";
 import { ArtistDetail } from "./ArtistDetail";
+import { AddToPlaylistModal, CreatePlaylistModal } from "./PlaylistModals";
+import { usePlaylistMutations } from "@/hooks/usePlaylistMutations";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 
 const sfx: any = { select: () => {}, hover: () => {}, pop: () => {}, move: () => {}, error: () => {} };
@@ -60,10 +62,12 @@ export default function SpotifyPlayerUI() {
   const [globalSearch, setGlobalSearch] = useState("");
   
   
-  
   const [isGeneratingMix, setIsGeneratingMix] = useState(false);
+  const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
+  const [editingPlaylist, setEditingPlaylist] = useState<any>(null);
+  const [addingTrackUri, setAddingTrackUri] = useState<string | null>(null);
 
-  
+  const { removeItems, reorderItems } = usePlaylistMutations();  
   const [selectedDevice, setSelectedDevice] = useState<string>("");
   const [libraryPage, setLibraryPage] = useState(0);
   
@@ -537,12 +541,33 @@ export default function SpotifyPlayerUI() {
               <PlaylistDetail
                 playlistId={selectedPlaylistId}
                 onBack={() => setSelectedPlaylistId(null)}
+                onEdit={() => {
+                  const p = playlists.find((pl: any) => pl.id === selectedPlaylistId);
+                  if (p) setEditingPlaylist(p);
+                }}
                 onPlayPlaylist={playPlaylist}
                 onPlayTrack={(uri, contextUri) => {
                   if (contextUri) playContextTrack(contextUri, uri);
                   else playTrack(uri);
                 }}
                 onAddToQueue={addToQueue}
+                onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
+                onRemoveFromPlaylist={async (uri) => {
+                  if (selectedPlaylistId) {
+                    await removeItems.mutateAsync({ playlistId: selectedPlaylistId, uri });
+                  }
+                }}
+                onReorder={async (startIndex, endIndex) => {
+                  if (selectedPlaylistId) {
+                    // Spotify's API for reorder: 
+                    // range_start: index of the first item to move
+                    // insert_before: position where the items should be inserted.
+                    // To move an item down, insert_before must be greater than the current index, 
+                    // and since it inserts BEFORE that index, if you move item 1 to position 2, insert_before = 3.
+                    const insertBefore = endIndex > startIndex ? endIndex + 1 : endIndex;
+                    await reorderItems.mutateAsync({ playlistId: selectedPlaylistId, range_start: startIndex, insert_before: insertBefore });
+                  }
+                }}
                 onShufflePlay={async (uri) => {
                   if (!isShuffle) {
                     await toggleShuffle();
@@ -552,13 +577,22 @@ export default function SpotifyPlayerUI() {
               />
             ) : (
               <>
-                <input 
-                  type="text"
-                  value={playlistSearch}
-                  onChange={(e) => setPlaylistSearch(e.target.value)}
-                  placeholder="Filter playlists..."
-                  className="w-full bg-[#FFF0F5] border-2 border-[#FFB6C1] rounded-xl px-2 py-2 mb-2 font-retro text-[10px] text-[#7A2871] focus:outline-none focus:border-[#FF69B4] shrink-0"
-                />
+                <div className="flex gap-2 mb-2 shrink-0">
+                  <input 
+                    type="text"
+                    value={playlistSearch}
+                    onChange={(e) => setPlaylistSearch(e.target.value)}
+                    placeholder="Filter playlists..."
+                    className="flex-1 bg-[#FFF0F5] border-2 border-[#FFB6C1] rounded-xl px-2 py-2 font-retro text-[10px] text-[#7A2871] focus:outline-none focus:border-[#FF69B4]"
+                  />
+                  <button 
+                    onClick={() => setIsCreatingPlaylist(true)}
+                    className="bg-[#FF69B4] text-white px-3 py-2 rounded-xl font-retro text-[10px] font-bold hover:scale-105 active:scale-95 transition-transform"
+                    title="Create Playlist"
+                  >
+                    + NEW
+                  </button>
+                </div>
                 {(() => {
                   if (isPlaylistsError && (playlistsError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#FF4500] font-pixel text-xs text-center px-4">RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((playlistsError as any)?.retryAfter ?? 60)} SECONDS.</div>;
                   if (isPlaylistsLoading) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs animate-pulse">LOADING LIBRARY...</div>;
@@ -596,7 +630,7 @@ export default function SpotifyPlayerUI() {
               </button>
               {(() => {
                 if (isLikedError && (likedError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#FF4500] font-pixel text-xs text-center px-4">RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((likedError as any)?.retryAfter ?? 60)} SECONDS.</div>;
-                return <TrackList tracks={likedData?.tracks || []} isLoading={isLikedLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} emptyMessage="NO LIKED SONGS" />;
+                return <TrackList tracks={likedData?.tracks || []} isLoading={isLikedLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} emptyMessage="NO LIKED SONGS" />;
               })()}
             </div>
           )}
@@ -627,7 +661,7 @@ export default function SpotifyPlayerUI() {
                 const filteredMix = birthdayMixTracks.filter((t: any) => t.name.toLowerCase().includes(mixSearch.toLowerCase()) || t.artists.some((a:any) => a.name.toLowerCase().includes(mixSearch.toLowerCase())));
                 if (filteredMix.length === 0) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs">NO MATCHES FOUND</div>;
                 
-                return <TrackList tracks={filteredMix} isLoading={isMixLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} />;
+                return <TrackList tracks={filteredMix} isLoading={isMixLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} />;
               })()}
             </>
           )}
@@ -645,6 +679,7 @@ export default function SpotifyPlayerUI() {
                 query={debouncedSearch} 
                 onPlayTrack={playTrack} 
                 onAddToQueue={addToQueue}
+                onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
                 onClickPlaylist={(id) => {
                   setActiveTab('playlists');
                   setSelectedPlaylistId(id);
@@ -674,6 +709,7 @@ export default function SpotifyPlayerUI() {
                 else playTrack(uri);
               }}
               onAddToQueue={addToQueue}
+              onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
               onShufflePlay={async (uri) => {
                 if (!isShuffle) {
                   await toggleShuffle();
@@ -699,6 +735,7 @@ export default function SpotifyPlayerUI() {
                 else playTrack(uri);
               }}
               onAddToQueue={addToQueue}
+              onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
             />
           )}
         </div>
@@ -864,6 +901,24 @@ export default function SpotifyPlayerUI() {
           </div>
         )}
       </div>
+      
+      {addingTrackUri && (
+        <AddToPlaylistModal 
+          trackUri={addingTrackUri} 
+          onClose={() => setAddingTrackUri(null)} 
+        />
+      )}
+      {isCreatingPlaylist && (
+        <CreatePlaylistModal 
+          onClose={() => setIsCreatingPlaylist(false)} 
+        />
+      )}
+      {editingPlaylist && (
+        <CreatePlaylistModal 
+          onClose={() => setEditingPlaylist(null)} 
+          playlistToEdit={editingPlaylist}
+        />
+      )}
     </div>
   );
 }

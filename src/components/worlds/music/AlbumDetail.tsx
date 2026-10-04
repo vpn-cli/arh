@@ -10,10 +10,11 @@ interface AlbumDetailProps {
   onPlayAlbum: (uri: string) => void;
   onPlayTrack: (uri: string, contextUri?: string) => void;
   onAddToQueue?: (track: any, contextUri?: string) => void;
+  onAddToPlaylist?: (uri: string) => void;
   onShufflePlay?: (uri: string) => void;
 }
 
-export function AlbumDetail({ albumId, onBack, onPlayAlbum, onPlayTrack, onAddToQueue, onShufflePlay }: AlbumDetailProps) {
+export function AlbumDetail({ albumId, onBack, onPlayAlbum, onPlayTrack, onAddToQueue, onAddToPlaylist, onShufflePlay }: AlbumDetailProps) {
   const { data: album, isLoading: isLoadingAlbum, isError: isAlbumError, error: albumError } = useAlbum(albumId);
   const { data: itemsData, isLoading: isLoadingItems, isError: isItemsError, error: itemsError } = useAlbumTracks(albumId, album);
   
