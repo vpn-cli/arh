@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   const codeVerifier = base64URLEncode(crypto.randomBytes(32));
   const codeChallenge = base64URLEncode(sha256(codeVerifier));
 
-  const scope = 'streaming user-read-email user-read-private user-library-read user-library-modify playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-top-read user-read-playback-state user-modify-playback-state';
+  const scope = 'streaming user-read-email user-read-private user-library-read user-library-modify playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-top-read user-read-playback-state user-modify-playback-state user-read-recently-played';
   const authUrl = new URL("https://accounts.spotify.com/authorize");
 
   const params = {

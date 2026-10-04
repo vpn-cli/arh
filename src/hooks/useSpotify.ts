@@ -133,3 +133,20 @@ export function useSpotifyMutations() {
 
   return { play, toggleSave, toggleShuffle };
 }
+
+export function useRecentlyPlayed(options?: { enabled?: boolean }) {
+  const { isSuccess, data: sessionData } = useSpotifySession();
+  const isAuthenticated = isSuccess && !!sessionData?.accessToken;
+  const isEnabled = options?.enabled !== false && isAuthenticated;
+
+  return useQuery({
+    queryKey: ['spotify', 'recentlyPlayed'],
+    queryFn: async () => {
+      const { getRecentlyPlayed } = await import('@/lib/spotify/player');
+      const data = await getRecentlyPlayed(50);
+      return data?.items || [];
+    },
+    enabled: isEnabled,
+    staleTime: 2 * 60 * 1000, // 2 minutes (recently played can update frequently)
+  });
+}
