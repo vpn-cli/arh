@@ -12,6 +12,7 @@ import { PlaylistCard } from "./PlaylistCard";
 import { AlbumDetail } from "./AlbumDetail";
 import { ArtistDetail } from "./ArtistDetail";
 import { MixSection } from "./MixSection";
+import { FrequenciesSection } from "./FrequenciesSection";
 import { AddToPlaylistModal, CreatePlaylistModal, RemovePlaylistModal } from "./PlaylistModals";
 import { usePlaylistMutations } from "@/hooks/usePlaylistMutations";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
@@ -51,7 +52,7 @@ export default function SpotifyPlayerUI() {
   const progressBarRef = React.useRef<HTMLDivElement>(null);
 
   // New Feature States
-  const [activeTab, setActiveTab] = useState<'library' | 'recent' | 'mix' | 'playlists' | 'search' | 'album' | 'artist' | 'queue'>('library');
+  const [activeTab, setActiveTab] = useState<'library' | 'recent' | 'mix' | 'playlists' | 'search' | 'album' | 'artist' | 'queue' | 'frequencies'>('library');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
@@ -449,6 +450,12 @@ export default function SpotifyPlayerUI() {
             >
               QUEUE
             </button>
+            <button 
+              onClick={() => setActiveTab('frequencies')}
+              className={`font-pixel text-[10px] px-2 py-1 rounded-md transition-colors ${activeTab === 'frequencies' ? 'bg-[#FFB6C1] text-[#FFFFFF]' : 'text-[#FFB6C1] hover:bg-[#FFE4E1]'}`}
+            >
+              FREQS
+            </button>
           </div>
           <div className="flex gap-2">
             <button
@@ -676,6 +683,20 @@ export default function SpotifyPlayerUI() {
               onClickPlaylist={(id) => {
                 setActiveTab('playlists');
                 setSelectedPlaylistId(id);
+              }}
+              rateLimitTimer={rateLimitTimer}
+            />
+          )}
+
+          {activeTab === 'frequencies' && (
+            <FrequenciesSection
+              onPlayTrack={playTrack}
+              onPlayTracks={playTracks}
+              onAddToQueue={addToQueue}
+              onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
+              onClickArtist={(id) => {
+                setActiveTab('artist');
+                setSelectedArtistId(id);
               }}
               rateLimitTimer={rateLimitTimer}
             />
