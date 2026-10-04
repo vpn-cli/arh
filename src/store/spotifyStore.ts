@@ -71,15 +71,14 @@ export const useSpotifyPlayerStore = create<SpotifyPlayerState>((set) => ({
     const newQueue = [...state.queue];
     newQueue.splice(index, 1);
     
-    // Adjust queueIndex if necessary
+    // Adjust queueIndex
     let newIndex = state.queueIndex;
-    if (index < state.queueIndex) {
+    if (index <= state.queueIndex) {
       newIndex--;
-    } else if (index === state.queueIndex) {
-      // If we remove the currently playing item, maybe we shouldn't change the index, 
-      // but nextTrack will use the new item at this index.
-      // Let's just keep the index and let the application handle playback changes if needed.
     }
+    
+    // Sanity bounds check just in case, although newIndex can be -1
+    if (newIndex < -1) newIndex = -1;
     
     return { queue: newQueue, queueIndex: newIndex };
   }),
