@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
-const sfx: any = { select: () => {}, hover: () => {}, pop: () => {}, move: () => {}, error: () => {} };
 import { useSpotifySession, usePlaylists, useDevices, useBirthdayMix, useTrackSavedStatus, useSpotifyMutations } from "@/hooks/useSpotify";
 import { useQueryClient } from '@tanstack/react-query';
 import { useLikedTracks } from "@/hooks/useLikedTracks";
@@ -12,6 +11,8 @@ import { PlaylistDetail } from "./PlaylistDetail";
 import { PlaylistCard } from "./PlaylistCard";
 import { AlbumDetail } from "./AlbumDetail";
 import { ArtistDetail } from "./ArtistDetail";
+
+const sfx: any = { select: () => {}, hover: () => {}, pop: () => {}, move: () => {}, error: () => {} };
 
 declare global {
   interface Window {
