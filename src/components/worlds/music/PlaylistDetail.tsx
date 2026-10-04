@@ -9,10 +9,11 @@ interface PlaylistDetailProps {
   onBack: () => void;
   onPlayPlaylist: (uri: string) => void;
   onPlayTrack: (uri: string, contextUri?: string) => void;
+  onAddToQueue?: (track: any, contextUri?: string) => void;
   onShufflePlay?: (uri: string) => void;
 }
 
-export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack, onShufflePlay }: PlaylistDetailProps) {
+export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack, onAddToQueue, onShufflePlay }: PlaylistDetailProps) {
   const { data: playlist, isLoading: isLoadingPlaylist, isError: isPlaylistError, error: playlistError } = usePlaylist(playlistId);
   const { data: itemsData, isLoading: isLoadingItems, isError: isItemsError, error: itemsError } = usePlaylistItems(playlistId);
 
@@ -102,6 +103,7 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
           tracks={itemsData?.items || []} 
           isLoading={isLoadingItems} 
           onPlayTrack={(uri) => onPlayTrack(uri, playlist?.uri)} 
+          onAddToQueue={(track) => onAddToQueue && onAddToQueue(track, playlist?.uri)}
         />
       )}
     </div>

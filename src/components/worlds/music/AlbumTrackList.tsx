@@ -5,12 +5,13 @@ interface AlbumTrackListProps {
   tracks: any[];
   isLoading: boolean;
   onPlayTrack: (uri: string) => void;
+  onAddToQueue?: (track: any) => void;
 }
 
-export function AlbumTrackList({ tracks, isLoading, onPlayTrack }: AlbumTrackListProps) {
+export function AlbumTrackList({ tracks, isLoading, onPlayTrack, onAddToQueue }: AlbumTrackListProps) {
   return (
     <div className="flex-1 overflow-hidden flex flex-col px-2 pb-2">
-      <TrackList tracks={tracks} isLoading={isLoading} onPlayTrack={onPlayTrack} emptyMessage="NO TRACKS ON ALBUM" />
+      <TrackList tracks={tracks} isLoading={isLoading} onPlayTrack={onPlayTrack} onAddToQueue={onAddToQueue} emptyMessage="NO TRACKS ON ALBUM" />
     </div>
   );
 }

@@ -9,9 +9,10 @@ interface ArtistDetailProps {
   onBack: () => void;
   onClickAlbum: (id: string) => void;
   onPlayTrack?: (uri: string, contextUri?: string) => void;
+  onAddToQueue?: (track: any, contextUri?: string) => void;
 }
 
-export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack }: ArtistDetailProps) {
+export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAddToQueue }: ArtistDetailProps) {
   const { data: artist, isLoading: isLoadingArtist, isError: isArtistError, error: artistError } = useArtist(artistId);
   const { data: albumsData, isLoading: isLoadingAlbums, isError: isAlbumsError, error: albumsError } = useArtistAlbums(artistId);
   const { data: topTracksData, isLoading: isLoadingTopTracks, isError: isTopTracksError, error: topTracksError } = useArtistTopTracks(artistId);
@@ -119,6 +120,7 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack }: Ar
                   tracks={topTracksData.tracks.slice(0, 5)} 
                   isLoading={isLoadingTopTracks} 
                   onPlayTrack={(uri) => onPlayTrack?.(uri, artist?.uri)} 
+                  onAddToQueue={(track) => onAddToQueue && onAddToQueue(track, artist?.uri)}
                   variant="compact"
                 />
               </div>

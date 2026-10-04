@@ -8,12 +8,13 @@ import { PlaylistCard } from './PlaylistCard';
 interface SearchResultsProps {
   query: string;
   onPlayTrack: (uri: string) => void;
+  onAddToQueue?: (track: any) => void;
   onClickPlaylist: (id: string) => void;
   onClickAlbum: (id: string) => void;
   onClickArtist?: (id: string) => void;
 }
 
-export function SearchResults({ query, onPlayTrack, onClickPlaylist, onClickAlbum, onClickArtist }: SearchResultsProps) {
+export function SearchResults({ query, onPlayTrack, onAddToQueue, onClickPlaylist, onClickAlbum, onClickArtist }: SearchResultsProps) {
   const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useSearch(query);
 
   if (!query.trim()) {
@@ -68,7 +69,7 @@ export function SearchResults({ query, onPlayTrack, onClickPlaylist, onClickAlbu
         <div className="flex flex-col gap-2">
           <h4 className="font-pixel text-[10px] text-[#D81B60]">TRACKS</h4>
           {tracks.map(t => (
-            <TrackRow key={t.id} track={t} onPlay={onPlayTrack} variant="compact" />
+            <TrackRow key={t.id} track={t} onPlay={onPlayTrack} onAddToQueue={onAddToQueue} variant="compact" />
           ))}
         </div>
       )}

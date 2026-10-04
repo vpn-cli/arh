@@ -1,5 +1,10 @@
 import { create } from 'zustand';
 
+export interface QueueItem {
+  track: any;
+  contextUri?: string;
+}
+
 interface SpotifyPlayerState {
   player: any | null;
   deviceId: string | null;
@@ -11,6 +16,10 @@ interface SpotifyPlayerState {
   position: number;
   duration: number;
   error: string | null;
+  
+  queue: QueueItem[];
+  queueIndex: number;
+
   setPlayer: (player: any) => void;
   setDeviceId: (id: string | null) => void;
   setIsReady: (ready: boolean) => void;
@@ -21,6 +30,13 @@ interface SpotifyPlayerState {
   setPosition: (pos: number) => void;
   setDuration: (dur: number) => void;
   setError: (err: string | null) => void;
+
+  addToQueue: (track: any, contextUri?: string) => void;
+  addTracksToQueue: (items: QueueItem[]) => void;
+  removeFromQueue: (index: number) => void;
+  clearQueue: () => void;
+  setQueueIndex: (index: number) => void;
+  setQueue: (queue: QueueItem[]) => void;
 }
 
 export const useSpotifyPlayerStore = create<SpotifyPlayerState>((set) => ({
@@ -34,6 +50,10 @@ export const useSpotifyPlayerStore = create<SpotifyPlayerState>((set) => ({
   position: 0,
   duration: 0,
   error: null,
+  
+  queue: [],
+  queueIndex: -1,
+
   setPlayer: (player) => set({ player }),
   setDeviceId: (deviceId) => set({ deviceId }),
   setIsReady: (isReady) => set({ isReady }),
@@ -44,4 +64,26 @@ export const useSpotifyPlayerStore = create<SpotifyPlayerState>((set) => ({
   setPosition: (position) => set({ position }),
   setDuration: (duration) => set({ duration }),
   setError: (error) => set({ error }),
+
+  addToQueue: (track, contextUri) => set((state) => ({ queue: [...state.queue, { track, contextUri }] })),
+  addTracksToQueue: (items) => set((state) => ({ queue: [...state.queue, ...items] })),
+  removeFromQueue: (index) => set((state) => {
+    const newQueue = [...state.queue];
+    newQueue.splice(index, 1);
+    
+    // Adjust queueIndex if necessary
+    let newIndex = state.queueIndex;
+    if (index < state.queueIndex) {
+      newIndex--;
+    } else if (index === state.queueIndex) {
+      // If we remove the currently playing item, maybe we shouldn't change the index, 
+      // but nextTrack will use the new item at this index.
+      // Let's just keep the index and let the application handle playback changes if needed.
+    }
+    
+    return { queue: newQueue, queueIndex: newIndex };
+  }),
+  clearQueue: () => set({ queue: [], queueIndex: -1 }),
+  setQueueIndex: (queueIndex) => set({ queueIndex }),
+  setQueue: (queue) => set({ queue })
 }));
