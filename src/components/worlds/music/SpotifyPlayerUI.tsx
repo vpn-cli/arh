@@ -587,6 +587,10 @@ export default function SpotifyPlayerUI() {
                 setActiveTab('album');
                 setSelectedAlbumId(id);
               }}
+              onPlayTrack={(uri, contextUri) => {
+                if (contextUri) playContextTrack(contextUri, uri);
+                else playTrack(uri);
+              }}
             />
           )}
         </div>
