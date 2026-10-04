@@ -167,13 +167,36 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
 
     // 6b. Bust playlist cache after successful write operations
     if (response.ok && request.method !== 'GET' && request.method !== 'HEAD' && redis) {
-      const isPlaylistWrite = pathString.startsWith('me/playlists') || pathString.startsWith('playlists/');
+      const isLibraryPlaylistWrite = pathString === 'me/library' && !!url.searchParams.get('uris')?.includes('spotify:playlist:');
+      const isPlaylistWrite = pathString.startsWith('me/playlists') || pathString.startsWith('playlists/') || isLibraryPlaylistWrite;
       if (isPlaylistWrite) {
         try {
           // Delete the cached GET /me/playlists response so the next fetch gets fresh data
           const playlistCacheUrl = `https://api.spotify.com/v1/me/playlists`;
           const playlistCacheKey = `spotify_cache:${accessToken}:${playlistCacheUrl}`;
           await redis.del(playlistCacheKey);
+
+          // Targeted cache invalidation for specific playlist operations
+          // Match playlists/{playlist_id} or playlists/{playlist_id}/items
+          let playlistId = null;
+          const match = pathString.match(/^playlists\/([^\/]+)/);
+          if (match && match[1]) {
+            playlistId = match[1];
+          } else if (isLibraryPlaylistWrite) {
+            const uris = url.searchParams.get('uris');
+            const pMatch = uris?.match(/spotify:playlist:([^,&]+)/);
+            if (pMatch && pMatch[1]) {
+              playlistId = pMatch[1];
+            }
+          }
+
+          if (playlistId) {
+            const pattern = `spotify_cache:${accessToken}:https://api.spotify.com/v1/playlists/${playlistId}*`;
+            const keys = await redis.keys(pattern);
+            if (keys && keys.length > 0) {
+              await redis.del(...keys);
+            }
+          }
         } catch (e) {
           console.error("Redis error busting playlist cache:", e);
         }

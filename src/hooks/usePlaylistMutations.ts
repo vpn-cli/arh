@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createPlaylist, updatePlaylist, addItemsToPlaylist, removeItemsFromPlaylist, reorderPlaylistItems } from '@/lib/spotify/playlists';
+import { createPlaylist, updatePlaylist, addItemsToPlaylist, removeItemsFromPlaylist, reorderPlaylistItems, removePlaylistFromLibrary } from '@/lib/spotify/playlists';
 import { useSpotifySession } from './useSpotify';
 
 export function usePlaylistMutations() {
@@ -56,11 +56,23 @@ export function usePlaylistMutations() {
     }
   });
 
+  const removePlaylist = useMutation({
+    mutationFn: async (playlistId: string) => {
+      return await removePlaylistFromLibrary(playlistId);
+    },
+    onSuccess: (_, playlistId) => {
+      queryClient.invalidateQueries({ queryKey: ['spotify', 'playlists'] });
+      queryClient.removeQueries({ queryKey: ['spotify', 'playlist', playlistId] });
+      queryClient.removeQueries({ queryKey: ['spotify', 'playlistItems', playlistId] });
+    }
+  });
+
   return {
     create,
     update,
     addItems,
     removeItems,
     reorderItems,
+    removePlaylist,
   };
 }

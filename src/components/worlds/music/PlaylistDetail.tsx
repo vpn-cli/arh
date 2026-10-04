@@ -15,9 +15,10 @@ interface PlaylistDetailProps {
   onRemoveFromPlaylist?: (uri: string) => void;
   onReorder?: (startIndex: number, endIndex: number) => void;
   onEdit?: () => void;
+  onRemove?: () => void;
 }
 
-export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack, onAddToQueue, onShufflePlay, onAddToPlaylist, onRemoveFromPlaylist, onReorder, onEdit }: PlaylistDetailProps) {
+export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack, onAddToQueue, onShufflePlay, onAddToPlaylist, onRemoveFromPlaylist, onReorder, onEdit, onRemove }: PlaylistDetailProps) {
   const { data: playlist, isLoading: isLoadingPlaylist, isError: isPlaylistError, error: playlistError } = usePlaylist(playlistId);
   const { data: itemsData, isLoading: isLoadingItems, isError: isItemsError, error: itemsError } = usePlaylistItems(playlistId);
 
@@ -88,6 +89,7 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
         onBack={onBack} 
         isRestricted={isItemsError && (itemsError as any)?.status === 403}
         onEdit={onEdit}
+        onRemove={onRemove}
       />
       <PlaylistActions 
         onPlay={handlePlay} 

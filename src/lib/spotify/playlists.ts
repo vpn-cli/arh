@@ -64,3 +64,9 @@ export async function reorderPlaylistItems(playlistId: string, range_start: numb
     }),
   });
 }
+
+export async function removePlaylistFromLibrary(playlistId: string) {
+  return await proxyFetch(`/me/library?uris=spotify:playlist:${playlistId}`, {
+    method: 'DELETE'
+  });
+}
