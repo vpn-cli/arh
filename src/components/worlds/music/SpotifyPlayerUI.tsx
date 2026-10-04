@@ -11,6 +11,7 @@ import { SearchResults } from "./SearchResults";
 import { PlaylistDetail } from "./PlaylistDetail";
 import { PlaylistCard } from "./PlaylistCard";
 import { AlbumDetail } from "./AlbumDetail";
+import { ArtistDetail } from "./ArtistDetail";
 
 declare global {
   interface Window {
@@ -42,9 +43,10 @@ export default function SpotifyPlayerUI() {
   const progressBarRef = React.useRef<HTMLDivElement>(null);
 
   // New Feature States
-  const [activeTab, setActiveTab] = useState<'library' | 'mix' | 'playlists' | 'search' | 'album'>('library');
+  const [activeTab, setActiveTab] = useState<'library' | 'mix' | 'playlists' | 'search' | 'album' | 'artist'>('library');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
+  const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
   
   
   
@@ -544,6 +546,10 @@ export default function SpotifyPlayerUI() {
                   setActiveTab('album');
                   setSelectedAlbumId(id);
                 }}
+                onClickArtist={(id) => {
+                  setActiveTab('artist');
+                  setSelectedArtistId(id);
+                }}
               />
             </div>
           )}
@@ -565,6 +571,25 @@ export default function SpotifyPlayerUI() {
                   await toggleShuffle();
                 }
                 playPlaylist(uri);
+              }}
+            />
+          )}
+
+          {activeTab === 'artist' && selectedArtistId && (
+            <ArtistDetail
+              artistId={selectedArtistId}
+              onBack={() => {
+                setActiveTab('search');
+                setSelectedArtistId(null);
+              }}
+              onPlayTrack={(uri, contextUri) => {
+                if (contextUri) playContextTrack(contextUri, uri);
+                else playTrack(uri);
+              }}
+              onPlayAlbum={playPlaylist}
+              onClickAlbum={(id) => {
+                setActiveTab('album');
+                setSelectedAlbumId(id);
               }}
             />
           )}
