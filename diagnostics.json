@@ -1,0 +1,301 @@
+{
+  "memories": [
+    {
+      "spotifyUri": "spotify:track:7pXA1BKgq0tROI4aPBT9Dg",
+      "entityType": "track",
+      "note": "very close to my heart",
+      "category": "K",
+      "dateLabel": "Summer 2026",
+      "id": "1fad9fb2-0b70-46e6-bd5d-4989017864c3",
+      "createdAt": "2026-10-04T15:15:01.293Z",
+      "updatedAt": "2026-10-04T15:15:01.293Z"
+    },
+    {
+      "spotifyUri": "spotify:track:086myS9r57YsLbJpU0TgK9",
+      "entityType": "track",
+      "note": "dfsd",
+      "category": "erget",
+      "id": "16741cfd-d1de-42d1-9bdf-ce64c92db010",
+      "createdAt": "2026-10-04T15:23:44.428Z",
+      "updatedAt": "2026-10-04T15:23:44.428Z"
+    },
+    {
+      "spotifyUri": "spotify:track:2GGxscxbF0vUAXWhv2rZHd",
+      "entityType": "track",
+      "note": "this",
+      "category": "test",
+      "dateLabel": "summer 2020",
+      "id": "038a8348-940f-4658-9ca6-791635be08fd",
+      "createdAt": "2026-10-04T15:48:13.730Z",
+      "updatedAt": "2026-10-04T15:48:13.730Z"
+    }
+  ],
+  "extractedIds": [
+    "7pXA1BKgq0tROI4aPBT9Dg",
+    "086myS9r57YsLbJpU0TgK9",
+    "2GGxscxbF0vUAXWhv2rZHd"
+  ],
+  "tests": {
+    "target_single": {
+      "status": 200,
+      "body": {
+        "album": {
+          "album_type": "single",
+          "artists": [
+            {
+              "external_urls": {
+                "spotify": "https://open.spotify.com/artist/1QAJqy2dA3ihHBFIHRphZj"
+              },
+              "href": "https://api.spotify.com/v1/artists/1QAJqy2dA3ihHBFIHRphZj",
+              "id": "1QAJqy2dA3ihHBFIHRphZj",
+              "name": "Cigarettes After Sex",
+              "type": "artist",
+              "uri": "spotify:artist:1QAJqy2dA3ihHBFIHRphZj"
+            }
+          ],
+          "external_urls": {
+            "spotify": "https://open.spotify.com/album/01tOfKaV5EpVHHNEYYfCqt"
+          },
+          "href": "https://api.spotify.com/v1/albums/01tOfKaV5EpVHHNEYYfCqt",
+          "id": "01tOfKaV5EpVHHNEYYfCqt",
+          "images": [
+            {
+              "url": "https://i.scdn.co/image/ab67616d0000b2737fc968e33515e38a5fb0fe5a",
+              "width": 640,
+              "height": 640
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d00001e027fc968e33515e38a5fb0fe5a",
+              "width": 300,
+              "height": 300
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d000048517fc968e33515e38a5fb0fe5a",
+              "width": 64,
+              "height": 64
+            }
+          ],
+          "is_playable": true,
+          "name": "Apocalypse",
+          "release_date": "2017-03-21",
+          "release_date_precision": "day",
+          "total_tracks": 1,
+          "type": "album",
+          "uri": "spotify:album:01tOfKaV5EpVHHNEYYfCqt"
+        },
+        "artists": [
+          {
+            "external_urls": {
+              "spotify": "https://open.spotify.com/artist/1QAJqy2dA3ihHBFIHRphZj"
+            },
+            "href": "https://api.spotify.com/v1/artists/1QAJqy2dA3ihHBFIHRphZj",
+            "id": "1QAJqy2dA3ihHBFIHRphZj",
+            "name": "Cigarettes After Sex",
+            "type": "artist",
+            "uri": "spotify:artist:1QAJqy2dA3ihHBFIHRphZj"
+          }
+        ],
+        "disc_number": 1,
+        "duration_ms": 290146,
+        "explicit": false,
+        "external_ids": {
+          "isrc": "USBQU1700034"
+        },
+        "external_urls": {
+          "spotify": "https://open.spotify.com/track/7pXA1BKgq0tROI4aPBT9Dg"
+        },
+        "href": "https://api.spotify.com/v1/tracks/7pXA1BKgq0tROI4aPBT9Dg",
+        "id": "7pXA1BKgq0tROI4aPBT9Dg",
+        "is_local": false,
+        "is_playable": true,
+        "name": "Apocalypse",
+        "track_number": 1,
+        "type": "track",
+        "uri": "spotify:track:7pXA1BKgq0tROI4aPBT9Dg"
+      }
+    },
+    "target_batch": {
+      "status": 403,
+      "body": {
+        "error": {
+          "status": 403,
+          "message": "Forbidden"
+        }
+      }
+    },
+    "working_single": {
+      "status": 200,
+      "body": {
+        "album": {
+          "album_type": "album",
+          "artists": [
+            {
+              "external_urls": {
+                "spotify": "https://open.spotify.com/artist/0gxyHStUsqpMadRV0Di1Qt"
+              },
+              "href": "https://api.spotify.com/v1/artists/0gxyHStUsqpMadRV0Di1Qt",
+              "id": "0gxyHStUsqpMadRV0Di1Qt",
+              "name": "Rick Astley",
+              "type": "artist",
+              "uri": "spotify:artist:0gxyHStUsqpMadRV0Di1Qt"
+            }
+          ],
+          "external_urls": {
+            "spotify": "https://open.spotify.com/album/5Z9iiGl2FcIfa3BMiv6OIw"
+          },
+          "href": "https://api.spotify.com/v1/albums/5Z9iiGl2FcIfa3BMiv6OIw",
+          "id": "5Z9iiGl2FcIfa3BMiv6OIw",
+          "images": [
+            {
+              "url": "https://i.scdn.co/image/ab67616d0000b273baf89eb11ec7c657805d2da0",
+              "width": 640,
+              "height": 640
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d00001e02baf89eb11ec7c657805d2da0",
+              "width": 300,
+              "height": 300
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d00004851baf89eb11ec7c657805d2da0",
+              "width": 64,
+              "height": 64
+            }
+          ],
+          "is_playable": true,
+          "name": "Whenever You Need Somebody",
+          "release_date": "1987-11-12",
+          "release_date_precision": "day",
+          "total_tracks": 10,
+          "type": "album",
+          "uri": "spotify:album:5Z9iiGl2FcIfa3BMiv6OIw"
+        },
+        "artists": [
+          {
+            "external_urls": {
+              "spotify": "https://open.spotify.com/artist/0gxyHStUsqpMadRV0Di1Qt"
+            },
+            "href": "https://api.spotify.com/v1/artists/0gxyHStUsqpMadRV0Di1Qt",
+            "id": "0gxyHStUsqpMadRV0Di1Qt",
+            "name": "Rick Astley",
+            "type": "artist",
+            "uri": "spotify:artist:0gxyHStUsqpMadRV0Di1Qt"
+          }
+        ],
+        "disc_number": 1,
+        "duration_ms": 213573,
+        "explicit": false,
+        "external_ids": {
+          "isrc": "GBARL9300135"
+        },
+        "external_urls": {
+          "spotify": "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT"
+        },
+        "href": "https://api.spotify.com/v1/tracks/4cOdK2wGLETKBW3PvgPWqT",
+        "id": "4cOdK2wGLETKBW3PvgPWqT",
+        "is_local": false,
+        "is_playable": true,
+        "name": "Never Gonna Give You Up",
+        "track_number": 1,
+        "type": "track",
+        "uri": "spotify:track:4cOdK2wGLETKBW3PvgPWqT"
+      }
+    },
+    "working_batch": {
+      "status": 403,
+      "body": {
+        "error": {
+          "status": 403,
+          "message": "Forbidden"
+        }
+      }
+    },
+    "mixed_batch": {
+      "status": 403,
+      "body": {
+        "error": {
+          "status": 403,
+          "message": "Forbidden"
+        }
+      }
+    },
+    "target_market": {
+      "status": 200,
+      "body": {
+        "album": {
+          "album_type": "single",
+          "artists": [
+            {
+              "external_urls": {
+                "spotify": "https://open.spotify.com/artist/1QAJqy2dA3ihHBFIHRphZj"
+              },
+              "href": "https://api.spotify.com/v1/artists/1QAJqy2dA3ihHBFIHRphZj",
+              "id": "1QAJqy2dA3ihHBFIHRphZj",
+              "name": "Cigarettes After Sex",
+              "type": "artist",
+              "uri": "spotify:artist:1QAJqy2dA3ihHBFIHRphZj"
+            }
+          ],
+          "external_urls": {
+            "spotify": "https://open.spotify.com/album/01tOfKaV5EpVHHNEYYfCqt"
+          },
+          "href": "https://api.spotify.com/v1/albums/01tOfKaV5EpVHHNEYYfCqt",
+          "id": "01tOfKaV5EpVHHNEYYfCqt",
+          "images": [
+            {
+              "url": "https://i.scdn.co/image/ab67616d0000b2737fc968e33515e38a5fb0fe5a",
+              "width": 640,
+              "height": 640
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d00001e027fc968e33515e38a5fb0fe5a",
+              "width": 300,
+              "height": 300
+            },
+            {
+              "url": "https://i.scdn.co/image/ab67616d000048517fc968e33515e38a5fb0fe5a",
+              "width": 64,
+              "height": 64
+            }
+          ],
+          "is_playable": true,
+          "name": "Apocalypse",
+          "release_date": "2017-03-21",
+          "release_date_precision": "day",
+          "total_tracks": 1,
+          "type": "album",
+          "uri": "spotify:album:01tOfKaV5EpVHHNEYYfCqt"
+        },
+        "artists": [
+          {
+            "external_urls": {
+              "spotify": "https://open.spotify.com/artist/1QAJqy2dA3ihHBFIHRphZj"
+            },
+            "href": "https://api.spotify.com/v1/artists/1QAJqy2dA3ihHBFIHRphZj",
+            "id": "1QAJqy2dA3ihHBFIHRphZj",
+            "name": "Cigarettes After Sex",
+            "type": "artist",
+            "uri": "spotify:artist:1QAJqy2dA3ihHBFIHRphZj"
+          }
+        ],
+        "disc_number": 1,
+        "duration_ms": 290146,
+        "explicit": false,
+        "external_ids": {
+          "isrc": "USBQU1700034"
+        },
+        "external_urls": {
+          "spotify": "https://open.spotify.com/track/7pXA1BKgq0tROI4aPBT9Dg"
+        },
+        "href": "https://api.spotify.com/v1/tracks/7pXA1BKgq0tROI4aPBT9Dg",
+        "id": "7pXA1BKgq0tROI4aPBT9Dg",
+        "is_local": false,
+        "is_playable": true,
+        "name": "Apocalypse",
+        "track_number": 1,
+        "type": "track",
+        "uri": "spotify:track:7pXA1BKgq0tROI4aPBT9Dg"
+      }
+    }
+  }
+}

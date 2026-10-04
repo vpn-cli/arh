@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useMemoriesStore } from '@/store/useMemoriesStore';
-import { useQuery } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import { proxyFetch } from '@/lib/spotifyClient';
 import { TrackRow } from './TrackRow';
 import { ArtistCard } from './ArtistCard';
@@ -44,57 +44,50 @@ export function MemoriesSection({
     return { trackIds: tIds, artistIds: aIds, playlistIds: pIds };
   }, [memories]);
 
-  // Fetch Tracks
-  const { data: tracksData, isLoading: tracksLoading } = useQuery({
-    queryKey: ['memories', 'tracks', trackIds],
-    queryFn: async () => {
-      if (!trackIds.length) return [];
-      // Spotify batch track limit is 50, assuming fewer memories for now or we would chunk it.
-      const res = await proxyFetch(`/tracks?ids=${trackIds.slice(0, 50).join(',')}`);
-      return res?.tracks || [];
-    },
-    enabled: trackIds.length > 0,
-    staleTime: 5 * 60 * 1000,
-    retry: (failureCount, error: any) => {
-      if (error?.status >= 400 && error?.status < 500) return false;
-      return failureCount < 3;
-    },
+  // Fetch Tracks individually
+  const trackQueries = useQueries({
+    queries: trackIds.map((id) => ({
+      queryKey: ['memories', 'track', id],
+      queryFn: () => proxyFetch(`/tracks/${id}`),
+      staleTime: 5 * 60 * 1000,
+      retry: (failureCount: number, error: any) => {
+        if (error?.status >= 400 && error?.status < 500) return false;
+        return failureCount < 3;
+      },
+    })),
   });
+  const tracksLoading = trackQueries.some(q => q.isLoading);
+  const tracksData = trackQueries.map(q => q.data).filter(Boolean);
 
-  // Fetch Artists
-  const { data: artistsData, isLoading: artistsLoading } = useQuery({
-    queryKey: ['memories', 'artists', artistIds],
-    queryFn: async () => {
-      if (!artistIds.length) return [];
-      const res = await proxyFetch(`/artists?ids=${artistIds.slice(0, 50).join(',')}`);
-      return res?.artists || [];
-    },
-    enabled: artistIds.length > 0,
-    staleTime: 5 * 60 * 1000,
-    retry: (failureCount, error: any) => {
-      if (error?.status >= 400 && error?.status < 500) return false;
-      return failureCount < 3;
-    },
+  // Fetch Artists individually
+  const artistQueries = useQueries({
+    queries: artistIds.map((id) => ({
+      queryKey: ['memories', 'artist', id],
+      queryFn: () => proxyFetch(`/artists/${id}`),
+      staleTime: 5 * 60 * 1000,
+      retry: (failureCount: number, error: any) => {
+        if (error?.status >= 400 && error?.status < 500) return false;
+        return failureCount < 3;
+      },
+    })),
   });
+  const artistsLoading = artistQueries.some(q => q.isLoading);
+  const artistsData = artistQueries.map(q => q.data).filter(Boolean);
 
-  // Fetch Playlists (Spotify doesn't have batch playlists, we fetch individually if needed)
-  // For simplicity and network stability (Rule 24), we can use useQueries or Promise.all. 
-  // If many playlists, chunk them. Let's do Promise.all for now.
-  const { data: playlistsData, isLoading: playlistsLoading } = useQuery({
-    queryKey: ['memories', 'playlists', playlistIds],
-    queryFn: async () => {
-      if (!playlistIds.length) return [];
-      const reqs = playlistIds.slice(0, 10).map(id => proxyFetch(`/playlists/${id}`).catch(() => null));
-      const res = await Promise.all(reqs);
-      return res.filter(Boolean);
-    },
-    enabled: playlistIds.length > 0,
-    staleTime: 5 * 60 * 1000,
-    retry: (failureCount, error: any) => {
-      if (error?.status >= 400 && error?.status < 500) return false;
-      return failureCount < 3;
-    },
+  // Fetch Playlists individually
+  const playlistQueries = useQueries({
+    queries: playlistIds.map((id) => ({
+      queryKey: ['memories', 'playlist', id],
+      queryFn: () => proxyFetch(`/playlists/${id}`),
+      staleTime: 5 * 60 * 1000,
+      retry: (failureCount: number, error: any) => {
+        if (error?.status >= 400 && error?.status < 500) return false;
+        return failureCount < 3;
+      },
+    })),
   });
+  const playlistsLoading = playlistQueries.some(q => q.isLoading);
+  const playlistsData = playlistQueries.map(q => q.data).filter(Boolean);
 
   const isLoading = tracksLoading || artistsLoading || playlistsLoading;
 
