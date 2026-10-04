@@ -3,9 +3,10 @@ import React from 'react';
 interface PlaylistHeaderProps {
   playlist: any;
   onBack: () => void;
+  isRestricted?: boolean;
 }
 
-export function PlaylistHeader({ playlist, onBack }: PlaylistHeaderProps) {
+export function PlaylistHeader({ playlist, onBack, isRestricted }: PlaylistHeaderProps) {
   if (!playlist) return null;
   return (
     <div className="flex items-center gap-4 p-4 border-b-2 border-[#FFE4E1] shrink-0">
@@ -25,7 +26,10 @@ export function PlaylistHeader({ playlist, onBack }: PlaylistHeaderProps) {
           <p className="font-retro text-[10px] text-[#9B4F96] opacity-80 mt-1 line-clamp-2" dangerouslySetInnerHTML={{ __html: playlist.description }} />
         )}
         <div className="font-retro text-[10px] text-[#FF69B4] mt-2 font-bold tracking-widest uppercase">
-          {playlist.tracks?.total || 0} TRACKS
+          {isRestricted 
+            ? (playlist.items?.total ? `${playlist.items.total} TRACKS` : 'TRACKS UNAVAILABLE')
+            : `${playlist.items?.total ?? 0} TRACKS`
+          }
         </div>
       </div>
     </div>

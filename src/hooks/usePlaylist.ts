@@ -29,5 +29,9 @@ export function usePlaylistItems(id: string | null) {
     },
     enabled: isAuthenticated && !!id,
     staleTime: 5 * 60 * 1000,
+    retry: (failureCount, error: any) => {
+      if (error?.status === 403 || error?.status === 401) return false;
+      return failureCount < 3;
+    },
   });
 }

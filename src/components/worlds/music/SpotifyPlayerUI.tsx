@@ -10,6 +10,7 @@ import { TrackList } from "./TrackList";
 import { SearchResults } from "./SearchResults";
 import { PlaylistDetail } from "./PlaylistDetail";
 import { PlaylistCard } from "./PlaylistCard";
+import { AlbumDetail } from "./AlbumDetail";
 
 declare global {
   interface Window {
@@ -41,8 +42,9 @@ export default function SpotifyPlayerUI() {
   const progressBarRef = React.useRef<HTMLDivElement>(null);
 
   // New Feature States
-  const [activeTab, setActiveTab] = useState<'library' | 'mix' | 'playlists' | 'search'>('library');
+  const [activeTab, setActiveTab] = useState<'library' | 'mix' | 'playlists' | 'search' | 'album'>('library');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+  const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
   
   
   
@@ -58,10 +60,10 @@ export default function SpotifyPlayerUI() {
   const [selectedDevice, setSelectedDevice] = useState<string>("");
   const [libraryPage, setLibraryPage] = useState(0);
   
-  const { data: playlists = [], isLoading: isPlaylistsLoading, isError: isPlaylistsError, error: playlistsError } = usePlaylists();
-  const { data: likedData, isLoading: isLikedLoading, isError: isLikedError, error: likedError } = useLikedTracks(libraryPage);
+  const { data: playlists = [], isLoading: isPlaylistsLoading, isError: isPlaylistsError, error: playlistsError } = usePlaylists({ enabled: activeTab === 'playlists' });
+  const { data: likedData, isLoading: isLikedLoading, isError: isLikedError, error: likedError } = useLikedTracks(libraryPage, 50, { enabled: activeTab === 'library' });
   const { data: devices = [], refetch: fetchDevices } = useDevices();
-  const { data: birthdayMixTracks = [], isLoading: isMixLoading, isError: isMixError, error: mixError } = useBirthdayMix();
+  const { data: birthdayMixTracks = [], isLoading: isMixLoading, isError: isMixError, error: mixError } = useBirthdayMix({ enabled: activeTab === 'mix' });
   
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
@@ -231,6 +233,17 @@ export default function SpotifyPlayerUI() {
       await play.mutateAsync({ context_uri: uri, device_id: targetDevice || undefined });
     } catch (e: any) {
       alert(e.message || 'Error playing playlist');
+    }
+  };
+
+  const playContextTrack = async (contextUri: string, trackUri: string) => {
+    if (!token) return;
+    sfx?.select?.();
+    const targetDevice = selectedDevice || deviceId;
+    try {
+      await play.mutateAsync({ context_uri: contextUri, offset: { uri: trackUri }, device_id: targetDevice || undefined });
+    } catch (e: any) {
+      alert(e.message || 'Error playing track in context');
     }
   };
 
@@ -418,7 +431,10 @@ export default function SpotifyPlayerUI() {
                 playlistId={selectedPlaylistId}
                 onBack={() => setSelectedPlaylistId(null)}
                 onPlayPlaylist={playPlaylist}
-                onPlayTrack={playTrack}
+                onPlayTrack={(uri, contextUri) => {
+                  if (contextUri) playContextTrack(contextUri, uri);
+                  else playTrack(uri);
+                }}
                 onShufflePlay={async (uri) => {
                   if (!isShuffle) {
                     await toggleShuffle();
@@ -517,11 +533,40 @@ export default function SpotifyPlayerUI() {
                 placeholder="Search Spotify..."
                 className="w-full bg-[#FFF0F5] border-2 border-[#FFB6C1] rounded-xl px-2 py-2 mb-3 font-retro text-[10px] text-[#7A2871] focus:outline-none focus:border-[#FF69B4] shrink-0"
               />
-              <SearchResults query={debouncedSearch} onPlayTrack={playTrack} onClickPlaylist={(id) => {
-                setActiveTab('playlists');
-                setSelectedPlaylistId(id);
-              }} />
+              <SearchResults 
+                query={debouncedSearch} 
+                onPlayTrack={playTrack} 
+                onClickPlaylist={(id) => {
+                  setActiveTab('playlists');
+                  setSelectedPlaylistId(id);
+                }} 
+                onClickAlbum={(id) => {
+                  setActiveTab('album');
+                  setSelectedAlbumId(id);
+                }}
+              />
             </div>
+          )}
+
+          {activeTab === 'album' && selectedAlbumId && (
+            <AlbumDetail
+              albumId={selectedAlbumId}
+              onBack={() => {
+                setActiveTab('search');
+                setSelectedAlbumId(null);
+              }}
+              onPlayAlbum={playPlaylist}
+              onPlayTrack={(uri, contextUri) => {
+                if (contextUri) playContextTrack(contextUri, uri);
+                else playTrack(uri);
+              }}
+              onShufflePlay={async (uri) => {
+                if (!isShuffle) {
+                  await toggleShuffle();
+                }
+                playPlaylist(uri);
+              }}
+            />
           )}
         </div>
       </div>

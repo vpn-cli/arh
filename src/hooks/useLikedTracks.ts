@@ -2,9 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { getLikedTracks, normalizeSavedTrack } from '@/lib/spotify/library';
 import { useSpotifySession } from './useSpotify';
 
-export function useLikedTracks(page: number = 0, limit: number = 50) {
+export function useLikedTracks(page: number = 0, limit: number = 50, options?: { enabled?: boolean }) {
   const { isSuccess, data: sessionData } = useSpotifySession();
   const isAuthenticated = isSuccess && !!sessionData?.accessToken;
+  const isEnabled = options?.enabled !== false && isAuthenticated;
   const offset = page * limit;
 
   return useQuery({
@@ -18,7 +19,7 @@ export function useLikedTracks(page: number = 0, limit: number = 50) {
         previous: data?.previous,
       };
     },
-    enabled: isAuthenticated,
+    enabled: isEnabled,
     staleTime: 5 * 60 * 1000,
   });
 }
