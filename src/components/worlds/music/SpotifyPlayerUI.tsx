@@ -38,8 +38,11 @@ export default function SpotifyPlayerUI() {
     position, setPosition,
     duration, setDuration,
     error, setError,
-    queue, queueIndex, setQueueIndex, addToQueue, removeFromQueue, clearQueue
+    queue, queueIndex, setQueueIndex, addToQueue, removeFromQueue, clearQueue, reorderQueue
   } = useSpotifyPlayerStore();
+
+  const [draggedQueueIndex, setDraggedQueueIndex] = useState<number | null>(null);
+  const [dragOverQueueIndex, setDragOverQueueIndex] = useState<number | null>(null);
 
   const [isDragging, setIsDragging] = useState(false);
   const progressBarRef = React.useRef<HTMLDivElement>(null);
@@ -470,8 +473,40 @@ export default function SpotifyPlayerUI() {
               ) : (
                 <div className="flex flex-col gap-2 pb-4">
                   {queue.map((item, idx) => (
-                    <div key={`${item.track.id}-${idx}`} className={`flex items-center justify-between p-2 rounded-xl border-2 ${idx === queueIndex ? 'border-[#FF69B4] bg-[#FFF0F5] shadow-sm scale-[1.02]' : 'border-[#FFE4E1] bg-[#FFFFFF] hover:border-[#FFB6C1]'} transition-all group cursor-pointer`} onClick={() => playQueueItem(idx)}>
+                    <div 
+                      key={`${item.track.id}-${idx}`} 
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedQueueIndex(idx);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDragOverQueueIndex(idx);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedQueueIndex(null);
+                        setDragOverQueueIndex(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (draggedQueueIndex !== null && draggedQueueIndex !== idx) {
+                          reorderQueue(draggedQueueIndex, idx);
+                        }
+                        setDraggedQueueIndex(null);
+                        setDragOverQueueIndex(null);
+                      }}
+                      className={`flex items-center justify-between p-2 rounded-xl border-2 ${idx === queueIndex ? 'border-[#FF69B4] bg-[#FFF0F5] shadow-sm scale-[1.02]' : 'border-[#FFE4E1] bg-[#FFFFFF] hover:border-[#FFB6C1]'} ${dragOverQueueIndex === idx ? (draggedQueueIndex !== null && draggedQueueIndex < idx ? 'border-b-[#D81B60] border-b-4' : 'border-t-[#D81B60] border-t-4') : ''} ${draggedQueueIndex === idx ? 'opacity-50' : 'opacity-100'} transition-all group cursor-pointer`} 
+                      onClick={() => playQueueItem(idx)}
+                    >
                       <div className="flex items-center gap-3 overflow-hidden">
+                        <div 
+                          className="text-[#FFB6C1] hover:text-[#FF69B4] cursor-grab active:cursor-grabbing px-1 opacity-50 group-hover:opacity-100 transition-opacity" 
+                          title="Drag to reorder"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          ⠿
+                        </div>
                         {idx === queueIndex && !isPaused ? (
                           <div className="w-10 h-10 flex items-center justify-center bg-[#FF69B4] rounded-lg shrink-0">
                             <svg className="w-6 h-6 fill-white" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>

@@ -37,6 +37,7 @@ interface SpotifyPlayerState {
   clearQueue: () => void;
   setQueueIndex: (index: number) => void;
   setQueue: (queue: QueueItem[]) => void;
+  reorderQueue: (startIndex: number, endIndex: number) => void;
 }
 
 export const useSpotifyPlayerStore = create<SpotifyPlayerState>((set) => ({
@@ -84,5 +85,21 @@ export const useSpotifyPlayerStore = create<SpotifyPlayerState>((set) => ({
   }),
   clearQueue: () => set({ queue: [], queueIndex: -1 }),
   setQueueIndex: (queueIndex) => set({ queueIndex }),
-  setQueue: (queue) => set({ queue })
+  setQueue: (queue) => set({ queue }),
+  reorderQueue: (startIndex, endIndex) => set((state) => {
+    const newQueue = [...state.queue];
+    const [removed] = newQueue.splice(startIndex, 1);
+    newQueue.splice(endIndex, 0, removed);
+
+    let newIndex = state.queueIndex;
+    if (startIndex === state.queueIndex) {
+      newIndex = endIndex;
+    } else if (startIndex < state.queueIndex && endIndex >= state.queueIndex) {
+      newIndex--;
+    } else if (startIndex > state.queueIndex && endIndex <= state.queueIndex) {
+      newIndex++;
+    }
+
+    return { queue: newQueue, queueIndex: newIndex };
+  })
 }));
