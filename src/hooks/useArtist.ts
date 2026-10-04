@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { getArtist, getArtistAlbums, getArtistTopTracks } from '@/lib/spotify/artists';
+import { getArtist, getArtistAlbums } from '@/lib/spotify/artists';
+import { searchSpotify } from '@/lib/spotify/search';
 import { useSpotifySession } from './useSpotify';
 
 export function useArtist(id?: string) {
@@ -40,17 +41,17 @@ export function useArtistAlbums(id?: string) {
   });
 }
 
-export function useArtistTopTracks(id?: string) {
+export function useArtistFeaturedTracks(artistName?: string) {
   const { isSuccess, data: sessionData } = useSpotifySession();
   const isAuthenticated = isSuccess && !!sessionData?.accessToken;
 
   return useQuery({
-    queryKey: ['spotify', 'artistTopTracks', id],
+    queryKey: ['spotify', 'artistFeaturedTracks', artistName],
     queryFn: async () => {
-      if (!id) return null;
-      return await getArtistTopTracks(id);
+      if (!artistName) return null;
+      return await searchSpotify({ query: `artist:"${artistName}"`, type: ['track'], limit: 10, offset: 0 });
     },
-    enabled: isAuthenticated && !!id,
+    enabled: isAuthenticated && !!artistName,
     staleTime: 5 * 60 * 1000,
     retry: (failureCount, error: any) => {
       if (error?.status === 403 || error?.status === 404) return false;

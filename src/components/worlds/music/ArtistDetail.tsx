@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useArtist, useArtistAlbums, useArtistTopTracks } from '@/hooks/useArtist';
+import { useArtist, useArtistAlbums, useArtistFeaturedTracks } from '@/hooks/useArtist';
 import { ArtistHeader } from './ArtistHeader';
 import { AlbumCard } from './AlbumCard';
 import { TrackList } from './TrackList';
@@ -15,22 +15,22 @@ interface ArtistDetailProps {
 export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAddToQueue }: ArtistDetailProps) {
   const { data: artist, isLoading: isLoadingArtist, isError: isArtistError, error: artistError } = useArtist(artistId);
   const { data: albumsData, isLoading: isLoadingAlbums, isError: isAlbumsError, error: albumsError } = useArtistAlbums(artistId);
-  const { data: topTracksData, isLoading: isLoadingTopTracks, isError: isTopTracksError, error: topTracksError } = useArtistTopTracks(artistId);
+  const { data: featuredTracksData, isLoading: isLoadingFeaturedTracks, isError: isFeaturedTracksError, error: featuredTracksError } = useArtistFeaturedTracks(artist?.name);
   
   const [rateLimitTimer, setRateLimitTimer] = useState<number | null>(null);
   
   useEffect(() => {
     const aError = artistError as Record<string, unknown>;
     const alError = albumsError as Record<string, unknown>;
-    const ttError = topTracksError as Record<string, unknown>;
+    const ftError = featuredTracksError as Record<string, unknown>;
     if (aError?.status === 429 && aError?.retryAfter && rateLimitTimer === null) {
       setRateLimitTimer(aError.retryAfter as number);
     } else if (alError?.status === 429 && alError?.retryAfter && rateLimitTimer === null) {
       setRateLimitTimer(alError.retryAfter as number);
-    } else if (ttError?.status === 429 && ttError?.retryAfter && rateLimitTimer === null) {
-      setRateLimitTimer(ttError.retryAfter as number);
+    } else if (ftError?.status === 429 && ftError?.retryAfter && rateLimitTimer === null) {
+      setRateLimitTimer(ftError.retryAfter as number);
     }
-  }, [artistError, albumsError, topTracksError, rateLimitTimer]);
+  }, [artistError, albumsError, featuredTracksError, rateLimitTimer]);
 
   useEffect(() => {
     if (rateLimitTimer === null || rateLimitTimer <= 0) return;
@@ -104,29 +104,33 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
           </div>
         ) : (
           <>
-            {/* Top Tracks Section */}
-            {isTopTracksError && (topTracksError as Record<string, unknown>)?.status === 429 ? (
+            {/* Featured Tracks Section */}
+            {isFeaturedTracksError && (featuredTracksError as Record<string, unknown>)?.status === 429 ? (
               <div className="flex items-center justify-center text-[#FF4500] font-pixel text-xs text-center px-4 h-20">
-                RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((topTracksError as Record<string, unknown>)?.retryAfter as number ?? 60)} SECONDS.
+                RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((featuredTracksError as Record<string, unknown>)?.retryAfter as number ?? 60)} SECONDS.
               </div>
-            ) : isTopTracksError ? (
+            ) : isFeaturedTracksError ? (
               <div className="flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2 h-20">
-                <span className="text-[#FF4500]">TOP TRACKS UNAVAILABLE</span>
+                <span className="text-[#FF4500]">FEATURED TRACKS UNAVAILABLE</span>
               </div>
-            ) : (topTracksData?.tracks && topTracksData.tracks.length > 0) ? (
+            ) : (featuredTracksData?.tracks?.items && featuredTracksData.tracks.items.length > 0) ? (
               <div className="flex flex-col gap-3">
-                <h3 className="font-pixel text-[12px] text-[#D81B60]">TOP TRACKS</h3>
+                <h3 className="font-pixel text-[12px] text-[#D81B60]">FEATURED TRACKS</h3>
                 <TrackList 
-                  tracks={topTracksData.tracks.slice(0, 5)} 
-                  isLoading={isLoadingTopTracks} 
-                  onPlayTrack={(uri) => onPlayTrack?.(uri, artist?.uri)} 
-                  onAddToQueue={(track) => onAddToQueue && onAddToQueue(track, artist?.uri)}
+                  tracks={featuredTracksData.tracks.items.slice(0, 5)} 
+                  isLoading={isLoadingFeaturedTracks} 
+                  onPlayTrack={(uri) => onPlayTrack?.(uri)} 
+                  onAddToQueue={(track) => onAddToQueue && onAddToQueue(track)}
                   variant="compact"
                 />
               </div>
-            ) : isLoadingTopTracks ? (
+            ) : (featuredTracksData && (!featuredTracksData.tracks?.items || featuredTracksData.tracks.items.length === 0)) ? (
+              <div className="flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2 h-20 text-[#FFB6C1]/70">
+                NO FEATURED TRACKS FOUND
+              </div>
+            ) : isLoadingFeaturedTracks ? (
               <div className="flex items-center justify-center text-[#FFB6C1] font-pixel text-xs animate-pulse h-20">
-                LOADING TOP TRACKS...
+                FEATURED TRACKS...
               </div>
             ) : null}
 
