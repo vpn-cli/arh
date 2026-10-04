@@ -197,8 +197,8 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
               await redis.del(...keys);
             }
           }
-        } catch (e) {
-          console.error("Redis error busting playlist cache:", e);
+        } catch (e: any) {
+          console.error("Redis error busting playlist cache:", e?.message || JSON.stringify(e));
         }
       }
     }

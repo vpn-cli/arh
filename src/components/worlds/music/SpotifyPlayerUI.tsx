@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
-import { useSpotifySession, usePlaylists, useDevices, useBirthdayMix, useTrackSavedStatus, useSpotifyMutations } from "@/hooks/useSpotify";
+import { useSpotifySession, usePlaylists, useDevices, useBirthdayMix, useTrackSavedStatus, useSpotifyMutations, useRecentlyPlayed } from "@/hooks/useSpotify";
 import { useQueryClient } from '@tanstack/react-query';
 import { useLikedTracks } from "@/hooks/useLikedTracks";
 import { TrackList } from "./TrackList";
@@ -50,7 +50,7 @@ export default function SpotifyPlayerUI() {
   const progressBarRef = React.useRef<HTMLDivElement>(null);
 
   // New Feature States
-  const [activeTab, setActiveTab] = useState<'library' | 'mix' | 'playlists' | 'search' | 'album' | 'artist' | 'queue'>('library');
+  const [activeTab, setActiveTab] = useState<'library' | 'recent' | 'mix' | 'playlists' | 'search' | 'album' | 'artist' | 'queue'>('library');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
@@ -76,6 +76,7 @@ export default function SpotifyPlayerUI() {
   const { data: likedData, isLoading: isLikedLoading, isError: isLikedError, error: likedError } = useLikedTracks(libraryPage, 50, { enabled: activeTab === 'library' });
   const { data: devices = [], refetch: fetchDevices } = useDevices();
   const { data: birthdayMixTracks = [], isLoading: isMixLoading, isError: isMixError, error: mixError } = useBirthdayMix({ enabled: activeTab === 'mix' });
+  const { data: recentTracks = [], isLoading: isRecentLoading, isError: isRecentError, error: recentError } = useRecentlyPlayed({ enabled: activeTab === 'recent' });
   
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
@@ -95,14 +96,17 @@ export default function SpotifyPlayerUI() {
     const pError = playlistsError as any;
     const mError = mixError as any;
     const lError = likedError as any;
+    const rError = recentError as any;
     if (pError?.status === 429 && pError?.retryAfter && rateLimitTimer === null) {
       setRateLimitTimer(pError.retryAfter);
     } else if (mError?.status === 429 && mError?.retryAfter && rateLimitTimer === null) {
       setRateLimitTimer(mError.retryAfter);
     } else if (lError?.status === 429 && lError?.retryAfter && rateLimitTimer === null) {
       setRateLimitTimer(lError.retryAfter);
+    } else if (rError?.status === 429 && rError?.retryAfter && rateLimitTimer === null) {
+      setRateLimitTimer(rError.retryAfter);
     }
-  }, [playlistsError, mixError, rateLimitTimer]);
+  }, [playlistsError, mixError, likedError, recentError, rateLimitTimer]);
 
   useEffect(() => {
     if (rateLimitTimer === null || rateLimitTimer <= 0) return;
@@ -406,8 +410,8 @@ export default function SpotifyPlayerUI() {
       <div className="w-full sm:w-1/3 bg-[#FFFFFF] rounded-3xl border-4 border-[#FFB6C1] shadow-[0_10px_30px_rgba(255,182,193,0.3)] p-4 flex flex-col h-full z-10">
         
         {/* Tabs */}
-        <div className="flex flex-wrap items-center justify-between mb-4 border-b-2 border-[#FFE4E1] pb-2 shrink-0">
-          <div className="flex gap-2">
+        <div className="flex flex-wrap items-center justify-between mb-4 border-b-2 border-[#FFE4E1] pb-2 shrink-0 gap-y-2">
+          <div className="flex flex-wrap gap-2">
             <button 
               onClick={() => setActiveTab('library')}
               className={`font-pixel text-[10px] px-2 py-1 rounded-md transition-colors ${activeTab === 'library' ? 'bg-[#FFB6C1] text-[#FFFFFF]' : 'text-[#FFB6C1] hover:bg-[#FFE4E1]'}`}
@@ -431,6 +435,12 @@ export default function SpotifyPlayerUI() {
               className={`font-pixel text-[10px] px-2 py-1 rounded-md transition-colors ${activeTab === 'search' ? 'bg-[#FFB6C1] text-[#FFFFFF]' : 'text-[#FFB6C1] hover:bg-[#FFE4E1]'}`}
             >
               SEARCH
+            </button>
+            <button 
+              onClick={() => setActiveTab('recent')}
+              className={`font-pixel text-[10px] px-2 py-1 rounded-md transition-colors ${activeTab === 'recent' ? 'bg-[#FFB6C1] text-[#FFFFFF]' : 'text-[#FFB6C1] hover:bg-[#FFE4E1]'}`}
+            >
+              RECENT
             </button>
             <button 
               onClick={() => setActiveTab('queue')}
@@ -612,6 +622,18 @@ export default function SpotifyPlayerUI() {
                 })()}
               </>
             )
+          )}
+
+          {activeTab === 'recent' && (
+            <div className="absolute inset-0 flex flex-col p-4 bg-[#FFFFFF]/95 overflow-y-auto">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-pixel text-[10px] text-[#D81B60]">RECENTLY PLAYED</span>
+              </div>
+              {(() => {
+                if (isRecentError && (recentError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#FF4500] font-pixel text-xs text-center px-4">RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((recentError as any)?.retryAfter ?? 60)} SECONDS.</div>;
+                return <TrackList tracks={recentTracks.map((item: any) => item.track)} isLoading={isRecentLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} emptyMessage="NO RECENTLY PLAYED TRACKS" />;
+              })()}
+            </div>
           )}
 
           {activeTab === 'library' && (
