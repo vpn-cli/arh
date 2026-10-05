@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
-import { useRecentlyPlayed } from '@/hooks/useSpotify';
+import { useRecentlyPlayed, usePlayerQueue } from '@/hooks/useSpotify';
 
 interface QueueModalProps {
   isOpen: boolean;
@@ -40,6 +40,18 @@ export function QueueModal({
     enabled: isOpen,
   });
 
+  const { data: playerQueueData, isLoading: isPlayerQueueLoading } = usePlayerQueue({
+    enabled: isOpen,
+  });
+
+  const effectiveQueue = React.useMemo(() => {
+    if (queue && queue.length > 0) return queue;
+    if (playerQueueData?.queue && playerQueueData.queue.length > 0) {
+      return playerQueueData.queue.map((t: any) => ({ track: t, contextUri: undefined }));
+    }
+    return [];
+  }, [queue, playerQueueData]);
+
   if (!isOpen) return null;
 
   const formatTime = (ms: number) => {
@@ -66,10 +78,18 @@ export function QueueModal({
     }
   };
 
+  const ensureQueueInitialized = () => {
+    if (queue.length === 0 && effectiveQueue.length > 0) {
+      setQueue(effectiveQueue);
+      return effectiveQueue;
+    }
+    return queue;
+  };
+
   const handleShuffleQueue = () => {
-    if (queue.length <= 1) return;
-    // Keep current track position if playing from queue, shuffle rest
-    const newQueue = [...queue];
+    const currentList = ensureQueueInitialized();
+    if (currentList.length <= 1) return;
+    const newQueue = [...currentList];
     const upcoming = newQueue.slice(queueIndex + 1);
     for (let i = upcoming.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -80,14 +100,16 @@ export function QueueModal({
   };
 
   const handleMoveUp = (index: number) => {
+    ensureQueueInitialized();
     if (index > 0) reorderQueue(index, index - 1);
   };
 
   const handleMoveDown = (index: number) => {
-    if (index < queue.length - 1) reorderQueue(index, index + 1);
+    ensureQueueInitialized();
+    if (index < effectiveQueue.length - 1) reorderQueue(index, index + 1);
   };
 
-  const filteredQueue = queue.filter((item) => {
+  const filteredQueue = effectiveQueue.filter((item: any) => {
     if (!searchFilter.trim()) return true;
     const q = searchFilter.toLowerCase();
     const name = item.track?.name?.toLowerCase() || '';
@@ -122,7 +144,7 @@ export function QueueModal({
               <h2 className="font-pixel text-xl text-[#5D1687] font-bold tracking-wide flex items-center gap-2">
                 Playback Queue & History Tuner
                 <span className="text-xs bg-[#FF4F9A] text-white px-2.5 py-0.5 rounded-full font-normal">
-                  {activeTab === 'queue' ? `${queue.length} Tracks` : `${recentTracks.length} Recent`}
+                  {activeTab === 'queue' ? `${effectiveQueue.length} Tracks` : `${recentTracks.length} Recent`}
                 </span>
               </h2>
               <p className="font-pixel text-xs text-[#7A2871]">
@@ -152,7 +174,7 @@ export function QueueModal({
                   : 'text-[#8C3A7A] hover:text-[#5D1687] hover:bg-[#FFD6E8]/40'
               }`}
             >
-              <span className="text-[11px]">♥</span> Up Next ({queue.length})
+              <span className="text-[11px]">♥</span> Up Next ({effectiveQueue.length})
             </button>
             <button
               onClick={() => setActiveTab('recent')}
@@ -187,7 +209,7 @@ export function QueueModal({
               )}
             </div>
 
-            {activeTab === 'queue' && queue.length > 0 && (
+            {activeTab === 'queue' && effectiveQueue.length > 0 && (
               <>
                 <button
                   onClick={handleShuffleQueue}
@@ -253,14 +275,22 @@ export function QueueModal({
               )}
 
               {/* Up Next List */}
-              {queue.length === 0 ? (
+              {isPlayerQueueLoading && effectiveQueue.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-12 h-12 rounded-full bg-[#FFE1EF] border-2 border-[#FFC1DA] flex items-center justify-center text-xl mb-2 animate-bounce">
+                    🎵
+                  </div>
+                  <h3 className="font-pixel text-sm font-bold text-[#5D1687]">Loading Upcoming Tracks...</h3>
+                  <p className="font-pixel text-xs text-[#7A2871] max-w-sm mt-1">Fetching live queue from Spotify</p>
+                </div>
+              ) : effectiveQueue.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="w-16 h-16 rounded-full bg-[#FFE1EF] border-2 border-[#FFC1DA] flex items-center justify-center text-2xl mb-2 shadow-inner">
                     🌸
                   </div>
                   <h3 className="font-pixel text-base font-bold text-[#5D1687]">Queue is Empty</h3>
                   <p className="font-pixel text-xs text-[#7A2871] max-w-sm mt-1">
-                    Play a playlist, album, or click the options menu on any track to add it to your queue!
+                    Play a playlist, album, mix, or click the options menu on any track to add it to your queue!
                   </p>
                 </div>
               ) : filteredQueue.length === 0 ? (
@@ -274,8 +304,8 @@ export function QueueModal({
                     <span className="text-xs text-[#7A2871] font-medium lowercase">Drag items or use arrows to reorder</span>
                   </div>
 
-                  {filteredQueue.map((item, idx) => {
-                    const originalIndex = queue.indexOf(item);
+                  {filteredQueue.map((item: any, idx: number) => {
+                    const originalIndex = effectiveQueue.indexOf(item);
                     const isCurrentlyActive = originalIndex === queueIndex;
 
                     return (
@@ -411,7 +441,10 @@ export function QueueModal({
                             </button>
                           )}
                           <button
-                            onClick={() => removeFromQueue(originalIndex)}
+                            onClick={() => {
+                              ensureQueueInitialized();
+                              removeFromQueue(originalIndex);
+                            }}
                             className="w-8 h-8 rounded-full hover:bg-rose-100 text-[#7A2871] hover:text-rose-600 flex items-center justify-center text-xs transition-all active:scale-95"
                             title="Remove from Queue"
                           >

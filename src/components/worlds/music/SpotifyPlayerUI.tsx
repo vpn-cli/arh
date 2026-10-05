@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
-import { useSpotifySession, usePlaylists, useDevices, useBirthdayMix, useTrackSavedStatus, useSpotifyMutations, useRecentlyPlayed } from "@/hooks/useSpotify";
+import { useSpotifySession, usePlaylists, useDevices, useBirthdayMix, useTrackSavedStatus, useSpotifyMutations, useRecentlyPlayed, usePlayerQueue, useAddToSpotifyQueue } from "@/hooks/useSpotify";
 import { useQueryClient } from '@tanstack/react-query';
 import { useLikedTracks } from "@/hooks/useLikedTracks";
 import { TrackList } from "./TrackList";
@@ -47,7 +47,7 @@ export default function SpotifyPlayerUI() {
     position, setPosition,
     duration, setDuration,
     error, setError,
-    queue, queueIndex, setQueueIndex, addToQueue, removeFromQueue, clearQueue, reorderQueue
+    queue, queueIndex, setQueueIndex, addToQueue, removeFromQueue, clearQueue, reorderQueue, setQueue
   } = useSpotifyPlayerStore();
 
   const [draggedQueueIndex, setDraggedQueueIndex] = useState<number | null>(null);
@@ -55,6 +55,9 @@ export default function SpotifyPlayerUI() {
 
   const [isDragging, setIsDragging] = useState(false);
   const progressBarRef = React.useRef<HTMLDivElement>(null);
+  const userPausedRef = React.useRef(false);
+  const isAutoplayingRef = React.useRef(false);
+  const lastActiveTrackUriRef = React.useRef<string | null>(null);
 
   // New Feature States
   const [activeTab, setActiveTab] = useState<'home' | 'library' | 'recent' | 'mix' | 'playlists' | 'search' | 'album' | 'artist' | 'queue' | 'frequencies' | 'vibes' | 'memories'>('home');
@@ -88,8 +91,17 @@ export default function SpotifyPlayerUI() {
   const { data: playlists = [], isLoading: isPlaylistsLoading, isError: isPlaylistsError, error: playlistsError } = usePlaylists({ enabled: true });
   const { data: likedData, isLoading: isLikedLoading, isError: isLikedError, error: likedError } = useLikedTracks(libraryPage, 50, { enabled: activeTab === 'library' || activeTab === 'home' });
   const { data: devices = [], refetch: fetchDevices } = useDevices();
-  const { data: birthdayMixTracks = [], isLoading: isMixLoading, isError: isMixError, error: mixError } = useBirthdayMix({ enabled: activeTab === 'mix' });
+  const { data: birthdayMixTracks = [], isLoading: isMixLoading, isError: isMixError, error: mixError, refetch: refetchMix } = useBirthdayMix({ enabled: true });
   const { data: recentTracks = [], isLoading: isRecentLoading, isError: isRecentError, error: recentError } = useRecentlyPlayed({ enabled: !currentTrack || activeTab === 'recent' || activeTab === 'home' || rightPanelTab === 'recent' || isQueueModalOpen });
+  const { data: playerQueueData } = usePlayerQueue({ enabled: !!token });
+
+  const effectiveQueue = React.useMemo(() => {
+    if (queue && queue.length > 0) return queue;
+    if (playerQueueData?.queue && playerQueueData.queue.length > 0) {
+      return playerQueueData.queue.map((t: any) => ({ track: t, contextUri: undefined }));
+    }
+    return [];
+  }, [queue, playerQueueData]);
 
   // Auto-load last played track from Spotify if player cache is empty
   useEffect(() => {
@@ -208,9 +220,10 @@ export default function SpotifyPlayerUI() {
         setDeviceId("");
       });
 
-      spotifyPlayer.addListener('player_state_changed', (state: any) => {
+      spotifyPlayer.addListener('player_state_changed', async (state: any) => {
         if (!state) return;
-        setCurrentTrack(state.track_window.current_track);
+        const newTrack = state.track_window?.current_track;
+        setCurrentTrack(newTrack);
         setIsPaused(state.paused);
         setIsShuffle(state.shuffle);
         if (state.repeat_mode !== undefined) {
@@ -224,6 +237,45 @@ export default function SpotifyPlayerUI() {
         }
         setPosition(state.position);
         setDuration(state.duration);
+
+        // Sync queue position if track is in store queue
+        if (newTrack?.uri) {
+          lastActiveTrackUriRef.current = newTrack.uri;
+          const currentQueue = useSpotifyPlayerStore.getState().queue;
+          const idx = currentQueue.findIndex(item => item.track?.uri === newTrack.uri);
+          if (idx !== -1) {
+            setQueueIndex(idx);
+          }
+        }
+
+        // Continuous playback: if playback ended and next_tracks is empty
+        const nextTracks = state.track_window?.next_tracks || [];
+        const isEnded = state.paused && state.position === 0 && !userPausedRef.current && !!lastActiveTrackUriRef.current;
+        if (isEnded && nextTracks.length === 0 && !isAutoplayingRef.current) {
+          isAutoplayingRef.current = true;
+          try {
+            const trackForAutoplay = newTrack || currentTrack;
+            if (trackForAutoplay) {
+              const { getRelevantTracks } = await import('@/lib/spotify/player');
+              const relevant = await getRelevantTracks(trackForAutoplay, 12);
+              if (relevant.length > 0) {
+                const targetDevice = selectedDevice || deviceId;
+                await play.mutateAsync({
+                  uris: relevant.map((t: any) => t.uri),
+                  device_id: targetDevice || undefined
+                });
+                setQueue(relevant.map((t: any) => ({ track: t })));
+                setQueueIndex(0);
+              }
+            }
+          } catch (e) {
+            console.error('Autoplay error:', e);
+          } finally {
+            setTimeout(() => {
+              isAutoplayingRef.current = false;
+            }, 3000);
+          }
+        }
       });
 
       spotifyPlayer.addListener('initialization_error', ({ message }: { message: string }) => setError(message));
@@ -251,25 +303,85 @@ export default function SpotifyPlayerUI() {
     };
   }, [token]);
 
+  const handleAddToQueue = async (trackOrUri: any, contextUri?: string) => {
+    const uri = typeof trackOrUri === 'string' ? trackOrUri : trackOrUri?.uri;
+    const track = typeof trackOrUri === 'object' ? trackOrUri : { uri, name: 'Queued Track' };
+    if (!uri) return;
 
-  const playTrack = async (uri: string) => {
-    console.log('[DEBUG] playTrack called with uri:', uri);
+    addToQueue(track, contextUri);
+
+    try {
+      const { addTrackToPlayerQueue } = await import('@/lib/spotify/player');
+      const targetDevice = selectedDevice || deviceId;
+      await addTrackToPlayerQueue(uri, targetDevice || undefined);
+    } catch (err) {
+      console.warn('Could not add to Spotify queue:', err);
+    }
+  };
+
+  const playTrack = async (uri: string, contextUri?: string, trackObj?: any) => {
     if (!token) return;
     sfx?.select?.();
+    userPausedRef.current = false;
     const targetDevice = selectedDevice || deviceId;
+
     try {
-      await play.mutateAsync({ uris: [uri], device_id: targetDevice || undefined });
+      if (contextUri) {
+        await playContextTrack(contextUri, uri);
+        return;
+      }
+
+      // Identify track info
+      let track = trackObj;
+      if (!track && currentTrack?.uri === uri) track = currentTrack;
+      if (!track) {
+        track = 
+          birthdayMixTracks.find((t: any) => t.uri === uri) ||
+          likedData?.tracks?.find((t: any) => t.uri === uri) ||
+          recentTracks.find((item: any) => item.track?.uri === uri)?.track;
+      }
+
+      // Continuous Playback: Fetch relevant tracks so playback keeps going continuously
+      let relevant: any[] = [];
+      try {
+        const { getRelevantTracks } = await import('@/lib/spotify/player');
+        relevant = track ? await getRelevantTracks(track, 15) : [];
+      } catch (err) {
+        console.warn('Could not fetch relevant tracks:', err);
+      }
+
+      const relevantUris = relevant.map((t: any) => t.uri).filter(Boolean);
+      const allUris = [uri, ...relevantUris];
+
+      await play.mutateAsync({ uris: allUris, device_id: targetDevice || undefined });
+
+      // Populate Zustand queue with active track + upcoming relevant tracks
+      const fullQueue = [
+        { track: track || { uri, name: 'Playing Track' }, contextUri },
+        ...relevant.map((t: any) => ({ track: t, contextUri }))
+      ];
+      setQueue(fullQueue);
+      setQueueIndex(0);
     } catch (e: any) {
       alert(e.message || 'Error playing track');
     }
   };
 
-  const playTracks = async (uris: string[]) => {
-    if (!token) return;
+  const playTracks = async (uris: string[], tracksList?: any[]) => {
+    if (!token || uris.length === 0) return;
     sfx?.select?.();
+    userPausedRef.current = false;
     const targetDevice = selectedDevice || deviceId;
     try {
       await play.mutateAsync({ uris, device_id: targetDevice || undefined });
+
+      if (tracksList && tracksList.length > 0) {
+        setQueue(tracksList.map(t => ({ track: t })));
+        setQueueIndex(0);
+      } else {
+        setQueue(uris.map(u => ({ track: { uri: u, name: 'Queued Track' } })));
+        setQueueIndex(0);
+      }
     } catch (e: any) {
       alert(e.message || 'Error playing tracks');
     }
@@ -283,12 +395,17 @@ export default function SpotifyPlayerUI() {
     } catch (e: any) { }
   };
 
-  const playPlaylist = async (uri: string) => {
+  const playPlaylist = async (uri: string, playlistTracks?: any[]) => {
     if (!token) return;
     sfx?.select?.();
+    userPausedRef.current = false;
     const targetDevice = selectedDevice || deviceId;
     try {
       await play.mutateAsync({ context_uri: uri, device_id: targetDevice || undefined });
+      if (playlistTracks && playlistTracks.length > 0) {
+        setQueue(playlistTracks.map(t => ({ track: t, contextUri: uri })));
+        setQueueIndex(0);
+      }
     } catch (e: any) {
       alert(e.message || 'Error playing playlist');
     }
@@ -297,6 +414,7 @@ export default function SpotifyPlayerUI() {
   const playContextTrack = async (contextUri: string, trackUri: string) => {
     if (!token) return;
     sfx?.select?.();
+    userPausedRef.current = false;
     const targetDevice = selectedDevice || deviceId;
     try {
       await play.mutateAsync({ context_uri: contextUri, offset: { uri: trackUri }, device_id: targetDevice || undefined });
@@ -306,13 +424,14 @@ export default function SpotifyPlayerUI() {
   };
 
   const playQueueItem = async (index: number) => {
-    if (index < 0 || index >= queue.length) return;
-    const item = queue[index];
+    const list = effectiveQueue;
+    if (index < 0 || index >= list.length) return;
+    const item = list[index];
     setQueueIndex(index);
     if (item.contextUri) {
       await playContextTrack(item.contextUri, item.track.uri);
     } else {
-      await playTrack(item.track.uri);
+      await playTrack(item.track.uri, undefined, item.track);
     }
   };
 
@@ -320,20 +439,28 @@ export default function SpotifyPlayerUI() {
     sfx?.select?.();
     if (!player) {
       if (currentTrack?.uri) {
-        await playTrack(currentTrack.uri);
+        userPausedRef.current = false;
+        await playTrack(currentTrack.uri, undefined, currentTrack);
       }
       return;
     }
     try {
       const state = await player.getCurrentState();
       if ((!state || !state.track_window?.current_track) && currentTrack?.uri) {
-        await playTrack(currentTrack.uri);
+        userPausedRef.current = false;
+        await playTrack(currentTrack.uri, undefined, currentTrack);
       } else {
+        if (!state.paused) {
+          userPausedRef.current = true;
+        } else {
+          userPausedRef.current = false;
+        }
         await player.togglePlay();
       }
     } catch {
       if (currentTrack?.uri) {
-        await playTrack(currentTrack.uri);
+        userPausedRef.current = false;
+        await playTrack(currentTrack.uri, undefined, currentTrack);
       } else {
         player.togglePlay();
       }
@@ -343,11 +470,12 @@ export default function SpotifyPlayerUI() {
   const nextTrack = () => {
     if (!player) return;
     sfx?.select?.();
-    if (repeatMode === 'track' && queue.length > 0 && queueIndex >= 0) {
+    const list = effectiveQueue;
+    if (repeatMode === 'track' && list.length > 0 && queueIndex >= 0) {
       playQueueItem(queueIndex);
-    } else if (queue.length > 0 && queueIndex < queue.length - 1) {
+    } else if (list.length > 0 && queueIndex < list.length - 1) {
       playQueueItem(queueIndex + 1);
-    } else if (queue.length > 0 && repeatMode === 'context') {
+    } else if (list.length > 0 && repeatMode === 'context') {
       playQueueItem(0);
     } else {
       player.nextTrack();
@@ -357,12 +485,13 @@ export default function SpotifyPlayerUI() {
   const prevTrack = () => {
     if (!player) return;
     sfx?.select?.();
-    if (repeatMode === 'track' && queue.length > 0 && queueIndex >= 0) {
+    const list = effectiveQueue;
+    if (repeatMode === 'track' && list.length > 0 && queueIndex >= 0) {
       playQueueItem(queueIndex);
-    } else if (queue.length > 0 && queueIndex > 0) {
+    } else if (list.length > 0 && queueIndex > 0) {
       playQueueItem(queueIndex - 1);
-    } else if (queue.length > 0 && repeatMode === 'context') {
-      playQueueItem(queue.length - 1);
+    } else if (list.length > 0 && repeatMode === 'context') {
+      playQueueItem(list.length - 1);
     } else {
       player.previousTrack();
     }
@@ -575,6 +704,13 @@ export default function SpotifyPlayerUI() {
                 <span className="text-base">Playlists</span>
               </button>
               <button
+                onClick={() => setActiveTab('mix')}
+                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C2185B] ${activeTab === 'mix' ? 'bg-[#FFE4F0] text-[#881337] font-bold border border-[#FF87BE] shadow-xs' : 'text-[#5D1687] hover:bg-[#FFF0F5] hover:text-[#881337] font-medium'}`}
+              >
+                <span className="w-5 text-xl">✨</span>
+                <span className="text-base">Mix</span>
+              </button>
+              <button
                 onClick={() => setActiveTab('vibes')}
                 className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C2185B] ${activeTab === 'vibes' ? 'bg-[#FFE4F0] text-[#881337] font-bold border border-[#FF87BE] shadow-xs' : 'text-[#5D1687] hover:bg-[#FFF0F5] hover:text-[#881337] font-medium'}`}
               >
@@ -638,7 +774,7 @@ export default function SpotifyPlayerUI() {
                     )}
                     <div className="flex flex-col overflow-hidden">
                       <span className="text-xs font-bold text-[#4A0E4E] truncate group-hover:text-[#881337] transition-colors">{p.name}</span>
-                      <span className="text-xs text-[#7A2871] font-medium">{p.tracks?.total || 0} songs</span>
+                      <span className="text-xs text-[#7A2871] font-medium">{(p.items?.total ?? p.tracks?.total ?? p.total_tracks ?? (Array.isArray(p.items) ? p.items.length : (Array.isArray(p.tracks?.items) ? p.tracks.items.length : (Array.isArray(p.tracks) ? p.tracks.length : 0))))} songs</span>
                     </div>
                   </div>
                 ))}
@@ -660,9 +796,12 @@ export default function SpotifyPlayerUI() {
                       <p className="mt-3 font-pixel text-base sm:text-lg font-medium text-[#5D1687]">What are we listening to today?</p>
                       <button
                         onClick={() => {
-                          const uris = likedHomeTracks.map((track: any) => track.uri).filter(Boolean);
-                          if (uris.length) playTracks(uris);
-                          else setActiveTab('playlists');
+                          const tracksToPlay = birthdayMixTracks.length > 0 ? birthdayMixTracks : (likedData?.tracks || []);
+                          if (tracksToPlay.length > 0) {
+                            playTracks(tracksToPlay.map((t: any) => t.uri), tracksToPlay);
+                          } else {
+                            setActiveTab('mix');
+                          }
                         }}
                         className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#C2185B] hover:bg-[#A0144F] px-6 py-2.5 font-pixel text-base font-bold text-white shadow-md transition hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#881337]"
                       >
@@ -693,7 +832,7 @@ export default function SpotifyPlayerUI() {
                         )}
                         <div className="p-3">
                           <div className="truncate font-pixel text-base font-bold text-[#4A0E4E] group-hover:text-[#881337] transition-colors">{playlist.name}</div>
-                          <div className="font-pixel text-xs text-[#7A2871] font-medium">{playlist.tracks?.total || 0} songs</div>
+                          <div className="font-pixel text-xs text-[#7A2871] font-medium">{(playlist.items?.total ?? playlist.tracks?.total ?? playlist.total_tracks ?? (Array.isArray(playlist.items) ? playlist.items.length : (Array.isArray(playlist.tracks?.items) ? playlist.tracks.items.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : 0))))} songs</div>
                         </div>
                       </button>
                     ))}
@@ -768,12 +907,12 @@ export default function SpotifyPlayerUI() {
                     const p = playlists.find((pl: any) => pl.id === selectedPlaylistId);
                     if (p) setRemovingPlaylist(p);
                   }}
-                  onPlayPlaylist={playPlaylist}
-                  onPlayTrack={(uri, contextUri) => {
+                  onPlayPlaylist={(uri, tracks) => playPlaylist(uri, tracks)}
+                  onPlayTrack={(uri, contextUri, track) => {
                     if (contextUri) playContextTrack(contextUri, uri);
-                    else playTrack(uri);
+                    else playTrack(uri, undefined, track);
                   }}
-                  onAddToQueue={addToQueue}
+                  onAddToQueue={handleAddToQueue}
                   onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
                   onRemoveFromPlaylist={async (uri) => {
                     if (selectedPlaylistId) {
@@ -786,20 +925,15 @@ export default function SpotifyPlayerUI() {
                   }}
                   onReorder={async (startIndex, endIndex) => {
                     if (selectedPlaylistId) {
-                      // Spotify's API for reorder: 
-                      // range_start: index of the first item to move
-                      // insert_before: position where the items should be inserted.
-                      // To move an item down, insert_before must be greater than the current index, 
-                      // and since it inserts BEFORE that index, if you move item 1 to position 2, insert_before = 3.
                       const insertBefore = endIndex > startIndex ? endIndex + 1 : endIndex;
                       await reorderItems.mutateAsync({ playlistId: selectedPlaylistId, range_start: startIndex, insert_before: insertBefore });
                     }
                   }}
-                  onShufflePlay={async (uri) => {
+                  onShufflePlay={async (uri, tracks) => {
                     if (!isShuffle) {
                       await toggleShuffle();
                     }
-                    playPlaylist(uri);
+                    playPlaylist(uri, tracks);
                   }}
                 />
               ) : (
@@ -844,7 +978,7 @@ export default function SpotifyPlayerUI() {
                 </div>
                 {(() => {
                   if (isRecentError && (recentError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#B91C1C] font-pixel text-xs font-bold text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((recentError as any)?.retryAfter ?? 60)} SECONDS.</div>;
-                  return <TrackList tracks={recentTracks.map((item: any) => item.track).filter(Boolean)} isLoading={isRecentLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} onAddMemory={(track) => { setMemoryEditorEntity(track); setMemoryEditorType('track'); }} emptyMessage="NO RECENTLY PLAYED TRACKS" />;
+                  return <TrackList tracks={recentTracks.map((item: any) => item.track).filter(Boolean)} isLoading={isRecentLoading} onPlayTrack={playTrack} onAddToQueue={handleAddToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} onAddMemory={(track) => { setMemoryEditorEntity(track); setMemoryEditorType('track'); }} emptyMessage="NO RECENTLY PLAYED TRACKS" />;
                 })()}
               </div>
             )}
@@ -860,7 +994,7 @@ export default function SpotifyPlayerUI() {
                   </div>
                 </div>
                 <button
-                  onClick={() => playTracks(likedData?.tracks?.map((t: any) => t.uri) || [])}
+                  onClick={() => playTracks(likedData?.tracks?.map((t: any) => t.uri) || [], likedData?.tracks || [])}
                   disabled={!likedData?.tracks?.length}
                   className={`w-full mb-3 shrink-0 bg-gradient-to-r from-[#D81B60] to-[#C2185B] hover:from-[#C2185B] hover:to-[#AD1457] text-white py-3 rounded-xl shadow-[0_4px_14px_rgba(194,24,91,0.35)] transition-all flex flex-col items-center justify-center gap-1 ${!likedData?.tracks?.length ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.01] active:scale-95'}`}
                 >
@@ -870,7 +1004,7 @@ export default function SpotifyPlayerUI() {
                 </button>
                 {(() => {
                   if (isLikedError && (likedError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#B91C1C] font-pixel text-xs font-bold text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((likedError as any)?.retryAfter ?? 60)} SECONDS.</div>;
-                  return <TrackList tracks={likedData?.tracks || []} isLoading={isLikedLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} onAddMemory={(track) => { setMemoryEditorEntity(track); setMemoryEditorType('track'); }} emptyMessage="NO LIKED SONGS" />;
+                  return <TrackList tracks={likedData?.tracks || []} isLoading={isLikedLoading} onPlayTrack={playTrack} onAddToQueue={handleAddToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} onAddMemory={(track) => { setMemoryEditorEntity(track); setMemoryEditorType('track'); }} emptyMessage="NO LIKED SONGS" />;
                 })()}
               </div>
             )}
@@ -879,7 +1013,7 @@ export default function SpotifyPlayerUI() {
               <MixSection
                 onPlayTrack={playTrack}
                 onPlayTracks={playTracks}
-                onAddToQueue={addToQueue}
+                onAddToQueue={handleAddToQueue}
                 onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
                 onClickArtist={(id) => {
                   setActiveTab('artist');
@@ -901,7 +1035,7 @@ export default function SpotifyPlayerUI() {
               <FrequenciesSection
                 onPlayTrack={playTrack}
                 onPlayTracks={playTracks}
-                onAddToQueue={addToQueue}
+                onAddToQueue={handleAddToQueue}
                 onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
                 onClickArtist={(id) => {
                   setActiveTab('artist');
@@ -919,7 +1053,7 @@ export default function SpotifyPlayerUI() {
               <VibesSection
                 onPlayTrack={playTrack}
                 onPlayTracks={playTracks}
-                onAddToQueue={addToQueue}
+                onAddToQueue={handleAddToQueue}
                 onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
                 onClickArtist={(id) => {
                   setActiveTab('artist');
@@ -938,7 +1072,7 @@ export default function SpotifyPlayerUI() {
               <MemoriesSection
                 onPlayTrack={playTrack}
                 onPlayPlaylist={playPlaylist}
-                onAddToQueue={addToQueue}
+                onAddToQueue={handleAddToQueue}
                 onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
                 onClickArtist={(id) => {
                   setActiveTab('artist');
@@ -961,7 +1095,7 @@ export default function SpotifyPlayerUI() {
                 <SearchResults
                   query={debouncedSearch}
                   onPlayTrack={playTrack}
-                  onAddToQueue={addToQueue}
+                  onAddToQueue={handleAddToQueue}
                   onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
                   onClickPlaylist={(id) => {
                     setActiveTab('playlists');
@@ -991,11 +1125,10 @@ export default function SpotifyPlayerUI() {
                   setSelectedAlbumId(null);
                 }}
                 onPlayAlbum={playPlaylist}
-                onPlayTrack={(uri, contextUri) => {
-                  if (contextUri) playContextTrack(contextUri, uri);
-                  else playTrack(uri);
+                onPlayTrack={(uri: string, contextUri?: string) => {
+                  playTrack(uri, contextUri);
                 }}
-                onAddToQueue={addToQueue}
+                onAddToQueue={handleAddToQueue}
                 onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
                 onAddMemory={(entity, type) => {
                   setMemoryEditorEntity(entity);
@@ -1021,11 +1154,10 @@ export default function SpotifyPlayerUI() {
                   setActiveTab('album');
                   setSelectedAlbumId(id);
                 }}
-                onPlayTrack={(uri, contextUri) => {
-                  if (contextUri) playContextTrack(contextUri, uri);
-                  else playTrack(uri);
+                onPlayTrack={(uri: string, contextUri?: string) => {
+                  playTrack(uri, contextUri);
                 }}
-                onAddToQueue={addToQueue}
+                onAddToQueue={handleAddToQueue}
                 onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
                 onAddMemory={(entity, type) => {
                   setMemoryEditorEntity(entity);
@@ -1261,7 +1393,7 @@ export default function SpotifyPlayerUI() {
                   {rightPanelTab === 'queue' ? '+ Up Next' : '🕒 Recently Played'}
                 </span>
                 <div className="flex items-center gap-2">
-                  {rightPanelTab === 'queue' && queue.length > 0 && (
+                  {rightPanelTab === 'queue' && effectiveQueue.length > 0 && (
                     <button
                       onClick={() => clearQueue()}
                       className="font-pixel text-xs text-[#7A2871] hover:text-[#881337] transition-colors font-bold"
@@ -1285,7 +1417,7 @@ export default function SpotifyPlayerUI() {
               {/* Tracks List */}
               <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1">
                 {rightPanelTab === 'queue' ? (
-                  queue.length === 0 ? (
+                  effectiveQueue.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
                       <div className="text-xl mb-1">🌸</div>
                       <div className="text-[#881337] font-pixel text-xs font-bold">QUEUE IS EMPTY</div>
@@ -1301,15 +1433,17 @@ export default function SpotifyPlayerUI() {
                       </button>
                     </div>
                   ) : (
-                    queue.map((item, idx) => (
+                    effectiveQueue.map((item: any, idx: number) => (
                       <div
-                        key={`${item.track.id}-${idx}`}
-                        draggable
+                        key={`${item.track?.id || item.track?.uri || 'queue'}-${idx}`}
+                        draggable={queue.length > 0}
                         onDragStart={(e) => {
+                          if (queue.length === 0) return;
                           setDraggedQueueIndex(idx);
                           e.dataTransfer.effectAllowed = 'move';
                         }}
                         onDragOver={(e) => {
+                          if (queue.length === 0) return;
                           e.preventDefault();
                           setDragOverQueueIndex(idx);
                         }}
@@ -1319,7 +1453,7 @@ export default function SpotifyPlayerUI() {
                         }}
                         onDrop={(e) => {
                           e.preventDefault();
-                          if (draggedQueueIndex !== null && draggedQueueIndex !== idx) {
+                          if (queue.length > 0 && draggedQueueIndex !== null && draggedQueueIndex !== idx) {
                             reorderQueue(draggedQueueIndex, idx);
                           }
                           setDraggedQueueIndex(null);
@@ -1337,28 +1471,30 @@ export default function SpotifyPlayerUI() {
                         <span className={`font-pixel text-xs w-4 text-center shrink-0 font-bold ${idx === queueIndex ? 'text-[#C2185B]' : 'text-[#8C3A7A]'}`}>
                           {idx + 1}
                         </span>
-                        {item.track.album?.images?.[0]?.url ? (
+                        {item.track?.album?.images?.[0]?.url ? (
                           <img src={item.track.album.images[0].url} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[#FFD0E2]" />
                         ) : (
                           <div className="w-9 h-9 rounded-lg bg-[#FFD1E3] border border-[#FF87BE] shrink-0 shadow-2xs flex items-center justify-center text-[#881337] text-xs font-bold">♪</div>
                         )}
                         <div className="flex flex-col overflow-hidden flex-1 min-w-0">
                           <span className={`font-pixel text-xs font-bold truncate ${idx === queueIndex ? 'text-[#C2185B]' : 'text-[#4A0E4E]'}`}>
-                            {item.track.name}
+                            {item.track?.name}
                           </span>
                           <span className="font-pixel text-xs text-[#7A2871] font-medium truncate">
-                            {item.track.artists?.map((a: any) => a.name).join(', ')}
+                            {item.track?.artists?.map((a: any) => a.name).join(', ')}
                           </span>
                         </div>
                         <span className="font-pixel text-xs text-[#5D1687] font-bold shrink-0">
-                          {formatTime(item.track.duration_ms)}
+                          {formatTime(item.track?.duration_ms || 0)}
                         </span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            removeFromQueue(idx);
+                            if (queue.length > 0) {
+                              removeFromQueue(idx);
+                            }
                           }}
-                          className="opacity-0 group-hover:opacity-100 text-[#7A2871] hover:text-[#B91C1C] px-1 py-0.5 rounded shrink-0 font-bold text-xs"
+                          className={`text-[#7A2871] hover:text-[#B91C1C] px-1 py-0.5 rounded shrink-0 font-bold text-xs ${queue.length > 0 ? 'opacity-0 group-hover:opacity-100' : 'hidden'}`}
                           aria-label="Remove from queue"
                           title="Remove from queue"
                         >
@@ -1385,7 +1521,7 @@ export default function SpotifyPlayerUI() {
                           className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[#FFE1EF] transition-colors group cursor-pointer"
                           onClick={() => {
                             if (item.context?.uri) playContextTrack(item.context.uri, track.uri);
-                            else playTrack(track.uri);
+                            else playTrack(track.uri, undefined, track);
                           }}
                         >
                           <span className="font-pixel text-xs w-4 text-center shrink-0 text-[#8C3A7A] font-bold">
@@ -1407,7 +1543,7 @@ export default function SpotifyPlayerUI() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              addToQueue(track, item.context?.uri);
+                              handleAddToQueue(track, item.context?.uri);
                             }}
                             className="opacity-0 group-hover:opacity-100 text-[#881337] bg-white border border-[#FF87BE] hover:bg-[#C2185B] hover:text-white px-2.5 py-1 rounded-full font-pixel text-xs font-bold transition-all shadow-xs shrink-0"
                             title="Add to queue"

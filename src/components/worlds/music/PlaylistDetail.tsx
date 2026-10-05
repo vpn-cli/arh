@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { usePlaylist, usePlaylistItems } from '@/hooks/usePlaylist';
+import { normalizePlaylistItem } from '@/lib/spotify/library';
 import { PlaylistHeader } from './PlaylistHeader';
 import { PlaylistActions } from './PlaylistActions';
 import { PlaylistTrackList } from './PlaylistTrackList';
@@ -7,10 +8,10 @@ import { PlaylistTrackList } from './PlaylistTrackList';
 interface PlaylistDetailProps {
   playlistId: string;
   onBack: () => void;
-  onPlayPlaylist: (uri: string) => void;
-  onPlayTrack: (uri: string, contextUri?: string) => void;
+  onPlayPlaylist: (uri: string, tracks?: any[]) => void;
+  onPlayTrack: (uri: string, contextUri?: string, track?: any) => void;
   onAddToQueue?: (track: any, contextUri?: string) => void;
-  onShufflePlay?: (uri: string) => void;
+  onShufflePlay?: (uri: string, tracks?: any[]) => void;
   onAddToPlaylist?: (uri: string) => void;
   onRemoveFromPlaylist?: (uri: string) => void;
   onReorder?: (startIndex: number, endIndex: number) => void;
@@ -43,6 +44,26 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
     return () => clearInterval(interval);
   }, [rateLimitTimer]);
 
+  const resolvedTracks = React.useMemo(() => {
+    if (itemsData?.items && itemsData.items.length > 0) {
+      return itemsData.items;
+    }
+    if (playlist?.tracks?.items && Array.isArray(playlist.tracks.items) && playlist.tracks.items.length > 0) {
+      return playlist.tracks.items.map(normalizePlaylistItem).filter(Boolean);
+    }
+    if (Array.isArray(playlist?.items) && playlist.items.length > 0) {
+      return playlist.items.map(normalizePlaylistItem).filter(Boolean);
+    }
+    return [];
+  }, [itemsData, playlist]);
+
+  const totalTrackCount = 
+    itemsData?.total ??
+    (itemsData?.items?.length) ??
+    playlist?.tracks?.total ??
+    playlist?.items?.total ??
+    resolvedTracks.length;
+
   if (isPlaylistError && (playlistError as any)?.status === 429) {
     return (
       <div className="flex flex-col h-full items-center justify-center p-4">
@@ -73,44 +94,55 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
 
   const handlePlay = () => {
     if (playlist?.uri) {
-      onPlayPlaylist(playlist.uri);
+      onPlayPlaylist(playlist.uri, resolvedTracks);
     }
   };
 
   const handleShuffle = () => {
     if (onShufflePlay && playlist?.uri) {
-      onShufflePlay(playlist.uri);
+      onShufflePlay(playlist.uri, resolvedTracks);
     }
   };
 
   return (
     <div className="flex flex-col h-full w-full">
       <PlaylistHeader 
-        playlist={playlist} 
+        playlist={{
+          ...playlist,
+          items: {
+            total: totalTrackCount
+          },
+          tracks: {
+            total: totalTrackCount
+          }
+        }} 
         onBack={onBack} 
-        isRestricted={isItemsError && (itemsError as any)?.status === 403}
+        isRestricted={isItemsError && (itemsError as any)?.status === 403 && resolvedTracks.length === 0}
         onEdit={onEdit}
         onRemove={onRemove}
       />
       <PlaylistActions 
         onPlay={handlePlay} 
         onShuffle={handleShuffle} 
-        disabled={isLoadingItems || !itemsData?.items?.length} 
+        disabled={(isLoadingItems && resolvedTracks.length === 0) || resolvedTracks.length === 0} 
       />
       {isItemsError && (itemsError as any)?.status === 429 ? (
         <div className="flex-1 flex items-center justify-center text-[#B91C1C] font-pixel text-xs font-bold text-center px-4">
           Rate limited by Spotify.<br/>Wait {rateLimitTimer || ((itemsError as any)?.retryAfter ?? 60)} seconds.
         </div>
-      ) : isItemsError && (itemsError as any)?.status === 403 ? (
+      ) : isItemsError && (itemsError as any)?.status === 403 && resolvedTracks.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center font-pixel text-xs text-center px-4 gap-2">
           <span className="text-[#B91C1C] font-bold">Tracks Unavailable</span>
           <span className="text-[#7A2871] leading-relaxed">Spotify does not allow this app to read tracks from this playlist.</span>
         </div>
       ) : (
         <PlaylistTrackList 
-          tracks={itemsData?.items || []} 
-          isLoading={isLoadingItems} 
-          onPlayTrack={(uri) => onPlayTrack(uri, playlist?.uri)} 
+          tracks={resolvedTracks} 
+          isLoading={isLoadingItems && resolvedTracks.length === 0} 
+          onPlayTrack={(uri) => {
+            const trackObj = resolvedTracks.find((t: any) => t.uri === uri);
+            onPlayTrack(uri, playlist?.uri, trackObj);
+          }} 
           onAddToQueue={(track) => onAddToQueue && onAddToQueue(track, playlist?.uri)}
           onAddToPlaylist={onAddToPlaylist}
           onRemoveFromPlaylist={onRemoveFromPlaylist}

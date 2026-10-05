@@ -53,12 +53,17 @@ export function PlaylistHeader({ playlist, onBack, isRestricted, onEdit, onRemov
         {playlist.description && (
           <p className="font-pixel text-xs text-[#7A2871] mt-1 line-clamp-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: playlist.description }} />
         )}
-        <div className="font-pixel text-xs text-[#8C3A7A] mt-2 font-bold tracking-wide">
-          {isRestricted 
-            ? (playlist.items?.total ? `${playlist.items.total} tracks` : 'Tracks unavailable')
-            : `${playlist.items?.total ?? 0} tracks`
-          }
-        </div>
+        {(() => {
+          const trackCount = playlist.items?.total ?? playlist.tracks?.total ?? (Array.isArray(playlist.items) ? playlist.items.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : (playlist.items?.items?.length ?? 0)));
+          return (
+            <div className="font-pixel text-xs text-[#8C3A7A] mt-2 font-bold tracking-wide">
+              {isRestricted 
+                ? (trackCount ? `${trackCount} tracks` : 'Tracks unavailable')
+                : `${trackCount} tracks`
+              }
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
