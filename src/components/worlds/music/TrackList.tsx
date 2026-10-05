@@ -30,7 +30,7 @@ export function TrackList({ tracks, onPlayTrack, onAddToQueue, onAddToPlaylist, 
     <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1">
       {tracks.map((t, i) => (
         <div
-          key={t.id + i}
+          key={`${t.id || t.uri || 'track'}-${i}`}
           draggable={!!onReorder}
           onDragStart={(e) => {
             if (onReorder) {

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Pixelify+Sans:wght@400;500;600;700&family=Press+Start+2P&family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DotGothic16&family=Fredoka:wght@400;500;600;700&family=Pixelify+Sans:wght@500;700&family=Press+Start+2P&family=Quicksand:wght@500;600;700&family=VT323&display=swap');
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════
@@ -27,8 +27,10 @@
   --color-border: #20233F;
   --color-dark-muted: #4B4E6A;
 
-  /* Typography */
-  --font-pixel: 'Pixelify Sans', sans-serif;
+  /* Typography — Cute Kawaii & WCAG 2.1 Compliant */
+  --font-pixel: 'Fredoka', 'Quicksand', system-ui, sans-serif;
+  --font-cute: 'Fredoka', 'Quicksand', sans-serif;
+  --font-dot: 'DotGothic16', monospace;
   --font-retro: 'Press Start 2P', monospace;
   --font-terminal: 'VT323', monospace;
   --font-handwriting: 'Caveat', cursive;
@@ -47,8 +49,8 @@ html {
 body {
   background-color: #FFFFFF;
   color: var(--color-dark, #20233F);
-  font-family: 'Pixelify Sans', sans-serif;
-  font-weight: 700;
+  font-family: 'Fredoka', 'Quicksand', system-ui, sans-serif;
+  font-weight: 500;
   font-optical-sizing: auto;
   overflow-x: clip;
   margin: 0;
@@ -61,11 +63,17 @@ body {
   color: var(--color-dark, #20233F);
 }
 
-/* Force Pixelify Sans bold for readability everywhere it's used as .font-pixel */
+/* Cute, rounded, crystal-clear Kawaii typography (WCAG 2.1 compliant) */
 .font-pixel {
-  font-weight: 700 !important;
+  font-family: 'Fredoka', 'Quicksand', system-ui, sans-serif;
+  font-weight: 600;
   font-optical-sizing: auto;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.015em;
+}
+
+.font-dot {
+  font-family: 'DotGothic16', monospace;
+  letter-spacing: 0.04em;
 }
 
 /* ═══════════════════════════════════════════════════════
