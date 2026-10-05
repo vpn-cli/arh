@@ -96,47 +96,8 @@ export default function MusicWorld() {
       </div>
 
       {/* Main Content Flow */}
-      <main ref={containerRef} className="relative z-10 w-full flex flex-col items-center justify-center min-h-[100dvh] pt-16 pb-4 px-4">
-        
-        <div className="text-center mb-6 relative">
-          <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-4xl opacity-90 animate-bounce-soft drop-shadow-md font-pixel text-[#FFB6C1]">♫</div>
-          <h1 className="font-pixel text-4xl sm:text-5xl md:text-6xl font-bold text-[#FF69B4] tracking-wider drop-shadow-[0_4px_0_#FFFFFF,0_0_20px_rgba(255,105,180,0.4)] mb-3 mt-4">
-            SOUNDSCAPES
-          </h1>
-          <p className="font-retro text-[9px] sm:text-[11px] text-[#FF99B9] tracking-[4px] uppercase bg-[#FFFFFF]/50 py-1.5 px-6 rounded-full border-2 border-[#FFB6C1] backdrop-blur-sm shadow-sm inline-block font-bold">
-            Vibes / Frequencies / Memories
-          </p>
-        </div>
-
-        {/* Custom Retro Spotify Player UI */}
-        <div className="w-full max-w-6xl xl:max-w-7xl bg-[#FFFFFF]/90 backdrop-blur-md border-4 border-[#FFB6C1] rounded-3xl shadow-[0_10px_30px_rgba(255,182,193,0.3)] overflow-hidden relative group">
-          
-          {/* Mac-OS Classic Style Header */}
-          <div className="bg-[#FFF0F5] px-4 py-3 flex items-center justify-between border-b-4 border-[#FFE4E1]">
-            <div className="flex gap-2">
-              <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-[#FFB6C1] shadow-inner" />
-              <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-[#FF69B4] shadow-inner" />
-              <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-[#FF99B9] shadow-inner" />
-            </div>
-            <div className="font-retro text-[8px] sm:text-[10px] text-[#FF69B4] tracking-[2px] flex items-center gap-2 font-bold">
-              <span className="text-[#FF69B4] text-sm animate-pulse">💕</span>
-              KAWAII_PLAYER.EXE
-            </div>
-            <div className="w-12" /> {/* Flex spacer */}
-          </div>
-
-          <div className="p-4 sm:p-8 flex flex-col items-center">
-            
-            <SpotifyPlayerUI />
-
-          </div>
-
-          {/* Aesthetic tape decoration on corners */}
-          <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none">
-            <div className="absolute top-4 -right-6 w-24 h-4 bg-[#FFB6C1]/30 backdrop-blur-sm rotate-45 transform origin-center shadow-sm" />
-          </div>
-        </div>
-
+      <main ref={containerRef} className="relative z-10 w-full min-h-[100dvh] pt-16 pb-4 px-3 sm:px-5">
+        <SpotifyPlayerUI />
       </main>
     </div>
   );

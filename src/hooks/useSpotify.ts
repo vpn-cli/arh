@@ -126,12 +126,22 @@ export function useSpotifyMutations() {
   });
 
   const toggleShuffle = useMutation({
-    mutationFn: async ({ state, device_id }: { state: boolean, device_id: string }) => {
-      await proxyFetch(`/me/player/shuffle?state=${state}&device_id=${device_id}`, { method: 'PUT' });
+    mutationFn: async ({ state, device_id }: { state: boolean, device_id?: string }) => {
+      let url = `/me/player/shuffle?state=${state}`;
+      if (device_id) url += `&device_id=${device_id}`;
+      await proxyFetch(url, { method: 'PUT' });
     }
   });
 
-  return { play, toggleSave, toggleShuffle };
+  const toggleRepeat = useMutation({
+    mutationFn: async ({ state, device_id }: { state: 'off' | 'context' | 'track', device_id?: string }) => {
+      let url = `/me/player/repeat?state=${state}`;
+      if (device_id) url += `&device_id=${device_id}`;
+      await proxyFetch(url, { method: 'PUT' });
+    }
+  });
+
+  return { play, toggleSave, toggleShuffle, toggleRepeat };
 }
 
 export function useRecentlyPlayed(options?: { enabled?: boolean }) {

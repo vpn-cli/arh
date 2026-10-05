@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+export type RepeatMode = 'off' | 'context' | 'track';
+
 export interface QueueItem {
   track: any;
   contextUri?: string;
@@ -13,6 +15,7 @@ interface SpotifyPlayerState {
   currentTrack: any | null;
   isPaused: boolean;
   isShuffle: boolean;
+  repeatMode: RepeatMode;
   position: number;
   duration: number;
   error: string | null;
@@ -27,6 +30,7 @@ interface SpotifyPlayerState {
   setCurrentTrack: (track: any) => void;
   setIsPaused: (paused: boolean) => void;
   setIsShuffle: (shuffle: boolean) => void;
+  setRepeatMode: (mode: RepeatMode) => void;
   setPosition: (pos: number) => void;
   setDuration: (dur: number) => void;
   setError: (err: string | null) => void;
@@ -48,6 +52,7 @@ export const useSpotifyPlayerStore = create<SpotifyPlayerState>((set) => ({
   currentTrack: null,
   isPaused: true,
   isShuffle: false,
+  repeatMode: 'off',
   position: 0,
   duration: 0,
   error: null,
@@ -62,6 +67,7 @@ export const useSpotifyPlayerStore = create<SpotifyPlayerState>((set) => ({
   setCurrentTrack: (currentTrack) => set({ currentTrack }),
   setIsPaused: (isPaused) => set({ isPaused }),
   setIsShuffle: (isShuffle) => set({ isShuffle }),
+  setRepeatMode: (repeatMode) => set({ repeatMode }),
   setPosition: (position) => set({ position }),
   setDuration: (duration) => set({ duration }),
   setError: (error) => set({ error }),
