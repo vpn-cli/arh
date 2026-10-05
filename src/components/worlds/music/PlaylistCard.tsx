@@ -34,9 +34,14 @@ export function PlaylistCard({ playlist, onClick, onAddMemory, variant = 'defaul
               {playlist.name}
             </span>
           </div>
-          <div className="font-pixel text-xs text-[#7A2871] font-medium mt-0.5 truncate">
-            Playlist • {playlist.owner?.display_name || 'Spotify'}
-          </div>
+          {(() => {
+            const trackCount = playlist.items?.total ?? playlist.tracks?.total ?? playlist.total_tracks ?? (Array.isArray(playlist.items) ? playlist.items.length : (Array.isArray(playlist.tracks?.items) ? playlist.tracks.items.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : undefined)));
+            return (
+              <div className="font-pixel text-xs text-[#7A2871] font-medium mt-0.5 truncate">
+                Playlist • {playlist.owner?.display_name || 'Spotify'}{trackCount !== undefined ? ` • ${trackCount} tracks` : ''}
+              </div>
+            );
+          })()}
         </div>
       </button>
       {onAddMemory && (

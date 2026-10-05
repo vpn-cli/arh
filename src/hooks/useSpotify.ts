@@ -23,15 +23,17 @@ export function usePlaylists(options?: { enabled?: boolean }) {
     queryKey: ['spotify', 'playlists'],
     queryFn: async () => {
       const [meData, playlistsData] = await Promise.all([
-        proxyFetch('/me'),
-        proxyFetch('/me/playlists')
+        proxyFetch('/me').catch(() => null),
+        proxyFetch('/me/playlists?limit=50').catch(() => null)
       ]);
       const currentUserId = meData?.id;
       const allPlaylists = playlistsData?.items || [];
-      return allPlaylists.filter((p: any) => p?.owner?.id === currentUserId);
+      if (!currentUserId) return allPlaylists;
+      const userPlaylists = allPlaylists.filter((p: any) => p?.owner?.id === currentUserId);
+      return userPlaylists.length > 0 ? userPlaylists : allPlaylists;
     },
     enabled: isEnabled,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
   });
 }
 
@@ -54,27 +56,65 @@ export function useBirthdayMix(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['spotify', 'birthdayMix'],
     queryFn: async () => {
-      const [topData, savedData] = await Promise.all([
-        proxyFetch('/me/top/tracks?limit=50&time_range=medium_term'),
-        proxyFetch('/me/tracks?limit=50'),
+      const [shortTop, medTop, savedData, recentData] = await Promise.all([
+        proxyFetch('/me/top/tracks?limit=50&time_range=short_term').catch(() => ({ items: [] })),
+        proxyFetch('/me/top/tracks?limit=50&time_range=medium_term').catch(() => ({ items: [] })),
+        proxyFetch('/me/tracks?limit=50').catch(() => ({ items: [] })),
+        proxyFetch('/me/player/recently-played?limit=30').catch(() => ({ items: [] })),
       ]);
-      const topTracks = topData?.items || [];
-      const savedTracks = (savedData?.items || []).map((i: { track: Record<string, unknown> }) => i.track).filter(Boolean);
+
+      const shortTracks = shortTop?.items || [];
+      const medTracks = medTop?.items || [];
+      const savedTracks = (savedData?.items || []).map((i: any) => i?.track).filter(Boolean);
+      const recentTracks = (recentData?.items || []).map((i: any) => i?.track).filter(Boolean);
 
       const seen = new Set<string>();
-      const merged = [...topTracks, ...savedTracks].filter(t => {
-        if (!t?.id || seen.has(t.id)) return false;
+      const merged = [...shortTracks, ...recentTracks, ...medTracks, ...savedTracks].filter(t => {
+        if (!t?.id || !t?.uri || seen.has(t.id)) return false;
         seen.add(t.id);
         return true;
       });
+
+      // Fisher-Yates shuffle
       for (let i = merged.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [merged[i], merged[j]] = [merged[j], merged[i]];
       }
-      return merged.slice(0, 30);
+
+      return merged.slice(0, 35);
     },
     enabled: isEnabled,
-    staleTime: 60 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function usePlayerQueue(options?: { enabled?: boolean }) {
+  const { isSuccess, data: sessionData } = useSpotifySession();
+  const isAuthenticated = isSuccess && !!sessionData?.accessToken;
+  const isEnabled = options?.enabled !== false && isAuthenticated;
+
+  return useQuery({
+    queryKey: ['spotify', 'playerQueue'],
+    queryFn: async () => {
+      const { getPlayerQueue } = await import('@/lib/spotify/player');
+      return await getPlayerQueue();
+    },
+    enabled: isEnabled,
+    refetchInterval: isEnabled ? 4000 : false,
+    staleTime: 2000,
+  });
+}
+
+export function useAddToSpotifyQueue() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ uri, deviceId }: { uri: string; deviceId?: string }) => {
+      const { addTrackToPlayerQueue } = await import('@/lib/spotify/player');
+      return await addTrackToPlayerQueue(uri, deviceId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['spotify', 'playerQueue'] });
+    }
   });
 }
 

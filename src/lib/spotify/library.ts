@@ -39,12 +39,13 @@ export function normalizeSavedTrack(item: any) {
 }
 
 export function normalizePlaylistItem(playlistItem: any) {
-  if (!playlistItem || !playlistItem.item) return null;
+  if (!playlistItem) return null;
   
-  const item = playlistItem.item;
+  const item = playlistItem.item || playlistItem.track || playlistItem;
+  if (!item) return null;
   
-  // Only accept playable track items
-  if (item.type !== "track") return null;
+  // Only accept playable track items (skip episodes/podcasts if not track)
+  if (item.type && item.type !== "track") return null;
 
   // Guarantee a URI is present for playback
   if (!item.uri && item.id) {
