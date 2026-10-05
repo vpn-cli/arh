@@ -71,21 +71,21 @@ export function FrequenciesSection({
   const renderError = (error: any, label: string) => {
     if (error?.status === 429) {
       return (
-        <div className="flex items-center justify-center h-16 text-[#FF4500] font-pixel text-[10px] text-center px-4 mb-4 border border-[#FF4500]/30 rounded-xl bg-[#FF4500]/5">
+        <div className="flex items-center justify-center h-16 text-[#B91C1C] font-pixel text-xs font-medium text-center px-4 mb-4 border border-[#B91C1C]/30 rounded-xl bg-[#B91C1C]/5">
           {label} RATE LIMITED.<br/>WAIT {rateLimitTimer || (error?.retryAfter ?? 60)} SECONDS.
         </div>
       );
     }
     return (
-      <div className="flex items-center justify-center h-16 text-[#FF4500] font-pixel text-[10px] text-center px-4 mb-4 border border-[#FF4500]/30 rounded-xl bg-[#FF4500]/5">
-        FAILED TO LOAD {label}
+      <div className="flex items-center justify-center h-16 text-[#B91C1C] font-pixel text-xs font-medium text-center px-4 mb-4 border border-[#B91C1C]/30 rounded-xl bg-[#B91C1C]/5">
+        Failed to load {label}
       </div>
     );
   };
 
   const renderLoading = (label: string) => (
-    <div className="flex items-center justify-center h-16 text-[#FFB6C1] font-pixel text-[10px] mb-4 animate-pulse">
-      LOADING {label}...
+    <div className="flex items-center justify-center h-16 text-[#8C3A7A] font-pixel text-xs font-medium mb-4 animate-pulse">
+      Loading {label}...
     </div>
   );
 
@@ -93,18 +93,18 @@ export function FrequenciesSection({
     <div className="flex flex-col gap-6 pb-6">
       
       {/* Time Range Selector */}
-      <div className="flex bg-[#FFF0F5] p-1 rounded-xl shrink-0">
+      <div className="flex bg-[#FFF0F5] p-1 rounded-xl shrink-0 border border-[#FFCADF]">
         {[
-          { id: 'short_term', label: 'SHORT TERM (~4 wks)' },
-          { id: 'medium_term', label: 'MEDIUM TERM (~6 mos)' },
-          { id: 'long_term', label: 'LONG TERM (all time)' }
+          { id: 'short_term', label: 'Short Term (~4 wks)' },
+          { id: 'medium_term', label: 'Medium Term (~6 mos)' },
+          { id: 'long_term', label: 'Long Term (all time)' }
         ].map((range) => (
           <button
             key={range.id}
             onClick={() => setTimeRange(range.id as TimeRange)}
-            className={`flex-1 font-pixel text-[8px] sm:text-[9px] py-2 rounded-lg transition-colors ${
+            className={`flex-1 font-pixel text-xs py-2 rounded-lg transition-colors font-bold ${
               timeRange === range.id 
-                ? 'bg-[#FFB6C1] text-[#FFFFFF] shadow-sm' 
+                ? 'bg-[#C2185B] text-white shadow-xs' 
                 : 'text-[#7A2871] hover:bg-[#FFE4E1]'
             }`}
           >
@@ -115,49 +115,49 @@ export function FrequenciesSection({
 
       {/* Listening Patterns / Summary */}
       <section>
-        <h2 className="font-pixel text-xs text-[#7A2871] mb-3 px-1">LISTENING PROFILE</h2>
+        <h2 className="font-pixel text-xs font-bold text-[#881337] tracking-wider uppercase mb-3 px-1">Listening Profile</h2>
         {isTopTracksLoading ? (
-          renderLoading('PROFILE')
+          renderLoading('profile')
         ) : isTopTracksError ? (
-          renderError(topTracksError, 'PROFILE')
+          renderError(topTracksError, 'profile')
         ) : metrics ? (
           <div className="bg-[#FFFFFF] border-2 border-[#FFE4E1] rounded-xl p-4 flex flex-col gap-3 shadow-sm">
             <div className="flex items-center justify-between border-b border-[#FFE4E1] pb-2">
-              <span className="font-retro text-[10px] text-[#7A2871]">UNIQUE ARTISTS</span>
-              <span className="font-pixel text-[10px] text-[#D81B60] text-right ml-2">{metrics.uniqueArtists} ARTISTS IN YOUR TOP {metrics.totalTracks} TRACKS</span>
+              <span className="font-pixel text-xs text-[#7A2871] font-medium">Unique Artists</span>
+              <span className="font-pixel text-xs font-bold text-[#881337] text-right ml-2">{metrics.uniqueArtists} artists in your top {metrics.totalTracks} tracks</span>
             </div>
             
             {metrics.multiArtistTrackCount > 0 && (
               <div className="flex items-center justify-between border-b border-[#FFE4E1] pb-2">
-                <span className="font-retro text-[10px] text-[#7A2871]">MULTI-ARTIST TRACKS</span>
-                <span className="font-pixel text-[10px] text-[#D81B60] text-right ml-2">{metrics.multiArtistTrackCount} OF YOUR TOP {metrics.totalTracks} TRACKS</span>
+                <span className="font-pixel text-xs text-[#7A2871] font-medium">Multi-Artist Tracks</span>
+                <span className="font-pixel text-xs font-bold text-[#881337] text-right ml-2">{metrics.multiArtistTrackCount} of your top {metrics.totalTracks} tracks</span>
               </div>
             )}
 
             {metrics.mostFrequentArtist.count > 1 && (
               <div className="flex flex-col pt-1">
-                <span className="font-retro text-[10px] text-[#7A2871] mb-1">MOST REPRESENTED ARTIST</span>
-                <span className="font-pixel text-[10px] text-[#D81B60]">
+                <span className="font-pixel text-xs text-[#7A2871] font-medium mb-1">Most Represented Artist</span>
+                <span className="font-pixel text-sm font-bold text-[#4A0E4E]">
                   {metrics.mostFrequentArtist.name}
                 </span>
-                <span className="font-pixel text-[8px] text-[#9B4F96] mt-1">
-                  {metrics.mostFrequentArtist.count} OF YOUR TOP {metrics.totalTracks} TRACKS
+                <span className="font-pixel text-xs text-[#8C3A7A] font-medium mt-0.5">
+                  {metrics.mostFrequentArtist.count} of your top {metrics.totalTracks} tracks
                 </span>
               </div>
             )}
           </div>
         ) : (
-          <div className="text-[#FFB6C1] font-pixel text-[10px] px-1">NOT ENOUGH DATA</div>
+          <div className="text-[#7A2871] font-pixel text-xs font-medium px-1">Not enough data to compute profile.</div>
         )}
       </section>
 
       {/* Top Artists */}
       <section>
-        <h2 className="font-pixel text-xs text-[#7A2871] mb-3 px-1">TOP ARTISTS</h2>
+        <h2 className="font-pixel text-xs font-bold text-[#881337] tracking-wider uppercase mb-3 px-1">Top Artists</h2>
         {isTopArtistsError ? renderError(topArtistsError, 'TOP ARTISTS') :
-         isTopArtistsLoading ? renderLoading('TOP ARTISTS') :
+         isTopArtistsLoading ? renderLoading('top artists') :
          topArtists && topArtists.length > 0 ? (
-           <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
              {topArtists.slice(0, 10).map((artist: any) => (
                <ArtistCard 
                  key={artist.id} 
@@ -169,7 +169,7 @@ export function FrequenciesSection({
              ))}
            </div>
          ) : (
-           <div className="text-[#FFB6C1] font-pixel text-[10px] px-1">NO TOP ARTISTS</div>
+           <div className="text-[#7A2871] font-pixel text-xs font-medium px-1">No top artists found.</div>
          )
         }
       </section>
@@ -177,17 +177,17 @@ export function FrequenciesSection({
       {/* Top Tracks */}
       <section>
         <div className="flex justify-between items-center mb-3 px-1">
-          <h2 className="font-pixel text-xs text-[#7A2871]">TOP TRACKS</h2>
+          <h2 className="font-pixel text-xs font-bold text-[#881337] tracking-wider uppercase">Top Tracks</h2>
           <button 
             onClick={() => topTracks && onPlayTracks(topTracks.map((t: any) => t.uri))}
             disabled={!topTracks || topTracks.length === 0}
-            className="font-retro text-[10px] bg-[#FFB6C1] text-white px-2 py-1 rounded-md hover:bg-[#FF69B4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+            className="font-pixel text-xs font-bold bg-[#C2185B] text-white px-3 py-1.5 rounded-lg hover:bg-[#A0144F] transition-colors shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#881337]"
           >
-            PLAY ALL
+            Play All
           </button>
         </div>
         {isTopTracksError ? renderError(topTracksError, 'TOP TRACKS') :
-         isTopTracksLoading ? renderLoading('TOP TRACKS') :
+         isTopTracksLoading ? renderLoading('top tracks') :
          topTracks && topTracks.length > 0 ? (
            <TrackList 
              tracks={topTracks.slice(0, 10)} 
@@ -197,7 +197,7 @@ export function FrequenciesSection({
              onAddMemory={(track) => onAddMemory(track, 'track')}
            />
          ) : (
-           <div className="text-[#FFB6C1] font-pixel text-[10px] px-1">NO TOP TRACKS</div>
+           <div className="text-[#7A2871] font-pixel text-xs font-medium px-1">No top tracks found.</div>
          )
         }
       </section>

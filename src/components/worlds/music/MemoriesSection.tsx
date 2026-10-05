@@ -95,8 +95,8 @@ export function MemoriesSection({
     return (
       <div className="flex flex-col items-center justify-center h-full opacity-80 min-h-[200px]">
         <div className="text-4xl mb-4">📓</div>
-        <div className="text-[#FFB6C1] font-pixel text-xs text-center">NO MEMORIES YET</div>
-        <div className="text-[#7A2871] font-retro text-[10px] mt-2 text-center max-w-[200px]">
+        <div className="text-[#881337] font-pixel text-xs font-bold text-center">NO MEMORIES YET</div>
+        <div className="text-[#7A2871] font-pixel text-xs mt-2 text-center max-w-[240px] font-medium">
           Save a song, artist, or playlist here when it means something special to you.
         </div>
       </div>
@@ -112,12 +112,12 @@ export function MemoriesSection({
   return (
     <div className="flex flex-col h-full overflow-y-auto min-h-0 pb-10">
       <div className="flex items-center justify-between mb-4 shrink-0">
-        <span className="font-pixel text-[10px] text-[#D81B60]">MY MEMORIES</span>
-        <span className="text-[10px] text-[#7A2871] font-retro">{memories.length} SAVED</span>
+        <span className="font-pixel text-xs font-bold uppercase tracking-wider text-[#881337]">MY MEMORIES</span>
+        <span className="text-xs text-[#7A2871] font-pixel font-bold">{memories.length} SAVED</span>
       </div>
 
       {isLoading && (
-        <div className="text-center font-pixel text-[10px] text-[#FFB6C1] animate-pulse my-4">
+        <div className="text-center font-pixel text-xs text-[#7A2871] font-medium animate-pulse my-4">
           RECALLING MEMORIES...
         </div>
       )}
@@ -128,31 +128,31 @@ export function MemoriesSection({
           const isFailed = !isLoading && !entity;
 
           return (
-            <div key={memory.id} className="flex flex-col bg-[#FFF0F5] border-2 border-[#FFE4E1] rounded-2xl overflow-hidden hover:border-[#FFB6C1] transition-colors group">
+            <div key={memory.id} className="flex flex-col bg-[#FFF0F5] border-2 border-[#FFC1DA] rounded-2xl overflow-hidden hover:border-[#FF74B3] transition-colors group shadow-xs">
               {/* Note Section */}
-              <div className="p-3 bg-white/50 border-b-2 border-[#FFE4E1]">
+              <div className="p-3 bg-white/70 border-b-2 border-[#FFD9EA]">
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex gap-2 items-center flex-wrap">
                     {memory.category && (
-                      <span className="bg-[#FFB6C1] text-white font-pixel text-[8px] px-2 py-0.5 rounded-full uppercase">
+                      <span className="bg-[#FFE4F0] border border-[#FF87BE] text-[#881337] font-pixel text-xs px-2.5 py-0.5 rounded-full font-bold uppercase">
                         {memory.category}
                       </span>
                     )}
                     {memory.dateLabel && (
-                      <span className="text-[#9B4F96] font-retro text-[9px] uppercase">
+                      <span className="text-[#7A2871] font-pixel text-xs font-semibold uppercase">
                         {memory.dateLabel}
                       </span>
                     )}
                   </div>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => onEditMemory(entity || null, memory.entityType, memory.id)} className="text-[#7A2871] hover:text-[#D81B60] font-retro text-[9px]">EDIT</button>
-                    <button onClick={() => deleteMemory(memory.id)} className="text-[#7A2871] hover:text-[#FF4500] font-retro text-[9px]">DELETE</button>
+                    <button onClick={() => onEditMemory(entity || null, memory.entityType, memory.id)} className="text-xs font-bold text-[#7A2871] hover:text-[#881337] font-pixel px-2 py-0.5 rounded hover:bg-white/80 transition-colors">EDIT</button>
+                    <button onClick={() => deleteMemory(memory.id)} className="text-xs font-bold text-[#7A2871] hover:text-[#B91C1C] font-pixel px-2 py-0.5 rounded hover:bg-white/80 transition-colors">DELETE</button>
                   </div>
                 </div>
-                <p className="font-retro text-[11px] text-[#7A2871] leading-relaxed whitespace-pre-wrap mt-2">
+                <p className="font-pixel text-xs sm:text-sm text-[#4A0E4E] leading-relaxed whitespace-pre-wrap mt-2 font-medium">
                   "{memory.note}"
                 </p>
-                <div className="text-[#9B4F96]/50 font-retro text-[8px] mt-2 text-right">
+                <div className="text-[#8C3A7A] font-pixel text-xs mt-2 text-right font-medium">
                   {new Date(memory.createdAt).toLocaleDateString()}
                 </div>
               </div>
@@ -160,7 +160,7 @@ export function MemoriesSection({
               {/* Entity Section */}
               <div className="p-1">
                 {isFailed ? (
-                  <div className="p-2 text-center text-[#FFB6C1] font-retro text-[10px]">
+                  <div className="p-2 text-center text-[#7A2871] font-pixel text-xs font-medium">
                     SPOTIFY ENTITY UNAVAILABLE
                   </div>
                 ) : entity ? (

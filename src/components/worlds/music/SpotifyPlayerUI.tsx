@@ -89,7 +89,18 @@ export default function SpotifyPlayerUI() {
   const { data: likedData, isLoading: isLikedLoading, isError: isLikedError, error: likedError } = useLikedTracks(libraryPage, 50, { enabled: activeTab === 'library' || activeTab === 'home' });
   const { data: devices = [], refetch: fetchDevices } = useDevices();
   const { data: birthdayMixTracks = [], isLoading: isMixLoading, isError: isMixError, error: mixError } = useBirthdayMix({ enabled: activeTab === 'mix' });
-  const { data: recentTracks = [], isLoading: isRecentLoading, isError: isRecentError, error: recentError } = useRecentlyPlayed({ enabled: activeTab === 'recent' || activeTab === 'home' || rightPanelTab === 'recent' || isQueueModalOpen });
+  const { data: recentTracks = [], isLoading: isRecentLoading, isError: isRecentError, error: recentError } = useRecentlyPlayed({ enabled: !currentTrack || activeTab === 'recent' || activeTab === 'home' || rightPanelTab === 'recent' || isQueueModalOpen });
+
+  // Auto-load last played track from Spotify if player cache is empty
+  useEffect(() => {
+    if (!currentTrack && recentTracks.length > 0 && recentTracks[0]?.track) {
+      const lastPlayed = recentTracks[0].track;
+      setCurrentTrack(lastPlayed);
+      if (lastPlayed.duration_ms) {
+        setDuration(lastPlayed.duration_ms);
+      }
+    }
+  }, [currentTrack, recentTracks, setCurrentTrack, setDuration]);
 
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
@@ -305,10 +316,28 @@ export default function SpotifyPlayerUI() {
     }
   };
 
-  const togglePlay = () => {
-    if (!player) return;
+  const togglePlay = async () => {
     sfx?.select?.();
-    player.togglePlay();
+    if (!player) {
+      if (currentTrack?.uri) {
+        await playTrack(currentTrack.uri);
+      }
+      return;
+    }
+    try {
+      const state = await player.getCurrentState();
+      if ((!state || !state.track_window?.current_track) && currentTrack?.uri) {
+        await playTrack(currentTrack.uri);
+      } else {
+        await player.togglePlay();
+      }
+    } catch {
+      if (currentTrack?.uri) {
+        await playTrack(currentTrack.uri);
+      } else {
+        player.togglePlay();
+      }
+    }
   };
 
   const nextTrack = () => {
@@ -433,19 +462,19 @@ export default function SpotifyPlayerUI() {
   ];
 
   return (
-      <div className="w-full h-[calc(100dvh-5rem)] min-h-[720px] flex flex-col bg-[#FFF7FB]/95 text-[#FF4F9A] rounded-[22px] border-2 border-[#FF74B3] shadow-[0_18px_45px_rgba(255,105,180,0.22)] font-sans relative overflow-hidden">
+      <div className="w-full h-[calc(100dvh-5rem)] min-h-[720px] flex flex-col bg-[#FFF7FB]/95 text-[#4A0E4E] rounded-[22px] border-2 border-[#FF74B3] shadow-[0_18px_45px_rgba(255,105,180,0.22)] font-sans relative overflow-hidden">
 
         {isSessionExpired && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#FFE4E1]/80 backdrop-blur-sm">
-            <div className="bg-white rounded-none border-4 border-[#FF69B4] shadow-[8px_8px_0px_#FFB6C1] p-8 flex flex-col items-center gap-4 max-w-xs text-center">
+            <div className="bg-white rounded-none border-4 border-[#C2185B] shadow-[8px_8px_0px_#FF87BE] p-8 flex flex-col items-center gap-4 max-w-xs text-center">
               <div className="text-5xl animate-bounce">🔑</div>
-              <h3 className="font-pixel text-lg text-[#D81B60] leading-snug">SESSION EXPIRED</h3>
-              <p className="font-retro text-[10px] text-[#9B4F96] leading-relaxed">
+              <h3 className="font-pixel text-lg font-bold text-[#881337] leading-snug">SESSION EXPIRED</h3>
+              <p className="font-pixel text-xs text-[#7A2871] leading-relaxed">
                 Your music is still playing! But the controls need a fresh login to keep working.
               </p>
               <button
                 onClick={() => redirectToSpotifyAuth()}
-                className="w-full mt-2 bg-gradient-to-r from-[#1DB954] to-[#1ed760] text-white font-pixel text-sm py-3 px-6 rounded-full shadow-[0_4px_15px_rgba(29,185,84,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="w-full mt-2 bg-gradient-to-r from-[#1DB954] to-[#1ed760] text-white font-pixel text-sm font-bold py-3 px-6 rounded-full shadow-[0_4px_15px_rgba(29,185,84,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
                 RE-LOGIN TO SPOTIFY
               </button>
@@ -457,20 +486,20 @@ export default function SpotifyPlayerUI() {
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#FFF0F7]/75 backdrop-blur-sm px-4">
             <div className="bg-white/95 rounded-3xl border-2 border-[#FF74B3] shadow-[0_18px_45px_rgba(255,105,180,0.25)] p-8 flex flex-col items-center gap-4 max-w-sm text-center">
               <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
-              <h3 className="font-pixel text-2xl text-[#D81B60] leading-snug">KAWAII_PLAYER.EXE</h3>
-              <p className="font-pixel text-sm text-[#7A2871] leading-relaxed">
+              <h3 className="font-pixel text-2xl font-bold text-[#881337] leading-snug">KAWAII_PLAYER.EXE</h3>
+              <p className="font-pixel text-sm text-[#7A2871] leading-relaxed font-medium">
                 Connect Spotify to load your playlists, queue, and soundscape controls.
               </p>
               <button
                 onClick={() => redirectToSpotifyAuth()}
-                className="w-full mt-2 bg-[#FF4F9A] text-white font-pixel text-lg py-3 px-6 rounded-full shadow-[0_8px_22px_rgba(255,79,154,0.35)] hover:scale-105 active:scale-95 transition-all"
+                className="w-full mt-2 bg-[#C2185B] hover:bg-[#A0144F] text-white font-pixel text-lg font-bold py-3 px-6 rounded-full shadow-[0_8px_22px_rgba(194,24,91,0.35)] hover:scale-105 active:scale-95 transition-all"
               >
                 Connect Spotify
               </button>
               {isLocalhost && (
                 <button
                   onClick={() => logoutSpotify()}
-                  className="font-pixel text-xs text-[#9B4F96] hover:text-[#D81B60]"
+                  className="font-pixel text-xs text-[#7A2871] hover:text-[#881337] font-medium"
                 >
                   Reset local session
                 </button>
@@ -480,14 +509,14 @@ export default function SpotifyPlayerUI() {
         )}
 
         {/* KawaiiWindowHeader */}
-        <div className="flex h-14 border-b-2 border-[#FF74B3] items-center px-4 justify-between shrink-0 bg-[#FFE7F1]/90 backdrop-blur">
+        <div className="flex h-14 border-b-2 border-[#FF74B3] items-center px-4 justify-between shrink-0 bg-[#FFE7F1]/95 backdrop-blur">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#FFB6C1]" />
+            <div className="w-3 h-3 rounded-full bg-[#FF87BE]" />
             <div className="w-3 h-3 rounded-full bg-[#FFDAB9]" />
-            <div className="w-3 h-3 rounded-full bg-[#98FB98]" />
+            <div className="w-3 h-3 rounded-full bg-[#86EFAC]" />
             <img src="/hampter/hello_kitty_pin.png" alt="" className="w-9 h-9 object-contain hidden sm:block" />
-            <span className="font-pixel text-lg ml-1 text-[#FF4F9A] hidden md:inline-block">KAWAII_PLAYER.EXE</span>
-            <span className="font-pixel text-lg text-[#FF4F9A] hidden md:inline-block">♥</span>
+            <span className="font-pixel text-lg font-bold ml-1 text-[#881337] hidden md:inline-block">KAWAII_PLAYER.EXE</span>
+            <span className="font-pixel text-lg text-[#C2185B] hidden md:inline-block">♥</span>
           </div>
           <div className="flex-1 max-w-md mx-4 relative">
             <input
@@ -495,23 +524,25 @@ export default function SpotifyPlayerUI() {
               value={globalSearch}
               onChange={(e) => { setGlobalSearch(e.target.value); setActiveTab('search'); }}
               placeholder="Search songs, artists, playlists..."
-              className="w-full bg-white/85 border-2 border-[#FF74B3] rounded-full px-10 py-2 font-pixel text-sm text-[#7A2871] focus:outline-none focus:border-[#D81B60] transition-colors"
+              aria-label="Search songs, artists, playlists"
+              className="w-full bg-white/95 border-2 border-[#FF74B3] rounded-full px-10 py-2 font-pixel text-sm text-[#4A0E4E] placeholder:text-[#7A2871]/80 focus:outline-none focus:border-[#C2185B] focus-visible:ring-2 focus-visible:ring-[#C2185B]/20 transition-colors"
             />
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#FF4F9A]">⌕</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C3A7A] font-bold">⌕</span>
             {globalSearch && (
               <button
                 onClick={() => setGlobalSearch('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#FF74B3] hover:text-[#D81B60] font-pixel transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#7A2871] hover:text-[#881337] font-pixel transition-colors p-1"
+                aria-label="Clear search"
                 title="Clear search"
               >
                 ✕
               </button>
             )}
           </div>
-          <div className="flex items-center gap-4 text-[#FF69B4] font-bold text-lg">
-            <button className="hover:scale-110">_</button>
-            <button className="hover:scale-110">□</button>
-            <button className="hover:scale-110">×</button>
+          <div className="flex items-center gap-4 text-[#8C3A7A] font-bold text-lg">
+            <button className="hover:scale-110 hover:text-[#881337] transition-all p-1" aria-label="Minimize window">_</button>
+            <button className="hover:scale-110 hover:text-[#881337] transition-all p-1" aria-label="Maximize window">□</button>
+            <button className="hover:scale-110 hover:text-[#881337] transition-all p-1" aria-label="Close window">×</button>
           </div>
         </div>
 
@@ -519,36 +550,95 @@ export default function SpotifyPlayerUI() {
         <div className="flex flex-1 overflow-hidden min-h-0 relative">
 
           {/* Left Sidebar */}
-          <div className="w-64 border-r-2 border-[#FF9BC9] flex flex-col shrink-0 bg-[#FFFFFF]/80 hidden md:flex">
+          <div className="w-64 border-r-2 border-[#FF87BE] flex flex-col shrink-0 bg-[#FFFFFF]/90 hidden md:flex">
             <div className="h-28 border-2 border-[#FFC1DA] bg-[#FFF0F7] flex items-center gap-3 justify-center m-4 rounded-2xl shrink-0">
               <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
               <div>
-                <div className="font-pixel text-lg text-[#FF4F9A]">KAWAII</div>
-                <div className="font-pixel text-xs text-[#7A2871]">vibes • memories</div>
+                <div className="font-pixel text-lg font-bold text-[#881337]">KAWAII</div>
+                <div className="font-pixel text-xs text-[#7A2871] font-medium">vibes • memories</div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-1 px-4 py-2 shrink-0">
-              <button onClick={() => setActiveTab('home')} className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors ${activeTab === 'home' ? 'bg-[#FFD6E6] text-[#FF4F9A] font-bold' : 'text-[#5D1687] hover:bg-[#FFF0F5]'}`}><span className="w-5 text-xl">⌂</span><span className="text-lg">Home</span></button>
-              <button onClick={() => setActiveTab('playlists')} className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors ${activeTab === 'playlists' ? 'bg-[#FFD6E6] text-[#FF4F9A] font-bold' : 'text-[#5D1687] hover:bg-[#FFF0F5]'}`}><span className="w-5 text-xl">♫</span><span className="text-lg">Playlists</span></button>
-              <button onClick={() => setActiveTab('vibes')} className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors ${activeTab === 'vibes' ? 'bg-[#FFD6E6] text-[#FF4F9A] font-bold' : 'text-[#5D1687] hover:bg-[#FFF0F5]'}`}><span className="w-5 text-xl">✦</span><span className="text-lg">Vibes</span></button>
-              <button onClick={() => setActiveTab('library')} className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors ${activeTab === 'library' ? 'bg-[#FFD6E6] text-[#FF4F9A] font-bold' : 'text-[#5D1687] hover:bg-[#FFF0F5]'}`}><span className="w-5 text-xl">▥</span><span className="text-lg">Library</span></button>
-              <button onClick={() => setActiveTab('memories')} className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors ${activeTab === 'memories' ? 'bg-[#FFD6E6] text-[#FF4F9A] font-bold' : 'text-[#5D1687] hover:bg-[#FFF0F5]'}`}><span className="w-5 text-xl">▣</span><span className="text-lg">Memories</span></button>
-              <button onClick={() => setActiveTab('frequencies')} className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors ${activeTab === 'frequencies' ? 'bg-[#FFD6E6] text-[#FF4F9A] font-bold' : 'text-[#5D1687] hover:bg-[#FFF0F5]'}`}><span className="w-5 text-xl">≋</span><span className="text-lg">Frequencies</span></button>
-            </div>
+            <nav className="flex flex-col gap-1 px-4 py-2 shrink-0" aria-label="Main Navigation">
+              <button
+                onClick={() => setActiveTab('home')}
+                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C2185B] ${activeTab === 'home' ? 'bg-[#FFE4F0] text-[#881337] font-bold border border-[#FF87BE] shadow-xs' : 'text-[#5D1687] hover:bg-[#FFF0F5] hover:text-[#881337] font-medium'}`}
+              >
+                <span className="w-5 text-xl">⌂</span>
+                <span className="text-base">Home</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('playlists')}
+                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C2185B] ${activeTab === 'playlists' ? 'bg-[#FFE4F0] text-[#881337] font-bold border border-[#FF87BE] shadow-xs' : 'text-[#5D1687] hover:bg-[#FFF0F5] hover:text-[#881337] font-medium'}`}
+              >
+                <span className="w-5 text-xl">♫</span>
+                <span className="text-base">Playlists</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('vibes')}
+                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C2185B] ${activeTab === 'vibes' ? 'bg-[#FFE4F0] text-[#881337] font-bold border border-[#FF87BE] shadow-xs' : 'text-[#5D1687] hover:bg-[#FFF0F5] hover:text-[#881337] font-medium'}`}
+              >
+                <span className="w-5 text-xl">✦</span>
+                <span className="text-base">Vibes</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('library')}
+                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C2185B] ${activeTab === 'library' ? 'bg-[#FFE4F0] text-[#881337] font-bold border border-[#FF87BE] shadow-xs' : 'text-[#5D1687] hover:bg-[#FFF0F5] hover:text-[#881337] font-medium'}`}
+              >
+                <span className="w-5 text-xl">▥</span>
+                <span className="text-base">Library</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('memories')}
+                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C2185B] ${activeTab === 'memories' ? 'bg-[#FFE4F0] text-[#881337] font-bold border border-[#FF87BE] shadow-xs' : 'text-[#5D1687] hover:bg-[#FFF0F5] hover:text-[#881337] font-medium'}`}
+              >
+                <span className="w-5 text-xl">▣</span>
+                <span className="text-base">Memories</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('frequencies')}
+                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C2185B] ${activeTab === 'frequencies' ? 'bg-[#FFE4F0] text-[#881337] font-bold border border-[#FF87BE] shadow-xs' : 'text-[#5D1687] hover:bg-[#FFF0F5] hover:text-[#881337] font-medium'}`}
+              >
+                <span className="w-5 text-xl">≋</span>
+                <span className="text-base">Frequencies</span>
+              </button>
+            </nav>
 
             <div className="flex flex-col flex-1 overflow-hidden mt-2">
-              <div className="px-4 py-2 flex justify-between items-center text-[#FF69B4] shrink-0">
-                <span className="font-pixel text-[10px]">Your Playlists</span>
-                <button onClick={() => setIsCreatingPlaylist(true)} className="hover:scale-110 font-bold">+</button>
+              <div className="px-4 py-2 flex justify-between items-center text-[#881337] shrink-0 border-t border-[#FFD9EA]">
+                <span className="font-pixel text-xs font-bold uppercase tracking-wider text-[#7A2871]">Your Playlists</span>
+                <button
+                  onClick={() => setIsCreatingPlaylist(true)}
+                  className="hover:scale-110 font-bold text-base text-[#881337] p-1 rounded transition-transform"
+                  aria-label="Create new playlist"
+                  title="Create new playlist"
+                >
+                  +
+                </button>
               </div>
               <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
                 {playlists.slice(0, 15).map((p: any, idx: number) => (
-                  <div key={`${p.id || 'playlist'}-${idx}`} onClick={() => { setActiveTab('playlists'); setSelectedPlaylistId(p.id); }} className="flex items-center gap-3 py-2 cursor-pointer hover:bg-[#FFE4E1] rounded-lg px-2 transition-colors">
-                    {p.images?.[0] ? <img src={p.images[0].url} className="w-8 h-8 rounded object-cover shadow-sm shrink-0" /> : <div className="w-8 h-8 bg-[#FFB6C1] rounded shadow-sm flex items-center justify-center text-white text-xs shrink-0">♪</div>}
+                  <div
+                    key={`${p.id || 'playlist'}-${idx}`}
+                    onClick={() => { setActiveTab('playlists'); setSelectedPlaylistId(p.id); }}
+                    className="flex items-center gap-3 py-2 cursor-pointer hover:bg-[#FFE4E1] rounded-lg px-2 transition-colors group"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setActiveTab('playlists');
+                        setSelectedPlaylistId(p.id);
+                      }
+                    }}
+                  >
+                    {p.images?.[0] ? (
+                      <img src={p.images[0].url} alt={p.name} className="w-8 h-8 rounded object-cover shadow-sm shrink-0 border border-[#FFC1DA]" />
+                    ) : (
+                      <div className="w-8 h-8 bg-[#FFD1E3] border border-[#FF87BE] rounded shadow-sm flex items-center justify-center text-[#881337] text-xs font-bold shrink-0">♪</div>
+                    )}
                     <div className="flex flex-col overflow-hidden">
-                      <span className="text-xs font-bold text-[#7A2871] truncate">{p.name}</span>
-                      <span className="text-[10px] text-[#FF69B4]">{p.tracks?.total || 0} songs</span>
+                      <span className="text-xs font-bold text-[#4A0E4E] truncate group-hover:text-[#881337] transition-colors">{p.name}</span>
+                      <span className="text-xs text-[#7A2871] font-medium">{p.tracks?.total || 0} songs</span>
                     </div>
                   </div>
                 ))}
@@ -562,19 +652,19 @@ export default function SpotifyPlayerUI() {
               <div className="flex flex-col gap-6">
                 <section className="relative min-h-[260px] overflow-hidden rounded-[24px] border-2 border-[#FFB2D2] bg-[#FFE1EF] shadow-[0_14px_32px_rgba(255,105,180,0.18)]">
                   <img src={heroArt} alt="" className="absolute inset-0 h-full w-full object-cover opacity-75" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#FFD9EA]/95 via-[#FFD9EA]/70 to-[#FFD9EA]/20" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#FFD9EA]/95 via-[#FFD9EA]/75 to-[#FFD9EA]/25" />
                   <div className="relative z-10 flex min-h-[260px] items-center px-8 py-8">
                     <div className="max-w-lg">
-                      <p className="font-pixel text-lg text-[#7A2871]/70">GOOD EVENING</p>
-                      <h2 className="mt-2 font-pixel text-5xl leading-none text-[#FF4F9A] drop-shadow-[0_3px_0_#FFFFFF]">Let&apos;s listen together ♡</h2>
-                      <p className="mt-3 font-pixel text-xl text-[#7A2871]">What are we listening to today?</p>
+                      <p className="font-pixel text-xs sm:text-sm font-bold tracking-widest text-[#7A2871] uppercase">GOOD EVENING</p>
+                      <h2 className="mt-2 font-pixel text-4xl sm:text-5xl font-extrabold leading-tight text-[#881337] drop-shadow-[0_2px_0_#FFFFFF]">Let&apos;s listen together ♡</h2>
+                      <p className="mt-3 font-pixel text-base sm:text-lg font-medium text-[#5D1687]">What are we listening to today?</p>
                       <button
                         onClick={() => {
                           const uris = likedHomeTracks.map((track: any) => track.uri).filter(Boolean);
                           if (uris.length) playTracks(uris);
                           else setActiveTab('playlists');
                         }}
-                        className="mt-6 rounded-full border-2 border-[#FF74B3] bg-white/85 px-6 py-2 font-pixel text-lg text-[#FF4F9A] shadow-sm transition hover:scale-105 active:scale-95"
+                        className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#C2185B] hover:bg-[#A0144F] px-6 py-2.5 font-pixel text-base font-bold text-white shadow-md transition hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#881337]"
                       >
                         ▶ Play Mix
                       </button>
@@ -584,15 +674,17 @@ export default function SpotifyPlayerUI() {
 
                 <section className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-pixel text-2xl text-[#FF4F9A]">♥ Continue Listening</h3>
-                    <button onClick={() => setActiveTab('playlists')} className="font-pixel text-sm text-[#7A2871] hover:text-[#FF4F9A]">See all →</button>
+                    <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[#881337] flex items-center gap-2">
+                      <span className="text-[#C2185B]">♥</span> Continue Listening
+                    </h3>
+                    <button onClick={() => setActiveTab('playlists')} className="font-pixel text-xs sm:text-sm font-bold text-[#7A2871] hover:text-[#881337] hover:underline">See all →</button>
                   </div>
                   <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-5">
                     {homePlaylists.map((playlist: any, idx: number) => (
                       <button
                         key={`${playlist.id || 'playlist'}-${idx}`}
                         onClick={() => { setActiveTab('playlists'); setSelectedPlaylistId(playlist.id); }}
-                        className="group overflow-hidden rounded-2xl border-2 border-[#FFC1DA] bg-white/90 text-left shadow-sm transition hover:-translate-y-1 hover:border-[#FF74B3] hover:shadow-[0_12px_24px_rgba(255,105,180,0.18)]"
+                        className="group overflow-hidden rounded-2xl border-2 border-[#FFC1DA] bg-white/95 text-left shadow-sm transition hover:-translate-y-1 hover:border-[#FF74B3] hover:shadow-[0_12px_24px_rgba(255,105,180,0.18)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C2185B]"
                       >
                         {playlist.images?.[0]?.url ? (
                           <img src={playlist.images[0].url} alt={playlist.name} className="aspect-[4/3] w-full object-cover" />
@@ -600,8 +692,8 @@ export default function SpotifyPlayerUI() {
                           <div className="aspect-[4/3] w-full bg-[#FFE1EF]" />
                         )}
                         <div className="p-3">
-                          <div className="truncate font-pixel text-lg text-[#5D1687]">{playlist.name}</div>
-                          <div className="font-pixel text-sm text-[#9B4F96]">{playlist.tracks?.total || 0} songs</div>
+                          <div className="truncate font-pixel text-base font-bold text-[#4A0E4E] group-hover:text-[#881337] transition-colors">{playlist.name}</div>
+                          <div className="font-pixel text-xs text-[#7A2871] font-medium">{playlist.tracks?.total || 0} songs</div>
                         </div>
                       </button>
                     ))}
@@ -610,22 +702,24 @@ export default function SpotifyPlayerUI() {
 
                 <section className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-pixel text-2xl text-[#FF4F9A]">♥ Vibes</h3>
-                    <button onClick={() => setActiveTab('vibes')} className="font-pixel text-sm text-[#7A2871] hover:text-[#FF4F9A]">See all →</button>
+                    <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[#881337] flex items-center gap-2">
+                      <span className="text-[#C2185B]">♥</span> Vibes
+                    </h3>
+                    <button onClick={() => setActiveTab('vibes')} className="font-pixel text-xs sm:text-sm font-bold text-[#7A2871] hover:text-[#881337] hover:underline">See all →</button>
                   </div>
                   <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-6">
                     {vibeCards.map((vibe) => (
                       <button
                         key={vibe.title}
                         onClick={() => setActiveTab('vibes')}
-                        className="overflow-hidden rounded-2xl border-2 border-[#FFC1DA] bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-[#FF74B3]"
+                        className="overflow-hidden rounded-2xl border-2 border-[#FFC1DA] bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-[#FF74B3] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C2185B]"
                       >
                         <div className={`flex aspect-[4/3] items-center justify-center bg-gradient-to-br ${vibe.tone} text-5xl text-white drop-shadow-sm`}>
                           {vibe.icon}
                         </div>
                         <div className="p-3">
-                          <div className="font-pixel text-lg text-[#FF4F9A]">{vibe.title}</div>
-                          <div className="font-pixel text-sm text-[#7A2871]">{vibe.subtitle}</div>
+                          <div className="font-pixel text-base font-bold text-[#881337]">{vibe.title}</div>
+                          <div className="font-pixel text-xs text-[#7A2871] font-medium">{vibe.subtitle}</div>
                         </div>
                       </button>
                     ))}
@@ -634,15 +728,17 @@ export default function SpotifyPlayerUI() {
 
                 <section className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-pixel text-2xl text-[#FF4F9A]">◷ Recently Played</h3>
-                    <button onClick={() => setActiveTab('recent')} className="font-pixel text-sm text-[#7A2871] hover:text-[#FF4F9A]">See all →</button>
+                    <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[#881337] flex items-center gap-2">
+                      <span className="text-[#C2185B]">◷</span> Recently Played
+                    </h3>
+                    <button onClick={() => setActiveTab('recent')} className="font-pixel text-xs sm:text-sm font-bold text-[#7A2871] hover:text-[#881337] hover:underline">See all →</button>
                   </div>
                   <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-6">
                     {(recentHomeTracks.length ? recentHomeTracks : likedHomeTracks).map((track: any, idx: number) => (
                       <button
                         key={`${track.id || track.uri || 'track'}-${idx}`}
                         onClick={() => playTrack(track.uri)}
-                        className="group overflow-hidden rounded-2xl border-2 border-[#FFC1DA] bg-white/90 text-left shadow-sm transition hover:-translate-y-1 hover:border-[#FF74B3]"
+                        className="group overflow-hidden rounded-2xl border-2 border-[#FFC1DA] bg-white/95 text-left shadow-sm transition hover:-translate-y-1 hover:border-[#FF74B3] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C2185B]"
                       >
                         {track.album?.images?.[0]?.url ? (
                           <img src={track.album.images[0].url} alt={track.name} className="aspect-square w-full object-cover" />
@@ -650,8 +746,8 @@ export default function SpotifyPlayerUI() {
                           <div className="aspect-square w-full bg-[#FFE1EF]" />
                         )}
                         <div className="p-3">
-                          <div className="truncate font-pixel text-lg text-[#5D1687]">{track.name}</div>
-                          <div className="truncate font-pixel text-sm text-[#9B4F96]">{track.artists?.map((a: any) => a.name).join(', ')}</div>
+                          <div className="truncate font-pixel text-base font-bold text-[#4A0E4E] group-hover:text-[#881337] transition-colors">{track.name}</div>
+                          <div className="truncate font-pixel text-xs text-[#7A2871] font-medium">{track.artists?.map((a: any) => a.name).join(', ')}</div>
                         </div>
                       </button>
                     ))}
@@ -714,23 +810,24 @@ export default function SpotifyPlayerUI() {
                       value={playlistSearch}
                       onChange={(e) => setPlaylistSearch(e.target.value)}
                       placeholder="Filter playlists..."
-                      className="flex-1 bg-[#FFF0F5] border-2 border-[#FFB6C1] rounded-xl px-2 py-2 font-retro text-[10px] text-[#7A2871] focus:outline-none focus:border-[#FF69B4]"
+                      aria-label="Filter playlists"
+                      className="flex-1 bg-white border-2 border-[#FF87BE] rounded-xl px-3 py-2 font-pixel text-xs text-[#4A0E4E] placeholder:text-[#7A2871]/80 focus:outline-none focus:border-[#C2185B] focus:ring-2 focus:ring-[#C2185B]/20"
                     />
                     <button
                       onClick={() => setIsCreatingPlaylist(true)}
-                      className="bg-[#FF69B4] text-white px-3 py-2 rounded-xl font-retro text-[10px] font-bold hover:scale-105 active:scale-95 transition-transform"
+                      className="bg-[#C2185B] hover:bg-[#A0144F] text-white px-4 py-2 rounded-xl font-pixel text-xs font-bold hover:scale-105 active:scale-95 transition-transform shadow-xs flex items-center gap-1"
                       title="Create Playlist"
                     >
-                      + NEW
+                      <span>+</span> NEW
                     </button>
                   </div>
                   {(() => {
-                    if (isPlaylistsError && (playlistsError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#FF4500] font-pixel text-xs text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((playlistsError as any)?.retryAfter ?? 60)} SECONDS.</div>;
-                    if (isPlaylistsLoading) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs animate-pulse">LOADING LIBRARY...</div>;
-                    if (playlists.length === 0) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs">NO PLAYLISTS FOUND</div>;
+                    if (isPlaylistsError && (playlistsError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#B91C1C] font-pixel text-xs font-bold text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((playlistsError as any)?.retryAfter ?? 60)} SECONDS.</div>;
+                    if (isPlaylistsLoading) return <div className="flex items-center justify-center h-20 text-[#7A2871] font-pixel text-xs font-medium animate-pulse">LOADING LIBRARY...</div>;
+                    if (playlists.length === 0) return <div className="flex items-center justify-center h-20 text-[#7A2871] font-pixel text-xs font-medium">NO PLAYLISTS FOUND</div>;
 
                     const filteredPlaylists = playlists.filter((p: any) => p.name.toLowerCase().includes(playlistSearch.toLowerCase()));
-                    if (filteredPlaylists.length === 0) return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs">NO MATCHES FOUND</div>;
+                    if (filteredPlaylists.length === 0) return <div className="flex items-center justify-center h-20 text-[#7A2871] font-pixel text-xs font-medium">NO MATCHES FOUND</div>;
 
                     return filteredPlaylists.map((p: any, idx: number) => (
                       <PlaylistCard key={`${p.id || 'playlist'}-${idx}`} playlist={p} onClick={() => setSelectedPlaylistId(p.id)} />
@@ -743,10 +840,10 @@ export default function SpotifyPlayerUI() {
             {activeTab === 'recent' && (
               <div className="flex flex-col h-full min-h-0">
                 <div className="flex justify-between items-center mb-2 shrink-0">
-                  <span className="font-pixel text-[10px] text-[#D81B60]">RECENTLY PLAYED</span>
+                  <span className="font-pixel text-xs font-bold uppercase tracking-wider text-[#881337]">RECENTLY PLAYED</span>
                 </div>
                 {(() => {
-                  if (isRecentError && (recentError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#FF4500] font-pixel text-xs text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((recentError as any)?.retryAfter ?? 60)} SECONDS.</div>;
+                  if (isRecentError && (recentError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#B91C1C] font-pixel text-xs font-bold text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((recentError as any)?.retryAfter ?? 60)} SECONDS.</div>;
                   return <TrackList tracks={recentTracks.map((item: any) => item.track).filter(Boolean)} isLoading={isRecentLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} onAddMemory={(track) => { setMemoryEditorEntity(track); setMemoryEditorType('track'); }} emptyMessage="NO RECENTLY PLAYED TRACKS" />;
                 })()}
               </div>
@@ -755,24 +852,24 @@ export default function SpotifyPlayerUI() {
             {activeTab === 'library' && (
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between mb-2 shrink-0">
-                  <span className="font-pixel text-[10px] text-[#D81B60]">LIKED SONGS</span>
-                  <div className="flex gap-2">
-                    <button onClick={() => setLibraryPage(p => Math.max(0, p - 1))} disabled={libraryPage === 0} className="text-[10px] text-[#7A2871] disabled:opacity-50 hover:text-[#D81B60] cursor-pointer">ΓùÇ</button>
-                    <span className="text-[10px] text-[#7A2871]">{libraryPage + 1}</span>
-                    <button onClick={() => setLibraryPage(p => p + 1)} disabled={!likedData?.next} className="text-[10px] text-[#7A2871] disabled:opacity-50 hover:text-[#D81B60] cursor-pointer">Γû╢</button>
+                  <span className="font-pixel text-xs font-bold uppercase tracking-wider text-[#881337]">LIKED SONGS</span>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setLibraryPage(p => Math.max(0, p - 1))} disabled={libraryPage === 0} className="text-xs font-bold text-[#7A2871] disabled:opacity-40 hover:text-[#881337] cursor-pointer p-1" aria-label="Previous page">◀</button>
+                    <span className="font-pixel text-xs font-bold text-[#881337] px-1">{libraryPage + 1}</span>
+                    <button onClick={() => setLibraryPage(p => p + 1)} disabled={!likedData?.next} className="text-xs font-bold text-[#7A2871] disabled:opacity-40 hover:text-[#881337] cursor-pointer p-1" aria-label="Next page">▶</button>
                   </div>
                 </div>
                 <button
                   onClick={() => playTracks(likedData?.tracks?.map((t: any) => t.uri) || [])}
                   disabled={!likedData?.tracks?.length}
-                  className={`w-full mb-3 shrink-0 bg-gradient-to-r from-[#FF99B9] to-[#FF69B4] text-white py-3 rounded-xl shadow-[0_4px_12px_rgba(255,105,180,0.4)] transition-all flex flex-col items-center justify-center gap-1 ${!likedData?.tracks?.length ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
+                  className={`w-full mb-3 shrink-0 bg-gradient-to-r from-[#D81B60] to-[#C2185B] hover:from-[#C2185B] hover:to-[#AD1457] text-white py-3 rounded-xl shadow-[0_4px_14px_rgba(194,24,91,0.35)] transition-all flex flex-col items-center justify-center gap-1 ${!likedData?.tracks?.length ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.01] active:scale-95'}`}
                 >
                   <span className="font-pixel text-sm font-bold tracking-widest">
-                    Γ£¿ PLAY LIKED Γ£¿
+                    ✦ PLAY LIKED ✦
                   </span>
                 </button>
                 {(() => {
-                  if (isLikedError && (likedError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#FF4500] font-pixel text-xs text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((likedError as any)?.retryAfter ?? 60)} SECONDS.</div>;
+                  if (isLikedError && (likedError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[#B91C1C] font-pixel text-xs font-bold text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((likedError as any)?.retryAfter ?? 60)} SECONDS.</div>;
                   return <TrackList tracks={likedData?.tracks || []} isLoading={isLikedLoading} onPlayTrack={playTrack} onAddToQueue={addToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} onAddMemory={(track) => { setMemoryEditorEntity(track); setMemoryEditorType('track'); }} emptyMessage="NO LIKED SONGS" />;
                 })()}
               </div>
@@ -940,12 +1037,12 @@ export default function SpotifyPlayerUI() {
           </div>
 
           {/* Right Sidebar */}
-          <div className="w-[380px] lg:w-[400px] xl:w-[420px] 2xl:w-[440px] border-l-2 border-[#FF9BC9] flex flex-col shrink-0 bg-[#FFF0F5]">
+          <div className="w-[380px] lg:w-[400px] xl:w-[420px] 2xl:w-[440px] border-l-2 border-[#FF87BE] flex flex-col shrink-0 bg-[#FFF0F5]">
             <div className="flex flex-col p-5 pb-3 relative shrink-0">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-[#FF4F9A] text-lg">♥</span>
-                  <span className="font-pixel text-[#FF4F9A] text-sm font-bold">Now Playing</span>
+                  <span className="text-[#C2185B] text-lg">♥</span>
+                  <span className="font-pixel text-[#881337] text-sm font-bold">Now Playing</span>
                 </div>
                 {currentTrack && (
                   <button
@@ -953,7 +1050,7 @@ export default function SpotifyPlayerUI() {
                       setQueueModalTab(rightPanelTab);
                       setIsQueueModalOpen(true);
                     }}
-                    className="font-pixel text-[11px] text-[#FF4F9A] hover:text-white bg-white hover:bg-[#FF4F9A] border border-[#FFB6C1] px-2.5 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-2xs font-bold active:scale-95"
+                    className="font-pixel text-xs text-[#881337] hover:text-white bg-white hover:bg-[#C2185B] border border-[#FF87BE] px-3 py-1 rounded-full flex items-center gap-1 transition-all shadow-xs font-bold active:scale-95"
                     title="Open Queue & History Tuner"
                   >
                     <span>⤢</span> Expand
@@ -976,7 +1073,7 @@ export default function SpotifyPlayerUI() {
                     {/* Record */}
                     <div className="relative w-4/5 h-4/5 transition-transform duration-500 group cursor-pointer hover:scale-105 z-10">
                       <img
-                        src={currentTrack.album.images[0].url}
+                        src={currentTrack.album?.images?.[0]?.url || (typeof currentTrack.album?.images?.[0] === 'string' ? currentTrack.album.images[0] : '') || '/soundscape_ref/finalui.png'}
                         alt="Album Cover"
                         className={`w-full h-full object-cover rounded-full shadow-[0_8px_24px_rgba(255,105,180,0.5)] border-4 border-[#FFFFFF] origin-center ${!isPaused ? 'animate-[spin_10s_linear_infinite]' : ''}`}
                       />
@@ -987,23 +1084,36 @@ export default function SpotifyPlayerUI() {
                   {/* Track Info */}
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex flex-col overflow-hidden flex-1">
-                      <h3 className="font-pixel text-xl text-[#5D1687] truncate" title={currentTrack.name}>{currentTrack.name}</h3>
-                      <p className="font-pixel text-xs text-[#7A2871] truncate" title={currentTrack.artists ? currentTrack.artists.map((a: any) => a.name).join(", ") : "Unknown Artist"}>
+                      <h3 className="font-pixel text-xl font-bold text-[#4A0E4E] truncate" title={currentTrack.name}>{currentTrack.name}</h3>
+                      <p className="font-pixel text-xs text-[#7A2871] font-medium truncate" title={currentTrack.artists ? currentTrack.artists.map((a: any) => a.name).join(", ") : "Unknown Artist"}>
                         {currentTrack.artists ? currentTrack.artists.map((a: any) => a.name).join(", ") : "Unknown Artist"}
                       </p>
                     </div>
                     <div className="flex gap-2 shrink-0 ml-2">
-                      <button onClick={toggleSaveTrack} className="text-xl transition-transform hover:scale-110 active:scale-95" title={isSaved ? "Remove from Library" : "Save to Library"}>
-                        {isSaved ? <span className="text-[#FF4F9A]">♥</span> : <span className="text-[#FF9BC9] hover:text-[#FF4F9A]">♡</span>}
+                      <button onClick={toggleSaveTrack} className="text-xl transition-transform hover:scale-110 active:scale-95" title={isSaved ? "Remove from Library" : "Save to Library"} aria-label={isSaved ? "Remove from Library" : "Save to Library"}>
+                        {isSaved ? <span className="text-[#C2185B]">♥</span> : <span className="text-[#8C3A7A] hover:text-[#C2185B]">♡</span>}
                       </button>
-                      <button className="text-xl text-[#FF9BC9] hover:text-[#FF4F9A] pb-2">...</button>
+                      <button className="text-xl text-[#8C3A7A] hover:text-[#881337] pb-2 font-bold" aria-label="Track options">...</button>
                     </div>
                   </div>
 
                   {/* Progress Bar */}
                   <div className="w-full flex flex-col gap-1 mt-1 group/slider">
-                    <div ref={progressBarRef} className="w-full h-2 group-hover/slider:h-3 transition-all duration-300 bg-[#FFE1EF] rounded-full relative flex items-center cursor-pointer" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>
-                      <div className="h-full bg-[#FF4F9A] relative rounded-full pointer-events-none" style={{ width: `${duration > 0 ? (position / duration) * 100 : 0}%` }}>
+                    <div
+                      ref={progressBarRef}
+                      role="slider"
+                      aria-label="Playback progress"
+                      aria-valuemin={0}
+                      aria-valuemax={duration}
+                      aria-valuenow={position}
+                      tabIndex={0}
+                      className="w-full h-2 group-hover/slider:h-3 transition-all duration-300 bg-[#FFCADF] rounded-full relative flex items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#C2185B]"
+                      onPointerDown={handlePointerDown}
+                      onPointerMove={handlePointerMove}
+                      onPointerUp={handlePointerUp}
+                      onPointerCancel={handlePointerUp}
+                    >
+                      <div className="h-full bg-[#C2185B] relative rounded-full pointer-events-none" style={{ width: `${duration > 0 ? (position / duration) * 100 : 0}%` }}>
                         <img
                           src="/hampter/hello_kitty_pin.png"
                           alt="Kitty Pin"
@@ -1012,29 +1122,54 @@ export default function SpotifyPlayerUI() {
                       </div>
                     </div>
                     <div className="flex justify-between w-full mt-1">
-                      <span className="font-pixel text-[11px] text-[#7A2871] font-bold">{formatTime(position)}</span>
-                      <span className="font-pixel text-[11px] text-[#7A2871] font-bold">{formatTime(duration)}</span>
+                      <span className="font-pixel text-xs text-[#5D1687] font-bold">{formatTime(position)}</span>
+                      <span className="font-pixel text-xs text-[#5D1687] font-bold">{formatTime(duration)}</span>
                     </div>
                   </div>
 
                   {/* Controls */}
                   <div className="flex items-center justify-between mt-3 px-2">
-                    <button onClick={toggleShuffle} className={`transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${isShuffle ? 'text-[#FF4F9A]' : 'text-[#FF9BC9] hover:text-[#FF4F9A]'}`} disabled={!isReady} title="Shuffle">
+                    <button
+                      onClick={toggleShuffle}
+                      className={`transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${isShuffle ? 'text-[#C2185B]' : 'text-[#7A2871] hover:text-[#881337]'}`}
+                      disabled={!isReady && !token}
+                      aria-label="Shuffle"
+                      title="Shuffle"
+                    >
                       <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" /></svg>
                     </button>
-                    <button onClick={prevTrack} className="text-[#FF4F9A] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50" disabled={!isReady} title="Previous">
+                    <button
+                      onClick={prevTrack}
+                      className="text-[#7A2871] hover:text-[#881337] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
+                      disabled={!isReady && !token}
+                      aria-label="Previous track"
+                      title="Previous"
+                    >
                       <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" /></svg>
                     </button>
-                    <button onClick={togglePlay} className="w-12 h-12 bg-[#FF4F9A] rounded-full flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all disabled:opacity-50 shadow-[0_4px_12px_rgba(255,79,154,0.4)]" disabled={!isReady} title={isPaused ? "Play" : "Pause"}>
+                    <button
+                      onClick={togglePlay}
+                      className="w-12 h-12 bg-[#C2185B] hover:bg-[#A0144F] rounded-full flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all disabled:opacity-50 shadow-[0_4px_14px_rgba(194,24,91,0.4)]"
+                      disabled={!isReady && !token}
+                      aria-label={isPaused ? "Play" : "Pause"}
+                      title={isPaused ? "Play" : "Pause"}
+                    >
                       {isPaused ? <svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> : <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>}
                     </button>
-                    <button onClick={nextTrack} className="text-[#FF4F9A] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50" disabled={!isReady} title="Next">
+                    <button
+                      onClick={nextTrack}
+                      className="text-[#7A2871] hover:text-[#881337] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
+                      disabled={!isReady && !token}
+                      aria-label="Next track"
+                      title="Next"
+                    >
                       <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg>
                     </button>
                     <button
                       onClick={toggleRepeat}
-                      className={`relative transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${repeatMode !== 'off' ? 'text-[#FF4F9A] drop-shadow-[0_2px_4px_rgba(255,79,154,0.4)]' : 'text-[#FF9BC9] hover:text-[#FF4F9A]'}`}
-                      disabled={!isReady}
+                      className={`relative transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${repeatMode !== 'off' ? 'text-[#C2185B] drop-shadow-[0_2px_4px_rgba(194,24,91,0.4)]' : 'text-[#7A2871] hover:text-[#881337]'}`}
+                      disabled={!isReady && !token}
+                      aria-label="Repeat mode"
                       title={repeatMode === 'off' ? 'Enable Repeat' : repeatMode === 'context' ? 'Repeat: All (Click for Repeat 1)' : 'Repeat: One (Click to turn off)'}
                     >
                       {repeatMode === 'track' ? (
@@ -1047,7 +1182,7 @@ export default function SpotifyPlayerUI() {
                         </svg>
                       )}
                       {repeatMode === 'context' && (
-                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#FF4F9A] rounded-full" />
+                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[#C2185B] rounded-full" />
                       )}
                     </button>
                   </div>
@@ -1055,38 +1190,38 @@ export default function SpotifyPlayerUI() {
               ) : (
                 <div className="flex flex-col mb-4">
                   <div className="relative w-full aspect-square mb-4 flex items-center justify-center">
-                     <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4/5 h-4/5 bg-black rounded-full border-[6px] border-gray-800 flex items-center justify-center shadow-lg" style={{ right: '-10%' }}>
-                       <div className="w-1/3 h-1/3 bg-[#FFB6C1] rounded-full border-2 border-black flex items-center justify-center">
+                     <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4/5 h-4/5 bg-[#1F2937] rounded-full border-[6px] border-[#374151] flex items-center justify-center shadow-lg" style={{ right: '-10%' }}>
+                       <div className="w-1/3 h-1/3 bg-[#FFCADF] rounded-full border-2 border-[#111827] flex items-center justify-center">
                          <div className="w-3 h-3 bg-white rounded-full"></div>
                        </div>
                     </div>
                     <div className="w-4/5 h-4/5 bg-[#FFE1EF] rounded-2xl shadow-[0_8px_24px_rgba(255,105,180,0.3)] relative z-10 border-2 border-[#FFC1DA] flex items-center justify-center">
-                      <span className="text-4xl text-[#FF9BC9]">♪</span>
+                      <span className="text-4xl text-[#C2185B]">♪</span>
                     </div>
                   </div>
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex flex-col flex-1">
-                      <h3 className="font-pixel text-xl text-[#5D1687]">No track loaded</h3>
-                      <p className="font-pixel text-xs text-[#7A2871]">Select a playlist to begin playback</p>
+                      <h3 className="font-pixel text-xl font-bold text-[#4A0E4E]">No track loaded</h3>
+                      <p className="font-pixel text-xs text-[#7A2871] font-medium">Select a playlist to begin playback</p>
                     </div>
                     <div className="flex gap-2 shrink-0 ml-2">
-                      <button className="text-xl text-[#FF9BC9]">♡</button>
-                      <button className="text-xl text-[#FF9BC9] pb-2">...</button>
+                      <button className="text-xl text-[#8C3A7A]">♡</button>
+                      <button className="text-xl text-[#8C3A7A] pb-2 font-bold">...</button>
                     </div>
                   </div>
                   <div className="w-full flex flex-col gap-1 mt-2">
-                    <div className="w-full h-1.5 bg-[#FFE1EF] rounded-full"></div>
+                    <div className="w-full h-1.5 bg-[#FFCADF] rounded-full"></div>
                     <div className="flex justify-between w-full">
-                      <span className="font-pixel text-[11px] text-[#7A2871] font-bold">0:00</span>
-                      <span className="font-pixel text-[11px] text-[#7A2871] font-bold">0:00</span>
+                      <span className="font-pixel text-xs text-[#5D1687] font-bold">0:00</span>
+                      <span className="font-pixel text-xs text-[#5D1687] font-bold">0:00</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between mt-4 px-2">
-                    <button className="text-[#FF9BC9]"><svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" /></svg></button>
-                    <button className="text-[#FF9BC9]"><svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" /></svg></button>
-                    <button className="w-12 h-12 bg-[#FF9BC9] rounded-full flex items-center justify-center text-white"><svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></button>
-                    <button className="text-[#FF9BC9]"><svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg></button>
-                    <button className="text-[#FF9BC9]"><svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" /></svg></button>
+                    <button className="text-[#8C3A7A]" aria-label="Shuffle disabled"><svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" /></svg></button>
+                    <button className="text-[#8C3A7A]" aria-label="Previous disabled"><svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" /></svg></button>
+                    <button className="w-12 h-12 bg-[#FFCADF] rounded-full flex items-center justify-center text-white/80" aria-label="Play disabled"><svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></button>
+                    <button className="text-[#8C3A7A]" aria-label="Next disabled"><svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg></button>
+                    <button className="text-[#8C3A7A]" aria-label="Repeat disabled"><svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" /></svg></button>
                   </div>
                 </div>
               )}
@@ -1094,14 +1229,14 @@ export default function SpotifyPlayerUI() {
             
             <div className="flex flex-col flex-1 overflow-hidden px-4 pb-4">
               {/* Tab Switcher & Bow */}
-              <div className="flex items-center justify-between bg-[#FFE1EF] rounded-full p-1 mb-2.5 shrink-0 border border-[#FFB6C1]">
+              <div className="flex items-center justify-between bg-[#FFE4F0] rounded-full p-1 mb-2.5 shrink-0 border border-[#FF87BE]">
                 <div className="flex flex-1 gap-1">
                   <button
                     onClick={() => setRightPanelTab('queue')}
                     className={`flex-1 font-pixel text-xs py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
                       rightPanelTab === 'queue'
-                        ? 'bg-[#FF4F9A] text-white shadow-xs'
-                        : 'text-[#7A2871] hover:text-[#5D1687]'
+                        ? 'bg-[#C2185B] text-white shadow-xs'
+                        : 'text-[#7A2871] hover:text-[#881337]'
                     }`}
                   >
                     <span>♥</span> Queue ({queue.length})
@@ -1110,8 +1245,8 @@ export default function SpotifyPlayerUI() {
                     onClick={() => setRightPanelTab('recent')}
                     className={`flex-1 font-pixel text-xs py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
                       rightPanelTab === 'recent'
-                        ? 'bg-[#FF4F9A] text-white shadow-xs'
-                        : 'text-[#7A2871] hover:text-[#5D1687]'
+                        ? 'bg-[#C2185B] text-white shadow-xs'
+                        : 'text-[#7A2871] hover:text-[#881337]'
                     }`}
                   >
                     <span>🕒</span> Recent
@@ -1122,14 +1257,14 @@ export default function SpotifyPlayerUI() {
               
               {/* Header with Title and Clear / Expand */}
               <div className="flex items-center justify-between mb-1.5 shrink-0 px-1">
-                <span className="font-pixel text-xs text-[#5D1687] font-bold">
+                <span className="font-pixel text-xs text-[#881337] font-bold tracking-wide">
                   {rightPanelTab === 'queue' ? '+ Up Next' : '🕒 Recently Played'}
                 </span>
                 <div className="flex items-center gap-2">
                   {rightPanelTab === 'queue' && queue.length > 0 && (
                     <button
                       onClick={() => clearQueue()}
-                      className="font-pixel text-[11px] text-[#7A2871] hover:text-[#FF4F9A] transition-colors font-bold"
+                      className="font-pixel text-xs text-[#7A2871] hover:text-[#881337] transition-colors font-bold"
                     >
                       Clear
                     </button>
@@ -1139,7 +1274,7 @@ export default function SpotifyPlayerUI() {
                       setQueueModalTab(rightPanelTab);
                       setIsQueueModalOpen(true);
                     }}
-                    className="font-pixel text-[11px] text-[#FF4F9A] hover:text-white bg-white hover:bg-[#FF4F9A] border border-[#FFB6C1] px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-2xs font-bold active:scale-95"
+                    className="font-pixel text-xs text-[#881337] hover:text-white bg-white hover:bg-[#C2185B] border border-[#FF87BE] px-2.5 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs font-bold active:scale-95"
                     title="Open large pop-up screen to tune queue & history"
                   >
                     <span>⤢</span> Expand
@@ -1153,14 +1288,14 @@ export default function SpotifyPlayerUI() {
                   queue.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
                       <div className="text-xl mb-1">🌸</div>
-                      <div className="text-[#FF4F9A] font-pixel text-xs font-bold">QUEUE IS EMPTY</div>
-                      <p className="text-[#7A2871] font-pixel text-[11px] mt-0.5">Play or add tracks to build your list</p>
+                      <div className="text-[#881337] font-pixel text-xs font-bold">QUEUE IS EMPTY</div>
+                      <p className="text-[#7A2871] font-pixel text-xs mt-0.5 font-medium">Play or add tracks to build your list</p>
                       <button
                         onClick={() => {
                           setQueueModalTab('recent');
                           setIsQueueModalOpen(true);
                         }}
-                        className="mt-2 font-pixel text-[11px] text-[#5D1687] bg-white border border-[#FFB6C1] px-2.5 py-0.5 rounded-full hover:bg-[#FFE1EF] transition-all font-bold shadow-2xs"
+                        className="mt-2 font-pixel text-xs text-[#881337] bg-white border border-[#FF87BE] px-3 py-1 rounded-full hover:bg-[#FFE4F0] transition-all font-bold shadow-xs"
                       >
                         Browse History ➔
                       </button>
@@ -1193,29 +1328,29 @@ export default function SpotifyPlayerUI() {
                         className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[#FFE1EF] transition-colors group cursor-pointer border ${
                           dragOverQueueIndex === idx
                             ? draggedQueueIndex !== null && draggedQueueIndex < idx
-                              ? 'border-b-[#FF4F9A] border-b-2'
-                              : 'border-t-[#FF4F9A] border-t-2'
+                              ? 'border-b-[#C2185B] border-b-2'
+                              : 'border-t-[#C2185B] border-t-2'
                             : 'border-transparent'
                         } ${draggedQueueIndex === idx ? 'opacity-50' : 'opacity-100'}`}
                         onClick={() => playQueueItem(idx)}
                       >
-                        <span className={`font-pixel text-[11px] w-4 text-center shrink-0 font-bold ${idx === queueIndex ? 'text-[#FF4F9A]' : 'text-[#7A2871]'}`}>
+                        <span className={`font-pixel text-xs w-4 text-center shrink-0 font-bold ${idx === queueIndex ? 'text-[#C2185B]' : 'text-[#8C3A7A]'}`}>
                           {idx + 1}
                         </span>
                         {item.track.album?.images?.[0]?.url ? (
-                          <img src={item.track.album.images[0].url} className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[#FFD0E2]" />
+                          <img src={item.track.album.images[0].url} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[#FFD0E2]" />
                         ) : (
-                          <div className="w-9 h-9 rounded-lg bg-[#FFC1DA] shrink-0 shadow-2xs flex items-center justify-center text-[#FF4F9A] text-xs">♪</div>
+                          <div className="w-9 h-9 rounded-lg bg-[#FFD1E3] border border-[#FF87BE] shrink-0 shadow-2xs flex items-center justify-center text-[#881337] text-xs font-bold">♪</div>
                         )}
                         <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                          <span className={`font-pixel text-xs font-bold truncate ${idx === queueIndex ? 'text-[#FF4F9A]' : 'text-[#5D1687]'}`}>
+                          <span className={`font-pixel text-xs font-bold truncate ${idx === queueIndex ? 'text-[#C2185B]' : 'text-[#4A0E4E]'}`}>
                             {item.track.name}
                           </span>
-                          <span className="font-pixel text-[11px] text-[#7A2871] truncate">
+                          <span className="font-pixel text-xs text-[#7A2871] font-medium truncate">
                             {item.track.artists?.map((a: any) => a.name).join(', ')}
                           </span>
                         </div>
-                        <span className="font-pixel text-[11px] text-[#82297D] font-bold shrink-0">
+                        <span className="font-pixel text-xs text-[#5D1687] font-bold shrink-0">
                           {formatTime(item.track.duration_ms)}
                         </span>
                         <button
@@ -1223,7 +1358,8 @@ export default function SpotifyPlayerUI() {
                             e.stopPropagation();
                             removeFromQueue(idx);
                           }}
-                          className="opacity-0 group-hover:opacity-100 text-[#7A2871] hover:text-rose-600 px-1 py-0.5 rounded shrink-0 font-bold text-xs"
+                          className="opacity-0 group-hover:opacity-100 text-[#7A2871] hover:text-[#B91C1C] px-1 py-0.5 rounded shrink-0 font-bold text-xs"
+                          aria-label="Remove from queue"
                           title="Remove from queue"
                         >
                           ✕
@@ -1236,8 +1372,8 @@ export default function SpotifyPlayerUI() {
                   recentTracks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
                       <div className="text-xl mb-1">🕒</div>
-                      <div className="text-[#5D1687] font-pixel text-xs font-bold">NO RECENT TRACKS</div>
-                      <p className="text-[#7A2871] font-pixel text-[11px] mt-0.5">Play some tunes to see them here</p>
+                      <div className="text-[#881337] font-pixel text-xs font-bold">NO RECENT TRACKS</div>
+                      <p className="text-[#7A2871] font-pixel text-xs mt-0.5 font-medium">Play some tunes to see them here</p>
                     </div>
                   ) : (
                     recentTracks.slice(0, 15).map((item: any, idx: number) => {
@@ -1252,19 +1388,19 @@ export default function SpotifyPlayerUI() {
                             else playTrack(track.uri);
                           }}
                         >
-                          <span className="font-pixel text-[11px] w-4 text-center shrink-0 text-[#A05596] font-bold">
+                          <span className="font-pixel text-xs w-4 text-center shrink-0 text-[#8C3A7A] font-bold">
                             {idx + 1}
                           </span>
                           {track.album?.images?.[0]?.url ? (
-                            <img src={track.album.images[0].url} className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[#FFD0E2]" />
+                            <img src={track.album.images[0].url} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[#FFD0E2]" />
                           ) : (
-                            <div className="w-9 h-9 rounded-lg bg-[#FFC1DA] shrink-0 shadow-2xs flex items-center justify-center text-[#FF4F9A] text-xs">♪</div>
+                            <div className="w-9 h-9 rounded-lg bg-[#FFD1E3] border border-[#FF87BE] shrink-0 shadow-2xs flex items-center justify-center text-[#881337] text-xs font-bold">♪</div>
                           )}
                           <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                            <span className="font-pixel text-xs font-bold text-[#5D1687] truncate">
+                            <span className="font-pixel text-xs font-bold text-[#4A0E4E] truncate">
                               {track.name}
                             </span>
-                            <span className="font-pixel text-[11px] text-[#7A2871] truncate">
+                            <span className="font-pixel text-xs text-[#7A2871] font-medium truncate">
                               {track.artists?.map((a: any) => a.name).join(', ')}
                             </span>
                           </div>
@@ -1273,7 +1409,7 @@ export default function SpotifyPlayerUI() {
                               e.stopPropagation();
                               addToQueue(track, item.context?.uri);
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-[#5D1687] bg-white border border-[#FFB6C1] hover:bg-[#FF4F9A] hover:text-white px-2 py-0.5 rounded-full font-pixel text-[10px] font-bold transition-all shadow-2xs shrink-0"
+                            className="opacity-0 group-hover:opacity-100 text-[#881337] bg-white border border-[#FF87BE] hover:bg-[#C2185B] hover:text-white px-2.5 py-1 rounded-full font-pixel text-xs font-bold transition-all shadow-xs shrink-0"
                             title="Add to queue"
                           >
                             + Queue

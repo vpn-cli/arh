@@ -45,28 +45,28 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
 
   if (isPlaylistError && (playlistError as any)?.status === 429) {
     return (
-      <div className="flex flex-col h-full items-center justify-center">
-        <div className="text-[#FF4500] font-pixel text-xs text-center px-4">
-          RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((playlistError as any)?.retryAfter ?? 60)} SECONDS.
+      <div className="flex flex-col h-full items-center justify-center p-4">
+        <div className="text-[#B91C1C] font-pixel text-xs font-bold text-center px-4">
+          Rate limited by Spotify.<br/>Wait {rateLimitTimer || ((playlistError as any)?.retryAfter ?? 60)} seconds.
         </div>
-        <button onClick={onBack} className="mt-4 font-pixel text-[#FF69B4] text-[10px]">GO BACK</button>
+        <button onClick={onBack} className="mt-4 font-pixel text-xs font-bold text-[#881337] bg-white border border-[#FF87BE] px-4 py-1.5 rounded-full hover:bg-[#FFE1EF] transition-all">Go Back</button>
       </div>
     );
   }
 
   if (isLoadingPlaylist) {
     return (
-      <div className="flex flex-col h-full items-center justify-center">
-        <div className="text-[#FFB6C1] font-pixel text-xs animate-pulse">LOADING PLAYLIST...</div>
+      <div className="flex flex-col h-full items-center justify-center p-4">
+        <div className="text-[#8C3A7A] font-pixel text-xs font-medium animate-pulse">Loading playlist...</div>
       </div>
     );
   }
 
   if (!playlist) {
     return (
-      <div className="flex flex-col h-full items-center justify-center">
-        <div className="text-[#FFB6C1] font-pixel text-xs">PLAYLIST NOT FOUND</div>
-        <button onClick={onBack} className="mt-4 font-pixel text-[#FF69B4] text-[10px]">GO BACK</button>
+      <div className="flex flex-col h-full items-center justify-center p-4">
+        <div className="text-[#7A2871] font-pixel text-xs font-medium">Playlist not found</div>
+        <button onClick={onBack} className="mt-4 font-pixel text-xs font-bold text-[#881337] bg-white border border-[#FF87BE] px-4 py-1.5 rounded-full hover:bg-[#FFE1EF] transition-all">Go Back</button>
       </div>
     );
   }
@@ -98,13 +98,13 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
         disabled={isLoadingItems || !itemsData?.items?.length} 
       />
       {isItemsError && (itemsError as any)?.status === 429 ? (
-        <div className="flex-1 flex items-center justify-center text-[#FF4500] font-pixel text-xs text-center px-4">
-          RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((itemsError as any)?.retryAfter ?? 60)} SECONDS.
+        <div className="flex-1 flex items-center justify-center text-[#B91C1C] font-pixel text-xs font-bold text-center px-4">
+          Rate limited by Spotify.<br/>Wait {rateLimitTimer || ((itemsError as any)?.retryAfter ?? 60)} seconds.
         </div>
       ) : isItemsError && (itemsError as any)?.status === 403 ? (
-        <div className="flex-1 flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2">
-          <span className="text-[#FF4500]">TRACKS UNAVAILABLE</span>
-          <span className="text-[#FFB6C1]/70 leading-relaxed uppercase">SPOTIFY DOESN'T ALLOW THIS APP TO READ TRACKS FROM THIS PLAYLIST.</span>
+        <div className="flex-1 flex flex-col items-center justify-center font-pixel text-xs text-center px-4 gap-2">
+          <span className="text-[#B91C1C] font-bold">Tracks Unavailable</span>
+          <span className="text-[#7A2871] leading-relaxed">Spotify does not allow this app to read tracks from this playlist.</span>
         </div>
       ) : (
         <PlaylistTrackList 
