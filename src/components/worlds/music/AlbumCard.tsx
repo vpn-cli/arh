@@ -8,8 +8,8 @@ interface AlbumCardProps {
 
 export function AlbumCard({ album, onClick, variant = 'default' }: AlbumCardProps) {
   const isCompact = variant === 'compact';
-  const imgSize = isCompact ? 'w-8 h-8' : 'w-10 h-10';
-  const titleSize = isCompact ? 'text-[10px] font-bold font-retro' : 'text-sm font-pixel uppercase';
+  const imgSize = isCompact ? 'w-9 h-9' : 'w-11 h-11';
+  const titleSize = isCompact ? 'text-xs font-bold font-pixel' : 'text-sm font-bold font-pixel';
 
   return (
     <div
@@ -17,23 +17,26 @@ export function AlbumCard({ album, onClick, variant = 'default' }: AlbumCardProp
     >
       <button
         onClick={() => onClick(album.id)}
-        className="flex-1 flex items-center gap-3 active:scale-95 text-left truncate min-w-0"
+        className="flex-1 flex items-center gap-3 active:scale-95 text-left truncate min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#881337] rounded-lg p-1 -m-1"
+        aria-label={`Open album ${album.name}`}
       >
-      {album.images && album.images[0] ? (
-        <img src={album.images[0].url} alt={album.name} className={`${imgSize} rounded-lg shadow-sm object-cover transition-transform duration-200 group-hover:scale-110 group-hover:shadow-md shrink-0`} />
-      ) : (
-        <div className={`${imgSize} rounded-lg bg-[#FFB6C1]/30 flex items-center justify-center shadow-sm shrink-0`} />
-      )}
-      <div className={`flex-1 overflow-hidden z-10 relative ${isCompact ? 'flex flex-col min-w-0' : ''}`}>
-        <div className="w-full relative overflow-hidden whitespace-nowrap">
-          <span className={`${titleSize} text-[#7A2871] transition-colors pr-2 truncate block w-full`} title={album.name}>
-            {album.name}
-          </span>
+        {album.images && album.images[0] ? (
+          <img src={album.images[0].url} alt="" className={`${imgSize} rounded-lg shadow-sm object-cover transition-transform duration-200 group-hover:scale-105 group-hover:shadow-md shrink-0`} />
+        ) : (
+          <div className={`${imgSize} rounded-lg bg-[#FFC1DA] text-[#881337] font-bold text-xs flex items-center justify-center shadow-sm shrink-0`}>
+            ♪
+          </div>
+        )}
+        <div className="flex-1 overflow-hidden z-10 relative flex flex-col min-w-0">
+          <div className="w-full relative overflow-hidden whitespace-nowrap">
+            <span className={`${titleSize} text-[#4A0E4E] transition-colors pr-2 truncate block w-full`} title={album.name}>
+              {album.name}
+            </span>
+          </div>
+          <div className="font-pixel text-xs text-[#7A2871] font-medium mt-0.5 truncate" title={album.artists?.map((a:any)=>a.name).join(', ')}>
+            Album • {album.artists?.map((a:any)=>a.name).join(', ')}
+          </div>
         </div>
-        <div className="font-retro text-[8px] text-[#9B4F96] mt-0.5 truncate" title={album.artists?.map((a:any)=>a.name).join(', ')}>
-          ALBUM • {album.artists?.map((a:any)=>a.name).join(', ')}
-        </div>
-      </div>
       </button>
     </div>
   );

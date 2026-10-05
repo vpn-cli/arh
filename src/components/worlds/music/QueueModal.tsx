@@ -229,13 +229,13 @@ export function QueueModal({
                     )}
                     <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-pixel text-[10px] font-bold uppercase tracking-wider text-[#FF4F9A] bg-white border border-[#FFCADF] px-2 py-0.5 rounded-full shadow-2xs">
+                        <span className="font-pixel text-xs font-bold uppercase tracking-wider text-[#881337] bg-white border border-[#FFCADF] px-2.5 py-0.5 rounded-full shadow-2xs">
                           Now Playing
                         </span>
                         <span className="flex gap-0.5 items-end h-3">
-                          <span className="w-1 h-3 bg-[#FF4F9A] rounded-full animate-pulse" />
-                          <span className="w-1 h-1.5 bg-[#FF4F9A] rounded-full animate-pulse delay-75" />
-                          <span className="w-1 h-3.5 bg-[#FF4F9A] rounded-full animate-pulse delay-150" />
+                          <span className="w-1 h-3 bg-[#881337] rounded-full animate-pulse" />
+                          <span className="w-1 h-1.5 bg-[#881337] rounded-full animate-pulse delay-75" />
+                          <span className="w-1 h-3.5 bg-[#881337] rounded-full animate-pulse delay-150" />
                         </span>
                       </div>
                       <span className="font-pixel text-base font-bold text-[#4A0E4E] truncate tracking-wide">
@@ -246,7 +246,7 @@ export function QueueModal({
                       </span>
                     </div>
                   </div>
-                  <span className="font-pixel text-sm text-[#FF4F9A] font-bold pr-3 shrink-0">
+                  <span className="font-pixel text-sm text-[#881337] font-bold pr-3 shrink-0">
                     {formatTime(currentTrack.duration_ms)}
                   </span>
                 </div>
@@ -269,9 +269,9 @@ export function QueueModal({
                 </div>
               ) : (
                 <div className="space-y-1">
-                  <div className="text-xs font-pixel font-bold text-[#D81B60] tracking-wide px-2 flex justify-between items-center mb-1.5">
-                    <span>UP NEXT ({filteredQueue.length} tracks)</span>
-                    <span className="text-[10px] text-[#A05596] font-normal">Drag items or use arrows to reorder</span>
+                  <div className="text-xs font-pixel font-bold text-[#881337] tracking-wider uppercase px-2 flex justify-between items-center mb-1.5">
+                    <span>Up Next ({filteredQueue.length} tracks)</span>
+                    <span className="text-xs text-[#7A2871] font-medium lowercase">Drag items or use arrows to reorder</span>
                   </div>
 
                   {filteredQueue.map((item, idx) => {
@@ -368,16 +368,18 @@ export function QueueModal({
                           <button
                             onClick={() => handleMoveUp(originalIndex)}
                             disabled={originalIndex === 0}
-                            className="text-[#7A2871] hover:text-[#FF4F9A] disabled:opacity-20 text-[10px] p-0.5 leading-none"
+                            className="text-[#7A2871] hover:text-[#881337] disabled:opacity-20 text-xs p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#881337] rounded"
                             title="Move Up"
+                            aria-label={`Move ${item.track?.name} up`}
                           >
                             ▲
                           </button>
                           <button
                             onClick={() => handleMoveDown(originalIndex)}
                             disabled={originalIndex === queue.length - 1}
-                            className="text-[#7A2871] hover:text-[#FF4F9A] disabled:opacity-20 text-[10px] p-0.5 leading-none"
+                            className="text-[#7A2871] hover:text-[#881337] disabled:opacity-20 text-xs p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#881337] rounded"
                             title="Move Down"
+                            aria-label={`Move ${item.track?.name} down`}
                           >
                             ▼
                           </button>
@@ -425,13 +427,13 @@ export function QueueModal({
           ) : (
             /* Recently Played View */
             <div className="space-y-1">
-              <div className="text-xs font-pixel font-bold text-[#D81B60] tracking-wide px-2 flex justify-between items-center mb-1.5">
-                <span>RECENT SESSIONS ({filteredRecent.length} tracks)</span>
-                <span className="text-[10px] text-[#A05596] font-normal">History from your Spotify listening</span>
+              <div className="text-xs font-pixel font-bold text-[#881337] tracking-wider uppercase px-2 flex justify-between items-center mb-1.5">
+                <span>Recent Sessions ({filteredRecent.length} tracks)</span>
+                <span className="text-xs text-[#7A2871] font-medium lowercase">History from your Spotify listening</span>
               </div>
 
               {isRecentLoading ? (
-                <div className="py-20 text-center font-pixel text-sm text-[#FF4F9A] animate-pulse">
+                <div className="py-20 text-center font-pixel text-sm text-[#8C3A7A] animate-pulse">
                   Loading recently played songs...
                 </div>
               ) : filteredRecent.length === 0 ? (
@@ -448,7 +450,7 @@ export function QueueModal({
                       key={`${track.id}-${item.played_at || idx}`}
                       className="group flex items-center gap-3 px-3.5 py-2.5 rounded-2xl bg-white hover:bg-[#FFF5F9] border border-[#FFD0E2] hover:border-[#FF9BC9] transition-all shadow-2xs"
                     >
-                      <span className="font-pixel text-xs font-bold text-[#A05596] w-5 text-center shrink-0">
+                      <span className="font-pixel text-xs font-bold text-[#8C3A7A] w-5 text-center shrink-0">
                         {idx + 1}
                       </span>
 
@@ -459,7 +461,7 @@ export function QueueModal({
                           className="w-11 h-11 rounded-xl object-cover shrink-0 shadow-2xs border border-[#FFD0E2]"
                         />
                       ) : (
-                        <div className="w-11 h-11 rounded-xl bg-[#FFD0E2] shrink-0 flex items-center justify-center text-[#FF4F9A] text-sm">
+                        <div className="w-11 h-11 rounded-xl bg-[#FFD0E2] shrink-0 flex items-center justify-center text-[#881337] text-sm font-bold">
                           ♪
                         </div>
                       )}
@@ -473,7 +475,7 @@ export function QueueModal({
                             {track.artists?.map((a: any) => a.name).join(', ')}
                           </span>
                           {item.played_at && (
-                            <span className="font-pixel text-[10px] text-[#A05596] bg-[#FFE1EF] px-1.5 py-0.5 rounded-full shrink-0">
+                            <span className="font-pixel text-xs text-[#7A2871] bg-[#FFE1EF] px-2 py-0.5 rounded-full shrink-0 font-medium">
                               {formatRelativeTime(item.played_at)}
                             </span>
                           )}

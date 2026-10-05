@@ -21,15 +21,15 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
   const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useSearch(query);
 
   if (!query.trim()) {
-    return <div className="text-center text-[#FFB6C1] font-pixel text-xs mt-4">TYPE TO SEARCH</div>;
+    return <div className="text-center text-[#7A2871] font-pixel text-sm font-medium mt-8">Type to search songs, artists, and playlists ♡</div>;
   }
 
   if (isLoading) {
-    return <div className="text-center text-[#FFB6C1] font-pixel text-xs mt-4 animate-pulse">SEARCHING...</div>;
+    return <div className="text-center text-[#8C3A7A] font-pixel text-sm font-medium mt-8 animate-pulse">Searching music world...</div>;
   }
 
   if (isError) {
-    return <div className="text-center text-[#FF4500] font-pixel text-xs mt-4">ERROR SEARCHING</div>;
+    return <div className="text-center text-[#B91C1C] font-pixel text-sm font-medium mt-8">Error searching. Please try again!</div>;
   }
 
   const pages = data?.pages || [];
@@ -53,7 +53,7 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
   const hasResults = tracks.length > 0 || artists.length > 0 || albums.length > 0 || playlists.length > 0;
 
   if (!hasResults) {
-    return <div className="text-center text-[#FFB6C1] font-pixel text-xs mt-4">NO MATCHES FOUND</div>;
+    return <div className="text-center text-[#7A2871] font-pixel text-sm font-medium mt-8">No matches found for &quot;{query}&quot;</div>;
   }
 
   const handleArtistClick = (id: string) => {
@@ -67,10 +67,10 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       {tracks.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h4 className="font-pixel text-[10px] text-[#D81B60]">TRACKS</h4>
+          <h4 className="font-pixel text-xs font-bold text-[#881337] tracking-wider uppercase px-1">Tracks</h4>
           {tracks.map((t, idx) => (
             <TrackRow key={`${t.id}-${idx}`} track={t} onPlay={onPlayTrack} onAddToQueue={onAddToQueue} onAddMemory={(track) => onAddMemory(track, 'track')} variant="compact" />
           ))}
@@ -79,7 +79,7 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
 
       {artists.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h4 className="font-pixel text-[10px] text-[#D81B60]">ARTISTS</h4>
+          <h4 className="font-pixel text-xs font-bold text-[#881337] tracking-wider uppercase px-1">Artists</h4>
           {artists.map((a, idx) => (
             <ArtistCard key={`${a.id}-${idx}`} artist={a} onClick={handleArtistClick} onAddMemory={(artist) => onAddMemory(artist, 'artist')} variant="compact" />
           ))}
@@ -88,7 +88,7 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
 
       {albums.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h4 className="font-pixel text-[10px] text-[#D81B60]">ALBUMS</h4>
+          <h4 className="font-pixel text-xs font-bold text-[#881337] tracking-wider uppercase px-1">Albums</h4>
           {albums.map((a, idx) => (
             <AlbumCard key={`${a.id}-${idx}`} album={a} onClick={handleAlbumClick} variant="compact" />
           ))}
@@ -97,7 +97,7 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
 
       {playlists.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h4 className="font-pixel text-[10px] text-[#D81B60]">PLAYLISTS</h4>
+          <h4 className="font-pixel text-xs font-bold text-[#881337] tracking-wider uppercase px-1">Playlists</h4>
           {playlists.map((p, idx) => (
             <PlaylistCard key={`${p.id}-${idx}`} playlist={p} onClick={() => onClickPlaylist(p.id)} onAddMemory={(playlist) => onAddMemory(playlist, 'playlist')} variant="compact" />
           ))}
@@ -108,9 +108,9 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
         <button
           onClick={() => fetchNextPage()}
           disabled={isFetchingNextPage}
-          className="w-full bg-[#FFE4E1] hover:bg-[#FFB6C1] text-[#7A2871] hover:text-[#FFFFFF] transition-colors py-2 rounded-xl font-pixel text-[10px] disabled:opacity-50 mt-2"
+          className="w-full bg-white hover:bg-[#FFE4E1] border border-[#FF87BE] text-[#881337] transition-colors py-2.5 rounded-xl font-pixel text-xs font-bold disabled:opacity-50 mt-2 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#881337]"
         >
-          {isFetchingNextPage ? 'LOADING...' : 'LOAD MORE'}
+          {isFetchingNextPage ? 'Loading more...' : 'Load more results'}
         </button>
       )}
     </div>

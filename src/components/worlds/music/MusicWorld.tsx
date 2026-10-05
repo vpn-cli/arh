@@ -81,17 +81,18 @@ export default function MusicWorld() {
             goHome();
           }}
           onMouseEnter={() => sfx.hover()}
-          className="pointer-events-auto group px-4 py-2 bg-[#FFFFFF]/80 backdrop-blur-md border-2 border-[#FFB6C1] rounded-full flex items-center gap-2 hover:bg-[#FFE4E1] transition-colors shadow-sm"
+          className="pointer-events-auto group px-4 py-2 bg-[#FFFFFF]/90 backdrop-blur-md border-2 border-[#FF87BE] rounded-full flex items-center gap-2 hover:bg-[#FFE4E1] transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#881337]"
+          aria-label="Return to Home World"
         >
-          <span className="text-[#FF69B4] text-xs font-pixel mt-1 group-hover:-translate-x-1 transition-transform">◀</span>
-          <span className="font-retro text-[8px] sm:text-[10px] text-[#9B4F96] tracking-[2px] uppercase group-hover:text-[#FF69B4] transition-colors">
-            HOME WORLD
+          <span className="text-[#881337] text-xs font-pixel mt-0.5 group-hover:-translate-x-1 transition-transform">◀</span>
+          <span className="font-pixel text-xs text-[#7A2871] font-bold tracking-wider uppercase group-hover:text-[#881337] transition-colors">
+            Home World
           </span>
         </button>
 
-        <div className="px-4 py-2 bg-[#FFFFFF]/80 border-2 border-[#FFB6C1] rounded-full shadow-sm flex items-center gap-2">
-          <span className="font-retro text-[8px] text-[#FF69B4] tracking-[2px]">MUSIC WORLD</span>
-          <span className="font-pixel text-[10px] text-[#FF99B9]">♪</span>
+        <div className="px-4 py-2 bg-[#FFFFFF]/90 border-2 border-[#FF87BE] rounded-full shadow-sm flex items-center gap-2">
+          <span className="font-pixel text-xs text-[#881337] font-bold tracking-wider uppercase">Music World</span>
+          <span className="font-pixel text-sm text-[#881337]">♪</span>
         </div>
       </div>
 
