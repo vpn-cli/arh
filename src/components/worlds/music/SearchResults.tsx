@@ -71,8 +71,8 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
       {tracks.length > 0 && (
         <div className="flex flex-col gap-2">
           <h4 className="font-pixel text-[10px] text-[#D81B60]">TRACKS</h4>
-          {tracks.map(t => (
-            <TrackRow key={t.id} track={t} onPlay={onPlayTrack} onAddToQueue={onAddToQueue} onAddMemory={(track) => onAddMemory(track, 'track')} variant="compact" />
+          {tracks.map((t, idx) => (
+            <TrackRow key={`${t.id}-${idx}`} track={t} onPlay={onPlayTrack} onAddToQueue={onAddToQueue} onAddMemory={(track) => onAddMemory(track, 'track')} variant="compact" />
           ))}
         </div>
       )}
@@ -80,8 +80,8 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
       {artists.length > 0 && (
         <div className="flex flex-col gap-2">
           <h4 className="font-pixel text-[10px] text-[#D81B60]">ARTISTS</h4>
-          {artists.map(a => (
-            <ArtistCard key={a.id} artist={a} onClick={handleArtistClick} onAddMemory={(artist) => onAddMemory(artist, 'artist')} variant="compact" />
+          {artists.map((a, idx) => (
+            <ArtistCard key={`${a.id}-${idx}`} artist={a} onClick={handleArtistClick} onAddMemory={(artist) => onAddMemory(artist, 'artist')} variant="compact" />
           ))}
         </div>
       )}
@@ -89,8 +89,8 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
       {albums.length > 0 && (
         <div className="flex flex-col gap-2">
           <h4 className="font-pixel text-[10px] text-[#D81B60]">ALBUMS</h4>
-          {albums.map(a => (
-            <AlbumCard key={a.id} album={a} onClick={handleAlbumClick} variant="compact" />
+          {albums.map((a, idx) => (
+            <AlbumCard key={`${a.id}-${idx}`} album={a} onClick={handleAlbumClick} variant="compact" />
           ))}
         </div>
       )}
@@ -98,8 +98,8 @@ export function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue
       {playlists.length > 0 && (
         <div className="flex flex-col gap-2">
           <h4 className="font-pixel text-[10px] text-[#D81B60]">PLAYLISTS</h4>
-          {playlists.map(p => (
-            <PlaylistCard key={p.id} playlist={p} onClick={() => onClickPlaylist(p.id)} onAddMemory={(playlist) => onAddMemory(playlist, 'playlist')} variant="compact" />
+          {playlists.map((p, idx) => (
+            <PlaylistCard key={`${p.id}-${idx}`} playlist={p} onClick={() => onClickPlaylist(p.id)} onAddMemory={(playlist) => onAddMemory(playlist, 'playlist')} variant="compact" />
           ))}
         </div>
       )}
