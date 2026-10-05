@@ -1,22 +1,29 @@
-# A Little Corner of the Internet for You
+# A Little Corner of the Internet for You ✦ Happy Birthday!
 
-A handcrafted, interactive birthday experience built as a tiny playable world instead of a standard webpage. It blends cozy pixel-art styling, hamster personality, scrapbook memories, music, and a playful narrative into a single indie-web adventure.
+A tiny interactive birthday world built with Next.js, React, and a lot of love. This project turns a standard web page into a handcrafted digital place: part scrapbook, part music room, part indie game, and part personal letter.
 
-This project is designed like an exploration game: the user starts with a warm intro, then moves through a Home World with multiple destinations including Main, Music, and Scrapbook. Each world has its own vibe, pacing, and personality.
+It is designed to feel like walking through a small, magical world built specifically for one person — cozy, playful, nostalgic, and just a little bit chaotic in the best way.
 
-## Why this exists
+## The feeling
 
-This repo is a personal, handmade birthday gift project. The goal is to make the recipient feel like they are stepping into a small world built just for them: a place with memories, jokes, a few surprises, and a lot of care.
+Instead of a typical birthday webpage, this project feels like:
 
-## Highlights
+- a world-selection screen with a hamster guide
+- a scrapbook full of memories and little details
+- a music room with a playlist-shaped atmosphere
+- a hidden vault of birthday wishes
+- a final handwritten message that lands softly
 
-- Three interactive world destinations: Main, Music, and Scrapbook
-- Cozy, retro, indie-game-inspired visual language
-- Hamster-themed character moments and playful motion design
-- Personalized scrapbook and memory-driven composition
-- Spotify-adjacent music flow and listening experience
-- Story-driven world transitions and micro-interactions
-- Built with modern React + Next.js app-router patterns
+This is not a product landing page. It is a personal digital experience.
+
+## What lives inside
+
+- Home World: the central hub for exploring the experience
+- Main World: the main narrative path, with playful sections and a personal letter
+- Music World: a mood-driven listening space
+- Scrapbook World: a tactile memory gallery of photos and moments
+- Hamster interactions: little personality moments, hover states, and affectionate details
+- Pixel-art styling: retro, handmade, cozy, and intentionally imperfect
 
 ## Tech stack
 
@@ -25,56 +32,59 @@ This repo is a personal, handmade birthday gift project. The goal is to make the
 - TypeScript
 - Tailwind CSS
 - GSAP for motion
-- Zustand for client state
+- Zustand for lightweight state
 - TanStack React Query
-- Three.js / canvas-driven visual elements
+- Three.js and animation-heavy UI elements
 
-## Project structure
+## Repository structure
 
 ```text
 .
 ├── src/
-│   ├── app/                  # App router pages and layout
+│   ├── app/                 # App Router entrypoints and root layout
 │   ├── components/
-│   │   ├── landing/          # intro + home world + navigation
-│   │   ├── ui/               # reusable UI and pixel-style components
-│   │   └── worlds/           # world-specific screens and route logic
-│   ├── data/                 # scrapbook / content data
-│   ├── hooks/                # Spotify and content hooks
-│   ├── lib/                  # audio, state, Spotify helpers
-│   ├── providers/            # React Query provider
-│   └── store/                # Zustand stores
-├── public/                   # static images and media assets
-├── docs/                     # repo notes / audits
+│   │   ├── landing/         # intro and world-selection flow
+│   │   ├── ui/              # reusable visual/UI elements
+│   │   └── worlds/          # world-specific screens and transitions
+│   ├── data/                # scrapbook/content data
+│   ├── hooks/               # fetching and data access logic
+│   ├── lib/                 # audio, state, Spotify helpers, platform utilities
+│   ├── providers/           # React Query provider
+│   └── store/               # state stores for app behavior
+├── public/                  # images, hamster art, media assets
+├── docs/                    # notes and audits related to the project
+├── project_overview.md       # canonical product brief and phases
 ├── README.md
 ├── package.json
 ├── next.config.ts
 ├── tsconfig.json
 ├── vitest.config.ts
 ├── eslint.config.mjs
-└── pnpm-lock.yaml
+├── pnpm-lock.yaml
+├── package-lock.json
+└── .gitignore
 ```
 
-## The experience
+## How it works
 
-The experience is organized around a simple concept:
+The experience is driven by world-based navigation, not a traditional page flow. The app starts in a warm intro, then transitions into a home screen that presents the different destinations. From there, the user can choose where to wander.
 
-- Enter a warm intro / landing sequence
-- Arrive at a central Home World
-- Choose your destination
-- Explore one of the themed worlds
-- Return home or continue the journey
+The skeleton is intentionally simple:
 
-The project deliberately avoids feeling like a standard birthday card or generic website. Instead, it tries to feel like a miniature digital world built with intention, personality, and a little bit of chaos.
+- `src/app/page.tsx` mounts the app
+- `src/lib/gameState.ts` controls current world and transitions
+- `components/worlds/*` renders each world
+- `components/landing/*` handles the welcome and navigation experience
+- `data/` and `hooks/` feed the content-rich sections
 
 ## Getting started
 
 ### Prerequisites
 
-- Node.js 18+ or later
+- Node.js 18+
 - npm, pnpm, or bun
 
-### Install dependencies
+### Install
 
 ```bash
 npm install
@@ -92,55 +102,42 @@ Then open:
 http://localhost:3000
 ```
 
-## Available scripts
+## Useful scripts
 
 ```bash
-npm run dev      # start local Next.js dev server
-npm run build    # production build
-npm run start    # run production build
-npm run lint     # run ESLint checks
+npm run dev
+npm run build
+npm run start
+npm run lint
 ```
 
-## Notes on architecture
+## Design philosophy
 
-This repository was built as an interactive experience rather than a conventional application. Key architectural patterns include:
+This project leans heavily into a handmade aesthetic:
 
-- world-based navigation through `GameStateProvider`
-- reusable component sets for UI and motion
-- content-driven scrapbook sections
-- Spotify-related hooks and state handling
-- static asset-heavy visuals for the handmade aesthetic
+- pixel-inspired UI
+- warm, nostalgic color palette
+- playful motion
+- layered, intentionally imperfect visual design
+- story-driven interactions instead of generic cards
+- an atmosphere that feels personal and lived-in
 
-## Design goals
+The goal is not polish for polish's sake. The goal is presence.
 
-The design direction is intentionally shaped around:
+## Project context
 
-- indie game aesthetics
-- retro web flavor
-- scrapbook / paper craft energy
-- cute, playful motion
-- handmade imperfections rather than sterile polish
+The repo also includes `project_overview.md`, which is the deeper blueprint for the experience. That file explains the intended architecture, world structure, and design rules behind the project. If you want to understand the why behind the app, start there.
 
-## Important project context
+## Notes
 
-This project includes a detailed internal planning document in `project_overview.md` that lays out the product vision, architecture, phases, and design principles. If you are working within this repo, that file is the best reference for understanding the intended experience and constraints.
-
-## Project status
-
-This repo is a buildable personal experience project with a strong visual and interaction direction. It is not a generic starter app; it is a bespoke interactive birthday web experience with a defined visual identity and world-based structure.
+This repo is best understood as a digital gift rather than a standard application. It was built to feel personal, memorable, and slightly magical — like a tiny corner of the internet made just for someone special.
 
 ## License
 
-This project does not currently declare a license in the repository metadata. If you intend to redistribute or reuse it, add an explicit license before publishing.
+No explicit license file is currently present in the repository metadata. If you plan to share or redistribute this project publicly, it would be wise to add one.
 
-## A final note
+---
 
-This project is best understood as a digital gift: thoughtful, playful, and built to feel personal. The value is not just in the code, but in the mood, timing, and story woven throughout the experience.
+If you're building this for a birthday, a thoughtful note, or a personal milestone, the real purpose of this project is simple:
 
-If you want, I can also turn this into a more polished version with:
-
-- a screenshot section
-- a feature matrix
-- badges for Next.js/TypeScript
-- a "How it works" diagram
-- a version tailored specifically for GitHub presentation
+to make someone feel seen.
