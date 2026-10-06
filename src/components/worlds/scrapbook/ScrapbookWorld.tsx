@@ -5,6 +5,24 @@ import { useGameState } from "@/lib/gameState";
 import { sfx } from "@/lib/audio";
 import ThreeDScrapbook from "./ThreeDScrapbook";
 
+const SPARKLES = [
+  { left: "12%", top: "18%", delay: "0.5s", duration: "4.2s", size: "16px", rotate: "45deg" },
+  { left: "85%", top: "15%", delay: "1.2s", duration: "5.1s", size: "22px", rotate: "120deg" },
+  { left: "25%", top: "75%", delay: "2.1s", duration: "3.8s", size: "14px", rotate: "210deg" },
+  { left: "70%", top: "80%", delay: "0.8s", duration: "4.5s", size: "28px", rotate: "300deg" },
+  { left: "45%", top: "30%", delay: "3.0s", duration: "5.5s", size: "18px", rotate: "80deg" },
+  { left: "90%", top: "60%", delay: "1.7s", duration: "3.5s", size: "12px", rotate: "15deg" },
+  { left: "8%", top: "45%", delay: "2.5s", duration: "4.8s", size: "24px", rotate: "195deg" },
+  { left: "60%", top: "20%", delay: "0.2s", duration: "4.0s", size: "15px", rotate: "270deg" },
+  { left: "35%", top: "60%", delay: "3.3s", duration: "5.0s", size: "20px", rotate: "330deg" },
+  { left: "80%", top: "40%", delay: "1.9s", duration: "3.9s", size: "13px", rotate: "65deg" },
+  { left: "18%", top: "85%", delay: "0.7s", duration: "4.6s", size: "26px", rotate: "140deg" },
+  { left: "50%", top: "88%", delay: "2.8s", duration: "5.2s", size: "17px", rotate: "225deg" },
+  { left: "95%", top: "25%", delay: "1.4s", duration: "3.6s", size: "11px", rotate: "315deg" },
+  { left: "30%", top: "10%", delay: "2.2s", duration: "4.4s", size: "23px", rotate: "90deg" },
+  { left: "65%", top: "55%", delay: "0.9s", duration: "4.9s", size: "19px", rotate: "180deg" },
+];
+
 export default function ScrapbookWorld() {
   const { goHome } = useGameState();
 
@@ -16,10 +34,20 @@ export default function ScrapbookWorld() {
         2. Uncomment the <img> tag below and change the src.
         3. That's it! It will loop automatically in the background.
       */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/background.jpeg"
+        src="/background.webp"
         alt="background"
+        decoding="async"
+        fetchPriority="high"
         className="absolute inset-0 w-full h-full object-cover z-0 opacity-100 pointer-events-none"
+        onError={(e) => {
+          const target = e.currentTarget;
+          if (!target.dataset.fallback) {
+            target.dataset.fallback = "true";
+            target.src = "/background.jpeg";
+          }
+        }}
       />
 
       {/* Aesthetic Cozy Wallpaper Pattern with warm pastel dots & faint grid */}
@@ -38,17 +66,17 @@ export default function ScrapbookWorld() {
 
       {/* Floating Sparkles ✨ */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        {[...Array(15)].map((_, i) => (
+        {SPARKLES.map((sparkle, i) => (
           <div
             key={i}
             className="absolute text-[#FFB6C1]/40 animate-pulse font-pixel"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 4}s`,
-              animationDuration: `${3 + Math.random() * 3}s`,
-              fontSize: `${10 + Math.random() * 20}px`,
-              transform: `rotate(${Math.random() * 360}deg)`
+              left: sparkle.left,
+              top: sparkle.top,
+              animationDelay: sparkle.delay,
+              animationDuration: sparkle.duration,
+              fontSize: sparkle.size,
+              transform: `rotate(${sparkle.rotate})`
             }}
           >
             ✦

@@ -744,7 +744,18 @@
     },
     "right": {
       "pageTitle": "THE END ✦",
-      "items": []
+      "items": [
+        {
+          "src": "/videos/vid.mp4",
+          "col": 0,
+          "row": 0,
+          "colSpan": 3,
+          "rowSpan": 3,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": 2,
+          "sticker": "star"
+        }
+      ]
     }
   }
 ]
