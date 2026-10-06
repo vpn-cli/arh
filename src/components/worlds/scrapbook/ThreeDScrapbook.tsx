@@ -3,13 +3,68 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
-import { sfx } from "@/lib/audio";
+import { sfx, getAudioContext } from "@/lib/audio";
 
-let flipAudio: HTMLAudioElement | null = null;
+let flipAudioBuffer: AudioBuffer | null = null;
+let flipAudioLoading = false;
+let flipAudioFallback: HTMLAudioElement | null = null;
+
+function loadFlipAudio() {
+  if (typeof window === "undefined" || flipAudioBuffer || flipAudioLoading) return;
+  flipAudioLoading = true;
+  try {
+    flipAudioFallback = new Audio("/flip.mp3");
+    flipAudioFallback.volume = 0.5;
+    flipAudioFallback.preload = "auto";
+  } catch {}
+
+  fetch("/flip.mp3")
+    .then((r) => r.arrayBuffer())
+    .then((buf) => {
+      const ctx = getAudioContext();
+      if (ctx) return ctx.decodeAudioData(buf);
+    })
+    .then((decoded) => {
+      if (decoded) flipAudioBuffer = decoded;
+    })
+    .catch(() => {});
+}
+
 if (typeof window !== "undefined") {
-  flipAudio = new Audio("/flip.mp3");
-  flipAudio.volume = 0.5;
-  flipAudio.preload = "auto";
+  loadFlipAudio();
+}
+
+function playFlipSound() {
+  try {
+    const ctx = getAudioContext();
+    if (ctx && flipAudioBuffer) {
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
+      const source = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      gain.gain.value = 0.6;
+      source.buffer = flipAudioBuffer;
+      source.connect(gain).connect(ctx.destination);
+      source.start(0);
+      return;
+    }
+  } catch {}
+
+  try {
+    if (flipAudioFallback) {
+      flipAudioFallback.currentTime = 0;
+      flipAudioFallback.play().catch(() => {
+        sfx.paper();
+      });
+    } else {
+      const audio = new Audio("/flip.mp3");
+      audio.volume = 0.5;
+      audio.play().catch(() => sfx.paper());
+    }
+  } catch {
+    sfx.paper();
+  }
 }
 
 interface BentoItem {
@@ -37,24 +92,65 @@ interface SpreadData {
 import scrapbookData from "@/data/scrapbook-data.json";
 const SPREADS = scrapbookData as SpreadData[];
 
+const toWebp = (p: string) => p.replace(/\.\w+$/, ".webp");
 
-const Sticker = ({ type }: { type: string }) => {
-  const SvgWrap = ({ children, className }: any) => (
-    <div className={`filter drop-shadow-[2px_2px_0_rgba(32,35,63,0.3)] ${className}`}>
-      <svg width="36" height="36" viewBox="-1 -1 9 9" shapeRendering="crispEdges">
-        {children}
-      </svg>
-    </div>
-  );
-  if (type === "star") return <SvgWrap className="animate-[spin_4s_linear_infinite] origin-center"><rect x="3" y="0" width="1" height="2" fill="#FFE4A1" /><rect x="2" y="2" width="3" height="1" fill="#FFE4A1" /><rect x="0" y="3" width="7" height="1" fill="#FFE4A1" /><rect x="1" y="4" width="5" height="1" fill="#FFE4A1" /><rect x="2" y="5" width="3" height="1" fill="#FFE4A1" /><rect x="1" y="6" width="1" height="1" fill="#FFE4A1" /><rect x="5" y="6" width="1" height="1" fill="#FFE4A1" /></SvgWrap>;
-  if (type === "note") return <SvgWrap className="animate-bounce"><rect x="4" y="0" width="3" height="1" fill="#A1C4FD" /><rect x="3" y="1" width="1" height="4" fill="#A1C4FD" /><rect x="6" y="1" width="1" height="2" fill="#A1C4FD" /><rect x="1" y="4" width="3" height="1" fill="#A1C4FD" /><rect x="0" y="5" width="4" height="2" fill="#A1C4FD" /></SvgWrap>;
-  if (type === "sparkle") return <SvgWrap className="animate-pulse"><rect x="3" y="0" width="1" height="2" fill="#DFD5F5" /><rect x="3" y="5" width="1" height="2" fill="#DFD5F5" /><rect x="0" y="3" width="2" height="1" fill="#DFD5F5" /><rect x="5" y="3" width="2" height="1" fill="#DFD5F5" /><rect x="2" y="2" width="3" height="3" fill="#DFD5F5" /></SvgWrap>;
-  if (type === "flower") return <SvgWrap className="animate-[spin_6s_linear_infinite_reverse] origin-center"><rect x="2" y="0" width="3" height="2" fill="#FF8FB3" /><rect x="0" y="2" width="2" height="3" fill="#FF8FB3" /><rect x="5" y="2" width="2" height="3" fill="#FF8FB3" /><rect x="2" y="5" width="3" height="2" fill="#FF8FB3" /><rect x="2" y="2" width="3" height="3" fill="#FFE4A1" /></SvgWrap>;
-  if (type === "banana") return <div className="text-4xl animate-bounce drop-shadow-[2px_4px_8px_rgba(0,0,0,0.3)] font-sans select-none origin-center mt-2">🍌</div>;
+const gridSrc = (src: string) => {
+  if (!src) return src;
+  const lower = src.toLowerCase();
+  if (lower.endsWith(".mp4") || lower.endsWith(".webm")) return src;
+  if (src.startsWith("/arh/")) {
+    return toWebp(src.replace("/arh/", "/arh/grid/"));
+  }
+  if (src.startsWith("/images/")) {
+    return toWebp(src.replace("/images/", "/images/grid/"));
+  }
+  return src;
+};
+
+const fullSrc = (src: string) => {
+  if (!src) return src;
+  const lower = src.toLowerCase();
+  if (lower.endsWith(".mp4") || lower.endsWith(".webm")) return src;
+  if (src.startsWith("/arh/")) {
+    return toWebp(src.replace("/arh/", "/arh/full/"));
+  }
+  if (src.startsWith("/images/")) {
+    return toWebp(src.replace("/images/", "/images/full/"));
+  }
+  return src;
+};
+
+
+const SvgWrap = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <div className={className}>
+    <svg width="36" height="36" viewBox="-1 -1 9 9" shapeRendering="crispEdges">
+      {children}
+    </svg>
+  </div>
+);
+
+const Sticker = React.memo(({ type, active = true }: { type: string; active?: boolean }) => {
+  if (type === "star") return <SvgWrap className={`${active ? "animate-[spin_4s_linear_infinite]" : ""} origin-center`}><rect x="3" y="0" width="1" height="2" fill="#FFE4A1" /><rect x="2" y="2" width="3" height="1" fill="#FFE4A1" /><rect x="0" y="3" width="7" height="1" fill="#FFE4A1" /><rect x="1" y="4" width="5" height="1" fill="#FFE4A1" /><rect x="2" y="5" width="3" height="1" fill="#FFE4A1" /><rect x="1" y="6" width="1" height="1" fill="#FFE4A1" /><rect x="5" y="6" width="1" height="1" fill="#FFE4A1" /></SvgWrap>;
+  if (type === "note") return <SvgWrap className={active ? "animate-bounce" : ""}><rect x="4" y="0" width="3" height="1" fill="#A1C4FD" /><rect x="3" y="1" width="1" height="4" fill="#A1C4FD" /><rect x="6" y="1" width="1" height="2" fill="#A1C4FD" /><rect x="1" y="4" width="3" height="1" fill="#A1C4FD" /><rect x="0" y="5" width="4" height="2" fill="#A1C4FD" /></SvgWrap>;
+  if (type === "sparkle") return <SvgWrap className={active ? "animate-pulse" : ""}><rect x="3" y="0" width="1" height="2" fill="#DFD5F5" /><rect x="3" y="5" width="1" height="2" fill="#DFD5F5" /><rect x="0" y="3" width="2" height="1" fill="#DFD5F5" /><rect x="5" y="3" width="2" height="1" fill="#DFD5F5" /><rect x="2" y="2" width="3" height="3" fill="#DFD5F5" /></SvgWrap>;
+  if (type === "flower") return <SvgWrap className={`${active ? "animate-[spin_6s_linear_infinite_reverse]" : ""} origin-center`}><rect x="2" y="0" width="3" height="2" fill="#FF8FB3" /><rect x="0" y="2" width="2" height="3" fill="#FF8FB3" /><rect x="5" y="2" width="2" height="3" fill="#FF8FB3" /><rect x="2" y="5" width="3" height="2" fill="#FF8FB3" /><rect x="2" y="2" width="3" height="3" fill="#FFE4A1" /></SvgWrap>;
+  if (type === "banana") return <div className="text-4xl font-sans select-none origin-center mt-2">🍌</div>;
   return null;
+});
+Sticker.displayName = "Sticker";
+
+interface DraggableCropImageProps {
+  item: BentoItem;
+  onImageClick?: (src: string | null) => void;
+  positions?: Record<string, { x: number; y: number }>;
+  setPosAbsolute?: (src: string, x: number, y: number) => void;
+  onCropEnd?: (src: string, x: number, y: number) => void;
+  editMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: () => void;
 }
 
-function DraggableCropImage({ item, onImageClick, positions, setPosAbsolute, onCropEnd, editMode, isSelected, onSelect }: any) {
+const DraggableCropImage = React.memo(function DraggableCropImage({ item, onImageClick, positions, setPosAbsolute, onCropEnd, editMode, isSelected, onSelect }: DraggableCropImageProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [hasDragged, setHasDragged] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
@@ -114,9 +210,17 @@ function DraggableCropImage({ item, onImageClick, positions, setPosAbsolute, onC
     }
   };
 
+  if (item.src?.endsWith('.mp4')) {
+    return (
+      <div className="relative w-full h-full bg-[#151728] overflow-hidden rounded-lg flex items-center justify-center">
+        <video src={item.src} className="w-full h-full object-cover" muted playsInline />
+      </div>
+    );
+  }
+
   return (
     <div
-      className={`relative w-full h-full bg-white overflow-hidden rounded-lg cursor-pointer group transition-all duration-500 ease-out hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(255,182,193,0.4)] hover:z-20 ${isSelected ? 'ring-4 ring-[#FF8FB3] scale-95 opacity-80' : ''}`}
+      className={`relative w-full h-full bg-white overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 ease-out ${isSelected ? 'ring-4 ring-[#FF8FB3] scale-95 opacity-80' : ''}`}
       onPointerDown={handlePointerDown}
       onPointerMove={editMode ? handlePointerMove : undefined}
       onPointerUp={editMode ? handlePointerUp : undefined}
@@ -125,24 +229,245 @@ function DraggableCropImage({ item, onImageClick, positions, setPosAbsolute, onC
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={item.src}
+        src={gridSrc(item.src)}
         alt="memory"
-        className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500"
+        className="w-full h-full object-cover"
         style={{
           objectPosition: `${currentX}% ${currentY}%`
         }}
         draggable={false}
+        decoding="async"
+        onError={(e) => {
+          const target = e.currentTarget;
+          if (!target.dataset.fallback) {
+            target.dataset.fallback = "full";
+            target.src = fullSrc(item.src);
+          } else if (target.dataset.fallback === "full") {
+            target.dataset.fallback = "orig";
+            target.src = item.src;
+          }
+        }}
       />
-      <div className="absolute inset-0 bg-[#FFF0DC]/10 mix-blend-multiply pointer-events-none" />
+      <div className="absolute inset-0 bg-[#FFF0DC]/10 pointer-events-none" />
 
       {/* Inner 3D Shading on images to make them feel embedded */}
       <div className="absolute inset-0 shadow-[inset_1px_2px_4px_rgba(0,0,0,0.1)] pointer-events-none" />
     </div>
   );
-}
+});
 
-function PageContent({
-  data, onImageClick, positions, setPosAbsolute, onCropEnd, editMode, selectedFrame, onFrameClick, spreadIdx, side, onTurnPage, totalSpreads
+const VideoFrame = React.memo(function VideoFrame({
+  src,
+  isCurrentSpread,
+  onGoToCover,
+  editMode,
+}: {
+  src: string;
+  isCurrentSpread?: boolean;
+  onGoToCover?: () => void;
+  editMode?: boolean;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [showControls, setShowControls] = useState(false);
+
+  // Guarantee sound is unmuted and at 100% volume by default
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+      videoRef.current.volume = 1.0;
+    }
+  }, []);
+
+  // Auto-pause video when turned away from this page
+  useEffect(() => {
+    if (!isCurrentSpread && videoRef.current && !videoRef.current.paused) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, [isCurrentSpread]);
+
+  const togglePlay = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!videoRef.current) return;
+    // Explicitly unmute and set full volume on user interaction
+    videoRef.current.muted = false;
+    videoRef.current.volume = 1.0;
+    setIsMuted(false);
+
+    if (videoRef.current.paused) {
+      videoRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch((err) => {
+        console.warn("Playback prevented:", err);
+      });
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    videoRef.current.muted = !videoRef.current.muted;
+    setIsMuted(videoRef.current.muted);
+  };
+
+  const handleTimeUpdate = () => {
+    if (!videoRef.current || !videoRef.current.duration) return;
+    setProgress((videoRef.current.currentTime / videoRef.current.duration) * 100);
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (!videoRef.current || !videoRef.current.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    videoRef.current.currentTime = pos * videoRef.current.duration;
+  };
+
+  return (
+    <div className="relative w-full h-full flex flex-col items-center justify-between p-1 sm:p-2 min-h-0">
+      {/* Massive Retro Camcorder / Video Reel TV Console Chassis */}
+      <div
+        className="relative bg-[#1A1830] p-2.5 sm:p-3.5 pb-2 sm:pb-3 rounded-[24px] sm:rounded-[32px] border-4 border-[#35305B] shadow-[0_18px_45px_rgba(20,10,35,0.45),inset_0_2px_4px_rgba(255,255,255,0.12)] flex flex-col items-center w-full max-w-[98%] sm:max-w-[96%] h-full max-h-[96%] my-auto min-h-0 overflow-hidden"
+        onMouseEnter={() => setShowControls(true)}
+        onMouseLeave={() => setShowControls(false)}
+      >
+        {/* Retro Header Bar: REC light, Timecode & Sound badge */}
+        <div className="w-full flex items-center justify-between px-2 sm:px-3 py-1 mb-1.5 bg-[#121024] rounded-xl border border-[#2B2748] shrink-0 pointer-events-none">
+          <div className="flex items-center gap-1.5 font-pixel text-[9px] sm:text-[10px] text-[#A8FFB2]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#FF4757] animate-pulse inline-block shadow-[0_0_8px_#FF4757]" />
+            <span className="font-bold tracking-wider">REC ● 00:24:16</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-pixel text-[8px] sm:text-[9px] text-[#FF8FB3] tracking-widest uppercase font-bold">
+              ✦ FINAL REEL ✦
+            </span>
+            <span className="font-pixel text-[8px] sm:text-[9px] px-1.5 py-0.5 bg-[#2B2748] rounded text-[#FFE4A1] font-bold">
+              STEREO 🔊
+            </span>
+          </div>
+        </div>
+
+        {/* Large CRT Screen Bezel (Maximized Screen Size) */}
+        <div
+          className="relative flex-1 w-full flex items-center justify-center min-h-0 overflow-hidden rounded-2xl border-3 border-[#0D0B1A] bg-black shadow-[inset_0_4px_24px_rgba(0,0,0,0.9)] group cursor-pointer"
+          onClick={togglePlay}
+        >
+          <video
+            ref={videoRef}
+            src={src}
+            playsInline
+            loop
+            preload="metadata"
+            muted={false}
+            className="w-full h-full object-contain sm:object-cover"
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onEnded={() => setIsPlaying(false)}
+            onTimeUpdate={handleTimeUpdate}
+          />
+
+          {/* CRT Scanline & Lens Shimmer */}
+          <div className="absolute inset-0 pointer-events-none opacity-20 mix-blend-screen bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.3)_50%)] bg-[length:100%_4px]" />
+          <div className="absolute inset-0 pointer-events-none opacity-25 mix-blend-overlay bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
+
+          {/* Inviting Play Button Overlay with UNMUTED AUDIO indicator */}
+          {!isPlaying && (
+            <div className="absolute inset-0 bg-[#0E0B1E]/75 flex items-center justify-center z-30 transition-opacity">
+              <button
+                onClick={togglePlay}
+                className="px-5 py-3 sm:px-7 sm:py-3.5 rounded-full bg-[#FF8FB3] hover:bg-[#FF739D] border-3 border-white shadow-[0_8px_25px_rgba(255,143,179,0.5),3px_3px_0_#121024] text-white font-pixel text-xs sm:text-sm flex items-center gap-2.5 [@media(hover:hover)]:hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+              >
+                <span className="text-base sm:text-lg">▶</span>
+                <span className="tracking-wider font-bold">PLAY VIDEO (AUDIO ON 🔊)</span>
+              </button>
+            </div>
+          )}
+
+          {/* Floating Retro Controls Bar */}
+          <div
+            className={`absolute bottom-2 inset-x-2 sm:inset-x-3 z-30 flex items-center justify-between px-3 py-1.5 sm:py-2 bg-[#121024]/95 rounded-xl border border-white/20 transition-opacity duration-300 pointer-events-auto ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={togglePlay}
+              className="text-white hover:text-[#FFE4A1] font-pixel text-xs sm:text-sm px-1 cursor-pointer"
+              title={isPlaying ? "Pause" : "Play"}
+            >
+              {isPlaying ? "❚❚" : "▶"}
+            </button>
+
+            {/* Progress Bar */}
+            <div
+              className="flex-1 mx-2 sm:mx-3 h-2 bg-white/20 hover:h-2.5 transition-all rounded-full overflow-hidden cursor-pointer"
+              onClick={handleSeek}
+            >
+              <div className="h-full bg-gradient-to-r from-[#FF8FB3] to-[#FFE4A1]" style={{ width: `${progress}%` }} />
+            </div>
+
+            {/* Mute / Unmute */}
+            <button
+              onClick={toggleMute}
+              className="text-white hover:text-[#FFE4A1] text-sm px-1 cursor-pointer"
+              title={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? "🔇" : "🔊"}
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Console Strip: Speaker Grill & Replay */}
+        <div className="w-full flex items-center justify-between px-2 pt-2 mt-1 shrink-0">
+          <div className="flex items-center gap-1 opacity-60">
+            {[0, 1, 2, 3, 4, 5].map((dot) => (
+              <span key={dot} className="w-1.5 h-1.5 rounded-full bg-[#35305B]" />
+            ))}
+          </div>
+
+          <div className="font-pixel text-[9px] sm:text-[10px] text-[#FF8FB3] font-bold tracking-widest uppercase">
+            ✦ SPECIAL MEMORY 🎬✨ ✦
+          </div>
+
+          {onGoToCover ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onGoToCover();
+              }}
+              className="px-3 py-1 bg-[#282444] hover:bg-[#35305B] border border-[#FF8FB3]/60 rounded-full text-white font-pixel text-[9px] sm:text-[10px] flex items-center gap-1 shadow-sm transition-all [@media(hover:hover)]:hover:-translate-y-0.5 cursor-pointer pointer-events-auto"
+            >
+              <span>↺</span>
+              <span>COVER</span>
+            </button>
+          ) : (
+            <div className="w-12" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+const PageContent = React.memo(function PageContent({
+  data,
+  onImageClick,
+  positions,
+  setPosAbsolute,
+  onCropEnd,
+  editMode,
+  selectedFrame,
+  onFrameClick,
+  spreadIdx,
+  side,
+  onTurnPage,
+  totalSpreads,
+  isCurrentSpread,
+  onGoToCover,
 }: {
   data: PageData,
   onImageClick?: (src: string | null) => void,
@@ -155,25 +480,147 @@ function PageContent({
   spreadIdx: number,
   side: 'left' | 'right',
   onTurnPage?: (dir: number) => void,
-  totalSpreads?: number
+  totalSpreads?: number,
+  isCurrentSpread?: boolean,
+  onGoToCover?: () => void,
 }) {
   if (data.pageTitle === "COVER") {
     return (
-      <div className="absolute inset-0 bg-[#FFB6C1] flex flex-col items-center justify-center overflow-hidden border-4 border-[#FFD0DC]">
+      <div
+        className="absolute inset-0 bg-[#FFB6C1] flex flex-col items-center justify-between p-2 sm:p-3 pb-2 overflow-hidden border-4 border-[#FFD0DC] select-none cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          onTurnPage?.(1);
+        }}
+      >
         <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: "radial-gradient(#ffffff 2px, transparent 2px)", backgroundSize: "24px 24px" }} />
-        <div className="relative font-pixel text-4xl sm:text-6xl text-white drop-shadow-[4px_4px_0_#20233F] rotate-[-2deg] mb-12 text-center px-4 leading-tight z-10 pointer-events-none flex flex-col items-center gap-4">
-          <span>BANANA<br />BOOK</span>
-          <div className="scale-150"><Sticker type="banana" /></div>
+
+        {/* Top Title Banner */}
+        <div className="relative z-10 flex items-center justify-center gap-2 sm:gap-3 shrink-0 pt-0.5 pointer-events-none">
+          <span className="font-pixel text-2xl sm:text-4xl text-white drop-shadow-[3px_3px_0_#20233F] rotate-[-2deg] tracking-wider">
+            BANANA BOOK
+          </span>
+          <div className="scale-100 sm:scale-125 -rotate-6">
+            <Sticker type="banana" />
+          </div>
         </div>
-        <div className="relative font-pixel text-[#20233F] text-xs sm:text-sm animate-bounce drop-shadow-[1px_1px_0_white] bg-white/70 backdrop-blur-sm px-6 py-3 rounded-full border-2 border-white z-10 pointer-events-none">
+
+        {/* Center: Deluxe Ornate Keepsake Frame (Enlarged) */}
+        <div className="relative z-10 flex-1 flex items-center justify-center w-full my-1 pointer-events-none min-h-0">
+          <div className="relative bg-[#FFFDF7] p-2.5 sm:p-3.5 pb-3.5 sm:pb-5 rounded-2xl shadow-[0_18px_38px_rgba(32,35,63,0.28),0_4px_14px_rgba(255,143,179,0.4)] border-4 border-[#FFD0DC] ring-4 ring-[#FFE4A1] ring-offset-2 ring-offset-[#FFB6C1] rotate-[-1deg] flex flex-col items-center max-h-full w-auto max-w-[94%] sm:max-w-[90%]">
+            
+            {/* Top Deluxe Ribbon & Bow Badge */}
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-0.5 bg-[#FFE4A1] border-2 border-[#20233F] rounded-full shadow-[2px_2px_0_#20233F] -rotate-1">
+              <span className="text-xs">🎀</span>
+              <span className="font-pixel text-[9px] sm:text-[10px] text-[#20233F] font-bold tracking-widest uppercase">
+                MEMORIES ALBUM
+              </span>
+              <span className="text-xs">✦</span>
+            </div>
+
+            {/* Corner Decorative Accent Gems */}
+            <div className="absolute -top-3 -right-3 z-20 scale-95">
+              <Sticker type="sparkle" active={isCurrentSpread} />
+            </div>
+            <div className="absolute -bottom-3 -left-3 z-20 scale-85">
+              <Sticker type="flower" active={isCurrentSpread} />
+            </div>
+
+            {/* Inner Photo Frame with 4 Vintage Mounting Corners (Enlarged) */}
+            <div className="relative overflow-hidden rounded-xl border-3 border-[#20233F]/20 bg-[#20233F]/5 aspect-[2/3] max-h-[50vh] sm:max-h-[55vh] w-auto shadow-[inset_0_2px_8px_rgba(0,0,0,0.15)] mt-1">
+              
+              {/* 4 Vintage Triangular Photo Mounting Corners */}
+              <div className="absolute top-0 left-0 w-5 h-5 border-t-4 border-l-4 border-[#E5B25D] z-20 pointer-events-none rounded-tl-sm shadow-sm" />
+              <div className="absolute top-0 right-0 w-5 h-5 border-t-4 border-r-4 border-[#E5B25D] z-20 pointer-events-none rounded-tr-sm shadow-sm" />
+              <div className="absolute bottom-0 left-0 w-5 h-5 border-b-4 border-l-4 border-[#E5B25D] z-20 pointer-events-none rounded-bl-sm shadow-sm" />
+              <div className="absolute bottom-0 right-0 w-5 h-5 border-b-4 border-r-4 border-[#E5B25D] z-20 pointer-events-none rounded-br-sm shadow-sm" />
+
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/grid/img.webp"
+                alt="Scrapbook Cover"
+                className="w-full h-full object-cover"
+                draggable={false}
+                decoding="async"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.dataset.fallback) {
+                    target.dataset.fallback = "true";
+                    target.src = "/images/img.jpeg";
+                  }
+                }}
+              />
+              <div className="absolute inset-0 bg-[#FFF0DC]/10 pointer-events-none" />
+            </div>
+
+            {/* Polaroid Chin Label */}
+            <div className="mt-1.5 sm:mt-2 text-center flex items-center justify-center gap-1.5 px-3 py-0.5 bg-[#FFF0F5] border border-[#FFB6C1] rounded-full shadow-sm">
+              <span className="font-pixel text-[9px] sm:text-[11px] text-[#881337] font-bold tracking-widest uppercase">
+                ✦ ARH ✦ SPECIAL MOMENTS ✦
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Call-to-action */}
+        <div className="relative z-10 font-pixel text-[#20233F] text-xs sm:text-sm drop-shadow-[1px_1px_0_white] bg-white/95 px-6 py-1.5 rounded-full border-2 border-white shadow-[2px_2px_0_#FFB6C1] shrink-0 pointer-events-none mb-0.5 [@media(hover:hover)]:hover:scale-105 transition-transform">
           ✦ ISKO DABAO ✦
         </div>
       </div>
     );
   }
 
+  const isVideoPage = data.pageTitle === "THE END ✦" || data.items.some(i => i.src?.endsWith('.mp4') || i.src?.includes('vid.mp4'));
+
+  if (isVideoPage) {
+    const videoSrc = data.items.find(i => i.src?.endsWith('.mp4'))?.src || "/videos/vid.mp4";
+    return (
+      <div className="relative w-full h-full p-2 sm:p-3 pb-2 flex flex-col overflow-hidden select-none" style={{ backgroundColor: "#FFB6C1" }}>
+        {/* Cute Pastel Pattern overlay */}
+        <div className="absolute inset-0 opacity-100 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#FFE4A1 1.5px, transparent 1.5px)', backgroundSize: '24px 24px' }} />
+
+        {data.pageTitle && (
+          <h2 className="relative font-pixel text-[#FF8FB3] text-base sm:text-xl font-bold mb-1 z-10 text-center tracking-widest uppercase drop-shadow-[2px_2px_0_white] shrink-0">
+            {data.pageTitle}
+          </h2>
+        )}
+
+        <div className="flex-1 relative z-10 w-full min-h-0 flex items-center justify-center">
+          <VideoFrame
+            src={videoSrc}
+            isCurrentSpread={isCurrentSpread}
+            onGoToCover={onGoToCover}
+            editMode={editMode}
+          />
+        </div>
+
+        {/* Page Navigation Buttons */}
+        <div className={`absolute bottom-3 sm:bottom-4 ${side === 'left' ? 'left-3 sm:left-4' : 'right-3 sm:right-4'} z-50 pointer-events-none`}>
+          {side === 'left' && spreadIdx > 0 && onTurnPage && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onTurnPage(-1); }}
+              className="px-3 py-1.5 bg-white/90 rounded-full shadow-[2px_2px_0_rgba(255,182,193,0.8)] font-pixel text-xs text-[#20233F] hover:bg-[#FFD0DC] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:-rotate-2 transition-all border-2 border-white pointer-events-auto cursor-pointer"
+            >
+              ◀ PICHE
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative w-full h-full p-4 sm:p-6 lg:p-8 flex flex-col overflow-hidden" style={{ backgroundColor: "#FFB6C1" }}>
+    <div
+      className="relative w-full h-full p-4 sm:p-6 lg:p-8 flex flex-col overflow-hidden select-none cursor-pointer"
+      style={{ backgroundColor: "#FFB6C1" }}
+      onClick={(e) => {
+        if (side === 'right' && onTurnPage && spreadIdx < (totalSpreads || 1) - 1 && data.pageTitle !== "COVER") {
+          onTurnPage(1);
+        } else if (side === 'left' && onTurnPage && spreadIdx > 0) {
+          onTurnPage(-1);
+        }
+      }}
+    >
       {/* Cute Pastel Pattern overlay */}
       <div className="absolute inset-0 opacity-100 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#FFE4A1 1.5px, transparent 1.5px)', backgroundSize: '24px 24px' }} />
 
@@ -188,7 +635,7 @@ function PageContent({
           {data.items.map((item, idx) => (
             <div
               key={idx}
-              className="relative p-1.5 sm:p-2 bg-white shadow-[2px_4px_12px_rgba(255,182,193,0.3)] rounded-xl border-2 border-[#FFD0DC]/40 group hover:scale-[1.02] hover:-rotate-1 transition-all duration-500"
+              className="relative p-1.5 sm:p-2 bg-white shadow-[2px_4px_12px_rgba(255,182,193,0.3)] rounded-xl border-2 border-[#FFD0DC]/40 group [@media(hover:hover)]:hover:scale-[1.02] [@media(hover:hover)]:hover:-rotate-1 transition-transform duration-300"
               style={{
                 gridColumn: `${item.col + 1} / span ${item.colSpan}`,
                 gridRow: `${item.row + 1} / span ${item.rowSpan}`,
@@ -207,7 +654,7 @@ function PageContent({
 
               {item.tapeColor && (
                 <div
-                  className="absolute -top-3 left-1/2 w-12 sm:w-16 h-5 z-20 opacity-80 mix-blend-multiply drop-shadow-sm pointer-events-none"
+                  className="absolute -top-3 left-1/2 w-12 sm:w-16 h-5 z-20 opacity-90 pointer-events-none"
                   style={{
                     backgroundColor: item.tapeColor,
                     transform: `translateX(-50%) rotate(${item.tapeAngle || 0}deg)`,
@@ -218,8 +665,8 @@ function PageContent({
               )}
 
               {item.sticker && (
-                <div className="absolute -bottom-5 -right-5 z-20 drop-shadow-[0_4px_8px_rgba(0,0,0,0.15)] group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300 pointer-events-none">
-                  <Sticker type={item.sticker} />
+                <div className="absolute -bottom-5 -right-5 z-20 [@media(hover:hover)]:group-hover:scale-110 [@media(hover:hover)]:group-hover:rotate-12 transition-transform duration-300 pointer-events-none">
+                  <Sticker type={item.sticker} active={isCurrentSpread} />
                 </div>
               )}
             </div>
@@ -232,7 +679,7 @@ function PageContent({
         {side === 'left' && spreadIdx > 0 && onTurnPage && (
           <button
             onClick={(e) => { e.stopPropagation(); onTurnPage(-1); }}
-            className="px-3 py-1.5 bg-white/80 backdrop-blur-md rounded-full shadow-[2px_2px_0_rgba(255,182,193,0.8)] font-pixel text-xs text-[#20233F] hover:bg-[#FFD0DC] hover:-translate-y-1 hover:-rotate-2 transition-all border-2 border-white pointer-events-auto"
+            className="px-3 py-1.5 bg-white/90 rounded-full shadow-[2px_2px_0_rgba(255,182,193,0.8)] font-pixel text-xs text-[#20233F] hover:bg-[#FFD0DC] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:-rotate-2 transition-all border-2 border-white pointer-events-auto cursor-pointer"
           >
             ◀ PICHE
           </button>
@@ -240,7 +687,7 @@ function PageContent({
         {side === 'right' && totalSpreads && spreadIdx < totalSpreads - 1 && data.pageTitle !== "COVER" && onTurnPage && (
           <button
             onClick={(e) => { e.stopPropagation(); onTurnPage(1); }}
-            className="px-3 py-1.5 bg-white/80 backdrop-blur-md rounded-full shadow-[2px_2px_0_rgba(255,182,193,0.8)] font-pixel text-xs text-[#20233F] hover:bg-[#FFD0DC] hover:-translate-y-1 hover:rotate-2 transition-all border-2 border-white pointer-events-auto"
+            className="px-3 py-1.5 bg-white/90 rounded-full shadow-[2px_2px_0_rgba(255,182,193,0.8)] font-pixel text-xs text-[#20233F] hover:bg-[#FFD0DC] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:rotate-2 transition-all border-2 border-white pointer-events-auto cursor-pointer"
           >
             AAGE ▶
           </button>
@@ -248,9 +695,11 @@ function PageContent({
       </div>
     </div>
   );
-}
+});
 
 export default function ThreeDScrapbook() {
+  const [mounted, setMounted] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const [appSpreads, setAppSpreads] = useState<SpreadData[]>([
     {
       left: { pageTitle: "", items: [] },
@@ -261,13 +710,31 @@ export default function ThreeDScrapbook() {
   const [editMode, setEditMode] = useState(false);
   const [selectedFrame, setSelectedFrame] = useState<{ spreadIdx: number, side: 'left' | 'right', itemIdx: number } | null>(null);
 
+  // 2.2-second cute Japanese loading screen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 2200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Enable smooth CSS transitions only after initial paint so the book starts rock-solid in closed state
+  useEffect(() => {
+    if (!mounted) return;
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [mounted]);
+
   useEffect(() => {
     let isCancelled = false;
-    const logError = (err: any) => {
+    const logError = (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
       fetch('/api/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'error', data: err?.message || err?.toString() })
+        body: JSON.stringify({ type: 'error', data: msg })
       }).catch(() => { });
     };
     const originalError = console.error;
@@ -326,25 +793,19 @@ export default function ThreeDScrapbook() {
       if (!isCancelled) {
         setAppSpreads(finalLayout);
 
-        // Now preload images of the first spread
+        // Preload first spread images (grid versions)
         const firstImages = [
-          ...finalLayout[0]?.left.items.map(i => i.src) || [],
-          ...finalLayout[0]?.right.items.map(i => i.src) || [],
-          ...finalLayout[1]?.left.items.map(i => i.src) || [],
-          ...finalLayout[1]?.right.items.map(i => i.src) || []
-        ];
+          gridSrc('/images/img.jpeg'),
+          ...((finalLayout[0]?.left.items || []).map(i => gridSrc(i.src))),
+          ...((finalLayout[0]?.right.items || []).map(i => gridSrc(i.src))),
+          ...((finalLayout[1]?.left.items || []).map(i => gridSrc(i.src))),
+          ...((finalLayout[1]?.right.items || []).map(i => gridSrc(i.src)))
+        ].filter(src => src && !src.endsWith('.mp4') && !src.endsWith('.webm'));
 
-        let loaded = 0;
         firstImages.forEach(src => {
           const img = new Image();
-          img.onload = () => { loaded++; };
-          img.onerror = () => { loaded++; };
           img.src = src;
         });
-
-        setTimeout(() => {
-          if (!isCancelled) setMounted(true);
-        }, 2500);
       }
     };
 
@@ -363,6 +824,31 @@ export default function ThreeDScrapbook() {
   const [flippingDir, setFlippingDir] = useState(0);
   const [inspectImage, setInspectImage] = useState<string | null>(null);
 
+  const preloadedImagesRef = useRef<Set<string>>(new Set());
+
+  // Preload images for spread currentSpread + 2 (and +3) so flipping never shows blank pages (grid versions only)
+  useEffect(() => {
+    const aheadSpreads = [currentSpread + 2, currentSpread + 3];
+    aheadSpreads.forEach(spreadIdx => {
+      const spread = appSpreads[spreadIdx];
+      if (spread) {
+        const images = [
+          ...(spread.left?.items || []).map(i => i.src),
+          ...(spread.right?.items || []).map(i => i.src)
+        ].filter(src => src && !src.endsWith('.mp4') && !src.endsWith('.webm'));
+
+        images.forEach(src => {
+          const targetSrc = gridSrc(src);
+          if (!preloadedImagesRef.current.has(targetSrc)) {
+            preloadedImagesRef.current.add(targetSrc);
+            const img = new Image();
+            img.src = targetSrc;
+          }
+        });
+      }
+    });
+  }, [currentSpread, appSpreads]);
+
   const [positions, setPositions] = useState<Record<string, { x: number, y: number }>>({});
 
   // Fullscreen image inspect refs & state
@@ -373,18 +859,152 @@ export default function ThreeDScrapbook() {
   const [carouselReady, setCarouselReady] = useState(false);
   const [showScrollHint, setShowScrollHint] = useState(false);
 
+  // Smooth scroll & momentum physics refs for inspect carousel
+  const carouselTargetScrollRef = useRef<number | null>(null);
+  const carouselRafRef = useRef<number | null>(null);
+  const carouselWheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 3D Scrapbook wheel page-turning refs
+  const lastBookWheelRef = useRef<number>(0);
+  const bookWheelDeltaRef = useRef<number>(0);
+
+  // Cleanup scroll RAF and timers on unmount
+  useEffect(() => {
+    return () => {
+      if (carouselRafRef.current) cancelAnimationFrame(carouselRafRef.current);
+      if (carouselWheelTimeoutRef.current) clearTimeout(carouselWheelTimeoutRef.current);
+    };
+  }, []);
+
   const allImages = React.useMemo(() => {
-    return appSpreads.flatMap(s => [...s.left.items, ...s.right.items].map(i => i.src));
+    return appSpreads
+      .flatMap(s => [...s.left.items, ...s.right.items].map(i => i.src))
+      .filter(src => src && !src.endsWith('.mp4') && !src.endsWith('.webm'));
   }, [appSpreads]);
 
+  const snapToNearestCard = useCallback(() => {
+    const container = carouselRef.current;
+    if (!container) return;
+
+    if (carouselRafRef.current) {
+      cancelAnimationFrame(carouselRafRef.current);
+      carouselRafRef.current = null;
+    }
+    carouselTargetScrollRef.current = null;
+
+    const containerCenter = container.scrollLeft + container.clientWidth / 2;
+    const items = Array.from(container.children).filter(
+      (c) => c.tagName !== 'STYLE' && (c as HTMLElement).offsetLeft !== undefined
+    ) as HTMLElement[];
+
+    if (items.length === 0) return;
+
+    let closestItem = items[0];
+    let minDiff = Infinity;
+
+    items.forEach((item) => {
+      const itemCenter = item.offsetLeft + item.offsetWidth / 2;
+      const diff = Math.abs(containerCenter - itemCenter);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestItem = item;
+      }
+    });
+
+    const targetLeft =
+      closestItem.offsetLeft - container.clientWidth / 2 + closestItem.offsetWidth / 2;
+
+    container.scrollTo({ left: targetLeft, behavior: 'smooth' });
+
+    // Re-enable CSS scroll snap after the smooth glide finishes
+    setTimeout(() => {
+      if (carouselRef.current) {
+        carouselRef.current.style.scrollSnapType = '';
+        carouselRef.current.style.scrollBehavior = '';
+      }
+    }, 350);
+  }, []);
+
+  const handleCarouselWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const container = carouselRef.current;
+    if (!container) return;
+
+    // Pick dominant delta (mouse wheel deltaY or trackpad deltaX)
+    const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (!delta) return;
+
+    // Immediately disable scroll-snap and CSS smooth scrolling so native snap engine doesn't fight the wheel
+    if (container.style.scrollSnapType !== 'none') {
+      container.style.scrollSnapType = 'none';
+      container.style.scrollBehavior = 'auto';
+    }
+
+    const maxScroll = container.scrollWidth - container.clientWidth;
+    if (carouselTargetScrollRef.current === null) {
+      carouselTargetScrollRef.current = container.scrollLeft;
+    }
+
+    // Accumulate target with smooth factor
+    carouselTargetScrollRef.current = Math.max(
+      0,
+      Math.min(maxScroll, carouselTargetScrollRef.current + delta * 0.95)
+    );
+
+    // Exponential smoothing RAF loop
+    if (!carouselRafRef.current) {
+      const step = () => {
+        if (!carouselRef.current || carouselTargetScrollRef.current === null) {
+          carouselRafRef.current = null;
+          return;
+        }
+        const current = carouselRef.current.scrollLeft;
+        const target = carouselTargetScrollRef.current;
+        const diff = target - current;
+
+        if (Math.abs(diff) > 0.5) {
+          carouselRef.current.scrollLeft = current + diff * 0.22;
+          carouselRafRef.current = requestAnimationFrame(step);
+        } else {
+          carouselRef.current.scrollLeft = target;
+          carouselRafRef.current = null;
+        }
+      };
+      carouselRafRef.current = requestAnimationFrame(step);
+    }
+
+    // Debounced snap settling once wheel events stop
+    if (carouselWheelTimeoutRef.current) {
+      clearTimeout(carouselWheelTimeoutRef.current);
+    }
+    carouselWheelTimeoutRef.current = setTimeout(() => {
+      snapToNearestCard();
+    }, 160);
+  }, [snapToNearestCard]);
+
   const openInspect = useCallback((src: string | null) => {
-    if (!src) return;
+    if (!src || src.endsWith('.mp4') || src.endsWith('.webm')) return;
     setCarouselReady(false);
     setInspectImage(src);
     setInspectVisible(true);
     setShowScrollHint(true);
     setTimeout(() => setShowScrollHint(false), 3500);
-  }, []);
+
+    // Preload full version only for clicked image and its immediate neighbours (+/-1)
+    const idx = allImages.indexOf(src);
+    if (idx !== -1) {
+      const toPreloadIndices = [idx - 1, idx, idx + 1];
+      toPreloadIndices.forEach((i) => {
+        if (i >= 0 && i < allImages.length) {
+          const fullPath = fullSrc(allImages[i]);
+          if (!preloadedImagesRef.current.has(fullPath)) {
+            preloadedImagesRef.current.add(fullPath);
+            const img = new Image();
+            img.src = fullPath;
+          }
+        }
+      });
+    }
+  }, [allImages]);
 
   useLayoutEffect(() => {
     if (inspectVisible && inspectImage && carouselRef.current) {
@@ -407,6 +1027,16 @@ export default function ThreeDScrapbook() {
   }, [inspectVisible, inspectImage, allImages]);
 
   const closeInspect = useCallback(() => {
+    if (carouselRafRef.current) {
+      cancelAnimationFrame(carouselRafRef.current);
+      carouselRafRef.current = null;
+    }
+    if (carouselWheelTimeoutRef.current) {
+      clearTimeout(carouselWheelTimeoutRef.current);
+      carouselWheelTimeoutRef.current = null;
+    }
+    carouselTargetScrollRef.current = null;
+
     if (overlayRef.current) {
       overlayRef.current.style.opacity = '0';
       overlayRef.current.style.transform = 'scale(0.98)';
@@ -429,11 +1059,26 @@ export default function ThreeDScrapbook() {
     }
   }, []);
 
-  const setPosAbsolute = (src: string, x: number, y: number) => {
-    setPositions(prev => ({ ...prev, [src]: { x, y } }));
-  };
+  const bookStateRef = useRef({ currentSpread, flippingIndex, len: appSpreads.length });
+  useEffect(() => {
+    bookStateRef.current = { currentSpread, flippingIndex, len: appSpreads.length };
+  }, [currentSpread, flippingIndex, appSpreads.length]);
 
-  const handleCropEnd = (src: string, x: number, y: number) => {
+  const flipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (flipTimeoutRef.current) {
+        clearTimeout(flipTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const setPosAbsolute = useCallback((src: string, x: number, y: number) => {
+    setPositions(prev => ({ ...prev, [src]: { x, y } }));
+  }, []);
+
+  const handleCropEnd = useCallback((src: string, x: number, y: number) => {
     // Instantly bake the new crop position into appSpreads and localStorage
     setAppSpreads(prev => {
       const newSpreads = JSON.parse(JSON.stringify(prev));
@@ -455,9 +1100,9 @@ export default function ThreeDScrapbook() {
       delete next[src];
       return next;
     });
-  };
+  }, []);
 
-  const handleFrameClick = (spreadIdx: number, side: 'left' | 'right', itemIdx: number) => {
+  const handleFrameClick = useCallback((spreadIdx: number, side: 'left' | 'right', itemIdx: number) => {
     if (!editMode) return;
     if (!selectedFrame) {
       setSelectedFrame({ spreadIdx, side, itemIdx });
@@ -481,9 +1126,9 @@ export default function ThreeDScrapbook() {
       });
       setSelectedFrame(null);
     }
-  };
+  }, [editMode, selectedFrame]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     const newSpreads = JSON.parse(JSON.stringify(appSpreads));
 
     // Update local state instantly
@@ -512,9 +1157,9 @@ export default function ThreeDScrapbook() {
       console.log(`API SAVE NETWORK ERROR: ${e}`);
       alert("Failed to save to JSON file due to a network error.");
     }
-  };
+  }, [appSpreads]);
 
-  const handleExportCode = () => {
+  const handleExportCode = useCallback(() => {
     const finalSpreads = JSON.parse(JSON.stringify(appSpreads));
     const dataToExport = finalSpreads.length > 0 && finalSpreads[0].right?.pageTitle === "COVER"
       ? finalSpreads.slice(1)
@@ -530,21 +1175,18 @@ export default function ThreeDScrapbook() {
         win.document.write(`<pre style="font-family:monospace;font-size:12px;padding:20px;white-space:pre-wrap">${code}</pre>`);
       }
     });
-  };
+  }, [appSpreads]);
 
-  const turnPage = (dir: number) => {
+  const turnPage = useCallback((dir: number) => {
+    const { currentSpread, flippingIndex, len } = bookStateRef.current;
     if (flippingIndex !== -1) return;
     const targetIdx = currentSpread + dir;
-    if (targetIdx < 0 || targetIdx >= appSpreads.length) {
+    if (targetIdx < 0 || targetIdx >= len) {
       return;
     }
 
-    try {
-      if (flipAudio) {
-        flipAudio.currentTime = 0;
-        flipAudio.play().catch(() => { });
-      }
-    } catch { }
+    // Play audio immediately with zero latency
+    playFlipSound();
 
     const leafIdx = dir > 0 ? currentSpread : targetIdx;
 
@@ -552,10 +1194,51 @@ export default function ThreeDScrapbook() {
     setFlippingDir(dir);
     setCurrentSpread(targetIdx);
 
-    setTimeout(() => {
+    if (flipTimeoutRef.current) {
+      clearTimeout(flipTimeoutRef.current);
+    }
+    flipTimeoutRef.current = setTimeout(() => {
       setFlippingIndex(-1);
-    }, 1200);
-  };
+      flipTimeoutRef.current = null;
+    }, 720);
+  }, []);
+
+  const handleBookWheel = useCallback((e: React.WheelEvent) => {
+    if (inspectVisible) return;
+    const now = Date.now();
+    // Cooldown during flip animation (750ms) to prevent collision
+    if (now - lastBookWheelRef.current < 800 || bookStateRef.current.flippingIndex !== -1) {
+      return;
+    }
+    const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    bookWheelDeltaRef.current += delta;
+
+    if (Math.abs(bookWheelDeltaRef.current) > 30) {
+      if (bookWheelDeltaRef.current > 0) {
+        turnPage(1);
+      } else {
+        turnPage(-1);
+      }
+      bookWheelDeltaRef.current = 0;
+      lastBookWheelRef.current = now;
+    }
+  }, [inspectVisible, turnPage]);
+
+  const goToCover = useCallback(() => {
+    const { currentSpread, flippingIndex } = bookStateRef.current;
+    if (flippingIndex !== -1 || currentSpread === 0) return;
+    playFlipSound();
+    setFlippingIndex(0);
+    setFlippingDir(-1);
+    setCurrentSpread(0);
+    if (flipTimeoutRef.current) {
+      clearTimeout(flipTimeoutRef.current);
+    }
+    flipTimeoutRef.current = setTimeout(() => {
+      setFlippingIndex(-1);
+      flipTimeoutRef.current = null;
+    }, 750);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -570,10 +1253,7 @@ export default function ThreeDScrapbook() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentSpread, flippingIndex, inspectVisible, navigateInspect, closeInspect]);
-
-  const [mounted, setMounted] = useState(false);
-  // `mounted` handles the preloading inside the massive useEffect above!
+  }, [inspectVisible, navigateInspect, closeInspect, turnPage]);
 
   if (!mounted) {
     return (
@@ -607,10 +1287,10 @@ export default function ThreeDScrapbook() {
 
         {/* Viewport borders progress bar */}
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
-          <div className="absolute top-0 left-0 h-2 sm:h-3 bg-[#FFB6C1] w-0" style={{ animation: 'border-draw-h 0.625s linear forwards' }} />
-          <div className="absolute top-0 right-0 w-2 sm:w-3 bg-[#FFE4A1] h-0" style={{ animation: 'border-draw-v 0.625s linear 0.625s forwards' }} />
-          <div className="absolute bottom-0 right-0 h-2 sm:h-3 bg-[#A1C4FD] w-0" style={{ animation: 'border-draw-h 0.625s linear 1.25s forwards' }} />
-          <div className="absolute bottom-0 left-0 w-2 sm:w-3 bg-[#B8E6D0] h-0" style={{ animation: 'border-draw-v 0.625s linear 1.875s forwards' }} />
+          <div className="absolute top-0 left-0 h-2 sm:h-3 bg-[#FFB6C1] w-0" style={{ animation: 'border-draw-h 0.55s linear forwards' }} />
+          <div className="absolute top-0 right-0 w-2 sm:w-3 bg-[#FFE4A1] h-0" style={{ animation: 'border-draw-v 0.55s linear 0.55s forwards' }} />
+          <div className="absolute bottom-0 right-0 h-2 sm:h-3 bg-[#A1C4FD] w-0" style={{ animation: 'border-draw-h 0.55s linear 1.1s forwards' }} />
+          <div className="absolute bottom-0 left-0 w-2 sm:w-3 bg-[#B8E6D0] h-0" style={{ animation: 'border-draw-v 0.55s linear 1.65s forwards' }} />
         </div>
 
         <div className="scrapbook-loader-card">
@@ -627,7 +1307,7 @@ export default function ThreeDScrapbook() {
 
           {/* Dots row */}
           <div className="flex gap-2">
-            {[0,1,2,3,4].map((i) => (
+            {[0, 1, 2, 3, 4].map((i) => (
               <div
                 key={i}
                 className="w-2.5 h-2.5 rounded-full bg-[#FFB6C1]"
@@ -645,7 +1325,16 @@ export default function ThreeDScrapbook() {
   return (
     <div
       className="relative w-full h-[85vh] min-h-[600px] flex flex-col items-center justify-center overflow-visible"
+      style={{
+        animation: mounted ? "scrapbook-fade-in 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards" : "none"
+      }}
     >
+      <style>{`
+        @keyframes scrapbook-fade-in {
+          from { opacity: 0; transform: scale(0.95) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
       {/* Fullscreen Image Inspect Modal — Native Scroll Carousel via Portal */}
       {inspectVisible && inspectImage && typeof document !== 'undefined' && createPortal(
         <div
@@ -656,7 +1345,7 @@ export default function ThreeDScrapbook() {
         >
           {/* Close Button */}
           <button
-            className="absolute top-4 right-4 sm:top-8 sm:right-8 w-12 h-12 bg-white/10 hover:bg-white/30 rounded-full flex items-center justify-center text-white backdrop-blur-sm transition-colors z-[999999] cursor-pointer"
+            className="absolute top-4 right-4 sm:top-8 sm:right-8 w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-[999999] cursor-pointer"
             onClick={(e) => { e.stopPropagation(); closeInspect(); }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -667,46 +1356,36 @@ export default function ThreeDScrapbook() {
             ref={carouselRef}
             className={`w-full h-full flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory items-center px-[50vw] gap-2 sm:gap-4 ${carouselReady ? 'scroll-smooth' : ''} cursor-grab active:cursor-grabbing`}
             style={{ overscrollBehaviorX: 'none', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            onWheel={(e) => {
-              if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                if (carouselRef.current) {
-                  carouselRef.current.scrollBy({ left: e.deltaY, behavior: 'auto' });
-                }
-              }
-            }}
+            onWheel={handleCarouselWheel}
             onPointerDown={(e) => {
               carouselDragRef.current.isDragging = true;
-              carouselDragRef.current.startX = e.pageX - (carouselRef.current?.offsetLeft || 0);
+              carouselDragRef.current.startX = e.pageX;
               carouselDragRef.current.scrollLeft = carouselRef.current?.scrollLeft || 0;
               if (carouselRef.current) {
                 carouselRef.current.style.scrollSnapType = 'none';
                 carouselRef.current.style.scrollBehavior = 'auto';
               }
+              if (carouselRafRef.current) {
+                cancelAnimationFrame(carouselRafRef.current);
+                carouselRafRef.current = null;
+              }
+              carouselTargetScrollRef.current = null;
             }}
             onPointerLeave={() => {
               if (!carouselDragRef.current.isDragging) return;
               carouselDragRef.current.isDragging = false;
-              if (carouselRef.current) {
-                carouselRef.current.style.scrollSnapType = '';
-                carouselRef.current.style.scrollBehavior = '';
-              }
+              snapToNearestCard();
             }}
             onPointerUp={() => {
               if (!carouselDragRef.current.isDragging) return;
               carouselDragRef.current.isDragging = false;
-              if (carouselRef.current) {
-                carouselRef.current.style.scrollSnapType = '';
-                carouselRef.current.style.scrollBehavior = '';
-              }
+              snapToNearestCard();
             }}
             onPointerMove={(e) => {
-              if (!carouselDragRef.current.isDragging) return;
+              if (!carouselDragRef.current.isDragging || !carouselRef.current) return;
               e.preventDefault();
-              if (carouselRef.current) {
-                const x = e.pageX - carouselRef.current.offsetLeft;
-                const walk = (x - carouselDragRef.current.startX) * 1.5;
-                carouselRef.current.scrollLeft = carouselDragRef.current.scrollLeft - walk;
-              }
+              const walk = e.pageX - carouselDragRef.current.startX;
+              carouselRef.current.scrollLeft = carouselDragRef.current.scrollLeft - walk;
             }}
           >
             <style>{`
@@ -719,33 +1398,48 @@ export default function ThreeDScrapbook() {
                 className="flex-none snap-center flex items-center justify-center pointer-events-none"
               >
                 <div
-                  className={`relative max-w-[90vw] sm:max-w-[75vw] max-h-[90vh] p-1.5 sm:p-2 bg-white/40 backdrop-blur-3xl shadow-[0_10px_40px_rgba(255,190,210,0.4)] rounded-2xl border-2 border-white/60 pointer-events-auto transition-all duration-300 hover:scale-[1.02] cursor-zoom-out flex flex-col items-center group ${i % 2 === 0 ? 'rotate-1' : '-rotate-1'}`}
+                  className={`relative max-w-[90vw] sm:max-w-[75vw] max-h-[90vh] p-1.5 sm:p-2 bg-white/95 shadow-[0_10px_40px_rgba(255,190,210,0.4)] rounded-2xl border-2 border-white/60 pointer-events-auto transition-all duration-300 [@media(hover:hover)]:hover:scale-[1.02] cursor-zoom-out flex flex-col items-center group ${i % 2 === 0 ? 'rotate-1' : '-rotate-1'}`}
                   onClick={() => { closeInspect(); }}
                 >
                   {/* Randomized Kawaii Washi Tapes */}
                   {i % 2 === 0 ? (
-                    <div className="absolute -top-3 -left-3 sm:-top-4 sm:-left-6 w-12 sm:w-20 h-4 sm:h-5 bg-[#FFD0DC]/90 backdrop-blur-md -rotate-6 shadow-sm z-10 rounded-sm mix-blend-multiply" />
+                    <div className="absolute -top-3 -left-3 sm:-top-4 sm:-left-6 w-12 sm:w-20 h-4 sm:h-5 bg-[#FFD0DC] -rotate-6 shadow-sm z-10 rounded-sm" />
                   ) : (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 sm:w-20 h-4 sm:h-5 bg-[#FFE4A1]/90 backdrop-blur-md rotate-2 shadow-sm z-10 rounded-sm mix-blend-multiply" />
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 sm:w-20 h-4 sm:h-5 bg-[#FFE4A1] rotate-2 shadow-sm z-10 rounded-sm" />
                   )}
                   {i % 3 === 0 ? (
-                    <div className="absolute -bottom-3 -right-3 sm:-bottom-4 sm:-right-6 w-12 sm:w-20 h-4 sm:h-5 bg-[#A1C4FD]/90 backdrop-blur-md rotate-3 shadow-sm z-10 rounded-sm mix-blend-multiply" />
+                    <div className="absolute -bottom-3 -right-3 sm:-bottom-4 sm:-right-6 w-12 sm:w-20 h-4 sm:h-5 bg-[#A1C4FD] rotate-3 shadow-sm z-10 rounded-sm" />
                   ) : i % 3 === 1 ? (
-                    <div className="absolute -bottom-3 -left-3 sm:-bottom-4 sm:-left-6 w-12 sm:w-20 h-4 sm:h-5 bg-[#B8E6D0]/90 backdrop-blur-md -rotate-4 shadow-sm z-10 rounded-sm mix-blend-multiply" />
+                    <div className="absolute -bottom-3 -left-3 sm:-bottom-4 sm:-left-6 w-12 sm:w-20 h-4 sm:h-5 bg-[#B8E6D0] -rotate-4 shadow-sm z-10 rounded-sm" />
                   ) : null}
 
                   {/* Randomized Hover Pixel Symbols! */}
-                  <div className="absolute -top-6 right-1 text-2xl sm:text-3xl opacity-0 group-hover:opacity-100 transition-all duration-500 hover:scale-125 -translate-y-4 group-hover:translate-y-0 pointer-events-none z-20 font-pixel drop-shadow-md text-[#FFE4A1] animate-bounce">
+                  <div className="absolute -top-6 right-1 text-2xl sm:text-3xl opacity-0 group-hover:opacity-100 transition-all duration-500 [@media(hover:hover)]:hover:scale-125 -translate-y-4 group-hover:translate-y-0 pointer-events-none z-20 font-pixel drop-shadow-md text-[#FFE4A1] animate-bounce">
                     {i % 4 === 0 ? '★' : i % 4 === 1 ? '✦' : i % 4 === 2 ? '⚡' : '☁'}
                   </div>
-                  <div className="absolute -bottom-6 left-1 text-2xl sm:text-3xl opacity-0 group-hover:opacity-100 transition-all duration-500 hover:-rotate-12 translate-y-4 group-hover:translate-y-0 pointer-events-none z-20 font-pixel drop-shadow-md text-[#FF8FB3] animate-pulse">
+                  <div className="absolute -bottom-6 left-1 text-2xl sm:text-3xl opacity-0 group-hover:opacity-100 transition-all duration-500 [@media(hover:hover)]:hover:-rotate-12 translate-y-4 group-hover:translate-y-0 pointer-events-none z-20 font-pixel drop-shadow-md text-[#FF8FB3] animate-pulse">
                     {i % 3 === 0 ? '✿' : i % 3 === 1 ? '♪' : '✸'}
                   </div>
 
                   {/* Inner Photo Frame */}
                   <div className="overflow-hidden rounded-xl border border-white/40 bg-white/20 shadow-sm pointer-events-auto" onContextMenu={(e) => e.stopPropagation()}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={src} alt="Memory" className="w-auto h-auto max-w-[85vw] sm:max-w-[70vw] max-h-[80vh] object-contain rounded-lg pointer-events-auto" />
+                    <img
+                      src={fullSrc(src)}
+                      alt="Memory"
+                      className="w-auto h-auto max-w-[85vw] sm:max-w-[70vw] max-h-[80vh] object-contain rounded-lg pointer-events-auto"
+                      decoding="async"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (!target.dataset.fallback) {
+                          target.dataset.fallback = "grid";
+                          target.src = gridSrc(src);
+                        } else if (target.dataset.fallback === "grid") {
+                          target.dataset.fallback = "orig";
+                          target.src = src;
+                        }
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -757,22 +1451,21 @@ export default function ThreeDScrapbook() {
           </div>
 
           {/* Scroll Hint Popup */}
-          <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 bg-[#FFD0DC]/90 backdrop-blur-md px-6 py-2 rounded-full text-[#20233F] font-pixel text-xs tracking-wider shadow-[0_4px_12px_rgba(255,182,193,0.4)] border border-white/50 pointer-events-none z-[999999] transition-opacity duration-1000 ${showScrollHint ? 'opacity-100' : 'opacity-0'}`}>
+          <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 bg-[#FFD0DC] px-6 py-2 rounded-full text-[#20233F] font-pixel text-xs tracking-wider shadow-[0_4px_12px_rgba(255,182,193,0.4)] border border-white/50 pointer-events-none z-[999999] transition-opacity duration-1000 ${showScrollHint ? 'opacity-100' : 'opacity-0'}`}>
             ✦ SCROLL TO NAVIGATE ✦
           </div>
         </div>,
         document.body
       )}
 
-      {/* Navigation Arrows Removed in favor of in-page buttons */}
-
       <div
-        className="relative w-[95%] max-w-[1300px] aspect-[1.75/1] z-10 will-change-transform"
+        className="relative w-[95%] max-w-[1300px] aspect-[1.75/1] z-10"
+        onWheel={handleBookWheel}
         style={{
           perspective: "3500px",
           transformStyle: "preserve-3d",
           transform: `rotateX(6deg) rotateY(-2deg) ${currentSpread === 0 ? 'translateX(-25%)' : 'translateX(0%)'} translateZ(0)`,
-          transition: "transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)"
+          transition: isReady ? "transform 0.65s cubic-bezier(0.25, 1, 0.5, 1)" : "none"
         }}
       >
         {/* Right Book Base (Thick Stack of Pages) */}
@@ -785,18 +1478,20 @@ export default function ThreeDScrapbook() {
               2px 1px 0px #FDFBF7, 2px 2px 0px #E5E0D8, 
               4px 3px 0px #FDFBF7, 4px 4px 0px #E5E0D8, 
               6px 5px 0px #FDFBF7, 6px 6px 0px #E5E0D8, 
-              8px 7px 0px #FDFBF7, 8px 8px 0px #E5E0D8,
-              10px 9px 0px #FDFBF7, 10px 10px 0px #E5E0D8,
+              8px 7px 0px #FDFBF7, 8px 8px 0px #E5E0D8, 
+              10px 9px 0px #FDFBF7, 10px 10px 0px #E5E0D8, 
               18px 25px 45px rgba(20,10,30,0.2)`
           }}
         />
 
         {/* Left Book Base Container */}
         <div
-          className="absolute left-0 top-0 bottom-0 w-1/2 origin-right z-0 will-change-transform"
+          className="absolute left-0 top-0 bottom-0 w-1/2 origin-right z-0"
           style={{
-            transform: currentSpread === 0 ? "rotateY(180deg) translateZ(10px)" : "rotateY(0deg) translateZ(0px)",
-            transition: "transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)",
+            opacity: currentSpread > 1 ? 1 : 0,
+            pointerEvents: currentSpread === 0 ? "none" : "auto",
+            transform: "rotateY(0deg) translateZ(0px)",
+            transition: isReady ? "opacity 0.4s ease-out" : "none",
             transformStyle: "preserve-3d"
           }}
         >
@@ -810,15 +1505,15 @@ export default function ThreeDScrapbook() {
                 -2px 1px 0px #FDFBF7, -2px 2px 0px #E5E0D8, 
                 -4px 3px 0px #FDFBF7, -4px 4px 0px #E5E0D8, 
                 -6px 5px 0px #FDFBF7, -6px 6px 0px #E5E0D8, 
-                -8px 7px 0px #FDFBF7, -8px 8px 0px #E5E0D8,
-                -10px 9px 0px #FDFBF7, -10px 10px 0px #E5E0D8,
+                -8px 7px 0px #FDFBF7, -8px 8px 0px #E5E0D8, 
+                -10px 9px 0px #FDFBF7, -10px 10px 0px #E5E0D8, 
                 -18px 25px 45px rgba(20,10,30,0.2)`
             }}
           />
 
           {/* Static Base Left (Spread 0 Left) */}
           <div className="absolute inset-0 bg-[#FFB6C1]" style={{ transform: "translateZ(0px)", backfaceVisibility: 'hidden' }}>
-            <PageContent data={appSpreads[0].left} onImageClick={(src) => { openInspect(src); }} positions={positions} setPosAbsolute={setPosAbsolute} onCropEnd={handleCropEnd} editMode={editMode} selectedFrame={selectedFrame} onFrameClick={handleFrameClick} spreadIdx={0} side="left" onTurnPage={turnPage} totalSpreads={appSpreads.length} />
+            <PageContent data={appSpreads[0].left} onImageClick={openInspect} positions={positions} setPosAbsolute={setPosAbsolute} onCropEnd={handleCropEnd} editMode={editMode} selectedFrame={selectedFrame} onFrameClick={handleFrameClick} spreadIdx={0} side="left" onTurnPage={turnPage} totalSpreads={appSpreads.length} isCurrentSpread={currentSpread === 0} onGoToCover={goToCover} />
           </div>
         </div>
 
@@ -839,7 +1534,7 @@ export default function ThreeDScrapbook() {
 
         {/* Static Base Right (Spread N-1 Right) */}
         <div className="absolute right-0 w-1/2 h-full origin-left bg-[#FFB6C1]" style={{ transform: "translateZ(0px)" }}>
-          <PageContent data={appSpreads[appSpreads.length - 1].right} onImageClick={(src) => { openInspect(src); }} positions={positions} setPosAbsolute={setPosAbsolute} onCropEnd={handleCropEnd} editMode={editMode} selectedFrame={selectedFrame} onFrameClick={handleFrameClick} spreadIdx={appSpreads.length - 1} side="right" onTurnPage={turnPage} totalSpreads={appSpreads.length} />
+          <PageContent data={appSpreads[appSpreads.length - 1].right} onImageClick={openInspect} positions={positions} setPosAbsolute={setPosAbsolute} onCropEnd={handleCropEnd} editMode={editMode} selectedFrame={selectedFrame} onFrameClick={handleFrameClick} spreadIdx={appSpreads.length - 1} side="right" onTurnPage={turnPage} totalSpreads={appSpreads.length} isCurrentSpread={currentSpread === appSpreads.length - 1} onGoToCover={goToCover} />
         </div>
 
         {/* Flippable Leaves */}
@@ -847,19 +1542,22 @@ export default function ThreeDScrapbook() {
           const isFlipped = currentSpread > i;
           const isFlipping = flippingIndex === i;
 
-          let zIndex = 10;
-          if (isFlipping) {
-            zIndex = 50;
-          } else if (isFlipped) {
-            zIndex = i + 1;
-          } else {
-            zIndex = totalLeaves - i + 1;
-          }
+          // Visibility culling: keep active leaves visible to eliminate Z-fighting & repaint jitter
+          const isVisible =
+            i === currentSpread ||
+            i === currentSpread - 1 ||
+            (flippingIndex !== -1 && (
+              (flippingDir > 0 && i === currentSpread - 2) ||
+              (flippingDir < 0 && i === currentSpread + 1)
+            ));
+
+          const zIndex = isFlipping ? 50 : 10;
+          const renderContent = i >= currentSpread - 2 && i <= currentSpread + 1;
 
           return (
             <div
               key={i}
-              className="absolute right-0 w-1/2 h-full origin-left will-change-transform"
+              className="absolute right-0 w-1/2 h-full origin-left"
               onClick={() => {
                 if (currentSpread === 0 && i === 0) {
                   turnPage(1);
@@ -868,41 +1566,48 @@ export default function ThreeDScrapbook() {
               style={{
                 zIndex,
                 transformStyle: "preserve-3d",
-                transform: isFlipped ? 'rotateY(-180deg) translateZ(-1px)' : 'rotateY(0deg) translateZ(1px)',
-                transition: 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                cursor: (currentSpread === 0 && i === 0) ? 'pointer' : 'auto'
+                transform: isFlipped ? "rotateY(-180deg)" : "rotateY(0deg)",
+                transition: isReady ? 'transform 0.65s cubic-bezier(0.25, 1, 0.5, 1)' : 'none',
+                cursor: (currentSpread === 0 && i === 0) ? 'pointer' : 'auto',
+                pointerEvents: (isFlipping || (currentSpread === i) || (currentSpread === i + 1) || (currentSpread === 0 && i === 0)) ? "auto" : "none",
+                visibility: isVisible ? 'visible' : 'hidden',
+                willChange: (isFlipping || i === currentSpread || i === currentSpread - 1) ? 'transform' : 'auto',
               }}
             >
               {/* Front of Leaf (Spread i Right) */}
               <div
-                className="absolute inset-0 bg-[#FFB6C1] shadow-sm will-change-transform"
+                className="absolute inset-0 bg-[#FFB6C1] shadow-sm"
                 style={{
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
-                  transform: 'rotateY(0deg) translateZ(1px)',
+                  transform: 'rotateY(0deg) translateZ(0.5px)',
                   pointerEvents: isFlipped ? 'none' : 'auto'
                 }}
               >
                 {/* Spine crease shadow on the left side of the right page */}
                 <div className="absolute left-0 w-1/3 h-full pointer-events-none z-[40]" style={{ background: "linear-gradient(to right, rgba(0,0,0,0.08) 0%, transparent 100%)" }} />
 
-                <PageContent data={appSpreads[i].right} onImageClick={(src) => { openInspect(src); }} positions={positions} setPosAbsolute={setPosAbsolute} onCropEnd={handleCropEnd} editMode={editMode} selectedFrame={selectedFrame} onFrameClick={handleFrameClick} spreadIdx={i} side="right" onTurnPage={turnPage} totalSpreads={appSpreads.length} />
+                {renderContent ? (
+                  <PageContent data={appSpreads[i].right} onImageClick={openInspect} positions={positions} setPosAbsolute={setPosAbsolute} onCropEnd={handleCropEnd} editMode={editMode} selectedFrame={selectedFrame} onFrameClick={handleFrameClick} spreadIdx={i} side="right" onTurnPage={turnPage} totalSpreads={appSpreads.length} isCurrentSpread={currentSpread === i} onGoToCover={goToCover} />
+                ) : null}
               </div>
 
               {/* Back of Leaf (Spread i+1 Left) */}
               <div
-                className="absolute inset-0 bg-[#FFB6C1] shadow-sm will-change-transform"
+                className="absolute inset-0 bg-[#FFB6C1] shadow-sm"
                 style={{
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
-                  transform: 'rotateY(180deg) translateZ(1px)',
+                  transform: 'rotateY(180deg) translateZ(0.5px)',
                   pointerEvents: !isFlipped ? 'none' : 'auto'
                 }}
               >
                 {/* Spine crease shadow on the right side of the left page */}
-                <div className="absolute right-0 w-1/3 h-full pointer-events-none z-[40]" style={{ background: "linear-gradient(to left, rgba(0,0,0,0.08) 0%, transparent 100%)" }} />
+                <div className="absolute right-0 w-1/3 h-full pointer-events-none z-[40]" style={{ background: "linear-gradient(to left, rgba(0,0,0,0.08) 100%)" }} />
 
-                <PageContent data={appSpreads[i + 1].left} onImageClick={(src) => { openInspect(src); }} positions={positions} setPosAbsolute={setPosAbsolute} onCropEnd={handleCropEnd} editMode={editMode} selectedFrame={selectedFrame} onFrameClick={handleFrameClick} spreadIdx={i + 1} side="left" onTurnPage={turnPage} totalSpreads={appSpreads.length} />
+                {renderContent ? (
+                  <PageContent data={appSpreads[i + 1].left} onImageClick={openInspect} positions={positions} setPosAbsolute={setPosAbsolute} onCropEnd={handleCropEnd} editMode={editMode} selectedFrame={selectedFrame} onFrameClick={handleFrameClick} spreadIdx={i + 1} side="left" onTurnPage={turnPage} totalSpreads={appSpreads.length} isCurrentSpread={currentSpread === i + 1} onGoToCover={goToCover} />
+                ) : null}
               </div>
             </div>
           );
@@ -919,14 +1624,14 @@ export default function ThreeDScrapbook() {
         {editMode ? (
           <>
             <button
-              className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] hover:-translate-y-1 hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#FFE4A1] text-[#20233F]"
+              className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#FFE4A1] text-[#20233F]"
               onClick={handleExportCode}
               title="Copies final SPREADS code to clipboard — paste into source before deploying"
             >
               📋 EXPORT FOR DEPLOY
             </button>
             <button
-              className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] hover:-translate-y-1 hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#B8E6D0] text-[#20233F]"
+              className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#B8E6D0] text-[#20233F]"
               onClick={handleSave}
             >
               ✓ DONE
@@ -934,7 +1639,7 @@ export default function ThreeDScrapbook() {
           </>
         ) : (
           <button
-            className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] hover:-translate-y-1 hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#FFD0DC] text-[#20233F]"
+            className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#FFD0DC] text-[#20233F]"
             onClick={() => setEditMode(true)}
           >
             EDIT MODE
