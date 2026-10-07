@@ -38,7 +38,18 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
   const { path } = await params;
   const pathString = path.join('/');
   const url = new URL(request.url);
-  const spotifyUrl = `https://api.spotify.com/v1/${pathString}${url.search}`;
+  
+  const searchParams = new URLSearchParams(url.search);
+  if (searchParams.has('limit')) {
+    const limit = parseInt(searchParams.get('limit') || '', 10);
+    if (!isNaN(limit)) {
+      searchParams.set('limit', limit.toString());
+    } else {
+      searchParams.delete('limit');
+    }
+  }
+  const qs = searchParams.toString();
+  const spotifyUrl = `https://api.spotify.com/v1/${pathString}${qs ? '?' + qs : ''}`;
 
   const cookieStore = await cookies();
   let accessToken = cookieStore.get('spotify_access_token')?.value;

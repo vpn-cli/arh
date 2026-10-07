@@ -11,28 +11,28 @@ interface PlaylistHeaderProps {
 export function PlaylistHeader({ playlist, onBack, isRestricted, onEdit, onRemove }: PlaylistHeaderProps) {
   if (!playlist) return null;
   return (
-    <div className="flex items-center gap-4 p-4 border-b-2 border-[#FFE4E1] shrink-0">
+    <div className="flex items-center gap-4 p-4 border-b-2 border-[var(--color-light)] shrink-0">
       <button 
         onClick={onBack} 
-        className="p-2 text-[#7A2871] hover:text-[#881337] transition-colors cursor-pointer text-lg font-bold active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#881337] rounded-full"
+        className="p-2 text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors cursor-pointer text-lg font-bold active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-full"
         aria-label="Go back to playlists"
       >
         ◀
       </button>
       {playlist.images && playlist.images[0] ? (
-        <img src={playlist.images[0].url} alt="" className="w-20 h-20 rounded-xl shadow-md object-cover shrink-0 border border-[#FFD0E2]" />
+        <img src={playlist.images[0].url} alt="" className="w-20 h-20 rounded-xl shadow-md object-cover shrink-0 border border-[var(--color-muted)]" />
       ) : (
-        <div className="w-20 h-20 rounded-xl bg-[#FFC1DA] flex items-center justify-center shadow-md shrink-0 border border-[#FFD0E2]">
-          <span className="text-[#881337] text-2xl font-bold">♪</span>
+        <div className="w-20 h-20 rounded-xl bg-[var(--color-muted)] flex items-center justify-center shadow-md shrink-0 border border-[var(--color-muted)]">
+          <span className="text-[var(--color-dark)] text-2xl font-bold">♪</span>
         </div>
       )}
       <div className="flex-1 overflow-hidden flex flex-col justify-center relative">
-        <h2 className="font-pixel text-xl sm:text-2xl font-bold text-[#881337] truncate pr-16">{playlist.name}</h2>
+        <h2 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] truncate pr-16">{playlist.name}</h2>
         <div className="absolute top-0 right-0 flex items-center gap-1">
           {onEdit && (
             <button 
               onClick={onEdit} 
-              className="p-1.5 text-[#7A2871] hover:text-[#881337] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#881337] rounded-full" 
+              className="p-1.5 text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-full" 
               title="Edit Playlist"
               aria-label="Edit Playlist"
             >
@@ -42,7 +42,7 @@ export function PlaylistHeader({ playlist, onBack, isRestricted, onEdit, onRemov
           {onRemove && (
             <button 
               onClick={onRemove} 
-              className="p-1.5 text-[#7A2871] hover:text-[#B91C1C] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B91C1C] rounded-full" 
+              className="p-1.5 text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-full" 
               title="Remove Playlist"
               aria-label="Remove Playlist"
             >
@@ -51,12 +51,12 @@ export function PlaylistHeader({ playlist, onBack, isRestricted, onEdit, onRemov
           )}
         </div>
         {playlist.description && (
-          <p className="font-pixel text-xs text-[#7A2871] mt-1 line-clamp-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: playlist.description }} />
+          <p className="font-pixel text-xs text-[var(--color-dark)] mt-1 line-clamp-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: playlist.description }} />
         )}
         {(() => {
           const trackCount = playlist.items?.total ?? playlist.tracks?.total ?? (Array.isArray(playlist.items) ? playlist.items.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : (playlist.items?.items?.length ?? 0)));
           return (
-            <div className="font-pixel text-xs text-[#8C3A7A] mt-2 font-bold tracking-wide">
+            <div className="font-pixel text-xs text-[var(--color-dark)] mt-2 font-bold tracking-wide">
               {isRestricted 
                 ? (trackCount ? `${trackCount} tracks` : 'Tracks unavailable')
                 : `${trackCount} tracks`

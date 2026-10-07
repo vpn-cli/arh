@@ -27,8 +27,13 @@ describe('spotifyAuth utils', () => {
     expect(window.location.href).toBe('/api/spotify/login');
   });
 
-  it('logoutSpotify should set location.href to /', () => {
-    logoutSpotify();
+  it('logoutSpotify should set location.href to /', async () => {
+    const originalFetch = global.fetch;
+    global.fetch = vi.fn().mockResolvedValue({ ok: true });
+    
+    await logoutSpotify();
     expect(window.location.href).toBe('/');
+    
+    global.fetch = originalFetch;
   });
 });

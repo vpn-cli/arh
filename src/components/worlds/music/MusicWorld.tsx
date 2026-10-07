@@ -36,13 +36,13 @@ export default function MusicWorld() {
   }, []);
 
   return (
-    <div className="relative w-full min-h-screen bg-[#FFF0F5] text-[#9B4F96] overflow-hidden selection:bg-[#FFB6C1]/40">
+    <div className="relative w-full min-h-screen bg-[var(--color-light)] text-[#9B4F96] overflow-hidden selection:bg-[var(--color-muted)]/40">
       
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none z-0">
         {/* Soft glowing orbs */}
-        <div className="absolute top-[20%] left-[20%] w-[400px] h-[400px] bg-[#FFB6C1]/30 rounded-full blur-[100px] animate-pulse" style={{animationDuration: '8s'}} />
-        <div className="absolute bottom-[20%] right-[20%] w-[350px] h-[350px] bg-[#FFE4E1]/50 rounded-full blur-[100px] animate-pulse" style={{animationDuration: '12s', animationDelay: '2s'}} />
+        <div className="absolute top-[20%] left-[20%] w-[400px] h-[400px] bg-[var(--color-muted)]/30 rounded-full blur-[100px] animate-pulse" style={{animationDuration: '8s'}} />
+        <div className="absolute bottom-[20%] right-[20%] w-[350px] h-[350px] bg-[var(--color-light)]/50 rounded-full blur-[100px] animate-pulse" style={{animationDuration: '12s', animationDelay: '2s'}} />
         
         {/* Retro dot grid */}
         <div 
@@ -73,32 +73,14 @@ export default function MusicWorld() {
         ))}
       </div>
 
-      {/* Navigation Header */}
-      <div className="fixed top-0 left-0 w-full p-4 sm:p-6 z-50 flex justify-between items-start pointer-events-none">
-        <button
-          onClick={() => {
-            sfx.select();
-            goHome();
-          }}
-          onMouseEnter={() => sfx.hover()}
-          className="pointer-events-auto group px-4 py-2 bg-[#FFFFFF]/90 backdrop-blur-md border-2 border-[#FF87BE] rounded-full flex items-center gap-2 hover:bg-[#FFE4E1] transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#881337]"
-          aria-label="Return to Home World"
-        >
-          <span className="text-[#881337] text-xs font-pixel mt-0.5 group-hover:-translate-x-1 transition-transform">◀</span>
-          <span className="font-pixel text-xs text-[#7A2871] font-bold tracking-wider uppercase group-hover:text-[#881337] transition-colors">
-            Home World
-          </span>
-        </button>
 
-        <div className="px-4 py-2 bg-[#FFFFFF]/90 border-2 border-[#FF87BE] rounded-full shadow-sm flex items-center gap-2">
-          <span className="font-pixel text-xs text-[#881337] font-bold tracking-wider uppercase">Music World</span>
-          <span className="font-pixel text-sm text-[#881337]">♪</span>
-        </div>
-      </div>
 
       {/* Main Content Flow */}
-      <main ref={containerRef} className="relative z-10 w-full min-h-[100dvh] pt-16 pb-4 px-3 sm:px-5">
-        <SpotifyPlayerUI />
+      <main ref={containerRef} className="relative z-10 w-full h-[100dvh] overflow-hidden">
+        <SpotifyPlayerUI onGoHome={() => {
+          sfx.select();
+          goHome();
+        }} />
       </main>
     </div>
   );

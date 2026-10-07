@@ -7,3 +7,69 @@
 {"type":"error","data":"Uncaught ReferenceError: debugLogs is not defined"}
 {"type":"error","data":"Uncaught ReferenceError: debugLogs is not defined"}
 {"type":"error","data":"The final argument passed to %s changed size between renders. The order and size of this array must remain constant.\n\nPrevious: %s\nIncoming: %s useEffect [false, (dir)=>{\n            if (carouselRef.current) {\n                // Scroll by roughly 35% of the screen width to safely push the snap point to the next/prev image\n                carouselRef.current.scrollBy({\n                    left: dir * (window.innerWidth * 0.35),\n                    behavior: 'smooth'\n                });\n            }\n        }, ()=>{\n            if (carouselRafRef.current) {\n                cancelAnimationFrame(carouselRafRef.current);\n                carouselRafRef.current = null;\n            }\n            if (carouselWheelTimeoutRef.current) {\n                clearTimeout(carouselWheelTimeoutRef.current);\n                carouselWheelTimeoutRef.current = null;\n            }\n            carouselTargetScrollRef.current = null;\n            if (overlayRef.current) {\n                overlayRef.current.style.opacity = '0';\n                overlayRef.current.style.transform = 'scale(0.98)';\n                setTimeout({\n                    \"ThreeDScrapbook.useCallback[closeInspect]\": ()=>{\n                        setInspectVisible(false);\n                        setInspectImage(null);\n                        setCarouselReady(false);\n                    }\n                }[\"ThreeDScrapbook.useCallback[closeInspect]\"], 300);\n            } else {\n                setInspectVisible(false);\n                setInspectImage(null);\n                setCarouselReady(false);\n            }\n        }, (dir)=>{\n            const { currentSpread, flippingIndex, len } = bookStateRef.current;\n            if (flippingIndex !== -1) return;\n            const targetIdx = currentSpread + dir;\n            if (targetIdx < 0 || targetIdx >= len) {\n                return;\n            }\n            const leafIdx = dir > 0 ? currentSpread : targetIdx;\n            setFlippingIndex(leafIdx);\n            setFlippingDir(dir);\n            setCurrentSpread(targetIdx);\n            queueMicrotask({\n                \"ThreeDScrapbook.useCallback[turnPage]\": ()=>{\n                    playFlipSound();\n                }\n            }[\"ThreeDScrapbook.useCallback[turnPage]\"]);\n            if (flipTimeoutRef.current) {\n                clearTimeout(flipTimeoutRef.current);\n            }\n            flipTimeoutRef.current = setTimeout({\n                \"ThreeDScrapbook.useCallback[turnPage]\": ()=>{\n                    setFlippingIndex(-1);\n                    flipTimeoutRef.current = null;\n                }\n            }[\"ThreeDScrapbook.useCallback[turnPage]\"], 720);\n        }] [false, false, (dir)=>{\n            if (carouselRef.current) {\n                // Scroll by roughly 35% of the screen width to safely push the snap point to the next/prev image\n                carouselRef.current.scrollBy({\n                    left: dir * (window.innerWidth * 0.35),\n                    behavior: 'smooth'\n                });\n            }\n        }, ()=>{\n            if (carouselRafRef.current) {\n                cancelAnimationFrame(carouselRafRef.current);\n                carouselRafRef.current = null;\n            }\n            if (carouselWheelTimeoutRef.current) {\n                clearTimeout(carouselWheelTimeoutRef.current);\n                carouselWheelTimeoutRef.current = null;\n            }\n            carouselTargetScrollRef.current = null;\n            if (overlayRef.current) {\n                overlayRef.current.style.opacity = '0';\n                overlayRef.current.style.transform = 'scale(0.98)';\n                setTimeout({\n                    \"ThreeDScrapbook.useCallback[closeInspect]\": ()=>{\n                        setInspectVisible(false);\n                        setInspectImage(null);\n                        setCarouselReady(false);\n                    }\n                }[\"ThreeDScrapbook.useCallback[closeInspect]\"], 300);\n            } else {\n                setInspectVisible(false);\n                setInspectImage(null);\n                setCarouselReady(false);\n            }\n        }, (dir)=>{\n            const { currentSpread, flippingIndex, len } = bookStateRef.current;\n            if (flippingIndex !== -1) return;\n            const targetIdx = currentSpread + dir;\n            if (targetIdx < 0 || targetIdx >= len) {\n                return;\n            }\n            const leafIdx = dir > 0 ? currentSpread : targetIdx;\n            setFlippingIndex(leafIdx);\n            setFlippingDir(dir);\n            setCurrentSpread(targetIdx);\n            queueMicrotask({\n                \"ThreeDScrapbook.useCallback[turnPage]\": ()=>{\n                    playFlipSound();\n                }\n            }[\"ThreeDScrapbook.useCallback[turnPage]\"]);\n            if (flipTimeoutRef.current) {\n                clearTimeout(flipTimeoutRef.current);\n            }\n            flipTimeoutRef.current = setTimeout({\n                \"ThreeDScrapbook.useCallback[turnPage]\": ()=>{\n                    setFlippingIndex(-1);\n                    flipTimeoutRef.current = null;\n                }\n            }[\"ThreeDScrapbook.useCallback[turnPage]\"], 720);\n        }]"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was skipped. New ViewTransition started"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}
+{"type":"error","data":"Transition was aborted because of invalid state. Document hidden"}

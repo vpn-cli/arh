@@ -39,20 +39,20 @@ export function MixSection({
   const renderError = (error: any, label: string) => {
     if (error?.status === 429) {
       return (
-        <div className="flex items-center justify-center h-16 text-[#B91C1C] font-pixel text-xs font-medium text-center px-4 mb-4 border border-[#B91C1C]/30 rounded-xl bg-[#B91C1C]/5">
+        <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-xs font-medium text-center px-4 mb-4 border border-[var(--color-dark)]/30 rounded-xl bg-[var(--color-dark)]/5">
           {label} RATE LIMITED.<br/>WAIT {rateLimitTimer || (error?.retryAfter ?? 60)} SECONDS.
         </div>
       );
     }
     return (
-      <div className="flex items-center justify-center h-16 text-[#B91C1C] font-pixel text-xs font-medium text-center px-4 mb-4 border border-[#B91C1C]/30 rounded-xl bg-[#B91C1C]/5">
+      <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-xs font-medium text-center px-4 mb-4 border border-[var(--color-dark)]/30 rounded-xl bg-[var(--color-dark)]/5">
         Failed to load {label}
       </div>
     );
   };
 
   const renderLoading = (label: string) => (
-    <div className="flex items-center justify-center h-16 text-[#8C3A7A] font-pixel text-xs font-medium mb-4 animate-pulse">
+    <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-xs font-medium mb-4 animate-pulse">
       Loading {label}...
     </div>
   );
@@ -69,16 +69,16 @@ export function MixSection({
     <div className="flex flex-col gap-6 pb-6">
       
       {/* ✦ DYNAMIC BIRTHDAY / DAILY MIX ✦ */}
-      <section className="bg-gradient-to-br from-[#FFE1EF] via-[#FFF3F8] to-[#FFE8F3] border-2 border-[#FF87BE] rounded-3xl p-5 shadow-[0_10px_30px_rgba(255,105,180,0.18)]">
+      <section className="bg-gradient-to-br from-[var(--color-light)] via-[#FFF3F8] to-[#FFE8F3] border-2 border-[var(--color-muted)] rounded-3xl p-5 shadow-[0_10px_30px_rgba(255,105,180,0.18)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xl">✨</span>
-              <h2 className="font-pixel text-xl sm:text-2xl font-extrabold text-[#881337] tracking-wide">
+              <h2 className="font-pixel text-xl sm:text-2xl font-extrabold text-[var(--color-dark)] tracking-wide">
                 Daily Birthday Mix
               </h2>
             </div>
-            <p className="font-pixel text-xs text-[#7A2871] mt-1 font-medium">
+            <p className="font-pixel text-xs text-[var(--color-dark)] mt-1 font-medium">
               Dynamic blend of your recent listens, top tracks, and personal favorites ♡
             </p>
           </div>
@@ -90,7 +90,7 @@ export function MixSection({
                 refetchMix();
               }}
               disabled={isMixLoading}
-              className="bg-white hover:bg-[#FFE1EF] border border-[#FF87BE] text-[#881337] px-3.5 py-2 rounded-xl font-pixel text-xs font-bold transition-all shadow-xs hover:scale-105 active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
+              className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] px-3.5 py-2 rounded-xl font-pixel text-xs font-bold transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs hover:scale-105 active:scale-95 will-change-transform flex items-center gap-1.5 disabled:opacity-50"
               title="Generate a fresh new mix"
             >
               <span>🔀</span> Re-mix
@@ -102,7 +102,7 @@ export function MixSection({
                 }
               }}
               disabled={isMixLoading || filteredMix.length === 0}
-              className="bg-[#C2185B] hover:bg-[#A0144F] text-white px-5 py-2 rounded-xl font-pixel text-xs font-bold transition-all shadow-md hover:scale-105 active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
+              className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white px-5 py-2 rounded-xl font-pixel text-xs font-bold transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-md hover:scale-105 active:scale-95 will-change-transform flex items-center gap-1.5 disabled:opacity-50"
             >
               <span>▶</span> Play Entire Mix ({filteredMix.length})
             </button>
@@ -116,7 +116,7 @@ export function MixSection({
             value={mixSearch}
             onChange={(e) => setMixSearch(e.target.value)}
             placeholder="Search tracks or artists in your mix..."
-            className="w-full bg-white border border-[#FFCADF] rounded-xl px-3 py-1.5 font-pixel text-xs text-[#4A0E4E] placeholder:text-[#7A2871]/70 focus:outline-none focus:border-[#C2185B]"
+            className="w-full bg-white border border-[var(--color-light)] rounded-xl px-3 py-1.5 font-pixel text-xs text-[var(--color-dark)] placeholder:text-[var(--color-dark)]/70 focus:outline-none focus:border-[var(--color-vibrant)]"
           />
         </div>
 
@@ -139,7 +139,7 @@ export function MixSection({
              />
            </div>
          ) : (
-           <div className="text-center py-6 text-[#7A2871] font-pixel text-xs">
+           <div className="text-center py-6 text-[var(--color-dark)] font-pixel text-xs">
              No mix tracks match your search filter.
            </div>
          )
@@ -148,7 +148,7 @@ export function MixSection({
 
       {/* Continue Listening (Latest from Recently Played) */}
       <section>
-        <h2 className="font-pixel text-xs font-bold text-[#881337] tracking-wider uppercase mb-3 px-1">Continue Listening</h2>
+        <h2 className="font-pixel text-xs font-bold text-[var(--color-dark)] tracking-wider uppercase mb-3 px-1">Continue Listening</h2>
         {isRecentError ? renderError(recentError, 'RECENTLY PLAYED') :
          isRecentLoading ? renderLoading('continue listening') :
          recentData && recentData.length > 0 ? (
@@ -160,7 +160,7 @@ export function MixSection({
              onAddMemory={(track) => onAddMemory(track, 'track')}
            />
          ) : (
-           <div className="text-[#7A2871] font-pixel text-xs font-medium px-1">Nothing recently played yet.</div>
+           <div className="text-[var(--color-dark)] font-pixel text-xs font-medium px-1">Nothing recently played yet.</div>
          )
         }
       </section>
@@ -169,12 +169,12 @@ export function MixSection({
       <section>
         <div className="flex flex-wrap justify-between items-center mb-3 px-1 gap-2">
           <div className="flex items-center gap-3">
-            <h2 className="font-pixel text-xs font-bold text-[#881337] tracking-wider uppercase">Top Tracks</h2>
-            <div className="flex items-center bg-[#FFE4F0] p-0.5 rounded-lg border border-[#FFCADF]">
+            <h2 className="font-pixel text-xs font-bold text-[var(--color-dark)] tracking-wider uppercase">Top Tracks</h2>
+            <div className="flex items-center bg-[var(--color-light)] p-0.5 rounded-lg border border-[var(--color-light)]">
               <button
                 onClick={() => setTimeRange('short_term')}
                 className={`font-pixel text-[10px] px-2.5 py-0.5 rounded-md transition-all font-bold ${
-                  timeRange === 'short_term' ? 'bg-[#C2185B] text-white shadow-2xs' : 'text-[#7A2871] hover:text-[#881337]'
+                  timeRange === 'short_term' ? 'bg-[var(--color-vibrant)] text-white shadow-2xs' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
                 }`}
               >
                 4 Weeks
@@ -182,7 +182,7 @@ export function MixSection({
               <button
                 onClick={() => setTimeRange('medium_term')}
                 className={`font-pixel text-[10px] px-2.5 py-0.5 rounded-md transition-all font-bold ${
-                  timeRange === 'medium_term' ? 'bg-[#C2185B] text-white shadow-2xs' : 'text-[#7A2871] hover:text-[#881337]'
+                  timeRange === 'medium_term' ? 'bg-[var(--color-vibrant)] text-white shadow-2xs' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
                 }`}
               >
                 6 Months
@@ -190,7 +190,7 @@ export function MixSection({
               <button
                 onClick={() => setTimeRange('long_term')}
                 className={`font-pixel text-[10px] px-2.5 py-0.5 rounded-md transition-all font-bold ${
-                  timeRange === 'long_term' ? 'bg-[#C2185B] text-white shadow-2xs' : 'text-[#7A2871] hover:text-[#881337]'
+                  timeRange === 'long_term' ? 'bg-[var(--color-vibrant)] text-white shadow-2xs' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
                 }`}
               >
                 All Time
@@ -200,7 +200,7 @@ export function MixSection({
           <button 
             onClick={() => topTracks && onPlayTracks(topTracks.map((t: any) => t.uri), topTracks)}
             disabled={!topTracks || topTracks.length === 0}
-            className="font-pixel text-xs font-bold bg-[#C2185B] text-white px-3 py-1.5 rounded-lg hover:bg-[#A0144F] transition-colors shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#881337]"
+            className="font-pixel text-xs font-bold bg-[var(--color-vibrant)] text-white px-3 py-1.5 rounded-lg hover:bg-[var(--color-vibrant)] transition-colors shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
           >
             Play All
           </button>
@@ -222,14 +222,14 @@ export function MixSection({
              onAddMemory={(track) => onAddMemory(track, 'track')}
            />
          ) : (
-           <div className="text-[#7A2871] font-pixel text-xs font-medium px-1">No top tracks found.</div>
+           <div className="text-[var(--color-dark)] font-pixel text-xs font-medium px-1">No top tracks found.</div>
          )
         }
       </section>
 
       {/* Top Artists */}
       <section>
-        <h2 className="font-pixel text-xs font-bold text-[#881337] tracking-wider uppercase mb-3 px-1">Top Artists</h2>
+        <h2 className="font-pixel text-xs font-bold text-[var(--color-dark)] tracking-wider uppercase mb-3 px-1">Top Artists</h2>
         {isTopArtistsError ? renderError(topArtistsError, 'TOP ARTISTS') :
          isTopArtistsLoading ? renderLoading('top artists') :
          topArtists && topArtists.length > 0 ? (
@@ -245,14 +245,14 @@ export function MixSection({
              ))}
            </div>
          ) : (
-           <div className="text-[#7A2871] font-pixel text-xs font-medium px-1">No top artists found.</div>
+           <div className="text-[var(--color-dark)] font-pixel text-xs font-medium px-1">No top artists found.</div>
          )
         }
       </section>
 
       {/* Your Playlists */}
       <section>
-        <h2 className="font-pixel text-xs font-bold text-[#881337] tracking-wider uppercase mb-3 px-1">Your Playlists</h2>
+        <h2 className="font-pixel text-xs font-bold text-[var(--color-dark)] tracking-wider uppercase mb-3 px-1">Your Playlists</h2>
         {isPlaylistsError ? renderError(playlistsError, 'PLAYLISTS') :
          isPlaylistsLoading ? renderLoading('playlists') :
          playlists && playlists.length > 0 ? (
@@ -268,7 +268,7 @@ export function MixSection({
              ))}
            </div>
          ) : (
-           <div className="text-[#7A2871] font-pixel text-xs font-medium px-1">No playlists found.</div>
+           <div className="text-[var(--color-dark)] font-pixel text-xs font-medium px-1">No playlists found.</div>
          )
         }
       </section>
