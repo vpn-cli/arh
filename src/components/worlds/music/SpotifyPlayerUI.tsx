@@ -81,6 +81,13 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const [mixSearch, setMixSearch] = useState("");
   const [globalSearch, setGlobalSearch] = useState("");
 
+  const [showLyrics, setShowLyrics] = useState(false);
+  const [lyricsData, setLyricsData] = useState<{ synced: any[] | null, plain: string | null } | null>(null);
+  const [isLyricsLoading, setIsLyricsLoading] = useState(false);
+  const lyricsCache = React.useRef<Record<string, any>>({});
+  const activeLyricIndexRef = React.useRef<number>(-1);
+  const lyricsLinesRef = React.useRef<(HTMLDivElement | null)[]>([]);
+
 
   const [isGeneratingMix, setIsGeneratingMix] = useState(false);
   const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
@@ -272,6 +279,42 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         }
       });
     });
+
+    const fetchLyrics = async (trackId: string) => {
+      if (lyricsCache.current[trackId]) return lyricsCache.current[trackId];
+      try {
+        const res = await fetch(`/api/lyrics?trackId=${encodeURIComponent(trackId)}`);
+        if (res.ok) {
+          const data = await res.json();
+          lyricsCache.current[trackId] = data;
+          return data;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      return null;
+    };
+
+    const trackIdsToFetch = new Set<string>();
+    if (currentTrack?.id) trackIdsToFetch.add(currentTrack.id);
+    if (effectiveQueue && effectiveQueue.length > 0 && queueIndex < effectiveQueue.length - 1) {
+      const nextTrack = effectiveQueue[queueIndex + 1]?.track;
+      if (nextTrack?.id) trackIdsToFetch.add(nextTrack.id);
+    }
+
+    trackIdsToFetch.forEach(trackId => {
+      if (trackId === currentTrack?.id && !lyricsCache.current[trackId]) {
+        setIsLyricsLoading(true);
+      }
+      fetchLyrics(trackId).then(data => {
+        if (currentTrack?.id === trackId) {
+          setLyricsData(data);
+          setIsLyricsLoading(false);
+          activeLyricIndexRef.current = -1;
+          lyricsLinesRef.current = [];
+        }
+      });
+    });
   }, [currentTrack, effectiveQueue, queueIndex]);
 
   const [rateLimitTimer, setRateLimitTimer] = useState<number | null>(null);
@@ -312,12 +355,54 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         if (progressBarRef.current) {
           progressBarRef.current.setAttribute('aria-valuenow', Math.floor(currentPos).toString());
         }
+
+        if (showLyrics && lyricsData?.synced) {
+          const lines = lyricsData.synced;
+          let low = 0;
+          let high = lines.length - 1;
+          let activeIndex = -1;
+          
+          while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            if (lines[mid].timeMs <= currentPos) {
+              activeIndex = mid;
+              low = mid + 1;
+            } else {
+              high = mid - 1;
+            }
+          }
+
+          if (activeIndex !== activeLyricIndexRef.current) {
+            const oldEl = lyricsLinesRef.current[activeLyricIndexRef.current];
+            const newEl = lyricsLinesRef.current[activeIndex];
+            
+            if (oldEl) {
+               oldEl.classList.remove('opacity-100', 'scale-105', 'text-[var(--color-vibrant)]');
+               oldEl.classList.add('opacity-50');
+            }
+            if (newEl) {
+               newEl.classList.remove('opacity-50');
+               newEl.classList.add('opacity-100', 'scale-105', 'text-[var(--color-vibrant)]');
+               const container = newEl.parentElement;
+               if (container) {
+                 const containerHeight = container.clientHeight;
+                 const targetScroll = newEl.offsetTop - (containerHeight * 0.4);
+                 if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                   container.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+                 } else {
+                   container.scrollTo({ top: Math.max(0, targetScroll) });
+                 }
+               }
+            }
+            activeLyricIndexRef.current = activeIndex;
+          }
+        }
       }
       frameId = requestAnimationFrame(updateLabel);
     };
     frameId = requestAnimationFrame(updateLabel);
     return () => cancelAnimationFrame(frameId);
-  }, [isPaused, isDragging, duration]);
+  }, [isPaused, isDragging, duration, showLyrics, lyricsData]);
 
   // Load SDK and initialize
   useEffect(() => {
@@ -1495,6 +1580,38 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                       />
                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/4 h-1/4 bg-gradient-to-br from-[var(--color-light)] to-[var(--color-muted)] rounded-full border-2 border-[#FFFFFF] shadow-inner" />
                     </div>
+
+                    {showLyrics && (
+                      <div className="absolute inset-0 z-20 bg-[var(--color-light)]/95 backdrop-blur-md p-6 flex flex-col overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                        {isLyricsLoading ? (
+                          <div className="flex-1 flex flex-col items-center justify-center gap-4 animate-pulse">
+                            <div className="w-3/4 h-4 bg-[var(--color-muted)] rounded"></div>
+                            <div className="w-1/2 h-4 bg-[var(--color-muted)] rounded"></div>
+                            <div className="w-5/6 h-4 bg-[var(--color-muted)] rounded"></div>
+                          </div>
+                        ) : lyricsData?.synced ? (
+                          <div className="flex flex-col gap-5 pb-[100%] pt-[40%] text-center">
+                            {lyricsData.synced.map((line, i) => (
+                              <div
+                                key={i}
+                                ref={(el) => { lyricsLinesRef.current[i] = el; }}
+                                className={`font-pixel text-sm sm:text-base md:text-lg opacity-50 transition-all duration-300 transform origin-center ${activeLyricIndexRef.current === i ? 'opacity-100 scale-105 text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}
+                              >
+                                {line.text || "♪"}
+                              </div>
+                            ))}
+                          </div>
+                        ) : lyricsData?.plain ? (
+                          <div className="font-pixel text-sm sm:text-base text-[var(--color-dark)] whitespace-pre-wrap leading-relaxed opacity-80 text-center pb-8 pt-4">
+                            {lyricsData.plain}
+                          </div>
+                        ) : (
+                          <div className="flex-1 flex items-center justify-center text-center">
+                            <span className="font-pixel text-sm text-[var(--color-dark)] font-bold opacity-60">No lyrics for this track (；一_一)</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   
                   {/* Track Info */}
@@ -1506,6 +1623,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                       </p>
                     </div>
                     <div className="flex gap-2 shrink-0 ml-2">
+                      <button onClick={() => setShowLyrics(!showLyrics)} className={`text-xl transition-transform hover:scale-110 active:scale-95 ${showLyrics ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`} aria-label="Toggle Lyrics" title="Lyrics">
+                        ❝
+                      </button>
                       <button onClick={toggleSaveTrack} className="text-xl transition-transform hover:scale-110 active:scale-95" title={isSaved ? "Remove from Library" : "Save to Library"} aria-label={isSaved ? "Remove from Library" : "Save to Library"}>
                         {isSaved ? <span className="text-[var(--color-vibrant)]">♥</span> : <span className="text-[var(--color-dark)] hover:text-[var(--color-vibrant)]">♡</span>}
                       </button>
