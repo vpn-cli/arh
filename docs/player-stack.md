@@ -74,11 +74,7 @@ Since FFT is off the table, drive "reactive" effects from what we *can* read:
 - Pulse/bounce effects run on a fixed tempo rather than detected beats. For an
   indie-game aesthetic this reads as stylized, not broken — a steady
   8-bit-style bob doesn't claim to be beat-matched.
-- **Only if `audio-analysis` returns 200 for us:** fetch beat timestamps once
-  per track, build a GSAP timeline seeded with them, and scrub it against
-  playback position. This is better than live FFT would have been — it's
-  precomputed, zero CPU, and survives tab throttling. Treat it as a bonus,
-  not a dependency.
+- **(Unavailable - 403 Forbidden):** The `audio-analysis` endpoint is deprecated and returns 403 for our app. Beat-accurate GSAP timelines scrubbed against playback position are confirmed unavailable. We will rely exclusively on fixed-tempo CSS/GSAP loops.
 
 **Pixel/canvas interactive layer**
 Scope it to one well-executed element (the deck, the tonearm, a single

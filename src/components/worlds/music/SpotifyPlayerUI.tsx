@@ -21,6 +21,8 @@ import { MemoryEditorModal } from "./MemoryEditorModal";
 import { QueueModal } from "./QueueModal";
 import { usePlaylistMutations } from "@/hooks/usePlaylistMutations";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
+import { VIBES } from "@/config/vibes";
+import { proxyFetch } from "@/lib/spotifyClient";
 
 const sfx: any = { select: () => { }, hover: () => { }, pop: () => { }, move: () => { }, error: () => { } };
 
@@ -57,12 +59,18 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
   const [isDragging, setIsDragging] = useState(false);
   const progressBarRef = React.useRef<HTMLDivElement>(null);
+  const positionRef = React.useRef(0);
+  const lastUpdateTimeRef = React.useRef(Date.now());
+  const positionLabelRef = React.useRef<HTMLSpanElement>(null);
+  const progressBarFillRef = React.useRef<HTMLDivElement>(null);
+  const progressBarThumbRef = React.useRef<HTMLDivElement>(null);
   const userPausedRef = React.useRef(false);
   const isAutoplayingRef = React.useRef(false);
   const lastActiveTrackUriRef = React.useRef<string | null>(null);
 
   // New Feature States
   const [activeTab, setActiveTab] = useState<'home' | 'library' | 'recent' | 'mix' | 'playlists' | 'search' | 'album' | 'artist' | 'queue' | 'frequencies' | 'vibes' | 'memories'>('home');
+  const [resolvedVibes, setResolvedVibes] = useState<Record<string, string | null>>({});
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
@@ -129,28 +137,142 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
 
 
+  const paletteCache = React.useRef<Record<string, any>>({});
+  const [layerPalettes, setLayerPalettes] = useState<[any, any]>([null, null]);
+  const [activeLayerIndex, setActiveLayerIndex] = useState<0 | 1>(0);
+  const activeLayerRef = React.useRef<0 | 1>(0);
   const [palette, setPalette] = useState<any>(null);
 
   useEffect(() => {
-    const art = currentTrack?.album?.images?.[0]?.url || (typeof currentTrack?.album?.images?.[0] === 'string' ? currentTrack.album.images[0] : null);
-    if (!art) return;
-    fetch(`/api/album-palette?url=${encodeURIComponent(art)}`)
-      .then(res => res.json())
-      .then(data => {
-        if (!data.error) {
-          if (document.startViewTransition) {
-            document.startViewTransition(() => {
-              flushSync(() => {
-                setPalette(data);
-              });
-            });
-          } else {
-            setPalette(data);
-          }
+    if (typeof window === 'undefined') return;
+    const root = document.documentElement;
+    const base = palette?.vibrant || '#C2185B';
+    const computedBg = palette?.computed?.bg || `color-mix(in srgb, ${base} 8%, #ffffff)`;
+    const computedLight = palette?.computed?.light || `color-mix(in srgb, ${base} 15%, #ffffff)`;
+    const computedMuted = palette?.computed?.muted || `color-mix(in srgb, ${base} 35%, #ffffff)`;
+    const computedDark = palette?.computed?.dark || `color-mix(in srgb, ${base} 40%, #000000)`;
+
+    root.style.setProperty('--base-color', base);
+    root.style.setProperty('--color-bg', computedBg);
+    root.style.setProperty('--color-light', computedLight);
+    root.style.setProperty('--color-muted', computedMuted);
+    root.style.setProperty('--color-vibrant', base);
+    root.style.setProperty('--color-dark', computedDark);
+  }, [palette]);
+
+  useEffect(() => {
+    if (!token) return;
+    
+    const resolveVibes = async () => {
+      const newResolved: Record<string, string | null> = {};
+      let updated = false;
+
+      for (const vibe of VIBES) {
+        if (vibe.playlistId) {
+          newResolved[vibe.id] = vibe.playlistId;
+          continue;
         }
-      })
-      .catch(console.error);
-  }, [currentTrack?.album?.images]);
+
+        const cacheKey = `resolved_vibe_${vibe.id}`;
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          newResolved[vibe.id] = cached === 'null' ? null : cached;
+          continue;
+        }
+
+        try {
+          const res = await proxyFetch(`search?q=${encodeURIComponent(vibe.searchQuery)}&type=playlist&limit=10`);
+          if (res && res.playlists?.items?.length > 0) {
+            let bestPlaylist = null;
+            let maxFollowers = -1;
+
+            for (const item of res.playlists.items) {
+              if (!item) continue;
+              const trackCount = item.tracks?.total || 0;
+              if (trackCount >= 20) {
+                const followers = item.followers?.total || 0;
+                if (followers > maxFollowers) {
+                  maxFollowers = followers;
+                  bestPlaylist = item;
+                }
+              }
+            }
+
+            if (bestPlaylist) {
+              newResolved[vibe.id] = bestPlaylist.id;
+              localStorage.setItem(cacheKey, bestPlaylist.id);
+            } else {
+              newResolved[vibe.id] = null;
+              localStorage.setItem(cacheKey, 'null');
+            }
+          } else {
+            newResolved[vibe.id] = null;
+            localStorage.setItem(cacheKey, 'null');
+          }
+        } catch (e) {
+          console.error(`Failed to resolve vibe ${vibe.id}`, e);
+          newResolved[vibe.id] = null;
+        }
+        updated = true;
+      }
+
+      if (updated || Object.keys(newResolved).length > 0) {
+        setResolvedVibes((prev: Record<string, string | null>) => ({ ...prev, ...newResolved }));
+      }
+    };
+    
+    resolveVibes();
+  }, [token]);
+
+
+  useEffect(() => {
+    const getArt = (track: any) => track?.album?.images?.[0]?.url || (typeof track?.album?.images?.[0] === 'string' ? track.album.images[0] : null);
+
+    const fetchPalette = async (art: string) => {
+      if (paletteCache.current[art]) return paletteCache.current[art];
+      try {
+        const res = await fetch(`/api/album-palette?url=${encodeURIComponent(art)}`);
+        const data = await res.json();
+        if (!data.error) {
+          paletteCache.current[art] = data;
+          return data;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      return null;
+    };
+
+    const urisToFetch = new Set<string>();
+    const currentArt = getArt(currentTrack);
+    if (currentArt) urisToFetch.add(currentArt);
+
+    if (effectiveQueue && effectiveQueue.length > 0 && queueIndex < effectiveQueue.length - 1) {
+      const nextArt = getArt(effectiveQueue[queueIndex + 1]?.track);
+      if (nextArt) urisToFetch.add(nextArt);
+    }
+
+    urisToFetch.forEach(art => {
+      fetchPalette(art).then(data => {
+        if (currentArt === art && data) {
+          setPalette((prev: any) => {
+            if (prev?.vibrant === data.vibrant) return prev;
+            
+            const nextIdx = (1 - activeLayerRef.current) as 0 | 1;
+            setLayerPalettes(layers => {
+              const newLayers = [...layers] as [any, any];
+              newLayers[nextIdx] = data;
+              return newLayers;
+            });
+            activeLayerRef.current = nextIdx;
+            setActiveLayerIndex(nextIdx);
+            
+            return data;
+          });
+        }
+      });
+    });
+  }, [currentTrack, effectiveQueue, queueIndex]);
 
   const [rateLimitTimer, setRateLimitTimer] = useState<number | null>(null);
   useEffect(() => {
@@ -176,32 +298,26 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     }, 1000);
     return () => clearInterval(interval);
   }, [rateLimitTimer]);
-
-  // Update position every second if playing using player.getCurrentState()
+  // Update numeric time label in rAF loop
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (player && !isPaused && !isDragging) {
-      interval = setInterval(() => {
-        player.getCurrentState().then((state: any) => {
-          if (!state) return;
-          setPosition(state.position);
-          setDuration(state.duration);
-          if (state.repeat_mode !== undefined) {
-            if (state.repeat_mode === 0 || state.repeat_mode === '0' || state.repeat_mode === 'off') {
-              setRepeatMode('off');
-            } else if (state.repeat_mode === 1 || state.repeat_mode === '1' || state.repeat_mode === 'context') {
-              setRepeatMode('context');
-            } else if (state.repeat_mode === 2 || state.repeat_mode === '2' || state.repeat_mode === 'track') {
-              setRepeatMode('track');
-            }
-          }
-        });
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
+    let frameId: number;
+    const updateLabel = () => {
+      if (!isPaused && !isDragging) {
+        const elapsed = Date.now() - lastUpdateTimeRef.current;
+        const currentPos = Math.min(positionRef.current + elapsed, duration);
+        if (positionLabelRef.current) {
+          const ts = Math.floor(currentPos / 1000);
+          positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
+        }
+        if (progressBarRef.current) {
+          progressBarRef.current.setAttribute('aria-valuenow', Math.floor(currentPos).toString());
+        }
+      }
+      frameId = requestAnimationFrame(updateLabel);
     };
-  }, [player, isPaused, isDragging]);
+    frameId = requestAnimationFrame(updateLabel);
+    return () => cancelAnimationFrame(frameId);
+  }, [isPaused, isDragging, duration]);
 
   // Load SDK and initialize
   useEffect(() => {
@@ -260,7 +376,39 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             setRepeatMode('track');
           }
         }
-        setPosition(state.position);
+        
+        positionRef.current = state.position;
+        lastUpdateTimeRef.current = Date.now();
+        
+        if (progressBarFillRef.current && progressBarThumbRef.current) {
+          const fill = progressBarFillRef.current;
+          const thumb = progressBarThumbRef.current;
+          fill.style.animationName = 'none';
+          thumb.style.animationName = 'none';
+          fill.style.transform = '';
+          thumb.style.transform = '';
+          fill.offsetHeight; // trigger reflow
+          
+          fill.style.animationName = 'progress-fill';
+          fill.style.animationDuration = `${state.duration}ms`;
+          fill.style.animationDelay = `-${state.position}ms`;
+          fill.style.animationPlayState = state.paused ? 'paused' : 'running';
+          fill.style.animationTimingFunction = 'linear';
+          fill.style.animationFillMode = 'forwards';
+
+          thumb.style.animationName = 'progress-thumb';
+          thumb.style.animationDuration = `${state.duration}ms`;
+          thumb.style.animationDelay = `-${state.position}ms`;
+          thumb.style.animationPlayState = state.paused ? 'paused' : 'running';
+          thumb.style.animationTimingFunction = 'linear';
+          thumb.style.animationFillMode = 'forwards';
+        }
+        
+        if (positionLabelRef.current) {
+           const ts = Math.floor(state.position / 1000);
+           positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
+        }
+
         setDuration(state.duration);
 
         // Sync queue position if track is in store queue
@@ -584,7 +732,22 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     if (!progressBarRef.current || duration === 0) return;
     const bounds = progressBarRef.current.getBoundingClientRect();
     const percent = Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width));
-    setPosition(percent * duration);
+    const newPos = percent * duration;
+    
+    positionRef.current = newPos;
+    lastUpdateTimeRef.current = Date.now();
+    
+    if (positionLabelRef.current) {
+      const ts = Math.floor(newPos / 1000);
+      positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
+    }
+    if (progressBarFillRef.current && progressBarThumbRef.current) {
+      progressBarFillRef.current.style.animationName = 'none';
+      progressBarFillRef.current.style.transform = `scaleX(${percent})`;
+      
+      progressBarThumbRef.current.style.animationName = 'none';
+      progressBarThumbRef.current.style.transform = `translateX(${percent * 100 - 100}%)`;
+    }
     return percent;
   };
 
@@ -636,14 +799,14 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   })();
   const likedHomeTracks = (likedData?.tracks || []).slice(0, 6);
   const homePlaylists = playlists.slice(0, 6);
-  const vibeCards = [
-    { title: "gym", subtitle: "get in the zone", icon: "♬", tone: "from-[#FFD1E5] to-[#FF7DB8]" },
-    { title: "late night", subtitle: "for the night owls", icon: "☾", tone: "from-[#DCD5FF] to-[#B7A9FF]" },
-    { title: "comfort", subtitle: "hugs in audio form", icon: "♡", tone: "from-[#FFE0EB] to-[#FFA6C8]" },
-    { title: "crying", subtitle: "it's okay to feel", icon: "☁", tone: "from-[#DDEBFF] to-[#B9CBFF]" },
-    { title: "party", subtitle: "turn it up", icon: "✦", tone: "from-[#FFC3D8] to-[#FF7FB2]" },
-    { title: "study", subtitle: "focus mode", icon: "▭", tone: "from-[#FFE5C7] to-[#FFC48B]" },
-  ];
+
+  const handleVibeClick = async (vibeId: string) => {
+    const targetPlaylistId = resolvedVibes[vibeId] || VIBES.find((v) => v.id === vibeId)?.playlistId;
+    if (targetPlaylistId) {
+      setSelectedPlaylistId(targetPlaylistId);
+      setActiveTab('playlists');
+    }
+  };
 
   return (
       <>
@@ -656,14 +819,31 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             --color-vibrant: var(--base-color);
             --color-dark: ${palette?.computed?.dark || 'color-mix(in srgb, var(--base-color) 40%, #000000)'};
           }
+          .bg-layer-0 {
+            --layer-bg: ${layerPalettes[0]?.computed?.bg || 'color-mix(in srgb, ' + (layerPalettes[0]?.vibrant || '#C2185B') + ' 8%, #ffffff)'};
+          }
+          .bg-layer-1 {
+            --layer-bg: ${layerPalettes[1]?.computed?.bg || 'color-mix(in srgb, ' + (layerPalettes[1]?.vibrant || '#C2185B') + ' 8%, #ffffff)'};
+          }
+          @keyframes progress-fill {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
+          }
+          @keyframes progress-thumb {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0%); }
+          }
         `}} />
         <div 
-          className="w-full h-[100dvh] flex flex-col bg-[var(--color-bg)]/95 text-[var(--color-dark)] font-sans relative overflow-hidden"
+          className="w-full h-[100dvh] flex flex-col text-[var(--color-dark)] font-sans relative overflow-hidden"
         >
+          <div className={`absolute inset-0 z-0 transition-opacity duration-[600ms] ease-in-out bg-layer-0 ${activeLayerIndex === 0 ? 'opacity-95' : 'opacity-0'}`} style={{ backgroundColor: layerPalettes[0]?.computed?.bg || `color-mix(in srgb, ${layerPalettes[0]?.vibrant || '#C2185B'} 8%, #ffffff)` }} />
+          <div className={`absolute inset-0 z-0 transition-opacity duration-[600ms] ease-in-out bg-layer-1 ${activeLayerIndex === 1 ? 'opacity-95' : 'opacity-0'}`} style={{ backgroundColor: layerPalettes[1]?.computed?.bg || `color-mix(in srgb, ${layerPalettes[1]?.vibrant || '#C2185B'} 8%, #ffffff)` }} />
+          <div className="relative z-10 flex flex-col h-full w-full flex-1 min-h-0">
 
         {isSessionExpired && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-light)]/80 backdrop-blur-sm">
-            <div className="bg-white rounded-none border-4 border-[var(--color-vibrant)] shadow-[8px_8px_0px_#FF87BE] p-8 flex flex-col items-center gap-4 max-w-xs text-center">
+            <div className="bg-white rounded-none border-4 border-[var(--color-vibrant)] shadow-[8px_8px_0px_var(--color-muted)] p-8 flex flex-col items-center gap-4 max-w-xs text-center">
               <div className="text-5xl animate-bounce">🔑</div>
               <h3 className="font-pixel text-lg font-bold text-[var(--color-dark)] leading-snug">SESSION EXPIRED</h3>
               <p className="font-pixel text-xs text-[var(--color-dark)] leading-relaxed">
@@ -680,8 +860,8 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         )}
 
         {!token && !isSessionExpired && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#FFF0F7]/75 backdrop-blur-sm px-4">
-            <div className="bg-white/95 rounded-3xl border-2 border-[var(--color-muted)] shadow-[0_18px_45px_rgba(255,105,180,0.25)] p-8 flex flex-col items-center gap-4 max-w-sm text-center">
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-bg)]/75 backdrop-blur-sm px-4">
+            <div className="bg-white/95 rounded-3xl border-2 border-[var(--color-muted)] shadow-[0_18px_45px_var(--color-muted)] shadow-opacity-20 p-8 flex flex-col items-center gap-4 max-w-sm text-center">
               <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
               <h3 className="font-pixel text-2xl font-bold text-[var(--color-dark)] leading-snug">KAWAII_PLAYER.EXE</h3>
               <p className="font-pixel text-sm text-[var(--color-dark)] leading-relaxed font-medium">
@@ -706,7 +886,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         )}
 
         {/* KawaiiWindowHeader */}
-        <div className="flex h-14 border-b-2 border-[var(--color-muted)] items-center px-4 justify-between shrink-0 bg-[#FFE7F1]/95 backdrop-blur">
+        <div className="flex h-14 border-b-2 border-[var(--color-muted)] items-center px-4 justify-between shrink-0 bg-[var(--color-bg)]/95 backdrop-blur">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 mr-2">
               <div className="w-3 h-3 rounded-full bg-[var(--color-muted)]" />
@@ -768,8 +948,8 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         <div className="flex flex-1 overflow-hidden min-h-0 relative">
 
           {/* Left Sidebar */}
-          <div className="w-64 border-r-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-[#FFFFFF]/90 hidden md:flex">
-            <div className="h-28 border-2 border-[var(--color-muted)] bg-[#FFF0F7] flex items-center gap-3 justify-center m-4 rounded-2xl shrink-0">
+          <div className="w-64 border-r-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-white/90 hidden md:flex" style={{ backgroundColor: 'color-mix(in srgb, var(--color-bg) 8%, white)' }}>
+            <div className="h-28 border-2 border-[var(--color-muted)] bg-[var(--color-light)] flex items-center gap-3 justify-center m-4 rounded-2xl shrink-0">
               <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
               <div>
                 <div className="font-pixel text-lg font-bold text-[var(--color-dark)]">KAWAII</div>
@@ -830,7 +1010,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             </nav>
 
             <div className="flex flex-col flex-1 overflow-hidden mt-2">
-              <div className="px-4 py-2 flex justify-between items-center text-[var(--color-dark)] shrink-0 border-t border-[#FFD9EA]">
+              <div className="px-4 py-2 flex justify-between items-center text-[var(--color-dark)] shrink-0 border-t border-[var(--color-light)]">
                 <span className="font-pixel text-sm font-bold uppercase tracking-wider text-[var(--color-dark)]">Your Playlists</span>
                 <button
                   onClick={() => setIsCreatingPlaylist(true)}
@@ -856,8 +1036,14 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                       }
                     }}
                   >
-                    {p.images?.[0] ? (
-                      <img src={p.images[0].url} alt={p.name} className="w-8 h-8 rounded object-cover shadow-sm shrink-0 border border-[var(--color-muted)]" />
+                    {p.images && p.images.length >= 4 ? (
+                      <div className="w-8 h-8 rounded overflow-hidden grid grid-cols-2 grid-rows-2 shadow-sm shrink-0 border border-[var(--color-muted)] bg-[var(--color-muted)]">
+                        {p.images.slice(0, 4).map((img: any, i: number) => (
+                          <img key={i} src={img.url || img} alt="" className="w-full h-full object-cover" />
+                        ))}
+                      </div>
+                    ) : p.images?.[0] ? (
+                      <img src={(p.images[2] || p.images[0]).url || p.images[0]} loading="lazy" alt={p.name} className="w-8 h-8 rounded object-cover shadow-sm shrink-0 border border-[var(--color-muted)]" />
                     ) : (
                       <div className="w-8 h-8 bg-[var(--color-muted)] border border-[var(--color-muted)] rounded shadow-sm flex items-center justify-center text-[var(--color-dark)] text-xs font-bold shrink-0">♪</div>
                     )}
@@ -875,9 +1061,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
           <div className="flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col gap-6 relative bg-[var(--color-light)]">
             {activeTab === 'home' && (
               <div className="flex flex-col gap-6">
-                <section className="relative min-h-[260px] overflow-hidden rounded-[24px] border-2 border-[#FFB2D2] bg-[var(--color-light)] shadow-[0_14px_32px_rgba(255,105,180,0.18)]">
+                <section className="relative min-h-[260px] overflow-hidden rounded-[24px] border-2 border-[var(--color-muted)] bg-[var(--color-light)] shadow-sm">
                   <img src={heroArt} alt="" className="absolute inset-0 h-full w-full object-cover opacity-75" fetchPriority="high" decoding="async" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#FFD9EA]/95 via-[#FFD9EA]/75 to-[#FFD9EA]/25" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-light)]/95 via-[var(--color-light)]/75 to-[var(--color-light)]/25" />
                   <div className="relative z-10 flex min-h-[260px] items-center px-8 py-8">
                     <div className="max-w-lg">
                       <p className="font-pixel text-xs sm:text-sm font-bold tracking-widest text-[var(--color-dark)] uppercase">GOOD EVENING</p>
@@ -892,7 +1078,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                             setActiveTab('mix');
                           }
                         }}
-                        className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-6 py-2.5 font-pixel text-base font-bold text-white shadow-md transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] will-change-transform"
+                        className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-6 py-2.5 font-pixel text-base font-bold text-white shadow-md transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
                       >
                         ▶ Play Mix
                       </button>
@@ -907,17 +1093,23 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                     </h3>
                     <button onClick={() => setActiveTab('playlists')} className="font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:underline">See all →</button>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-5">
+                  <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
                     {homePlaylists.map((playlist: any, idx: number) => (
                       <button
                         key={`${playlist.id || 'playlist'}-${idx}`}
                         onClick={() => { setActiveTab('playlists'); setSelectedPlaylistId(playlist.id); }}
-                        className="group overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-white/95 text-left shadow-sm transition hover:-translate-y-1 hover:border-[var(--color-muted)] hover:shadow-[0_12px_24px_rgba(255,105,180,0.18)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
+                        className="w-[160px] sm:w-[180px] shrink-0 group overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-bg)]/95 text-left shadow-sm transition hover:-translate-y-1 hover:border-[var(--color-muted)] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
                       >
-                        {playlist.images?.[0]?.url ? (
-                          <img src={playlist.images[0].url} alt={playlist.name} className="aspect-[4/3] w-full object-cover" />
+                        {playlist.images && playlist.images.length >= 4 ? (
+                          <div className="aspect-[4/3] w-full overflow-hidden grid grid-cols-2 grid-rows-2 bg-[var(--color-light)]">
+                            {playlist.images.slice(0, 4).map((img: any, i: number) => (
+                              <img key={i} src={img.url || img} alt="" className="w-full h-full object-cover" />
+                            ))}
+                          </div>
+                        ) : playlist.images?.[0] ? (
+                          <img src={(playlist.images[1] || playlist.images[0]).url || playlist.images[0]} loading="lazy" alt={playlist.name} className="aspect-[4/3] w-full object-cover" />
                         ) : (
-                          <div className="aspect-[4/3] w-full bg-[var(--color-light)]" />
+                          <div className="aspect-[4/3] w-full bg-[var(--color-light)] flex items-center justify-center font-bold text-2xl text-[var(--color-muted)]">♪</div>
                         )}
                         <div className="p-3">
                           <div className="truncate font-pixel text-base font-bold text-[var(--color-dark)] group-hover:text-[var(--color-dark)] transition-colors">{playlist.name}</div>
@@ -936,17 +1128,17 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                     <button onClick={() => setActiveTab('vibes')} className="font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:underline">See all →</button>
                   </div>
                   <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-6">
-                    {vibeCards.map((vibe) => (
+                    {VIBES.filter(vibe => resolvedVibes[vibe.id] !== null).map((vibe) => (
                       <button
-                        key={vibe.title}
-                        onClick={() => setActiveTab('vibes')}
+                        key={vibe.id}
+                        onClick={() => handleVibeClick(vibe.id)}
                         className="overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-[var(--color-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
                       >
                         <div className={`flex aspect-[4/3] items-center justify-center bg-gradient-to-br ${vibe.tone} text-5xl text-white drop-shadow-sm`}>
-                          {vibe.icon}
+                          {vibe.emoji}
                         </div>
                         <div className="p-3">
-                          <div className="font-pixel text-base font-bold text-[var(--color-dark)]">{vibe.title}</div>
+                          <div className="font-pixel text-base font-bold text-[var(--color-dark)]">{vibe.label}</div>
                           <div className="font-pixel text-xs text-[var(--color-dark)] font-medium">{vibe.subtitle}</div>
                         </div>
                       </button>
@@ -969,7 +1161,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                         className="group overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-white/95 text-left shadow-sm transition hover:-translate-y-1 hover:border-[var(--color-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
                       >
                         {track.album?.images?.[0]?.url ? (
-                          <img src={track.album.images[0].url} alt={track.name} className="aspect-square w-full object-cover" />
+                          <img src={(track.album.images[1] || track.album.images[0]).url} loading="lazy" alt={track.name} className="aspect-square w-full object-cover" />
                         ) : (
                           <div className="aspect-square w-full bg-[var(--color-light)]" />
                         )}
@@ -1274,7 +1466,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                       setQueueModalTab(rightPanelTab);
                       setIsQueueModalOpen(true);
                     }}
-                    className="font-pixel text-xs text-[var(--color-dark)] hover:text-white bg-white hover:bg-[var(--color-vibrant)] border border-[var(--color-muted)] px-3 py-1 rounded-full flex items-center gap-1 transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs font-bold active:scale-95 will-change-transform"
+                    className="font-pixel text-xs text-[var(--color-dark)] hover:text-white bg-white hover:bg-[var(--color-vibrant)] border border-[var(--color-muted)] px-3 py-1 rounded-full flex items-center gap-1 transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs font-bold active:scale-95"
                     title="Open Queue & History Tuner"
                   >
                     <span>⤢</span> Expand
@@ -1295,7 +1487,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                       </div>
                     )}
                     {/* Record */}
-                    <div className="relative w-4/5 h-4/5 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group cursor-pointer hover:scale-[1.08] z-10 will-change-transform">
+                    <div className="relative w-4/5 h-4/5 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group cursor-pointer hover:scale-[1.08] z-10">
                       <img
                         src={currentTrack.album?.images?.[0]?.url || (typeof currentTrack.album?.images?.[0] === 'string' ? currentTrack.album.images[0] : '') || '/soundscape_ref/finalui.png'}
                         alt="Album Cover"
@@ -1308,7 +1500,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                   {/* Track Info */}
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex flex-col overflow-hidden flex-1">
-                      <h3 className="font-pixel text-xl font-bold text-[var(--color-dark)] truncate" title={currentTrack.name}>{currentTrack.name}</h3>
+                      <h3 className="font-pixel text-xl font-bold text-[var(--color-dark)] line-clamp-2" title={currentTrack.name}>{currentTrack.name}</h3>
                       <p className="font-pixel text-xs text-[var(--color-dark)] font-medium truncate" title={currentTrack.artists ? currentTrack.artists.map((a: any) => a.name).join(", ") : "Unknown Artist"}>
                         {currentTrack.artists ? currentTrack.artists.map((a: any) => a.name).join(", ") : "Unknown Artist"}
                       </p>
@@ -1329,39 +1521,32 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                       aria-label="Playback progress"
                       aria-valuemin={0}
                       aria-valuemax={duration}
-                      aria-valuenow={position}
                       tabIndex={0}
-                      className="w-full h-3 relative flex items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--color-vibrant)]"
+                      className="w-full h-4 relative flex items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
                       onPointerDown={handlePointerDown}
                       onPointerMove={handlePointerMove}
                       onPointerUp={handlePointerUp}
                       onPointerCancel={handlePointerUp}
                     >
-                      <div className="absolute left-0 right-0 h-full overflow-hidden rounded-full pointer-events-none scale-y-[0.666] group-hover/slider:scale-y-100 transition-transform duration-300 ease-out origin-center bg-black/10 dark:bg-white/10">
+                      <div className="absolute left-0 right-0 h-full overflow-hidden rounded-full pointer-events-none scale-y-[0.6] group-hover/slider:scale-y-[0.85] transition-transform duration-300 ease-out origin-center bg-[var(--color-muted)]">
                         <div 
-                          className="absolute left-0 top-0 bottom-0 w-full bg-[var(--color-dark)] rounded-full origin-left will-change-transform" 
-                          style={{ 
-                            transform: `scaleX(${duration > 0 ? position / duration : 0})`,
-                            transition: isDragging ? 'none' : 'transform 0.1s linear'
-                          }} 
+                          ref={progressBarFillRef}
+                          className="absolute left-0 top-0 bottom-0 w-full bg-[var(--color-dark)] rounded-full origin-left" 
                         />
                       </div>
                       <div 
-                        className="absolute left-0 top-0 bottom-0 w-full pointer-events-none will-change-transform"
-                        style={{ 
-                          transform: `translateX(${duration > 0 ? (position / duration) * 100 - 100 : -100}%)`,
-                          transition: isDragging ? 'none' : 'transform 0.1s linear'
-                        }}
+                        ref={progressBarThumbRef}
+                        className="absolute left-0 top-0 bottom-0 w-full pointer-events-none"
                       >
                         <img
                           src="/hampter/hello_kitty_pin.png"
                           alt="Kitty Pin"
-                          className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 max-w-none object-contain translate-x-1/2 z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300"
+                          className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 max-w-none object-contain translate-x-1/2 z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300"
                         />
                       </div>
                     </div>
                     <div className="flex justify-between w-full mt-1">
-                      <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">{formatTime(position)}</span>
+                      <span ref={positionLabelRef} className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
                       <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">{formatTime(duration)}</span>
                     </div>
                   </div>
@@ -1388,7 +1573,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                     </button>
                     <button
                       onClick={togglePlay}
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 shadow-[0_4px_14px_var(--color-vibrant)] will-change-transform ${!isPremium ? 'bg-[#1DB954] hover:bg-[#1ed760]' : 'bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)]'}`}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 shadow-[0_4px_14px_var(--color-vibrant)] ${!isPremium ? 'bg-[#1DB954] hover:bg-[#1ed760]' : 'bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)]'}`}
                       disabled={!isReady && !token && isPremium}
                       aria-label={!isPremium ? "Open in Spotify" : isPaused ? "Play" : "Pause"}
                       title={!isPremium ? "Open in Spotify" : isPaused ? "Play" : "Pause"}
@@ -1449,7 +1634,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                     </div>
                   </div>
                   <div className="w-full flex flex-col gap-1 mt-2">
-                    <div className="w-full h-1.5 bg-[var(--color-light)] rounded-full"></div>
+                    <div className="w-full h-2.5 bg-[var(--color-muted)] rounded-full"></div>
                     <div className="flex justify-between w-full">
                       <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
                       <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
@@ -1579,7 +1764,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                           {idx + 1}
                         </span>
                         {item.track?.album?.images?.[0]?.url ? (
-                          <img src={item.track.album.images[0].url} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]" />
+                          <img src={(item.track.album.images[2] || item.track.album.images[0]).url} loading="lazy" alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]" />
                         ) : (
                           <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)] text-xs font-bold">♪</div>
                         )}
@@ -1635,7 +1820,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                             {idx + 1}
                           </span>
                           {track.album?.images?.[0]?.url ? (
-                            <img src={track.album.images[0].url} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]" />
+                            <img src={(track.album.images[2] || track.album.images[0]).url} loading="lazy" alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]" />
                           ) : (
                             <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)] text-xs font-bold">♪</div>
                           )}
@@ -1715,6 +1900,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             }}
           />
         )}
+        </div>
       </div>
       </>
   );
