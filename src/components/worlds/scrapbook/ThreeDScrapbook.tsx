@@ -429,8 +429,8 @@ const VideoFrame = React.memo(function VideoFrame({
             ))}
           </div>
 
-          <div className="font-pixel text-[9px] sm:text-[10px] text-[#FF8FB3] font-bold tracking-widest uppercase">
-            ✦ SPECIAL MEMORY 🎬✨ ✦
+          <div className="font-pixel text-[10px] sm:text-[12px] text-[#FF8FB3] font-bold tracking-widest uppercase">
+            BON JOVI WHO? ✨
           </div>
 
           {onGoToCover ? (
@@ -571,7 +571,10 @@ const PageContent = React.memo(function PageContent({
     );
   }
 
-  const isVideoPage = data.pageTitle === "THE END ✦" || data.items.some(i => i.src?.endsWith('.mp4') || i.src?.includes('vid.mp4'));
+  const isVideoPage = Boolean(
+    data.pageTitle === "THE END ✦" ||
+    data.items.some(i => i.src?.endsWith('.mp4') || i.src?.endsWith('.webm') || i.src?.includes('vid.mp4'))
+  );
 
   if (isVideoPage) {
     const videoSrc = data.items.find(i => i.src?.endsWith('.mp4'))?.src || "/videos/vid.mp4";
@@ -581,9 +584,15 @@ const PageContent = React.memo(function PageContent({
         <div className="absolute inset-0 opacity-100 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#FFE4A1 1.5px, transparent 1.5px)', backgroundSize: '24px 24px' }} />
 
         {data.pageTitle && (
-          <h2 className="relative font-pixel text-[#FF8FB3] text-base sm:text-xl font-bold mb-1 z-10 text-center tracking-widest uppercase drop-shadow-[2px_2px_0_white] shrink-0">
-            {data.pageTitle}
-          </h2>
+          <div className="relative z-10 flex justify-center mb-1 shrink-0">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-5 py-0.5 sm:py-1 bg-white/95 rounded-full border-2 border-white shadow-[0_4px_14px_rgba(255,143,179,0.35),2px_2px_0_#FFB6C1] -rotate-1">
+              <span className="text-xs sm:text-sm text-[#FF8FB3] select-none">✿</span>
+              <h2 className="font-['Fredoka'] text-[#881337] text-xs sm:text-sm font-bold tracking-wider uppercase">
+                {data.pageTitle}
+              </h2>
+              <span className="text-xs sm:text-sm text-[#FFE4A1] select-none">✦</span>
+            </div>
+          </div>
         )}
 
         <div className="flex-1 relative z-10 w-full min-h-0 flex items-center justify-center">
@@ -627,9 +636,15 @@ const PageContent = React.memo(function PageContent({
       <div className="absolute inset-0 opacity-100 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#FFE4A1 1.5px, transparent 1.5px)', backgroundSize: '24px 24px' }} />
 
       {data.pageTitle && (
-        <h2 className="relative font-pixel text-[#FF8FB3] text-lg sm:text-2xl font-bold mb-4 z-10 text-center tracking-widest uppercase drop-shadow-[2px_2px_0_white]">
-          {data.pageTitle}
-        </h2>
+        <div className="relative z-10 flex justify-center mb-3 sm:mb-4 shrink-0">
+          <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-1 sm:py-1.5 bg-white/95 rounded-full border-2 border-white shadow-[0_4px_14px_rgba(255,143,179,0.35),2px_2px_0_#FFB6C1] -rotate-1">
+            <span className="text-xs sm:text-sm text-[#FF8FB3] select-none">✿</span>
+            <h2 className="font-['Fredoka'] text-[#881337] text-xs sm:text-sm lg:text-base font-bold tracking-wider uppercase">
+              {data.pageTitle}
+            </h2>
+            <span className="text-xs sm:text-sm text-[#FFE4A1] select-none">✦</span>
+          </div>
+        </div>
       )}
 
       <div className="flex-1 relative z-10 w-full">
@@ -750,46 +765,23 @@ export default function ThreeDScrapbook() {
     const initScrapbook = async () => {
       let finalLayout = [...appSpreads]; // Fallback to SPREADS
 
-      // 1. Check local storage recovery
-      const saved = localStorage.getItem('scrapbook_spreads');
-      if (saved) {
-        try {
-          let savedSpreads = JSON.parse(saved);
-          if (savedSpreads.length > 0) {
-            if (savedSpreads[0].right?.pageTitle !== "COVER") {
-              savedSpreads = [
-                { left: { pageTitle: "", items: [] }, right: { pageTitle: "COVER", items: [] } },
-                ...savedSpreads
-              ];
-            }
-            finalLayout = savedSpreads;
+      // Clear any legacy localStorage cache that might hold stale titles
+      try {
+        localStorage.removeItem('scrapbook_spreads');
+      } catch { }
 
-            const dataToSave = savedSpreads[0].right?.pageTitle === "COVER" ? savedSpreads.slice(1) : savedSpreads;
-            fetch('/api/save-scrapbook', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(dataToSave)
-            }).then(() => {
-              localStorage.removeItem('scrapbook_spreads');
-            }).catch((e) => {
-              console.error(`Migration failed: ${e.message}`);
-            });
-          }
-        } catch (e) { console.error(`localStorage recovery failed: ${e}`); }
-      } else {
-        // 2. Fetch fresh layout from API
-        try {
-          const res = await fetch('/api/get-scrapbook?t=' + Date.now());
-          const serverSpreads = await res.json();
-          if (serverSpreads && serverSpreads.length > 0) {
-            finalLayout = [
-              { left: { pageTitle: "", items: [] }, right: { pageTitle: "COVER", items: [] } },
-              ...serverSpreads
-            ];
-          }
-        } catch (e) {
-          console.error(`API fetch failed: ${e}`);
+      // Fetch fresh layout from API
+      try {
+        const res = await fetch('/api/get-scrapbook?t=' + Date.now());
+        const serverSpreads = await res.json();
+        if (serverSpreads && serverSpreads.length > 0) {
+          finalLayout = [
+            { left: { pageTitle: "", items: [] }, right: { pageTitle: "COVER", items: [] } },
+            ...serverSpreads
+          ];
         }
+      } catch (e) {
+        console.error(`API fetch failed: ${e}`);
       }
 
       if (!isCancelled) {
@@ -1480,7 +1472,7 @@ export default function ThreeDScrapbook() {
 
           {/* Scroll Hint Popup */}
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-[#FFD0DC] px-6 py-2 rounded-full text-[#20233F] font-pixel text-xs tracking-wider shadow-[0_4px_12px_rgba(255,182,193,0.4)] border border-white/50 pointer-events-none z-[999999]">
-            ✦ SCROLL TO NAVIGATE ✦
+            ✦ SCROLL OR GESTURES TO NAVIGATE ✦
           </div>
         </div>,
         document.body
@@ -1667,7 +1659,7 @@ export default function ThreeDScrapbook() {
               onClick={handleExportCode}
               title="Copies final SPREADS code to clipboard — paste into source before deploying"
             >
-              📋 EXPORT FOR DEPLOY
+              📋 EXPORT FOR PROD
             </button>
             <button
               className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#B8E6D0] text-[#20233F]"
