@@ -21,8 +21,14 @@ export function PlaylistCard({ playlist, onClick, onAddMemory, variant = 'defaul
         className="flex-1 flex items-center gap-3 active:scale-95 text-left truncate min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-lg p-1 -m-1"
         aria-label={`Open playlist ${playlist.name}`}
       >
-        {playlist.images && playlist.images[0] ? (
-          <img src={playlist.images[0].url} alt="" className={`${imgSize} rounded-lg shadow-sm object-cover transition-transform duration-200 group-hover:scale-105 group-hover:shadow-md shrink-0`} />
+        {playlist.images && playlist.images.length >= 4 ? (
+          <div className={`${imgSize} rounded-lg shadow-sm overflow-hidden grid grid-cols-2 grid-rows-2 shrink-0 transition-transform duration-200 group-hover:scale-105 group-hover:shadow-md bg-[var(--color-muted)]`}>
+            {playlist.images.slice(0, 4).map((img: any, i: number) => (
+              <img key={i} src={img.url || img} alt="" className="w-full h-full object-cover" />
+            ))}
+          </div>
+        ) : playlist.images && playlist.images[0] ? (
+          <img src={playlist.images[0].url || playlist.images[0]} alt="" className={`${imgSize} rounded-lg shadow-sm object-cover transition-transform duration-200 group-hover:scale-105 group-hover:shadow-md shrink-0`} />
         ) : (
           <div className={`${imgSize} rounded-lg bg-[var(--color-muted)] flex items-center justify-center shadow-sm shrink-0 text-[var(--color-dark)] font-bold text-xs`}>
             ♪

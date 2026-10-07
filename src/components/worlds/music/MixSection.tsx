@@ -90,7 +90,7 @@ export function MixSection({
                 refetchMix();
               }}
               disabled={isMixLoading}
-              className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] px-3.5 py-2 rounded-xl font-pixel text-xs font-bold transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs hover:scale-105 active:scale-95 will-change-transform flex items-center gap-1.5 disabled:opacity-50"
+              className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] px-3.5 py-2 rounded-xl font-pixel text-xs font-bold transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs hover:scale-105 active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
               title="Generate a fresh new mix"
             >
               <span>🔀</span> Re-mix
@@ -102,7 +102,7 @@ export function MixSection({
                 }
               }}
               disabled={isMixLoading || filteredMix.length === 0}
-              className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white px-5 py-2 rounded-xl font-pixel text-xs font-bold transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-md hover:scale-105 active:scale-95 will-change-transform flex items-center gap-1.5 disabled:opacity-50"
+              className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white px-5 py-2 rounded-xl font-pixel text-xs font-bold transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-md hover:scale-105 active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
             >
               <span>▶</span> Play Entire Mix ({filteredMix.length})
             </button>
