@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "is_current_unique" ON "scrapbook_versions" USING btree ("is_current") WHERE "is_current" = true;

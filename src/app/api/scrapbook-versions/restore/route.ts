@@ -17,36 +17,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Validate Body
-    const data = await req.json();
-    if (!Array.isArray(data) || data.length === 0) {
-      return NextResponse.json({ error: "Invalid data format: must be a non-empty array of spreads" }, { status: 400 });
-    }
-    // Step 4 tightened validation: check if first spread has a `left` or `right` page
-    if (!data[0] || (typeof data[0] !== "object") || (!data[0].left && !data[0].right)) {
-      return NextResponse.json({ error: "Invalid data format: spreads must contain 'left' or 'right' objects" }, { status: 400 });
+    const { id } = await req.json();
+    if (typeof id !== "number") {
+      return NextResponse.json({ error: "Invalid data format: must provide a numeric id" }, { status: 400 });
     }
 
-    // 3. Database Batch
-    // Flips the current active row to false, and inserts the new one as true
+    // Database Batch
+    // Flips the current active row to false, and the target row to true
     await db.batch([
       db
         .update(scrapbookVersions)
         .set({ isCurrent: false })
         .where(eq(scrapbookVersions.isCurrent, true)),
       db
-        .insert(scrapbookVersions)
-        .values({
-          name: "client-update",
-          data: data,
-          isCurrent: true,
-        })
+        .update(scrapbookVersions)
+        .set({ isCurrent: true })
+        .where(eq(scrapbookVersions.id, id))
     ]);
     
     return NextResponse.json({ success: true });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error(`[Scrapbook Save Route] Database write failed. Error: ${errorMessage}`);
+    console.error(`[Scrapbook Restore Route] Database write failed. Error: ${errorMessage}`);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

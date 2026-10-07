@@ -725,6 +725,9 @@ export default function ThreeDScrapbook() {
     ...SPREADS
   ]);
   const [editMode, setEditMode] = useState(false);
+  const [sessionSecret, setSessionSecret] = useState<string>("");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedFrame, setSelectedFrame] = useState<{ spreadIdx: number, side: 'left' | 'right', itemIdx: number } | null>(null);
 
   // 2.2-second cute Japanese loading screen
@@ -773,7 +776,8 @@ export default function ThreeDScrapbook() {
       // Fetch fresh layout from API
       try {
         const res = await fetch('/api/get-scrapbook?t=' + Date.now());
-        const serverSpreads = await res.json();
+        const serverResponse = await res.json();
+        const serverSpreads = Array.isArray(serverResponse) ? serverResponse : serverResponse.data;
         if (serverSpreads && serverSpreads.length > 0) {
           finalLayout = [
             { left: { pageTitle: "", items: [] }, right: { pageTitle: "COVER", items: [] } },
@@ -1148,13 +1152,16 @@ export default function ThreeDScrapbook() {
   }, [editMode, selectedFrame]);
 
   const handleSave = useCallback(async () => {
+    let secretToUse = sessionSecret;
+    if (!secretToUse) {
+      setSaveError("Please enter the admin secret to save.");
+      return;
+    }
+
+    setSaveError(null);
+    setIsSaving(true);
     const newSpreads = JSON.parse(JSON.stringify(appSpreads));
 
-    // Update local state instantly
-    setAppSpreads(newSpreads);
-    setEditMode(false);
-
-    // Also persist via the new API so the JSON data file updates immediately
     try {
       const dataToSave = newSpreads.length > 0 && newSpreads[0].right?.pageTitle === "COVER"
         ? newSpreads.slice(1) // Remove the temporary COVER spread if it exists
@@ -1162,21 +1169,40 @@ export default function ThreeDScrapbook() {
 
       const res = await fetch('/api/save-scrapbook', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-scrapbook-secret': secretToUse
+        },
         body: JSON.stringify(dataToSave)
       });
+      
       if (!res.ok) {
-        const err = await res.json();
-        console.log(`API SAVE FAILED: ${err.error || res.statusText}`);
-        alert("Failed to save to JSON file: " + (err.error || res.statusText));
-      } else {
-        console.log(`API SAVE SUCCESS! Layout is now permanent.`);
-      }
+        if (res.status === 401) {
+          setSaveError("Wrong secret! Your changes were not saved, try again.");
+          setSessionSecret("");
+        } else if (res.status === 500) {
+          const err = await res.json().catch(() => ({}));
+          setSaveError("Server error: " + (err.error || res.statusText));
+        } else {
+          const err = await res.json().catch(() => ({}));
+          setSaveError("Failed to save: " + (err.error || res.statusText));
+        }
+        setIsSaving(false);
+        return;
+      } 
+      
+      console.log(`API SAVE SUCCESS! Layout is now permanent.`);
+      setSessionSecret(secretToUse);
+      setAppSpreads(newSpreads);
+      setEditMode(false);
+      setIsSaving(false);
+      
     } catch (e) {
       console.log(`API SAVE NETWORK ERROR: ${e}`);
-      alert("Failed to save to JSON file due to a network error.");
+      setSaveError("Failed to save due to a network error.");
+      setIsSaving(false);
     }
-  }, [appSpreads]);
+  }, [appSpreads, sessionSecret]);
 
   const handleExportCode = useCallback(() => {
     const finalSpreads = JSON.parse(JSON.stringify(appSpreads));
@@ -1651,31 +1677,49 @@ export default function ThreeDScrapbook() {
       </div>
 
       {/* Edit Mode Toggle & Save UI */}
-      <div className="absolute bottom-4 right-4 z-[1000] flex gap-2">
-        {editMode ? (
-          <>
-            <button
-              className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#FFE4A1] text-[#20233F]"
-              onClick={handleExportCode}
-              title="Copies final SPREADS code to clipboard — paste into source before deploying"
-            >
-              📋 EXPORT FOR PROD
-            </button>
-            <button
-              className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#B8E6D0] text-[#20233F]"
-              onClick={handleSave}
-            >
-              ✓ DONE
-            </button>
-          </>
-        ) : (
-          <button
-            className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#FFD0DC] text-[#20233F]"
-            onClick={() => setEditMode(true)}
-          >
-            {'EDIT MODE (FOR VPN ONLY)'}
-          </button>
+      <div className="absolute bottom-4 right-4 z-[1000] flex flex-col items-end gap-2">
+        {saveError && (
+          <div className="bg-[#FF4757] text-white px-4 py-2 font-pixel text-xs border-4 border-[#20233F] shadow-[4px_4px_0_#20233F] animate-bounce">
+            {saveError}
+          </div>
         )}
+        <div className="flex gap-2 items-center">
+          {editMode ? (
+            <>
+              <input 
+                type="password" 
+                placeholder="Admin Secret" 
+                value={sessionSecret} 
+                onChange={e => {
+                  setSessionSecret(e.target.value);
+                  if (saveError) setSaveError(null);
+                }}
+                className="border-4 border-[#20233F] px-3 py-2.5 font-pixel text-xs shadow-[4px_4px_0_#20233F] outline-none focus:bg-[#FFF0F5] w-32 sm:w-40"
+              />
+              <button
+                className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#FFE4A1] text-[#20233F]"
+                onClick={handleExportCode}
+                title="Copies final SPREADS code to clipboard — paste into source before deploying"
+              >
+                📋 EXPORT FOR PROD
+              </button>
+              <button
+                className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#B8E6D0] text-[#20233F] disabled:opacity-50"
+                onClick={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? "SAVING..." : "✓ DONE"}
+              </button>
+            </>
+          ) : (
+            <button
+              className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#FFD0DC] text-[#20233F]"
+              onClick={() => setEditMode(true)}
+            >
+              {'EDIT MODE (FOR VPN ONLY)'}
+            </button>
+          )}
+        </div>
       </div>
 
     </div>
