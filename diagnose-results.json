@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-10-07T14:35:24.935Z",
+  "step1_me": {
+    "status": 401,
+    "id": "N/A",
+    "display_name": "N/A"
+  },
+  "step1_error": {
+    "error": {
+      "status": 401,
+      "message": "Missing/invalid/expired access token"
+    }
+  }
+}

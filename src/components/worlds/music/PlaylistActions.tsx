@@ -12,7 +12,7 @@ export function PlaylistActions({ onPlay, onShuffle, disabled }: PlaylistActions
       <button 
         onClick={onPlay}
         disabled={disabled}
-        className={`flex-1 shrink-0 bg-gradient-to-r from-[#D81B60] to-[#C2185B] text-white py-3 rounded-xl shadow-[0_4px_14px_rgba(194,24,91,0.35)] transition-all flex flex-col items-center justify-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#881337] ${disabled ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
+        className={`flex-1 shrink-0 bg-gradient-to-r from-[var(--color-vibrant)] to-[var(--color-vibrant)] text-white py-3 rounded-xl shadow-[0_4px_14px_var(--color-vibrant)] transition-all flex flex-col items-center justify-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] ${disabled ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
       >
         <span className="font-pixel text-sm font-bold tracking-widest">
           ✨ PLAY ✨
@@ -21,7 +21,7 @@ export function PlaylistActions({ onPlay, onShuffle, disabled }: PlaylistActions
       <button
         onClick={onShuffle}
         disabled={disabled}
-        className={`px-4 py-3 bg-[#FFF0F5] border-2 border-[#FF87BE] rounded-xl text-[#7A2871] hover:text-[#881337] hover:bg-[#FFE4E1] transition-all flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#881337] ${disabled ? 'opacity-70 cursor-not-allowed' : 'active:scale-95 hover:scale-[1.02]'}`}
+        className={`px-4 py-3 bg-[var(--color-light)] border-2 border-[var(--color-muted)] rounded-xl text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:bg-[var(--color-light)] transition-all flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] ${disabled ? 'opacity-70 cursor-not-allowed' : 'active:scale-95 hover:scale-[1.02]'}`}
         title="Shuffle Play"
         aria-label="Shuffle Play"
       >

@@ -3,7 +3,7 @@ import { TrackRow } from './TrackRow';
 
 interface TrackListProps {
   tracks: any[];
-  onPlayTrack: (uri: string, contextUri?: string) => void;
+  onPlayTrack: (uri: string, contextUri?: string, trackObj?: any) => void;
   onAddToQueue?: (track: any) => void;
   onAddToPlaylist?: (uri: string) => void;
   onRemoveFromPlaylist?: (uri: string) => void;
@@ -14,16 +14,16 @@ interface TrackListProps {
   variant?: 'default' | 'compact';
 }
 
-export function TrackList({ tracks, onPlayTrack, onAddToQueue, onAddToPlaylist, onRemoveFromPlaylist, onAddMemory, onReorder, emptyMessage = "NO TRACKS FOUND", isLoading = false, variant = 'default' }: TrackListProps) {
+export const TrackList = React.memo(function TrackList({ tracks, onPlayTrack, onAddToQueue, onAddToPlaylist, onRemoveFromPlaylist, onAddMemory, onReorder, emptyMessage = "NO TRACKS FOUND", isLoading = false, variant = 'default' }: TrackListProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs animate-pulse">LOADING...</div>;
+    return <div className="flex items-center justify-center h-20 text-[var(--color-muted)] font-pixel text-xs animate-pulse">LOADING...</div>;
   }
   
   if (tracks.length === 0) {
-    return <div className="flex items-center justify-center h-20 text-[#FFB6C1] font-pixel text-xs">{emptyMessage}</div>;
+    return <div className="flex items-center justify-center h-20 text-[var(--color-muted)] font-pixel text-xs">{emptyMessage}</div>;
   }
 
   return (
@@ -63,10 +63,10 @@ export function TrackList({ tracks, onPlayTrack, onAddToQueue, onAddToPlaylist, 
               setDragOverIndex(null);
             }
           }}
-          className={`${dragOverIndex === i ? (draggedIndex !== null && draggedIndex < i ? 'border-b-[#D81B60] border-b-2' : 'border-t-[#D81B60] border-t-2') : ''} ${draggedIndex === i ? 'opacity-50' : 'opacity-100'} transition-all flex items-center group`}
+          className={`${dragOverIndex === i ? (draggedIndex !== null && draggedIndex < i ? 'border-b-[var(--color-vibrant)] border-b-2' : 'border-t-[var(--color-vibrant)] border-t-2') : ''} ${draggedIndex === i ? 'opacity-50' : 'opacity-100'} transition-all flex items-center group`}
         >
           {onReorder && (
-            <div className="px-1 text-[#FFB6C1] hover:text-[#FF69B4] cursor-grab active:cursor-grabbing opacity-50 group-hover:opacity-100 shrink-0">
+            <div className="px-1 text-[var(--color-muted)] hover:text-[var(--color-muted)] cursor-grab active:cursor-grabbing opacity-50 group-hover:opacity-100 shrink-0">
               ⠿
             </div>
           )}
@@ -77,4 +77,4 @@ export function TrackList({ tracks, onPlayTrack, onAddToQueue, onAddToPlaylist, 
       ))}
     </div>
   );
-}
+});

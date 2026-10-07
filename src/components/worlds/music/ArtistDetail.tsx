@@ -48,7 +48,7 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
         <div className="text-[#FF4500] font-pixel text-xs text-center px-4">
           RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((artistError as any)?.retryAfter ?? 60)} SECONDS.
         </div>
-        <button onClick={onBack} className="mt-4 font-pixel text-[#FF69B4] text-[10px]">GO BACK</button>
+        <button onClick={onBack} className="mt-4 font-pixel text-[var(--color-muted)] text-[10px]">GO BACK</button>
       </div>
     );
   }
@@ -56,7 +56,7 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
   if (isLoadingArtist) {
     return (
       <div className="flex flex-col h-full items-center justify-center">
-        <div className="text-[#FFB6C1] font-pixel text-xs animate-pulse">LOADING ARTIST...</div>
+        <div className="text-[var(--color-muted)] font-pixel text-xs animate-pulse">LOADING ARTIST...</div>
       </div>
     );
   }
@@ -64,8 +64,8 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
   if (!artist) {
     return (
       <div className="flex flex-col h-full items-center justify-center">
-        <div className="text-[#FFB6C1] font-pixel text-xs">ARTIST NOT FOUND</div>
-        <button onClick={onBack} className="mt-4 font-pixel text-[#FF69B4] text-[10px]">GO BACK</button>
+        <div className="text-[var(--color-muted)] font-pixel text-xs">ARTIST NOT FOUND</div>
+        <button onClick={onBack} className="mt-4 font-pixel text-[var(--color-muted)] text-[10px]">GO BACK</button>
       </div>
     );
   }
@@ -101,7 +101,7 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
             <span className="text-[#FF4500]">RELEASES UNAVAILABLE</span>
           </div>
         ) : isLoadingAlbums ? (
-          <div className="flex items-center justify-center text-[#FFB6C1] font-pixel text-xs animate-pulse h-20">
+          <div className="flex items-center justify-center text-[var(--color-muted)] font-pixel text-xs animate-pulse h-20">
             LOADING RELEASES...
           </div>
         ) : (
@@ -117,7 +117,7 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
               </div>
             ) : (featuredTracksData?.tracks?.items && featuredTracksData.tracks.items.length > 0) ? (
               <div className="flex flex-col gap-3">
-                <h3 className="font-pixel text-[12px] text-[#D81B60]">FEATURED TRACKS</h3>
+                <h3 className="font-pixel text-[12px] text-[var(--color-vibrant)]">FEATURED TRACKS</h3>
                 <TrackList 
                   tracks={featuredTracksData.tracks.items.slice(0, 5)} 
                   isLoading={isLoadingFeaturedTracks} 
@@ -128,18 +128,18 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
                 />
               </div>
             ) : (featuredTracksData && (!featuredTracksData.tracks?.items || featuredTracksData.tracks.items.length === 0)) ? (
-              <div className="flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2 h-20 text-[#FFB6C1]/70">
+              <div className="flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2 h-20 text-[var(--color-muted)]/70">
                 NO FEATURED TRACKS FOUND
               </div>
             ) : isLoadingFeaturedTracks ? (
-              <div className="flex items-center justify-center text-[#FFB6C1] font-pixel text-xs animate-pulse h-20">
+              <div className="flex items-center justify-center text-[var(--color-muted)] font-pixel text-xs animate-pulse h-20">
                 FEATURED TRACKS...
               </div>
             ) : null}
 
             {albums.length > 0 && (
               <div className="flex flex-col gap-3">
-                <h3 className="font-pixel text-[12px] text-[#D81B60]">ALBUMS</h3>
+                <h3 className="font-pixel text-[12px] text-[var(--color-vibrant)]">ALBUMS</h3>
                 <div className="flex flex-col gap-2">
                   {albums.map((album: any) => (
                     <AlbumCard key={album.id} album={album} onClick={onClickAlbum} variant="default" />
@@ -150,7 +150,7 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
             
             {singles.length > 0 && (
               <div className="flex flex-col gap-3">
-                <h3 className="font-pixel text-[12px] text-[#D81B60]">SINGLES & EPS</h3>
+                <h3 className="font-pixel text-[12px] text-[var(--color-vibrant)]">SINGLES & EPS</h3>
                 <div className="flex flex-col gap-2">
                   {singles.map((single: any) => (
                     <AlbumCard key={single.id} album={single} onClick={onClickAlbum} variant="default" />
@@ -160,7 +160,7 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
             )}
 
             {albums.length === 0 && singles.length === 0 && (
-              <div className="flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2 h-20 text-[#FFB6C1]/70">
+              <div className="flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2 h-20 text-[var(--color-muted)]/70">
                 NO RELEASES FOUND
               </div>
             )}

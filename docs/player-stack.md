@@ -116,19 +116,19 @@ dimensional scene (a room, a camera that moves).
 
 ## Build order
 
-1. Spotify auth + SDK init + playback state machine (incl. no-Premium path)
-2. `next/image` config + album art rendering
-3. Palette route + CSS variable theming
-4. GSAP setup + vinyl spin bound to playback state
-5. Flip transition between playlist and now-playing
-6. Progress interpolation + tempo-driven visual pulse
-7. Pixel/SVG character layer
-8. *(gated)* beat-timeline scrubbing if `audio-analysis` is available
-9. *(optional)* Lenis, Rive
+- [x] 1. Spotify auth + SDK init + playback state machine (incl. no-Premium path)
+- [x] 2. `next/image` config + album art rendering
+- [x] 3. Palette route + CSS variable theming
+- [x] 4. GSAP setup + vinyl spin bound to playback state
+- [ ] 5. Flip transition between playlist and now-playing
+- [ ] 6. Progress interpolation + tempo-driven visual pulse
+- [ ] 7. Pixel/SVG character layer
+- [~] 8. *(cancelled)* beat-timeline scrubbing (403 Forbidden on audio-analysis)
+- [ ] 9. *(optional)* Lenis, Rive
 
 ## Open questions
 
-- [ ] Does our Spotify app have `audio-analysis` access? (one curl, do first)
-- [ ] What does a non-Premium visitor see? Needs a design answer, not a fallback.
+- [x] Does our Spotify app have `audio-analysis` access? (No. Confirmed 403 Forbidden).
+- [x] What does a non-Premium visitor see? (Implemented "Open in Spotify" graceful degradation path where track rows and player controls link out to Spotify instead of failing on 403).
 - [ ] Mobile: is the player a first-class target or desktop-first?
   SDK reliability on mobile browsers is poor enough that this changes scope.

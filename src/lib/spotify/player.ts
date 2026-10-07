@@ -30,7 +30,7 @@ export async function getRelevantTracks(track: any, limit: number = 10): Promise
     if (artistName) {
       // Find top tracks from the same artist
       const query = `artist:"${artistName.replace(/"/g, '')}"`;
-      const searchData = await proxyFetch(`/search?q=${encodeURIComponent(query)}&type=track&limit=20`);
+      const searchData = await proxyFetch(`/search?q=${encodeURIComponent(query)}&type=track`);
       const items = searchData?.tracks?.items || [];
       const filtered = items.filter((t: any) => t && t.id !== trackId && t.is_playable !== false);
       if (filtered.length >= 3) {
@@ -40,11 +40,11 @@ export async function getRelevantTracks(track: any, limit: number = 10): Promise
 
     // Fallback: search for genre or title keywords
     const fallbackQuery = track.name ? `track:"${track.name.replace(/[^a-zA-Z0-9 ]/g, ' ').trim()}"` : 'genre:pop';
-    const fallbackData = await proxyFetch(`/search?q=${encodeURIComponent(fallbackQuery)}&type=track&limit=20`);
+    const fallbackData = await proxyFetch(`/search?q=${encodeURIComponent(fallbackQuery)}&type=track`);
     const fallbackItems = (fallbackData?.tracks?.items || []).filter((t: any) => t && t.id !== trackId);
     return fallbackItems.slice(0, limit);
-  } catch (error) {
-    console.error('Error fetching relevant tracks:', error);
+  } catch (error: any) {
+    console.warn('Warning fetching relevant tracks:', error?.error?.message || error?.message || error);
     return [];
   }
 }
