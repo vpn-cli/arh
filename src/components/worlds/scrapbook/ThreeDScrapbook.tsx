@@ -514,7 +514,7 @@ const PageContent = React.memo(function PageContent({
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-0.5 bg-[#FFE4A1] border-2 border-[#20233F] rounded-full shadow-[2px_2px_0_#20233F] -rotate-1">
               <span className="text-xs">🎀</span>
               <span className="font-pixel text-[9px] sm:text-[10px] text-[#20233F] font-bold tracking-widest uppercase">
-                MEMORIES ALBUM
+                MEMORY CAPSULE
               </span>
               <span className="text-xs">✦</span>
             </div>
@@ -557,7 +557,7 @@ const PageContent = React.memo(function PageContent({
             {/* Polaroid Chin Label */}
             <div className="mt-1.5 sm:mt-2 text-center flex items-center justify-center gap-1.5 px-3 py-0.5 bg-[#FFF0F5] border border-[#FFB6C1] rounded-full shadow-sm">
               <span className="font-pixel text-[9px] sm:text-[11px] text-[#881337] font-bold tracking-widest uppercase">
-                ✦ ARH ✦ SPECIAL MOMENTS ✦
+                {"✦ MAAHIVEY -> THIS WAY ✦"}
               </span>
             </div>
           </div>
@@ -887,7 +887,6 @@ export default function ThreeDScrapbook() {
   const carouselDragRef = useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
   const [inspectVisible, setInspectVisible] = useState(false);
   const [carouselReady, setCarouselReady] = useState(false);
-  const [showScrollHint, setShowScrollHint] = useState(false);
 
   // Smooth scroll & momentum physics refs for inspect carousel
   const carouselTargetScrollRef = useRef<number | null>(null);
@@ -1016,8 +1015,6 @@ export default function ThreeDScrapbook() {
     setCarouselReady(false);
     setInspectImage(src);
     setInspectVisible(true);
-    setShowScrollHint(true);
-    setTimeout(() => setShowScrollHint(false), 3500);
 
     // Preload full version only for clicked image and its immediate neighbours (+/-1)
     const idx = allImages.indexOf(src);
@@ -1482,7 +1479,7 @@ export default function ThreeDScrapbook() {
           </div>
 
           {/* Scroll Hint Popup */}
-          <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 bg-[#FFD0DC] px-6 py-2 rounded-full text-[#20233F] font-pixel text-xs tracking-wider shadow-[0_4px_12px_rgba(255,182,193,0.4)] border border-white/50 pointer-events-none z-[999999] transition-opacity duration-1000 ${showScrollHint ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-[#FFD0DC] px-6 py-2 rounded-full text-[#20233F] font-pixel text-xs tracking-wider shadow-[0_4px_12px_rgba(255,182,193,0.4)] border border-white/50 pointer-events-none z-[999999]">
             ✦ SCROLL TO NAVIGATE ✦
           </div>
         </div>,
