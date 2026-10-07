@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import gsap from "gsap";
 import { sfx, getAudioContext } from "@/lib/audio";
 
 let flipAudioBuffer: AudioBuffer | null = null;
@@ -33,6 +32,8 @@ function loadFlipAudio() {
 if (typeof window !== "undefined") {
   loadFlipAudio();
 }
+
+const decodedImagesCache = new Set<HTMLImageElement>();
 
 function playFlipSound() {
   try {
@@ -260,7 +261,6 @@ const VideoFrame = React.memo(function VideoFrame({
   src,
   isCurrentSpread,
   onGoToCover,
-  editMode,
 }: {
   src: string;
   isCurrentSpread?: boolean;
@@ -613,7 +613,7 @@ const PageContent = React.memo(function PageContent({
     <div
       className="relative w-full h-full p-4 sm:p-6 lg:p-8 flex flex-col overflow-hidden select-none cursor-pointer"
       style={{ backgroundColor: "#FFB6C1" }}
-      onClick={(e) => {
+      onClick={() => {
         if (side === 'right' && onTurnPage && spreadIdx < (totalSpreads || 1) - 1 && data.pageTitle !== "COVER") {
           onTurnPage(1);
         } else if (side === 'left' && onTurnPage && spreadIdx > 0) {
@@ -817,6 +817,7 @@ export default function ThreeDScrapbook() {
       window.removeEventListener('unhandledrejection', (e) => logError(e.reason));
       window.removeEventListener('error', (e) => logError(e.message));
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [currentSpread, setCurrentSpread] = useState(0);
@@ -824,29 +825,56 @@ export default function ThreeDScrapbook() {
   const [flippingDir, setFlippingDir] = useState(0);
   const [inspectImage, setInspectImage] = useState<string | null>(null);
 
+  const [settledSpread, setSettledSpread] = useState(0);
+  const [renderRange, setRenderRange] = useState({ min: -2, max: 2 });
+
+  useEffect(() => {
+    if (flippingIndex === -1) {
+      const timer = setTimeout(() => {
+        setSettledSpread(currentSpread);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [flippingIndex, currentSpread]);
+
+  useEffect(() => {
+    const cb = () => {
+      setRenderRange({ min: currentSpread - 2, max: currentSpread + 2 });
+    };
+    const handle = (window.requestIdleCallback || ((fn) => setTimeout(fn, 100)))(cb);
+    return () => (window.cancelIdleCallback || clearTimeout)(handle);
+  }, [currentSpread]);
+
   const preloadedImagesRef = useRef<Set<string>>(new Set());
 
-  // Preload images for spread currentSpread + 2 (and +3) so flipping never shows blank pages (grid versions only)
+  // Preload images for spreads around currentSpread so flipping never shows blank pages
   useEffect(() => {
-    const aheadSpreads = [currentSpread + 2, currentSpread + 3];
-    aheadSpreads.forEach(spreadIdx => {
-      const spread = appSpreads[spreadIdx];
-      if (spread) {
-        const images = [
-          ...(spread.left?.items || []).map(i => i.src),
-          ...(spread.right?.items || []).map(i => i.src)
-        ].filter(src => src && !src.endsWith('.mp4') && !src.endsWith('.webm'));
+    const cb = () => {
+      const aheadSpreads = [currentSpread + 2, currentSpread + 3, currentSpread - 2, currentSpread - 3];
+      aheadSpreads.forEach(spreadIdx => {
+        const spread = appSpreads[spreadIdx];
+        if (spread) {
+          const images = [
+            ...(spread.left?.items || []).map(i => i.src),
+            ...(spread.right?.items || []).map(i => i.src)
+          ].filter(src => src && !src.endsWith('.mp4') && !src.endsWith('.webm'));
 
-        images.forEach(src => {
-          const targetSrc = gridSrc(src);
-          if (!preloadedImagesRef.current.has(targetSrc)) {
-            preloadedImagesRef.current.add(targetSrc);
-            const img = new Image();
-            img.src = targetSrc;
-          }
-        });
-      }
-    });
+          images.forEach(src => {
+            const targetSrc = gridSrc(src);
+            if (!preloadedImagesRef.current.has(targetSrc)) {
+              preloadedImagesRef.current.add(targetSrc);
+              const img = new Image();
+              img.src = targetSrc;
+              img.decode().catch(() => {}).then(() => {
+                decodedImagesCache.add(img);
+              });
+            }
+          });
+        }
+      });
+    };
+    const handle = (window.requestIdleCallback || ((fn) => setTimeout(fn, 100)))(cb);
+    return () => (window.cancelIdleCallback || clearTimeout)(handle);
   }, [currentSpread, appSpreads]);
 
   const [positions, setPositions] = useState<Record<string, { x: number, y: number }>>({});
@@ -1185,14 +1213,15 @@ export default function ThreeDScrapbook() {
       return;
     }
 
-    // Play audio immediately with zero latency
-    playFlipSound();
-
     const leafIdx = dir > 0 ? currentSpread : targetIdx;
 
     setFlippingIndex(leafIdx);
     setFlippingDir(dir);
     setCurrentSpread(targetIdx);
+
+    queueMicrotask(() => {
+      playFlipSound();
+    });
 
     if (flipTimeoutRef.current) {
       clearTimeout(flipTimeoutRef.current);
@@ -1488,10 +1517,9 @@ export default function ThreeDScrapbook() {
         <div
           className="absolute left-0 top-0 bottom-0 w-1/2 origin-right z-0"
           style={{
-            opacity: currentSpread > 1 ? 1 : 0,
+            visibility: currentSpread > 0 ? "visible" : "hidden",
             pointerEvents: currentSpread === 0 ? "none" : "auto",
-            transform: "rotateY(0deg) translateZ(0px)",
-            transition: isReady ? "opacity 0.4s ease-out" : "none",
+            transform: "rotateY(0deg) translateZ(-2px)",
             transformStyle: "preserve-3d"
           }}
         >
@@ -1552,7 +1580,19 @@ export default function ThreeDScrapbook() {
             ));
 
           const zIndex = isFlipping ? 50 : 10;
-          const renderContent = i >= currentSpread - 2 && i <= currentSpread + 1;
+          const renderContent = i >= renderRange.min && i <= renderRange.max;
+          
+          const isWillChange = isFlipping || Math.abs(i - currentSpread) <= 1 || Math.abs(i - settledSpread) <= 1;
+          
+          const isFrontVisible =
+            (!isFlipped && i === currentSpread) ||
+            isFlipping ||
+            (flippingIndex !== -1 && flippingDir < 0 && i === currentSpread + 1);
+
+          const isBackVisible =
+            (isFlipped && i === currentSpread - 1) ||
+            isFlipping ||
+            (flippingIndex !== -1 && flippingDir > 0 && i === currentSpread - 2);
 
           return (
             <div
@@ -1571,12 +1611,12 @@ export default function ThreeDScrapbook() {
                 cursor: (currentSpread === 0 && i === 0) ? 'pointer' : 'auto',
                 pointerEvents: (isFlipping || (currentSpread === i) || (currentSpread === i + 1) || (currentSpread === 0 && i === 0)) ? "auto" : "none",
                 visibility: isVisible ? 'visible' : 'hidden',
-                willChange: (isFlipping || i === currentSpread || i === currentSpread - 1) ? 'transform' : 'auto',
+                willChange: isWillChange ? 'transform' : 'auto',
               }}
             >
               {/* Front of Leaf (Spread i Right) */}
               <div
-                className="absolute inset-0 bg-[#FFB6C1] shadow-sm"
+                className="absolute inset-0 bg-[#FFB6C1]"
                 style={{
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
@@ -1585,7 +1625,7 @@ export default function ThreeDScrapbook() {
                 }}
               >
                 {/* Spine crease shadow on the left side of the right page */}
-                <div className="absolute left-0 w-1/3 h-full pointer-events-none z-[40]" style={{ background: "linear-gradient(to right, rgba(0,0,0,0.08) 0%, transparent 100%)" }} />
+                {isFrontVisible && <div className="absolute left-0 w-1/3 h-full pointer-events-none z-[40]" style={{ background: "linear-gradient(to right, rgba(0,0,0,0.08) 0%, transparent 100%)" }} />}
 
                 {renderContent ? (
                   <PageContent data={appSpreads[i].right} onImageClick={openInspect} positions={positions} setPosAbsolute={setPosAbsolute} onCropEnd={handleCropEnd} editMode={editMode} selectedFrame={selectedFrame} onFrameClick={handleFrameClick} spreadIdx={i} side="right" onTurnPage={turnPage} totalSpreads={appSpreads.length} isCurrentSpread={currentSpread === i} onGoToCover={goToCover} />
@@ -1594,7 +1634,7 @@ export default function ThreeDScrapbook() {
 
               {/* Back of Leaf (Spread i+1 Left) */}
               <div
-                className="absolute inset-0 bg-[#FFB6C1] shadow-sm"
+                className="absolute inset-0 bg-[#FFB6C1]"
                 style={{
                   backfaceVisibility: 'hidden',
                   WebkitBackfaceVisibility: 'hidden',
@@ -1603,7 +1643,7 @@ export default function ThreeDScrapbook() {
                 }}
               >
                 {/* Spine crease shadow on the right side of the left page */}
-                <div className="absolute right-0 w-1/3 h-full pointer-events-none z-[40]" style={{ background: "linear-gradient(to left, rgba(0,0,0,0.08) 100%)" }} />
+                {isBackVisible && <div className="absolute right-0 w-1/3 h-full pointer-events-none z-[40]" style={{ background: "linear-gradient(to left, rgba(0,0,0,0.08) 0%, transparent 100%)" }} />}
 
                 {renderContent ? (
                   <PageContent data={appSpreads[i + 1].left} onImageClick={openInspect} positions={positions} setPosAbsolute={setPosAbsolute} onCropEnd={handleCropEnd} editMode={editMode} selectedFrame={selectedFrame} onFrameClick={handleFrameClick} spreadIdx={i + 1} side="left" onTurnPage={turnPage} totalSpreads={appSpreads.length} isCurrentSpread={currentSpread === i + 1} onGoToCover={goToCover} />
