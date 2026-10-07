@@ -365,7 +365,8 @@
           "colSpan": 1,
           "rowSpan": 1,
           "tapeColor": "#FFD0DC",
-          "tapeAngle": 4
+          "tapeAngle": 4,
+          "pos": "50% 63%"
         },
         {
           "src": "/arh/IMG20250924002702.jpg",
