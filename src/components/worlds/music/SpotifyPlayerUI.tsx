@@ -47,6 +47,7 @@ export default function SpotifyPlayerUI() {
     position, setPosition,
     duration, setDuration,
     error, setError,
+    isPremium, setIsPremium,
     queue, queueIndex, setQueueIndex, addToQueue, removeFromQueue, clearQueue, reorderQueue, setQueue
   } = useSpotifyPlayerStore();
 
@@ -280,7 +281,10 @@ export default function SpotifyPlayerUI() {
 
       spotifyPlayer.addListener('initialization_error', ({ message }: { message: string }) => setError(message));
       spotifyPlayer.addListener('authentication_error', ({ message }: { message: string }) => setError(message));
-      spotifyPlayer.addListener('account_error', ({ message }: { message: string }) => setError(message));
+      spotifyPlayer.addListener('account_error', ({ message }: { message: string }) => {
+        setIsPremium(false);
+        setError("Premium required for web playback.");
+      });
       spotifyPlayer.addListener('playback_error', ({ message }: { message: string }) => setError(message));
 
       spotifyPlayer.connect();
@@ -322,6 +326,11 @@ export default function SpotifyPlayerUI() {
   const playTrack = async (uri: string, contextUri?: string, trackObj?: any) => {
     if (!token) return;
     sfx?.select?.();
+    if (!isPremium) {
+      const parts = uri.split(':');
+      if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
+      return;
+    }
     userPausedRef.current = false;
     const targetDevice = selectedDevice || deviceId;
 
@@ -370,6 +379,11 @@ export default function SpotifyPlayerUI() {
   const playTracks = async (uris: string[], tracksList?: any[]) => {
     if (!token || uris.length === 0) return;
     sfx?.select?.();
+    if (!isPremium) {
+      const parts = uris[0].split(':');
+      if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
+      return;
+    }
     userPausedRef.current = false;
     const targetDevice = selectedDevice || deviceId;
     try {
@@ -398,6 +412,11 @@ export default function SpotifyPlayerUI() {
   const playPlaylist = async (uri: string, playlistTracks?: any[]) => {
     if (!token) return;
     sfx?.select?.();
+    if (!isPremium) {
+      const parts = uri.split(':');
+      if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
+      return;
+    }
     userPausedRef.current = false;
     const targetDevice = selectedDevice || deviceId;
     try {
@@ -414,6 +433,11 @@ export default function SpotifyPlayerUI() {
   const playContextTrack = async (contextUri: string, trackUri: string) => {
     if (!token) return;
     sfx?.select?.();
+    if (!isPremium) {
+      const parts = trackUri.split(':');
+      if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
+      return;
+    }
     userPausedRef.current = false;
     const targetDevice = selectedDevice || deviceId;
     try {
@@ -437,6 +461,13 @@ export default function SpotifyPlayerUI() {
 
   const togglePlay = async () => {
     sfx?.select?.();
+    if (!isPremium) {
+      if (currentTrack?.uri) {
+        const parts = currentTrack.uri.split(':');
+        if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
+      }
+      return;
+    }
     if (!player) {
       if (currentTrack?.uri) {
         userPausedRef.current = false;
@@ -1281,12 +1312,12 @@ export default function SpotifyPlayerUI() {
                     </button>
                     <button
                       onClick={togglePlay}
-                      className="w-12 h-12 bg-[#C2185B] hover:bg-[#A0144F] rounded-full flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all disabled:opacity-50 shadow-[0_4px_14px_rgba(194,24,91,0.4)]"
-                      disabled={!isReady && !token}
-                      aria-label={isPaused ? "Play" : "Pause"}
-                      title={isPaused ? "Play" : "Pause"}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white hover:scale-105 active:scale-95 transition-all disabled:opacity-50 shadow-[0_4px_14px_rgba(194,24,91,0.4)] ${!isPremium ? 'bg-[#1DB954] hover:bg-[#1ed760]' : 'bg-[#C2185B] hover:bg-[#A0144F]'}`}
+                      disabled={!isReady && !token && isPremium}
+                      aria-label={!isPremium ? "Open in Spotify" : isPaused ? "Play" : "Pause"}
+                      title={!isPremium ? "Open in Spotify" : isPaused ? "Play" : "Pause"}
                     >
-                      {isPaused ? <svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> : <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>}
+                      {!isPremium ? <span className="font-pixel text-[10px] leading-tight text-center px-1 font-bold">OPEN IN<br/>SPOTIFY</span> : isPaused ? <svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> : <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>}
                     </button>
                     <button
                       onClick={nextTrack}

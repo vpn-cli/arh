@@ -20,6 +20,7 @@ interface SpotifyPlayerState {
   position: number;
   duration: number;
   error: string | null;
+  isPremium: boolean;
   
   queue: QueueItem[];
   queueIndex: number;
@@ -43,6 +44,7 @@ interface SpotifyPlayerState {
   setQueueIndex: (index: number) => void;
   setQueue: (queue: QueueItem[]) => void;
   reorderQueue: (startIndex: number, endIndex: number) => void;
+  setIsPremium: (isPremium: boolean) => void;
 }
 
 export const useSpotifyPlayerStore = create<SpotifyPlayerState>()(
@@ -59,6 +61,7 @@ export const useSpotifyPlayerStore = create<SpotifyPlayerState>()(
       position: 0,
       duration: 0,
       error: null,
+      isPremium: true,
       
       queue: [],
       queueIndex: -1,
@@ -77,6 +80,7 @@ export const useSpotifyPlayerStore = create<SpotifyPlayerState>()(
       setPosition: (position) => set({ position }),
       setDuration: (duration) => set({ duration }),
       setError: (error) => set({ error }),
+      setIsPremium: (isPremium) => set({ isPremium }),
 
       addToQueue: (track, contextUri) => set((state) => ({ queue: [...state.queue, { track, contextUri }] })),
       addTracksToQueue: (items) => set((state) => ({ queue: [...state.queue, ...items] })),
