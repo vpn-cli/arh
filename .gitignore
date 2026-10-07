@@ -46,3 +46,4 @@ media-originals/
 # temporary and incomplete downloads
 *.crdownload
 public/hampter/Unconfirmed*
+.neon
