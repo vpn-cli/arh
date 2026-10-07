@@ -15,7 +15,7 @@ function loadFlipAudio() {
     flipAudioFallback = new Audio("/flip.mp3");
     flipAudioFallback.volume = 0.5;
     flipAudioFallback.preload = "auto";
-  } catch {}
+  } catch { }
 
   fetch("/flip.mp3")
     .then((r) => r.arrayBuffer())
@@ -26,7 +26,7 @@ function loadFlipAudio() {
     .then((decoded) => {
       if (decoded) flipAudioBuffer = decoded;
     })
-    .catch(() => {});
+    .catch(() => { });
 }
 
 if (typeof window !== "undefined") {
@@ -50,7 +50,7 @@ function playFlipSound() {
       source.start(0);
       return;
     }
-  } catch {}
+  } catch { }
 
   try {
     if (flipAudioFallback) {
@@ -490,6 +490,7 @@ const PageContent = React.memo(function PageContent({
         className="absolute inset-0 bg-[#FFB6C1] flex flex-col items-center justify-between p-2 sm:p-3 pb-2 overflow-hidden border-4 border-[#FFD0DC] select-none cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
+          if (editMode) return;
           onTurnPage?.(1);
         }}
       >
@@ -508,7 +509,7 @@ const PageContent = React.memo(function PageContent({
         {/* Center: Deluxe Ornate Keepsake Frame (Enlarged) */}
         <div className="relative z-10 flex-1 flex items-center justify-center w-full my-1 pointer-events-none min-h-0">
           <div className="relative bg-[#FFFDF7] p-2.5 sm:p-3.5 pb-3.5 sm:pb-5 rounded-2xl shadow-[0_18px_38px_rgba(32,35,63,0.28),0_4px_14px_rgba(255,143,179,0.4)] border-4 border-[#FFD0DC] ring-4 ring-[#FFE4A1] ring-offset-2 ring-offset-[#FFB6C1] rotate-[-1deg] flex flex-col items-center max-h-full w-auto max-w-[94%] sm:max-w-[90%]">
-            
+
             {/* Top Deluxe Ribbon & Bow Badge */}
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-0.5 bg-[#FFE4A1] border-2 border-[#20233F] rounded-full shadow-[2px_2px_0_#20233F] -rotate-1">
               <span className="text-xs">🎀</span>
@@ -528,7 +529,7 @@ const PageContent = React.memo(function PageContent({
 
             {/* Inner Photo Frame with 4 Vintage Mounting Corners (Enlarged) */}
             <div className="relative overflow-hidden rounded-xl border-3 border-[#20233F]/20 bg-[#20233F]/5 aspect-[2/3] max-h-[50vh] sm:max-h-[55vh] w-auto shadow-[inset_0_2px_8px_rgba(0,0,0,0.15)] mt-1">
-              
+
               {/* 4 Vintage Triangular Photo Mounting Corners */}
               <div className="absolute top-0 left-0 w-5 h-5 border-t-4 border-l-4 border-[#E5B25D] z-20 pointer-events-none rounded-tl-sm shadow-sm" />
               <div className="absolute top-0 right-0 w-5 h-5 border-t-4 border-r-4 border-[#E5B25D] z-20 pointer-events-none rounded-tr-sm shadow-sm" />
@@ -614,6 +615,7 @@ const PageContent = React.memo(function PageContent({
       className="relative w-full h-full p-4 sm:p-6 lg:p-8 flex flex-col overflow-hidden select-none cursor-pointer"
       style={{ backgroundColor: "#FFB6C1" }}
       onClick={() => {
+        if (editMode) return;
         if (side === 'right' && onTurnPage && spreadIdx < (totalSpreads || 1) - 1 && data.pageTitle !== "COVER") {
           onTurnPage(1);
         } else if (side === 'left' && onTurnPage && spreadIdx > 0) {
@@ -865,7 +867,7 @@ export default function ThreeDScrapbook() {
               preloadedImagesRef.current.add(targetSrc);
               const img = new Image();
               img.src = targetSrc;
-              img.decode().catch(() => {}).then(() => {
+              img.decode().catch(() => { }).then(() => {
                 decodedImagesCache.add(img);
               });
             }
@@ -1233,7 +1235,7 @@ export default function ThreeDScrapbook() {
   }, []);
 
   const handleBookWheel = useCallback((e: React.WheelEvent) => {
-    if (inspectVisible) return;
+    if (inspectVisible || editMode) return;
     const now = Date.now();
     // Cooldown during flip animation (750ms) to prevent collision
     if (now - lastBookWheelRef.current < 800 || bookStateRef.current.flippingIndex !== -1) {
@@ -1251,7 +1253,7 @@ export default function ThreeDScrapbook() {
       bookWheelDeltaRef.current = 0;
       lastBookWheelRef.current = now;
     }
-  }, [inspectVisible, turnPage]);
+  }, [inspectVisible, editMode, turnPage]);
 
   const goToCover = useCallback(() => {
     const { currentSpread, flippingIndex } = bookStateRef.current;
@@ -1275,14 +1277,14 @@ export default function ThreeDScrapbook() {
         if (e.key === "ArrowRight") navigateInspect(1);
         if (e.key === "ArrowLeft") navigateInspect(-1);
         if (e.key === "Escape") closeInspect();
-      } else {
+      } else if (!editMode) {
         if (e.key === "ArrowRight") turnPage(1);
         if (e.key === "ArrowLeft") turnPage(-1);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [inspectVisible, navigateInspect, closeInspect, turnPage]);
+  }, [inspectVisible, editMode, navigateInspect, closeInspect, turnPage]);
 
   if (!mounted) {
     return (
@@ -1500,7 +1502,7 @@ export default function ThreeDScrapbook() {
         {/* Right Book Base (Thick Stack of Pages) */}
         <div
           className="absolute right-0 top-0 bottom-0 w-1/2 bg-[#FFB6C1] rounded-r-xl border-y-2 border-r-2 border-white/40"
-          style={{ 
+          style={{
             transform: "translateZ(-3px)",
             boxShadow: `
               inset -2px 0 6px rgba(0,0,0,0.05),
@@ -1526,7 +1528,7 @@ export default function ThreeDScrapbook() {
           {/* Left Base Background with shadow (Thick Stack of Pages) */}
           <div
             className="absolute inset-0 bg-[#FFB6C1] rounded-l-xl border-y-2 border-l-2 border-white/40"
-            style={{ 
+            style={{
               transform: "translateZ(-3px)",
               boxShadow: `
                 inset 2px 0 6px rgba(0,0,0,0.05),
@@ -1581,9 +1583,9 @@ export default function ThreeDScrapbook() {
 
           const zIndex = isFlipping ? 50 : 10;
           const renderContent = i >= renderRange.min && i <= renderRange.max;
-          
+
           const isWillChange = isFlipping || Math.abs(i - currentSpread) <= 1 || Math.abs(i - settledSpread) <= 1;
-          
+
           const isFrontVisible =
             (!isFlipped && i === currentSpread) ||
             isFlipping ||
@@ -1656,7 +1658,7 @@ export default function ThreeDScrapbook() {
 
       {/* Navigation Hint Text */}
       <div className={`mt-6 sm:mt-10 bg-[#20233F] px-4 py-2 sm:px-6 sm:py-3 rounded-full text-white font-pixel text-[10px] sm:text-xs tracking-widest text-center shadow-[4px_4px_0_rgba(0,0,0,0.1)] border-2 border-white/50 whitespace-nowrap pointer-events-none z-[20] transition-opacity duration-1000 ${currentSpread === 0 ? 'opacity-0' : 'opacity-100'}`}>
-        PRESS ARROWS TO NAVIGATE • CLICK ANY IMAGE TO ENTER FULL VIEW
+        PRESS BUTTONS TO NAVIGATE • CLICK IMAGES TO ENTER FULL VIEW • CLICK ANY
       </div>
 
       {/* Edit Mode Toggle & Save UI */}
@@ -1682,7 +1684,7 @@ export default function ThreeDScrapbook() {
             className="border-4 border-[#20233F] px-4 py-3 font-pixel text-xs font-bold shadow-[4px_4px_0_#20233F] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-[4px_6px_0_#20233F] transition-all bg-[#FFD0DC] text-[#20233F]"
             onClick={() => setEditMode(true)}
           >
-            EDIT MODE
+            {'EDIT MODE (FOR VPN ONLY)'}
           </button>
         )}
       </div>
