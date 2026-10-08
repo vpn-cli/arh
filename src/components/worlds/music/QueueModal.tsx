@@ -470,8 +470,16 @@ export function QueueModal({
                   Loading recently played songs...
                 </div>
               ) : filteredRecent.length === 0 ? (
-                <div className="py-16 text-center font-pixel text-sm text-[var(--color-dark)]">
-                  {searchFilter ? `No history matches "${searchFilter}"` : 'No recently played tracks found.'}
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-16 h-16 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-2xl mb-2 shadow-inner">
+                    🕰️
+                  </div>
+                  <h3 className="font-pixel text-base font-bold text-[var(--color-dark)]">
+                    {searchFilter ? 'No Matches Found' : 'No History Yet'}
+                  </h3>
+                  <p className="font-pixel text-xs text-[var(--color-dark)] max-w-sm mt-1">
+                    {searchFilter ? `No history matches "${searchFilter}"` : "Once you start listening, your recent tracks will appear here so you can easily replay them ~"}
+                  </p>
                 </div>
               ) : (
                 filteredRecent.map((item: any, idx: number) => {

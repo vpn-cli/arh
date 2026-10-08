@@ -59,8 +59,11 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
   const [isDragging, setIsDragging] = useState(false);
   const progressBarRef = React.useRef<HTMLDivElement>(null);
-  const positionRef = React.useRef(0);
-  const lastUpdateTimeRef = React.useRef(Date.now());
+  const trackStartTimeRef = React.useRef(Date.now());
+  const pausedDurationRef = React.useRef(0);
+  const pauseTimestampRef = React.useRef<number | null>(null);
+  const lastActiveTrackIdRef = React.useRef<string | null>(null);
+  
   const positionLabelRef = React.useRef<HTMLSpanElement>(null);
   const progressBarFillRef = React.useRef<HTMLDivElement>(null);
   const progressBarThumbRef = React.useRef<HTMLDivElement>(null);
@@ -87,6 +90,203 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const lyricsCache = React.useRef<Record<string, any>>({});
   const activeLyricIndexRef = React.useRef<number>(-1);
   const lyricsLinesRef = React.useRef<(HTMLDivElement | null)[]>([]);
+  
+  const [activeLyricIndex, setActiveLyricIndex] = useState(-1);
+  const lyricsContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const baseLyricsYRef = React.useRef<number>(0);
+  const manualOffsetRef = React.useRef<number>(0);
+  const isManualBrowsingRef = React.useRef<boolean>(false);
+  const [isManualBrowsing, setIsManualBrowsing] = useState<boolean>(false);
+  const manualTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const skipCascadeRef = React.useRef<boolean>(false);
+  const [skipCascade, setSkipCascade] = useState<boolean>(false);
+
+  const getLineCenter = (lineEl: HTMLElement, containerEl: HTMLElement): number => {
+    let offset = lineEl.offsetTop + lineEl.offsetHeight / 2;
+    let curr: HTMLElement | null = lineEl.offsetParent as HTMLElement | null;
+    while (curr && curr !== containerEl) {
+      offset += curr.offsetTop;
+      curr = curr.offsetParent as HTMLElement | null;
+    }
+    return offset;
+  };
+
+  const updateLyricsPosition = React.useCallback((targetIndex: number, instant: boolean = false) => {
+    const container = lyricsContainerRef.current;
+    if (!container) return;
+
+    const lines = lyricsLinesRef.current;
+    if (!lines || lines.length === 0) return;
+
+    const idx = targetIndex >= 0 ? targetIndex : 0;
+    const activeLine = lines[idx];
+    if (!activeLine) return;
+
+    const containerHeight = container.clientHeight;
+    const lineCenter = activeLine.offsetTop + activeLine.offsetHeight / 2;
+    const baseY = containerHeight / 2 - lineCenter;
+    baseLyricsYRef.current = baseY;
+
+    if (instant) {
+      skipCascadeRef.current = true;
+      setSkipCascade(true);
+      requestAnimationFrame(() => {
+        skipCascadeRef.current = false;
+        setSkipCascade(false);
+      });
+    }
+
+    const totalY = isManualBrowsingRef.current ? baseY + manualOffsetRef.current : baseY;
+    container.style.setProperty('--lyrics-y', `${totalY}px`);
+  }, []);
+
+  const resumeToActive = React.useCallback(() => {
+    if (manualTimeoutRef.current) {
+      clearTimeout(manualTimeoutRef.current);
+      manualTimeoutRef.current = null;
+    }
+    isManualBrowsingRef.current = false;
+    manualOffsetRef.current = 0;
+    setIsManualBrowsing(false);
+
+    updateLyricsPosition(activeLyricIndexRef.current, false);
+  }, [updateLyricsPosition]);
+
+  const handleSeek = React.useCallback((targetMs: number) => {
+    if (player) {
+      player.seek(targetMs);
+    }
+    trackStartTimeRef.current = Date.now() - targetMs - pausedDurationRef.current;
+    if (positionLabelRef.current) {
+      const ts = Math.floor(targetMs / 1000);
+      positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
+    }
+    if (duration > 0 && progressBarFillRef.current && progressBarThumbRef.current) {
+      const percent = Math.max(0, Math.min(1, targetMs / duration));
+      progressBarFillRef.current.style.animationName = 'none';
+      progressBarFillRef.current.style.transform = `scaleX(${percent})`;
+      progressBarThumbRef.current.style.animationName = 'none';
+      progressBarThumbRef.current.style.transform = `translateX(${percent * 100 - 100}%)`;
+    }
+  }, [player, duration]);
+
+  // Recompute lyrics on container resize
+  useEffect(() => {
+    if (!showLyrics) return;
+    const container = lyricsContainerRef.current;
+    if (!container) return;
+
+    const ro = new ResizeObserver(() => {
+      updateLyricsPosition(activeLyricIndexRef.current, true);
+    });
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [showLyrics, updateLyricsPosition]);
+
+  // Recompute lyrics after document.fonts.ready
+  useEffect(() => {
+    if (!showLyrics) return;
+    if (typeof document !== 'undefined' && document.fonts) {
+      document.fonts.ready.then(() => {
+        updateLyricsPosition(activeLyricIndexRef.current, true);
+      });
+    }
+  }, [showLyrics, updateLyricsPosition]);
+
+  // Recompute when lyrics load or change
+  useEffect(() => {
+    if (!showLyrics || !lyricsData?.synced) return;
+    const timer = setTimeout(() => {
+      updateLyricsPosition(activeLyricIndexRef.current, true);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [lyricsData, showLyrics, updateLyricsPosition]);
+
+  // Snap to active line when opening lyrics view
+  useEffect(() => {
+    if (showLyrics) {
+      resumeToActive();
+      const timer = setTimeout(() => {
+        updateLyricsPosition(activeLyricIndexRef.current, true);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [showLyrics, resumeToActive, updateLyricsPosition]);
+
+  // Manual wheel and touch browsing with non-passive listeners
+  useEffect(() => {
+    if (!showLyrics) return;
+    const container = lyricsContainerRef.current;
+    if (!container) return;
+
+    const getClampedOffset = (delta: number) => {
+      const lines = lyricsLinesRef.current;
+      if (!lines || lines.length === 0) return 0;
+      const firstLine = lines[0];
+      const lastLine = lines[lines.length - 1];
+      if (!firstLine || !lastLine) return 0;
+
+      const containerHeight = container.clientHeight;
+      const firstLineCenter = getLineCenter(firstLine, container);
+      const lastLineCenter = getLineCenter(lastLine, container);
+
+      const maxY = containerHeight / 2 - firstLineCenter;
+      const minY = containerHeight / 2 - lastLineCenter;
+
+      const proposedTotalY = (baseLyricsYRef.current + manualOffsetRef.current) + delta;
+      const clampedTotalY = Math.max(minY, Math.min(maxY, proposedTotalY));
+      return clampedTotalY - baseLyricsYRef.current;
+    };
+
+    const applyDelta = (delta: number) => {
+      const newManualOffset = getClampedOffset(delta);
+      manualOffsetRef.current = newManualOffset;
+      const totalY = baseLyricsYRef.current + newManualOffset;
+      container.style.setProperty('--lyrics-y', `${totalY}px`);
+
+      if (!isManualBrowsingRef.current) {
+        isManualBrowsingRef.current = true;
+        setIsManualBrowsing(true);
+      }
+
+      if (manualTimeoutRef.current) clearTimeout(manualTimeoutRef.current);
+      manualTimeoutRef.current = setTimeout(() => {
+        resumeToActive();
+      }, 3000);
+    };
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault(); // Non-passive! Page behind does not scroll
+      applyDelta(-e.deltaY);
+    };
+
+    let touchStartY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        touchStartY = e.touches[0].clientY;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        e.preventDefault(); // Non-passive! Page behind does not scroll
+        const currentY = e.touches[0].clientY;
+        const delta = currentY - touchStartY;
+        touchStartY = currentY;
+        applyDelta(delta);
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, [showLyrics, resumeToActive]);
 
 
   const [isGeneratingMix, setIsGeneratingMix] = useState(false);
@@ -131,6 +331,17 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     }
   }, [currentTrack, recentTracks, setCurrentTrack, setDuration]);
 
+  useEffect(() => {
+    if (!showLyrics) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowLyrics(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showLyrics]);
+
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(globalSearch), 500);
@@ -169,7 +380,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
   useEffect(() => {
     if (!token) return;
-    
+
     const resolveVibes = async () => {
       const newResolved: Record<string, string | null> = {};
       let updated = false;
@@ -227,7 +438,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         setResolvedVibes((prev: Record<string, string | null>) => ({ ...prev, ...newResolved }));
       }
     };
-    
+
     resolveVibes();
   }, [token]);
 
@@ -264,7 +475,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         if (currentArt === art && data) {
           setPalette((prev: any) => {
             if (prev?.vibrant === data.vibrant) return prev;
-            
+
             const nextIdx = (1 - activeLayerRef.current) as 0 | 1;
             setLayerPalettes(layers => {
               const newLayers = [...layers] as [any, any];
@@ -273,7 +484,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             });
             activeLayerRef.current = nextIdx;
             setActiveLayerIndex(nextIdx);
-            
+
             return data;
           });
         }
@@ -308,14 +519,23 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       }
       fetchLyrics(trackId).then(data => {
         if (currentTrack?.id === trackId) {
-          setLyricsData(data);
+          setLyricsData(prev => {
+            // Only wipe refs if the track actually changed
+            if (prev?.synced !== data?.synced) {
+              activeLyricIndexRef.current = -1;
+              setActiveLyricIndex(-1);
+              lyricsLinesRef.current = [];
+              resumeToActive();
+              skipCascadeRef.current = true;
+              setSkipCascade(true);
+            }
+            return data;
+          });
           setIsLyricsLoading(false);
-          activeLyricIndexRef.current = -1;
-          lyricsLinesRef.current = [];
         }
       });
     });
-  }, [currentTrack, effectiveQueue, queueIndex]);
+  }, [currentTrack?.id, effectiveQueue?.length, queueIndex]);
 
   const [rateLimitTimer, setRateLimitTimer] = useState<number | null>(null);
   useEffect(() => {
@@ -341,13 +561,25 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     }, 1000);
     return () => clearInterval(interval);
   }, [rateLimitTimer]);
+  // Sync pause states for our accumulator
+  useEffect(() => {
+    if (isPaused) {
+      if (!pauseTimestampRef.current) pauseTimestampRef.current = Date.now();
+    } else {
+      if (pauseTimestampRef.current) {
+        pausedDurationRef.current += Date.now() - pauseTimestampRef.current;
+        pauseTimestampRef.current = null;
+      }
+    }
+  }, [isPaused]);
+
   // Update numeric time label in rAF loop
   useEffect(() => {
     let frameId: number;
     const updateLabel = () => {
       if (!isPaused && !isDragging) {
-        const elapsed = Date.now() - lastUpdateTimeRef.current;
-        const currentPos = Math.min(positionRef.current + elapsed, duration);
+        const elapsed = Date.now() - trackStartTimeRef.current - pausedDurationRef.current;
+        const currentPos = Math.max(0, elapsed);
         if (positionLabelRef.current) {
           const ts = Math.floor(currentPos / 1000);
           positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
@@ -357,44 +589,28 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         }
 
         if (showLyrics && lyricsData?.synced) {
+          if (lyricsLinesRef.current.length !== lyricsData.synced.length) {
+            lyricsLinesRef.current = new Array(lyricsData.synced.length).fill(null);
+            activeLyricIndexRef.current = -1;
+          }
+
           const lines = lyricsData.synced;
-          let low = 0;
-          let high = lines.length - 1;
           let activeIndex = -1;
-          
-          while (low <= high) {
-            const mid = Math.floor((low + high) / 2);
-            if (lines[mid].timeMs <= currentPos) {
-              activeIndex = mid;
-              low = mid + 1;
-            } else {
-              high = mid - 1;
+
+          for (let i = lines.length - 1; i >= 0; i--) {
+            if (lines[i].timeMs <= currentPos) {
+              activeIndex = i;
+              break;
             }
           }
 
           if (activeIndex !== activeLyricIndexRef.current) {
-            const oldEl = lyricsLinesRef.current[activeLyricIndexRef.current];
-            const newEl = lyricsLinesRef.current[activeIndex];
-            
-            if (oldEl) {
-               oldEl.classList.remove('opacity-100', 'scale-105', 'text-[var(--color-vibrant)]');
-               oldEl.classList.add('opacity-50');
-            }
-            if (newEl) {
-               newEl.classList.remove('opacity-50');
-               newEl.classList.add('opacity-100', 'scale-105', 'text-[var(--color-vibrant)]');
-               const container = newEl.parentElement;
-               if (container) {
-                 const containerHeight = container.clientHeight;
-                 const targetScroll = newEl.offsetTop - (containerHeight * 0.4);
-                 if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                   container.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
-                 } else {
-                   container.scrollTo({ top: Math.max(0, targetScroll) });
-                 }
-               }
-            }
             activeLyricIndexRef.current = activeIndex;
+            setActiveLyricIndex(activeIndex);
+
+            if (!isManualBrowsingRef.current) {
+              updateLyricsPosition(activeIndex, false);
+            }
           }
         }
       }
@@ -461,10 +677,16 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             setRepeatMode('track');
           }
         }
-        
-        positionRef.current = state.position;
-        lastUpdateTimeRef.current = Date.now();
-        
+
+        // Only reset the accumulator when the track ACTUALLY changes to avoid stale event freezing
+        const incomingTrackId = state.track_window?.current_track?.id;
+        if (incomingTrackId && incomingTrackId !== lastActiveTrackIdRef.current) {
+          lastActiveTrackIdRef.current = incomingTrackId;
+          trackStartTimeRef.current = Date.now() - state.position;
+          pausedDurationRef.current = 0;
+          pauseTimestampRef.current = state.paused ? Date.now() : null;
+        }
+
         if (progressBarFillRef.current && progressBarThumbRef.current) {
           const fill = progressBarFillRef.current;
           const thumb = progressBarThumbRef.current;
@@ -473,7 +695,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
           fill.style.transform = '';
           thumb.style.transform = '';
           fill.offsetHeight; // trigger reflow
-          
+
           fill.style.animationName = 'progress-fill';
           fill.style.animationDuration = `${state.duration}ms`;
           fill.style.animationDelay = `-${state.position}ms`;
@@ -488,10 +710,10 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
           thumb.style.animationTimingFunction = 'linear';
           thumb.style.animationFillMode = 'forwards';
         }
-        
+
         if (positionLabelRef.current) {
-           const ts = Math.floor(state.position / 1000);
-           positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
+          const ts = Math.floor(state.position / 1000);
+          positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
         }
 
         setDuration(state.duration);
@@ -601,7 +823,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       let track = trackObj;
       if (!track && currentTrack?.uri === uri) track = currentTrack;
       if (!track) {
-        track = 
+        track =
           birthdayMixTracks.find((t: any) => t.uri === uri) ||
           likedData?.tracks?.find((t: any) => t.uri === uri) ||
           recentTracks.find((item: any) => item.track?.uri === uri)?.track;
@@ -799,7 +1021,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     const targetDevice = selectedDevice || deviceId;
     if (!token) return;
     sfx?.select?.();
-    const nextMode: 'off' | 'context' | 'track' = 
+    const nextMode: 'off' | 'context' | 'track' =
       repeatMode === 'off' ? 'context' : repeatMode === 'context' ? 'track' : 'off';
 
     const prevMode = repeatMode;
@@ -818,10 +1040,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     const bounds = progressBarRef.current.getBoundingClientRect();
     const percent = Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width));
     const newPos = percent * duration;
-    
-    positionRef.current = newPos;
-    lastUpdateTimeRef.current = Date.now();
-    
+
+    trackStartTimeRef.current = Date.now() - newPos - pausedDurationRef.current;
+
     if (positionLabelRef.current) {
       const ts = Math.floor(newPos / 1000);
       positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
@@ -829,7 +1050,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     if (progressBarFillRef.current && progressBarThumbRef.current) {
       progressBarFillRef.current.style.animationName = 'none';
       progressBarFillRef.current.style.transform = `scaleX(${percent})`;
-      
+
       progressBarThumbRef.current.style.animationName = 'none';
       progressBarThumbRef.current.style.transform = `translateX(${percent * 100 - 100}%)`;
     }
@@ -894,8 +1115,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   };
 
   return (
-      <>
-        <style dangerouslySetInnerHTML={{__html: `
+    <>
+      <style dangerouslySetInnerHTML={{
+        __html: `
           :root {
             --base-color: ${palette?.vibrant || '#C2185B'};
             --color-bg: ${palette?.computed?.bg || 'color-mix(in srgb, var(--base-color) 8%, #ffffff)'};
@@ -918,559 +1140,573 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             from { transform: translateX(-100%); }
             to { transform: translateX(0%); }
           }
+          @keyframes interludeDot1 {
+            0% { transform: scale(0.6); opacity: 0.2; }
+            15% { transform: scale(1.15); opacity: 1; }
+            25% { transform: scale(1); opacity: 0.9; }
+            45% { transform: scale(1.1); opacity: 1; }
+            65% { transform: scale(1); opacity: 0.85; }
+            85% { transform: scale(1); opacity: 0.85; }
+            100% { transform: scale(0); opacity: 0; }
+          }
+          @keyframes interludeDot2 {
+            0%, 15% { transform: scale(0.6); opacity: 0.2; }
+            30% { transform: scale(1.15); opacity: 1; }
+            40% { transform: scale(1); opacity: 0.9; }
+            60% { transform: scale(1.1); opacity: 1; }
+            75% { transform: scale(1); opacity: 0.85; }
+            85% { transform: scale(1); opacity: 0.85; }
+            100% { transform: scale(0); opacity: 0; }
+          }
+          @keyframes interludeDot3 {
+            0%, 30% { transform: scale(0.6); opacity: 0.2; }
+            45% { transform: scale(1.15); opacity: 1; }
+            55% { transform: scale(1); opacity: 0.9; }
+            70% { transform: scale(1.1); opacity: 1; }
+            80% { transform: scale(1); opacity: 0.85; }
+            85% { transform: scale(1); opacity: 0.85; }
+            100% { transform: scale(0); opacity: 0; }
+          }
+          .interlude-dot-1 {
+            animation: interludeDot1 8s ease-in-out infinite;
+          }
+          .interlude-dot-2 {
+            animation: interludeDot2 8s ease-in-out infinite;
+          }
+          .interlude-dot-3 {
+            animation: interludeDot3 8s ease-in-out infinite;
+          }
         `}} />
-        <div 
-          className="w-full h-[100dvh] flex flex-col text-[var(--color-dark)] font-sans relative overflow-hidden"
-        >
-          <div className={`absolute inset-0 z-0 transition-opacity duration-[600ms] ease-in-out bg-layer-0 ${activeLayerIndex === 0 ? 'opacity-95' : 'opacity-0'}`} style={{ backgroundColor: layerPalettes[0]?.computed?.bg || `color-mix(in srgb, ${layerPalettes[0]?.vibrant || '#C2185B'} 8%, #ffffff)` }} />
-          <div className={`absolute inset-0 z-0 transition-opacity duration-[600ms] ease-in-out bg-layer-1 ${activeLayerIndex === 1 ? 'opacity-95' : 'opacity-0'}`} style={{ backgroundColor: layerPalettes[1]?.computed?.bg || `color-mix(in srgb, ${layerPalettes[1]?.vibrant || '#C2185B'} 8%, #ffffff)` }} />
-          <div className="relative z-10 flex flex-col h-full w-full flex-1 min-h-0">
+      <div
+        className="w-full h-[100dvh] flex flex-col text-[var(--color-dark)] font-sans relative overflow-hidden"
+      >
+        <div className={`absolute inset-0 z-0 transition-opacity duration-[600ms] ease-in-out bg-layer-0 ${activeLayerIndex === 0 ? 'opacity-95' : 'opacity-0'}`} style={{ backgroundColor: layerPalettes[0]?.computed?.bg || `color-mix(in srgb, ${layerPalettes[0]?.vibrant || '#C2185B'} 8%, #ffffff)` }} />
+        <div className={`absolute inset-0 z-0 transition-opacity duration-[600ms] ease-in-out bg-layer-1 ${activeLayerIndex === 1 ? 'opacity-95' : 'opacity-0'}`} style={{ backgroundColor: layerPalettes[1]?.computed?.bg || `color-mix(in srgb, ${layerPalettes[1]?.vibrant || '#C2185B'} 8%, #ffffff)` }} />
+        <div className="relative z-10 flex flex-col h-full w-full flex-1 min-h-0">
 
-        {isSessionExpired && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-light)]/80 backdrop-blur-sm">
-            <div className="bg-white rounded-none border-4 border-[var(--color-vibrant)] shadow-[8px_8px_0px_var(--color-muted)] p-8 flex flex-col items-center gap-4 max-w-xs text-center">
-              <div className="text-5xl animate-bounce">🔑</div>
-              <h3 className="font-pixel text-lg font-bold text-[var(--color-dark)] leading-snug">SESSION EXPIRED</h3>
-              <p className="font-pixel text-xs text-[var(--color-dark)] leading-relaxed">
-                Your music is still playing! But the controls need a fresh login to keep working.
-              </p>
-              <button
-                onClick={() => redirectToSpotifyAuth()}
-                className="w-full mt-2 bg-gradient-to-r from-[#1DB954] to-[#1ed760] text-white font-pixel text-sm font-bold py-3 px-6 rounded-full shadow-[0_4px_15px_rgba(29,185,84,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
-              >
-                RE-LOGIN TO SPOTIFY
-              </button>
-            </div>
-          </div>
-        )}
-
-        {!token && !isSessionExpired && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-bg)]/75 backdrop-blur-sm px-4">
-            <div className="bg-white/95 rounded-3xl border-2 border-[var(--color-muted)] shadow-[0_18px_45px_var(--color-muted)] shadow-opacity-20 p-8 flex flex-col items-center gap-4 max-w-sm text-center">
-              <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
-              <h3 className="font-pixel text-2xl font-bold text-[var(--color-dark)] leading-snug">KAWAII_PLAYER.EXE</h3>
-              <p className="font-pixel text-sm text-[var(--color-dark)] leading-relaxed font-medium">
-                Connect Spotify to load your playlists, queue, and soundscape controls.
-              </p>
-              <button
-                onClick={() => redirectToSpotifyAuth()}
-                className="w-full mt-2 bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white font-pixel text-lg font-bold py-3 px-6 rounded-full shadow-[0_8px_22px_var(--color-vibrant)] hover:scale-105 active:scale-95 transition-all"
-              >
-                Connect Spotify
-              </button>
-              {isLocalhost && (
+          {isSessionExpired && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-light)]/80 backdrop-blur-sm">
+              <div className="bg-white rounded-none border-4 border-[var(--color-vibrant)] shadow-[8px_8px_0px_var(--color-muted)] p-8 flex flex-col items-center gap-4 max-w-xs text-center">
+                <div className="text-5xl animate-bounce">🔑</div>
+                <h3 className="font-pixel text-lg font-bold text-[var(--color-dark)] leading-snug">SESSION EXPIRED</h3>
+                <p className="font-pixel text-xs text-[var(--color-dark)] leading-relaxed">
+                  Your music is still playing! But the controls need a fresh login to keep working.
+                </p>
                 <button
-                  onClick={() => logoutSpotify()}
-                  className="font-pixel text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] font-medium"
+                  onClick={() => redirectToSpotifyAuth()}
+                  className="w-full mt-2 bg-gradient-to-r from-[#1DB954] to-[#1ed760] text-white font-pixel text-sm font-bold py-3 px-6 rounded-full shadow-[0_4px_15px_rgba(29,185,84,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                  Reset local session
+                  RE-LOGIN TO SPOTIFY
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!token && !isSessionExpired && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-bg)]/75 backdrop-blur-sm px-4">
+              <div className="bg-white/95 rounded-3xl border-2 border-[var(--color-muted)] shadow-[0_18px_45px_var(--color-muted)] shadow-opacity-20 p-8 flex flex-col items-center gap-4 max-w-sm text-center">
+                <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
+                <h3 className="font-pixel text-2xl font-bold text-[var(--color-dark)] leading-snug">KAWAII_PLAYER.EXE</h3>
+                <p className="font-pixel text-sm text-[var(--color-dark)] leading-relaxed font-medium">
+                  Connect Spotify to load your playlists, queue, and soundscape controls.
+                </p>
+                <button
+                  onClick={() => redirectToSpotifyAuth()}
+                  className="w-full mt-2 bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white font-pixel text-lg font-bold py-3 px-6 rounded-full shadow-[0_8px_22px_var(--color-vibrant)] hover:scale-105 active:scale-95 transition-all"
+                >
+                  Connect Spotify
+                </button>
+                {isLocalhost && (
+                  <button
+                    onClick={() => logoutSpotify()}
+                    className="font-pixel text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] font-medium"
+                  >
+                    Reset local session
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* KawaiiWindowHeader */}
+          <div className="flex h-14 border-b-2 border-[var(--color-muted)] items-center px-4 justify-between shrink-0 bg-[var(--color-bg)]/95 backdrop-blur">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 mr-2">
+                <div className="w-3 h-3 rounded-full bg-[var(--color-muted)]" />
+                <div className="w-3 h-3 rounded-full bg-[#FFDAB9]" />
+                <div className="w-3 h-3 rounded-full bg-[#86EFAC]" />
+              </div>
+
+              {onGoHome && (
+                <button
+                  onClick={onGoHome}
+                  className="group px-3 py-1 bg-white/50 hover:bg-[var(--color-light)] border border-[var(--color-muted)] rounded-full flex items-center gap-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+                  aria-label="Return to Home World"
+                  title="Return to Home World"
+                >
+                  <span className="text-[var(--color-dark)] text-[10px] font-pixel mt-0.5 group-hover:-translate-x-0.5 transition-transform">◀</span>
+                  <span className="font-pixel text-[10px] text-[var(--color-dark)] font-bold tracking-wider uppercase group-hover:text-[var(--color-vibrant)] transition-colors">
+                    Home World
+                  </span>
+                </button>
+              )}
+
+              <img src="/hampter/hello_kitty_pin.png" alt="" className="w-7 h-7 object-contain hidden sm:block ml-2" />
+              <span className="font-pixel text-base font-bold text-[var(--color-dark)] hidden xl:inline-block">KAWAII_PLAYER.EXE</span>
+              <span className="font-pixel text-base text-[var(--color-vibrant)] hidden xl:inline-block">♥</span>
+            </div>
+            <div className="flex-1 max-w-md mx-4 relative">
+              <input
+                type="text"
+                value={globalSearch}
+                onChange={(e) => { setGlobalSearch(e.target.value); setActiveTab('search'); }}
+                placeholder="Search songs, artists, playlists..."
+                aria-label="Search songs, artists, playlists"
+                className="w-full bg-white/95 border-2 border-[var(--color-muted)] rounded-full px-10 py-2 font-pixel text-sm text-[var(--color-dark)] placeholder:text-[var(--color-dark)]/80 focus:outline-none focus:border-[var(--color-vibrant)] focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]/20 transition-colors"
+              />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-dark)] font-bold">⌕</span>
+              {globalSearch && (
+                <button
+                  onClick={() => setGlobalSearch('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel transition-colors p-1"
+                  aria-label="Clear search"
+                  title="Clear search"
+                >
+                  ✕
                 </button>
               )}
             </div>
-          </div>
-        )}
-
-        {/* KawaiiWindowHeader */}
-        <div className="flex h-14 border-b-2 border-[var(--color-muted)] items-center px-4 justify-between shrink-0 bg-[var(--color-bg)]/95 backdrop-blur">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 mr-2">
-              <div className="w-3 h-3 rounded-full bg-[var(--color-muted)]" />
-              <div className="w-3 h-3 rounded-full bg-[#FFDAB9]" />
-              <div className="w-3 h-3 rounded-full bg-[#86EFAC]" />
-            </div>
-            
-            {onGoHome && (
-              <button
-                onClick={onGoHome}
-                className="group px-3 py-1 bg-white/50 hover:bg-[var(--color-light)] border border-[var(--color-muted)] rounded-full flex items-center gap-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
-                aria-label="Return to Home World"
-                title="Return to Home World"
-              >
-                <span className="text-[var(--color-dark)] text-[10px] font-pixel mt-0.5 group-hover:-translate-x-0.5 transition-transform">◀</span>
-                <span className="font-pixel text-[10px] text-[var(--color-dark)] font-bold tracking-wider uppercase group-hover:text-[var(--color-vibrant)] transition-colors">
-                  Home World
-                </span>
-              </button>
-            )}
-
-            <img src="/hampter/hello_kitty_pin.png" alt="" className="w-7 h-7 object-contain hidden sm:block ml-2" />
-            <span className="font-pixel text-base font-bold text-[var(--color-dark)] hidden xl:inline-block">KAWAII_PLAYER.EXE</span>
-            <span className="font-pixel text-base text-[var(--color-vibrant)] hidden xl:inline-block">♥</span>
-          </div>
-          <div className="flex-1 max-w-md mx-4 relative">
-            <input
-              type="text"
-              value={globalSearch}
-              onChange={(e) => { setGlobalSearch(e.target.value); setActiveTab('search'); }}
-              placeholder="Search songs, artists, playlists..."
-              aria-label="Search songs, artists, playlists"
-              className="w-full bg-white/95 border-2 border-[var(--color-muted)] rounded-full px-10 py-2 font-pixel text-sm text-[var(--color-dark)] placeholder:text-[var(--color-dark)]/80 focus:outline-none focus:border-[var(--color-vibrant)] focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]/20 transition-colors"
-            />
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-dark)] font-bold">⌕</span>
-            {globalSearch && (
-              <button
-                onClick={() => setGlobalSearch('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel transition-colors p-1"
-                aria-label="Clear search"
-                title="Clear search"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-4 text-[var(--color-dark)] font-bold text-lg shrink-0">
-            <div className="hidden lg:flex px-3 py-1 bg-white/50 border border-[var(--color-muted)] rounded-full items-center gap-1.5 mr-2">
-              <span className="font-pixel text-[10px] text-[var(--color-dark)] font-bold tracking-wider uppercase">Music World</span>
-              <span className="font-pixel text-[10px] text-[var(--color-vibrant)]">♪</span>
-            </div>
-            <button className="hover:scale-110 hover:text-[var(--color-vibrant)] transition-all p-1 flex items-center justify-center" aria-label="Minimize window"><span className="text-sm">_</span></button>
-            <button className="hover:scale-110 hover:text-[var(--color-vibrant)] transition-all p-1 flex items-center justify-center" aria-label="Maximize window"><span className="text-base">□</span></button>
-            <button className="hover:scale-110 hover:text-[var(--color-vibrant)] transition-all p-1 flex items-center justify-center" aria-label="Close window"><span className="text-xl leading-none">×</span></button>
-          </div>
-        </div>
-
-        {/* Main Body */}
-        <div className="flex flex-1 overflow-hidden min-h-0 relative">
-
-          {/* Left Sidebar */}
-          <div className="w-64 border-r-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-white/90 hidden md:flex" style={{ backgroundColor: 'color-mix(in srgb, var(--color-bg) 8%, white)' }}>
-            <div className="h-28 border-2 border-[var(--color-muted)] bg-[var(--color-light)] flex items-center gap-3 justify-center m-4 rounded-2xl shrink-0">
-              <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
-              <div>
-                <div className="font-pixel text-lg font-bold text-[var(--color-dark)]">KAWAII</div>
-                <div className="font-pixel text-xs text-[var(--color-dark)] font-medium">vibes • memories</div>
+            <div className="flex items-center gap-4 text-[var(--color-dark)] font-bold text-lg shrink-0">
+              <div className="hidden lg:flex px-3 py-1 bg-white/50 border border-[var(--color-muted)] rounded-full items-center gap-1.5 mr-2">
+                <span className="font-pixel text-[10px] text-[var(--color-dark)] font-bold tracking-wider uppercase">Music World</span>
+                <span className="font-pixel text-[10px] text-[var(--color-vibrant)]">♪</span>
               </div>
+              <button className="hover:scale-110 hover:text-[var(--color-vibrant)] transition-all p-1 flex items-center justify-center" aria-label="Minimize window"><span className="text-sm">_</span></button>
+              <button className="hover:scale-110 hover:text-[var(--color-vibrant)] transition-all p-1 flex items-center justify-center" aria-label="Maximize window"><span className="text-base">□</span></button>
+              <button className="hover:scale-110 hover:text-[var(--color-vibrant)] transition-all p-1 flex items-center justify-center" aria-label="Close window"><span className="text-xl leading-none">×</span></button>
             </div>
+          </div>
 
-            <nav className="flex flex-col gap-1 px-4 py-2 shrink-0" aria-label="Main Navigation">
-              <button
-                onClick={() => setActiveTab('home')}
-                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'home' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
-              >
-                <span className="w-5 text-xl">⌂</span>
-                <span className="text-base">Home</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('playlists')}
-                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'playlists' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
-              >
-                <span className="w-5 text-xl">♫</span>
-                <span className="text-base">Playlists</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('mix')}
-                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'mix' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
-              >
-                <span className="w-5 text-xl">✨</span>
-                <span className="text-base">Mix</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('vibes')}
-                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'vibes' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
-              >
-                <span className="w-5 text-xl">✦</span>
-                <span className="text-base">Vibes</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('library')}
-                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'library' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
-              >
-                <span className="w-5 text-xl">▥</span>
-                <span className="text-base">Library</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('memories')}
-                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'memories' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
-              >
-                <span className="w-5 text-xl">▣</span>
-                <span className="text-base">Memories</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('frequencies')}
-                className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'frequencies' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
-              >
-                <span className="w-5 text-xl">≋</span>
-                <span className="text-base">Frequencies</span>
-              </button>
-            </nav>
+          {/* Main Body */}
+          <div className="flex flex-1 overflow-hidden min-h-0 relative">
 
-            <div className="flex flex-col flex-1 overflow-hidden mt-2">
-              <div className="px-4 py-2 flex justify-between items-center text-[var(--color-dark)] shrink-0 border-t border-[var(--color-light)]">
-                <span className="font-pixel text-sm font-bold uppercase tracking-wider text-[var(--color-dark)]">Your Playlists</span>
+            {/* Left Sidebar */}
+            <div className="w-64 border-r-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-white/90 hidden md:flex" style={{ backgroundColor: 'color-mix(in srgb, var(--color-bg) 8%, white)' }}>
+              <div className="h-28 border-2 border-[var(--color-muted)] bg-[var(--color-light)] flex items-center gap-3 justify-center m-4 rounded-2xl shrink-0">
+                <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
+                <div>
+                  <div className="font-pixel text-lg font-bold text-[var(--color-dark)]">KAWAII</div>
+                  <div className="font-pixel text-xs text-[var(--color-dark)] font-medium">vibes • memories</div>
+                </div>
+              </div>
+
+              <nav className="flex flex-col gap-1 px-4 py-2 shrink-0" aria-label="Main Navigation">
                 <button
-                  onClick={() => setIsCreatingPlaylist(true)}
-                  className="hover:scale-110 font-bold text-base text-[var(--color-dark)] p-1 rounded transition-transform"
-                  aria-label="Create new playlist"
-                  title="Create new playlist"
+                  onClick={() => setActiveTab('home')}
+                  className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'home' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
                 >
-                  +
+                  <span className="w-5 text-xl">⌂</span>
+                  <span className="text-base">Home</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('playlists')}
+                  className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'playlists' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
+                >
+                  <span className="w-5 text-xl">♫</span>
+                  <span className="text-base">Playlists</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('mix')}
+                  className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'mix' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
+                >
+                  <span className="w-5 text-xl">✨</span>
+                  <span className="text-base">Mix</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('vibes')}
+                  className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'vibes' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
+                >
+                  <span className="w-5 text-xl">✦</span>
+                  <span className="text-base">Vibes</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('library')}
+                  className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'library' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
+                >
+                  <span className="w-5 text-xl">▥</span>
+                  <span className="text-base">Library</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('memories')}
+                  className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'memories' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
+                >
+                  <span className="w-5 text-xl">▣</span>
+                  <span className="text-base">Memories</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('frequencies')}
+                  className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${activeTab === 'frequencies' ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs' : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'}`}
+                >
+                  <span className="w-5 text-xl">≋</span>
+                  <span className="text-base">Frequencies</span>
+                </button>
+              </nav>
+
+              <div className="flex flex-col flex-1 overflow-hidden mt-2">
+                <div className="px-4 py-2 flex justify-between items-center text-[var(--color-dark)] shrink-0 border-t border-[var(--color-light)]">
+                  <span className="font-pixel text-sm font-bold uppercase tracking-wider text-[var(--color-dark)]">Your Playlists</span>
+                  <button
+                    onClick={() => setIsCreatingPlaylist(true)}
+                    className="hover:scale-110 font-bold text-base text-[var(--color-dark)] p-1 rounded transition-transform"
+                    aria-label="Create new playlist"
+                    title="Create new playlist"
+                  >
+                    +
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
+                  {playlists.slice(0, 15).map((p: any, idx: number) => (
+                    <div
+                      key={`${p.id || 'playlist'}-${idx}`}
+                      onClick={() => { setActiveTab('playlists'); setSelectedPlaylistId(p.id); }}
+                      className="flex items-center gap-3 py-2 cursor-pointer hover:bg-[var(--color-light)] rounded-lg px-2 transition-colors group"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          setActiveTab('playlists');
+                          setSelectedPlaylistId(p.id);
+                        }
+                      }}
+                    >
+                      {p.images && p.images.length >= 4 ? (
+                        <div className="w-8 h-8 rounded overflow-hidden grid grid-cols-2 grid-rows-2 shadow-sm shrink-0 border border-[var(--color-muted)] bg-[var(--color-muted)]">
+                          {p.images.slice(0, 4).map((img: any, i: number) => (
+                            <img key={i} src={img.url || img} alt="" className="w-full h-full object-cover" />
+                          ))}
+                        </div>
+                      ) : p.images?.[0] ? (
+                        <img src={(p.images[2] || p.images[0]).url || p.images[0]} loading="lazy" alt={p.name} className="w-8 h-8 rounded object-cover shadow-sm shrink-0 border border-[var(--color-muted)]" />
+                      ) : (
+                        <div className="w-8 h-8 bg-[var(--color-muted)] border border-[var(--color-muted)] rounded shadow-sm flex items-center justify-center text-[var(--color-dark)] text-xs font-bold shrink-0">♪</div>
+                      )}
+                      <div className="flex flex-col overflow-hidden">
+                        <span className="text-sm font-bold text-[var(--color-dark)] truncate group-hover:text-[var(--color-dark)] transition-colors">{p.name}</span>
+                        <span className="text-xs text-[var(--color-dark)] font-medium">{(p.items?.total ?? p.tracks?.total ?? p.total_tracks ?? (Array.isArray(p.items) ? p.items.length : (Array.isArray(p.tracks?.items) ? p.tracks.items.length : (Array.isArray(p.tracks) ? p.tracks.length : 0))))} songs</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="p-4 mt-auto border-t border-[var(--color-light)]">
+                <button
+                  onClick={logoutSpotify}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl border border-[var(--color-vibrant)] text-[var(--color-vibrant)] font-pixel text-sm font-bold hover:bg-[var(--color-vibrant)] hover:text-white transition-colors"
+                >
+                  Logout
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
-                {playlists.slice(0, 15).map((p: any, idx: number) => (
-                  <div
-                    key={`${p.id || 'playlist'}-${idx}`}
-                    onClick={() => { setActiveTab('playlists'); setSelectedPlaylistId(p.id); }}
-                    className="flex items-center gap-3 py-2 cursor-pointer hover:bg-[var(--color-light)] rounded-lg px-2 transition-colors group"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        setActiveTab('playlists');
-                        setSelectedPlaylistId(p.id);
-                      }
-                    }}
-                  >
-                    {p.images && p.images.length >= 4 ? (
-                      <div className="w-8 h-8 rounded overflow-hidden grid grid-cols-2 grid-rows-2 shadow-sm shrink-0 border border-[var(--color-muted)] bg-[var(--color-muted)]">
-                        {p.images.slice(0, 4).map((img: any, i: number) => (
-                          <img key={i} src={img.url || img} alt="" className="w-full h-full object-cover" />
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col gap-6 relative bg-[var(--color-light)]">
+              {activeTab === 'home' && (
+                <div className="flex flex-col gap-6">
+                  <section className="relative min-h-[220px] sm:min-h-[260px] overflow-hidden rounded-[24px] border-2 border-[var(--color-muted)] bg-[var(--color-light)] shadow-sm">
+                    <img src={heroArt} alt="" className="absolute inset-0 h-full w-full object-cover opacity-75" fetchPriority="high" decoding="async" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-light)]/95 via-[var(--color-light)]/85 to-[var(--color-light)]/40" />
+                    <div className="relative z-10 flex min-h-[220px] sm:min-h-[260px] items-center px-6 sm:px-8 py-6 sm:py-8">
+                      <div className="max-w-lg">
+                        <p className="font-pixel text-xs sm:text-sm font-bold tracking-widest text-[var(--color-dark)] uppercase">
+                          {currentTrack ? 'CURRENTLY PLAYING' : 'GOOD EVENING'}
+                        </p>
+                        <h2 className="mt-2 font-pixel text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight text-[var(--color-dark)] drop-shadow-[0_2px_0_#FFFFFF]">
+                          {currentTrack ? currentTrack.name : "Let's listen together ♡"}
+                        </h2>
+                        <p className="mt-2 sm:mt-3 font-pixel text-sm sm:text-base md:text-lg font-medium text-[var(--color-dark)] opacity-90">
+                          {currentTrack ? currentTrack.artists?.map((a: any) => a.name).join(', ') : "What are we listening to today?"}
+                        </p>
+                        <button
+                          onClick={() => {
+                            if (currentTrack) {
+                              if (isPaused) togglePlay();
+                            } else {
+                              const tracksToPlay = birthdayMixTracks.length > 0 ? birthdayMixTracks : (likedData?.tracks || []);
+                              if (tracksToPlay.length > 0) {
+                                playTracks(tracksToPlay.map((t: any) => t.uri), tracksToPlay);
+                              } else {
+                                setActiveTab('mix');
+                              }
+                            }
+                          }}
+                          className="mt-4 sm:mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-5 sm:px-6 py-2 sm:py-2.5 font-pixel text-sm sm:text-base font-bold text-white shadow-md transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] group"
+                        >
+                          <span className="group-hover:scale-110 transition-transform">{currentTrack ? (isPaused ? '▶' : '⏸') : '▶'}</span>
+                          {currentTrack ? (isPaused ? 'Resume' : 'Playing') : 'Play Mix'}
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
+                        <span className="text-[var(--color-vibrant)]">♥</span> Continue Listening
+                      </h3>
+                      <button onClick={() => setActiveTab('playlists')} className="font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:underline">See all →</button>
+                    </div>
+                    <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+                      {homePlaylists.map((playlist: any, idx: number) => (
+                        <button
+                          key={`${playlist.id || 'playlist'}-${idx}`}
+                          onClick={() => { setActiveTab('playlists'); setSelectedPlaylistId(playlist.id); }}
+                          className="w-[160px] sm:w-[180px] shrink-0 group overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-bg)]/95 text-left shadow-sm transition hover:-translate-y-1 hover:border-[var(--color-muted)] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
+                        >
+                          {playlist.images && playlist.images.length >= 4 ? (
+                            <div className="relative aspect-[4/3] w-full overflow-hidden grid grid-cols-2 grid-rows-2 bg-[var(--color-light)]">
+                              {playlist.images.slice(0, 4).map((img: any, i: number) => (
+                                <img key={i} src={img.url || img} alt="" className="w-full h-full object-cover" />
+                              ))}
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">▶</div>
+                              </div>
+                            </div>
+                          ) : playlist.images?.[0] ? (
+                            <div className="relative aspect-[4/3] w-full">
+                              <img src={(playlist.images[1] || playlist.images[0]).url || playlist.images[0]} loading="lazy" alt={playlist.name} className="absolute inset-0 h-full w-full object-cover" />
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">▶</div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="relative aspect-[4/3] w-full bg-[var(--color-light)] flex items-center justify-center font-bold text-2xl text-[var(--color-muted)]">
+                              ♪
+                              <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">▶</div>
+                              </div>
+                            </div>
+                          )}
+                          <div className="p-3">
+                            <div className="truncate font-pixel text-base font-bold text-[var(--color-dark)] group-hover:text-[var(--color-vibrant)] transition-colors">{playlist.name}</div>
+                            <div className="font-pixel text-xs text-[var(--color-dark)] font-medium opacity-80">{(playlist.items?.total ?? playlist.tracks?.total ?? playlist.total_tracks ?? (Array.isArray(playlist.items) ? playlist.items.length : (Array.isArray(playlist.tracks?.items) ? playlist.tracks.items.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : 0))))} songs</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
+                        <span className="text-[var(--color-vibrant)]">♥</span> Vibes
+                      </h3>
+                      <button onClick={() => setActiveTab('vibes')} className="font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:underline">See all →</button>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
+                      {VIBES.filter(vibe => resolvedVibes[vibe.id] !== null).map((vibe) => (
+                        <button
+                          key={vibe.id}
+                          onClick={() => handleVibeClick(vibe.id)}
+                          className="group relative overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-[var(--color-vibrant)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] aspect-square"
+                        >
+                          <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${vibe.tone} text-4xl sm:text-5xl text-white drop-shadow-sm`}>
+                            {vibe.emoji}
+                          </div>
+                          <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors" />
+                          <div className="absolute inset-0 p-3 flex flex-col justify-end">
+                            <div className="font-pixel text-sm sm:text-base font-bold text-white drop-shadow-md group-hover:text-[var(--color-vibrant)] transition-colors">{vibe.label}</div>
+                          </div>
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
+                            <div className="w-8 h-8 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-sm shadow-md">▶</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
+                        <span className="text-[var(--color-vibrant)]">◷</span> Recently Played
+                      </h3>
+                      <button onClick={() => setActiveTab('recent')} className="font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:underline">See all →</button>
+                    </div>
+                    {recentHomeTracks.length === 0 && likedHomeTracks.length === 0 ? (
+                      <div className="p-8 text-center rounded-2xl border-2 border-dashed border-[var(--color-muted)] bg-[var(--color-light)]/50">
+                        <p className="font-pixel text-sm text-[var(--color-dark)] font-bold opacity-70">Nothing here yet! Start playing some tunes ~</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {(recentHomeTracks.length ? recentHomeTracks : likedHomeTracks).map((track: any, idx: number) => (
+                          <button
+                            key={`${track.id || track.uri || 'track'}-${idx}`}
+                            onClick={() => playTrack(track.uri)}
+                            className="group flex items-center gap-3 overflow-hidden rounded-xl border-2 border-transparent bg-[var(--color-light)] hover:bg-white text-left transition p-2 hover:-translate-y-0.5 hover:border-[var(--color-muted)] hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
+                          >
+                            <div className="relative w-12 h-12 shrink-0 rounded-md overflow-hidden shadow-sm">
+                              {track.album?.images?.[0]?.url ? (
+                                <img src={(track.album.images[1] || track.album.images[0]).url} loading="lazy" alt={track.name} className="absolute inset-0 w-full h-full object-cover" />
+                              ) : (
+                                <div className="absolute inset-0 bg-[var(--color-muted)]" />
+                              )}
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span className="text-white text-lg shadow-sm">▶</span>
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0 pr-2">
+                              <div className="truncate font-pixel text-sm font-bold text-[var(--color-dark)] group-hover:text-[var(--color-vibrant)] transition-colors">{track.name}</div>
+                              <div className="truncate font-pixel text-xs text-[var(--color-dark)] font-medium opacity-80">{track.artists?.map((a: any) => a.name).join(', ')}</div>
+                            </div>
+                          </button>
                         ))}
                       </div>
-                    ) : p.images?.[0] ? (
-                      <img src={(p.images[2] || p.images[0]).url || p.images[0]} loading="lazy" alt={p.name} className="w-8 h-8 rounded object-cover shadow-sm shrink-0 border border-[var(--color-muted)]" />
-                    ) : (
-                      <div className="w-8 h-8 bg-[var(--color-muted)] border border-[var(--color-muted)] rounded shadow-sm flex items-center justify-center text-[var(--color-dark)] text-xs font-bold shrink-0">♪</div>
                     )}
-                    <div className="flex flex-col overflow-hidden">
-                      <span className="text-sm font-bold text-[var(--color-dark)] truncate group-hover:text-[var(--color-dark)] transition-colors">{p.name}</span>
-                      <span className="text-xs text-[var(--color-dark)] font-medium">{(p.items?.total ?? p.tracks?.total ?? p.total_tracks ?? (Array.isArray(p.items) ? p.items.length : (Array.isArray(p.tracks?.items) ? p.tracks.items.length : (Array.isArray(p.tracks) ? p.tracks.length : 0))))} songs</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content Area */}
-          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col gap-6 relative bg-[var(--color-light)]">
-            {activeTab === 'home' && (
-              <div className="flex flex-col gap-6">
-                <section className="relative min-h-[260px] overflow-hidden rounded-[24px] border-2 border-[var(--color-muted)] bg-[var(--color-light)] shadow-sm">
-                  <img src={heroArt} alt="" className="absolute inset-0 h-full w-full object-cover opacity-75" fetchPriority="high" decoding="async" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-light)]/95 via-[var(--color-light)]/75 to-[var(--color-light)]/25" />
-                  <div className="relative z-10 flex min-h-[260px] items-center px-8 py-8">
-                    <div className="max-w-lg">
-                      <p className="font-pixel text-xs sm:text-sm font-bold tracking-widest text-[var(--color-dark)] uppercase">GOOD EVENING</p>
-                      <h2 className="mt-2 font-pixel text-4xl sm:text-5xl font-extrabold leading-tight text-[var(--color-dark)] drop-shadow-[0_2px_0_#FFFFFF]">Let&apos;s listen together ♡</h2>
-                      <p className="mt-3 font-pixel text-base sm:text-lg font-medium text-[var(--color-dark)]">What are we listening to today?</p>
+                  </section>
+                </div>
+              )}
+              {activeTab === 'playlists' && (
+                selectedPlaylistId ? (
+                  <PlaylistDetail
+                    playlistId={selectedPlaylistId}
+                    onBack={() => setSelectedPlaylistId(null)}
+                    onEdit={() => {
+                      const p = playlists.find((pl: any) => pl.id === selectedPlaylistId);
+                      if (p) setEditingPlaylist(p);
+                    }}
+                    onRemove={() => {
+                      const p = playlists.find((pl: any) => pl.id === selectedPlaylistId);
+                      if (p) setRemovingPlaylist(p);
+                    }}
+                    onPlayPlaylist={(uri, tracks) => playPlaylist(uri, tracks)}
+                    onPlayTrack={(uri, contextUri, track) => {
+                      if (contextUri) playContextTrack(contextUri, uri);
+                      else playTrack(uri, undefined, track);
+                    }}
+                    onAddToQueue={handleAddToQueue}
+                    onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
+                    onRemoveFromPlaylist={async (uri) => {
+                      if (selectedPlaylistId) {
+                        await removeItems.mutateAsync({ playlistId: selectedPlaylistId, uri });
+                      }
+                    }}
+                    onAddMemory={(entity, type) => {
+                      setMemoryEditorEntity(entity);
+                      setMemoryEditorType(type);
+                    }}
+                    onReorder={async (startIndex, endIndex) => {
+                      if (selectedPlaylistId) {
+                        const insertBefore = endIndex > startIndex ? endIndex + 1 : endIndex;
+                        await reorderItems.mutateAsync({ playlistId: selectedPlaylistId, range_start: startIndex, insert_before: insertBefore });
+                      }
+                    }}
+                    onShufflePlay={async (uri, tracks) => {
+                      if (!isShuffle) {
+                        await toggleShuffle();
+                      }
+                      playPlaylist(uri, tracks);
+                    }}
+                  />
+                ) : (
+                  <>
+                    <div className="flex gap-2 mb-2 shrink-0">
+                      <input
+                        type="text"
+                        value={playlistSearch}
+                        onChange={(e) => setPlaylistSearch(e.target.value)}
+                        placeholder="Filter playlists..."
+                        aria-label="Filter playlists"
+                        className="flex-1 bg-white border-2 border-[var(--color-muted)] rounded-xl px-3 py-2 font-pixel text-xs text-[var(--color-dark)] placeholder:text-[var(--color-dark)]/80 focus:outline-none focus:border-[var(--color-vibrant)] focus:ring-2 focus:ring-[var(--color-vibrant)]/20"
+                      />
                       <button
-                        onClick={() => {
-                          const tracksToPlay = birthdayMixTracks.length > 0 ? birthdayMixTracks : (likedData?.tracks || []);
-                          if (tracksToPlay.length > 0) {
-                            playTracks(tracksToPlay.map((t: any) => t.uri), tracksToPlay);
-                          } else {
-                            setActiveTab('mix');
-                          }
-                        }}
-                        className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-6 py-2.5 font-pixel text-base font-bold text-white shadow-md transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+                        onClick={() => setIsCreatingPlaylist(true)}
+                        className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white px-4 py-2 rounded-xl font-pixel text-xs font-bold hover:scale-105 active:scale-95 transition-transform shadow-xs flex items-center gap-1"
+                        title="Create Playlist"
                       >
-                        ▶ Play Mix
+                        <span>+</span> NEW
                       </button>
                     </div>
-                  </div>
-                </section>
+                    {(() => {
+                      if (isPlaylistsError && (playlistsError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-bold text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((playlistsError as any)?.retryAfter ?? 60)} SECONDS.</div>;
+                      if (isPlaylistsLoading) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-medium animate-pulse">LOADING LIBRARY...</div>;
+                      if (playlists.length === 0) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-medium">NO PLAYLISTS FOUND</div>;
 
-                <section className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
-                      <span className="text-[var(--color-vibrant)]">♥</span> Continue Listening
-                    </h3>
-                    <button onClick={() => setActiveTab('playlists')} className="font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:underline">See all →</button>
-                  </div>
-                  <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-                    {homePlaylists.map((playlist: any, idx: number) => (
-                      <button
-                        key={`${playlist.id || 'playlist'}-${idx}`}
-                        onClick={() => { setActiveTab('playlists'); setSelectedPlaylistId(playlist.id); }}
-                        className="w-[160px] sm:w-[180px] shrink-0 group overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-bg)]/95 text-left shadow-sm transition hover:-translate-y-1 hover:border-[var(--color-muted)] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
-                      >
-                        {playlist.images && playlist.images.length >= 4 ? (
-                          <div className="aspect-[4/3] w-full overflow-hidden grid grid-cols-2 grid-rows-2 bg-[var(--color-light)]">
-                            {playlist.images.slice(0, 4).map((img: any, i: number) => (
-                              <img key={i} src={img.url || img} alt="" className="w-full h-full object-cover" />
-                            ))}
-                          </div>
-                        ) : playlist.images?.[0] ? (
-                          <img src={(playlist.images[1] || playlist.images[0]).url || playlist.images[0]} loading="lazy" alt={playlist.name} className="aspect-[4/3] w-full object-cover" />
-                        ) : (
-                          <div className="aspect-[4/3] w-full bg-[var(--color-light)] flex items-center justify-center font-bold text-2xl text-[var(--color-muted)]">♪</div>
-                        )}
-                        <div className="p-3">
-                          <div className="truncate font-pixel text-base font-bold text-[var(--color-dark)] group-hover:text-[var(--color-dark)] transition-colors">{playlist.name}</div>
-                          <div className="font-pixel text-xs text-[var(--color-dark)] font-medium">{(playlist.items?.total ?? playlist.tracks?.total ?? playlist.total_tracks ?? (Array.isArray(playlist.items) ? playlist.items.length : (Array.isArray(playlist.tracks?.items) ? playlist.tracks.items.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : 0))))} songs</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </section>
+                      const filteredPlaylists = playlists.filter((p: any) => p.name.toLowerCase().includes(playlistSearch.toLowerCase()));
+                      if (filteredPlaylists.length === 0) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-medium">NO MATCHES FOUND</div>;
 
-                <section className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
-                      <span className="text-[var(--color-vibrant)]">♥</span> Vibes
-                    </h3>
-                    <button onClick={() => setActiveTab('vibes')} className="font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:underline">See all →</button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-6">
-                    {VIBES.filter(vibe => resolvedVibes[vibe.id] !== null).map((vibe) => (
-                      <button
-                        key={vibe.id}
-                        onClick={() => handleVibeClick(vibe.id)}
-                        className="overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-[var(--color-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
-                      >
-                        <div className={`flex aspect-[4/3] items-center justify-center bg-gradient-to-br ${vibe.tone} text-5xl text-white drop-shadow-sm`}>
-                          {vibe.emoji}
-                        </div>
-                        <div className="p-3">
-                          <div className="font-pixel text-base font-bold text-[var(--color-dark)]">{vibe.label}</div>
-                          <div className="font-pixel text-xs text-[var(--color-dark)] font-medium">{vibe.subtitle}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </section>
+                      return filteredPlaylists.map((p: any, idx: number) => (
+                        <PlaylistCard key={`${p.id || 'playlist'}-${idx}`} playlist={p} onClick={() => setSelectedPlaylistId(p.id)} />
+                      ));
+                    })()}
+                  </>
+                )
+              )}
 
-                <section className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
-                      <span className="text-[var(--color-vibrant)]">◷</span> Recently Played
-                    </h3>
-                    <button onClick={() => setActiveTab('recent')} className="font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:underline">See all →</button>
+              {activeTab === 'recent' && (
+                <div className="flex flex-col h-full min-h-0">
+                  <div className="flex justify-between items-center mb-2 shrink-0">
+                    <span className="font-pixel text-xs font-bold uppercase tracking-wider text-[var(--color-dark)]">RECENTLY PLAYED</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-6">
-                    {(recentHomeTracks.length ? recentHomeTracks : likedHomeTracks).map((track: any, idx: number) => (
-                      <button
-                        key={`${track.id || track.uri || 'track'}-${idx}`}
-                        onClick={() => playTrack(track.uri)}
-                        className="group overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-white/95 text-left shadow-sm transition hover:-translate-y-1 hover:border-[var(--color-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
-                      >
-                        {track.album?.images?.[0]?.url ? (
-                          <img src={(track.album.images[1] || track.album.images[0]).url} loading="lazy" alt={track.name} className="aspect-square w-full object-cover" />
-                        ) : (
-                          <div className="aspect-square w-full bg-[var(--color-light)]" />
-                        )}
-                        <div className="p-3">
-                          <div className="truncate font-pixel text-base font-bold text-[var(--color-dark)] group-hover:text-[var(--color-dark)] transition-colors">{track.name}</div>
-                          <div className="truncate font-pixel text-xs text-[var(--color-dark)] font-medium">{track.artists?.map((a: any) => a.name).join(', ')}</div>
-                        </div>
-                      </button>
-                    ))}
+                  {(() => {
+                    if (isRecentError && (recentError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-bold text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((recentError as any)?.retryAfter ?? 60)} SECONDS.</div>;
+                    return <TrackList tracks={recentTracks.map((item: any) => item.track).filter(Boolean)} isLoading={isRecentLoading} onPlayTrack={playTrack} onAddToQueue={handleAddToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} onAddMemory={(track) => { setMemoryEditorEntity(track); setMemoryEditorType('track'); }} emptyMessage="NO RECENTLY PLAYED TRACKS" />;
+                  })()}
+                </div>
+              )}
+
+              {activeTab === 'library' && (
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-2 shrink-0">
+                    <span className="font-pixel text-xs font-bold uppercase tracking-wider text-[var(--color-dark)]">LIKED SONGS</span>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setLibraryPage(p => Math.max(0, p - 1))} disabled={libraryPage === 0} className="text-xs font-bold text-[var(--color-dark)] disabled:opacity-40 hover:text-[var(--color-dark)] cursor-pointer p-1" aria-label="Previous page">◀</button>
+                      <span className="font-pixel text-xs font-bold text-[var(--color-dark)] px-1">{libraryPage + 1}</span>
+                      <button onClick={() => setLibraryPage(p => p + 1)} disabled={!likedData?.next} className="text-xs font-bold text-[var(--color-dark)] disabled:opacity-40 hover:text-[var(--color-dark)] cursor-pointer p-1" aria-label="Next page">▶</button>
+                    </div>
                   </div>
-                </section>
-              </div>
-            )}
-            {activeTab === 'playlists' && (
-              selectedPlaylistId ? (
-                <PlaylistDetail
-                  playlistId={selectedPlaylistId}
-                  onBack={() => setSelectedPlaylistId(null)}
-                  onEdit={() => {
-                    const p = playlists.find((pl: any) => pl.id === selectedPlaylistId);
-                    if (p) setEditingPlaylist(p);
-                  }}
-                  onRemove={() => {
-                    const p = playlists.find((pl: any) => pl.id === selectedPlaylistId);
-                    if (p) setRemovingPlaylist(p);
-                  }}
-                  onPlayPlaylist={(uri, tracks) => playPlaylist(uri, tracks)}
-                  onPlayTrack={(uri, contextUri, track) => {
-                    if (contextUri) playContextTrack(contextUri, uri);
-                    else playTrack(uri, undefined, track);
-                  }}
+                  <button
+                    onClick={() => playTracks(likedData?.tracks?.map((t: any) => t.uri) || [], likedData?.tracks || [])}
+                    disabled={!likedData?.tracks?.length}
+                    className={`w-full mb-3 shrink-0 bg-gradient-to-r from-[var(--color-vibrant)] to-[var(--color-vibrant)] hover:from-[var(--color-vibrant)] hover:to-[#AD1457] text-white py-3 rounded-xl shadow-[0_4px_14px_var(--color-vibrant)] transition-all flex flex-col items-center justify-center gap-1 ${!likedData?.tracks?.length ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.01] active:scale-95'}`}
+                  >
+                    <span className="font-pixel text-sm font-bold tracking-widest">
+                      ✦ PLAY LIKED ✦
+                    </span>
+                  </button>
+                  {(() => {
+                    if (isLikedError && (likedError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-bold text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((likedError as any)?.retryAfter ?? 60)} SECONDS.</div>;
+                    return <TrackList tracks={likedData?.tracks || []} isLoading={isLikedLoading} onPlayTrack={playTrack} onAddToQueue={handleAddToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} onAddMemory={(track) => { setMemoryEditorEntity(track); setMemoryEditorType('track'); }} emptyMessage="NO LIKED SONGS" />;
+                  })()}
+                </div>
+              )}
+
+              {activeTab === 'mix' && (
+                <MixSection
+                  onPlayTrack={playTrack}
+                  onPlayTracks={playTracks}
                   onAddToQueue={handleAddToQueue}
                   onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
-                  onRemoveFromPlaylist={async (uri) => {
-                    if (selectedPlaylistId) {
-                      await removeItems.mutateAsync({ playlistId: selectedPlaylistId, uri });
-                    }
+                  onClickArtist={(id) => {
+                    setActiveTab('artist');
+                    setSelectedArtistId(id);
+                  }}
+                  onClickPlaylist={(id) => {
+                    setActiveTab('playlists');
+                    setSelectedPlaylistId(id);
                   }}
                   onAddMemory={(entity, type) => {
                     setMemoryEditorEntity(entity);
                     setMemoryEditorType(type);
                   }}
-                  onReorder={async (startIndex, endIndex) => {
-                    if (selectedPlaylistId) {
-                      const insertBefore = endIndex > startIndex ? endIndex + 1 : endIndex;
-                      await reorderItems.mutateAsync({ playlistId: selectedPlaylistId, range_start: startIndex, insert_before: insertBefore });
-                    }
-                  }}
-                  onShufflePlay={async (uri, tracks) => {
-                    if (!isShuffle) {
-                      await toggleShuffle();
-                    }
-                    playPlaylist(uri, tracks);
-                  }}
+                  rateLimitTimer={rateLimitTimer}
                 />
-              ) : (
-                <>
-                  <div className="flex gap-2 mb-2 shrink-0">
-                    <input
-                      type="text"
-                      value={playlistSearch}
-                      onChange={(e) => setPlaylistSearch(e.target.value)}
-                      placeholder="Filter playlists..."
-                      aria-label="Filter playlists"
-                      className="flex-1 bg-white border-2 border-[var(--color-muted)] rounded-xl px-3 py-2 font-pixel text-xs text-[var(--color-dark)] placeholder:text-[var(--color-dark)]/80 focus:outline-none focus:border-[var(--color-vibrant)] focus:ring-2 focus:ring-[var(--color-vibrant)]/20"
-                    />
-                    <button
-                      onClick={() => setIsCreatingPlaylist(true)}
-                      className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white px-4 py-2 rounded-xl font-pixel text-xs font-bold hover:scale-105 active:scale-95 transition-transform shadow-xs flex items-center gap-1"
-                      title="Create Playlist"
-                    >
-                      <span>+</span> NEW
-                    </button>
-                  </div>
-                  {(() => {
-                    if (isPlaylistsError && (playlistsError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-bold text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((playlistsError as any)?.retryAfter ?? 60)} SECONDS.</div>;
-                    if (isPlaylistsLoading) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-medium animate-pulse">LOADING LIBRARY...</div>;
-                    if (playlists.length === 0) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-medium">NO PLAYLISTS FOUND</div>;
+              )}
 
-                    const filteredPlaylists = playlists.filter((p: any) => p.name.toLowerCase().includes(playlistSearch.toLowerCase()));
-                    if (filteredPlaylists.length === 0) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-medium">NO MATCHES FOUND</div>;
-
-                    return filteredPlaylists.map((p: any, idx: number) => (
-                      <PlaylistCard key={`${p.id || 'playlist'}-${idx}`} playlist={p} onClick={() => setSelectedPlaylistId(p.id)} />
-                    ));
-                  })()}
-                </>
-              )
-            )}
-
-            {activeTab === 'recent' && (
-              <div className="flex flex-col h-full min-h-0">
-                <div className="flex justify-between items-center mb-2 shrink-0">
-                  <span className="font-pixel text-xs font-bold uppercase tracking-wider text-[var(--color-dark)]">RECENTLY PLAYED</span>
-                </div>
-                {(() => {
-                  if (isRecentError && (recentError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-bold text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((recentError as any)?.retryAfter ?? 60)} SECONDS.</div>;
-                  return <TrackList tracks={recentTracks.map((item: any) => item.track).filter(Boolean)} isLoading={isRecentLoading} onPlayTrack={playTrack} onAddToQueue={handleAddToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} onAddMemory={(track) => { setMemoryEditorEntity(track); setMemoryEditorType('track'); }} emptyMessage="NO RECENTLY PLAYED TRACKS" />;
-                })()}
-              </div>
-            )}
-
-            {activeTab === 'library' && (
-              <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between mb-2 shrink-0">
-                  <span className="font-pixel text-xs font-bold uppercase tracking-wider text-[var(--color-dark)]">LIKED SONGS</span>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setLibraryPage(p => Math.max(0, p - 1))} disabled={libraryPage === 0} className="text-xs font-bold text-[var(--color-dark)] disabled:opacity-40 hover:text-[var(--color-dark)] cursor-pointer p-1" aria-label="Previous page">◀</button>
-                    <span className="font-pixel text-xs font-bold text-[var(--color-dark)] px-1">{libraryPage + 1}</span>
-                    <button onClick={() => setLibraryPage(p => p + 1)} disabled={!likedData?.next} className="text-xs font-bold text-[var(--color-dark)] disabled:opacity-40 hover:text-[var(--color-dark)] cursor-pointer p-1" aria-label="Next page">▶</button>
-                  </div>
-                </div>
-                <button
-                  onClick={() => playTracks(likedData?.tracks?.map((t: any) => t.uri) || [], likedData?.tracks || [])}
-                  disabled={!likedData?.tracks?.length}
-                  className={`w-full mb-3 shrink-0 bg-gradient-to-r from-[var(--color-vibrant)] to-[var(--color-vibrant)] hover:from-[var(--color-vibrant)] hover:to-[#AD1457] text-white py-3 rounded-xl shadow-[0_4px_14px_var(--color-vibrant)] transition-all flex flex-col items-center justify-center gap-1 ${!likedData?.tracks?.length ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.01] active:scale-95'}`}
-                >
-                  <span className="font-pixel text-sm font-bold tracking-widest">
-                    ✦ PLAY LIKED ✦
-                  </span>
-                </button>
-                {(() => {
-                  if (isLikedError && (likedError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-bold text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((likedError as any)?.retryAfter ?? 60)} SECONDS.</div>;
-                  return <TrackList tracks={likedData?.tracks || []} isLoading={isLikedLoading} onPlayTrack={playTrack} onAddToQueue={handleAddToQueue} onAddToPlaylist={(uri) => setAddingTrackUri(uri)} onAddMemory={(track) => { setMemoryEditorEntity(track); setMemoryEditorType('track'); }} emptyMessage="NO LIKED SONGS" />;
-                })()}
-              </div>
-            )}
-
-            {activeTab === 'mix' && (
-              <MixSection
-                onPlayTrack={playTrack}
-                onPlayTracks={playTracks}
-                onAddToQueue={handleAddToQueue}
-                onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
-                onClickArtist={(id) => {
-                  setActiveTab('artist');
-                  setSelectedArtistId(id);
-                }}
-                onClickPlaylist={(id) => {
-                  setActiveTab('playlists');
-                  setSelectedPlaylistId(id);
-                }}
-                onAddMemory={(entity, type) => {
-                  setMemoryEditorEntity(entity);
-                  setMemoryEditorType(type);
-                }}
-                rateLimitTimer={rateLimitTimer}
-              />
-            )}
-
-            {activeTab === 'frequencies' && (
-              <FrequenciesSection
-                onPlayTrack={playTrack}
-                onPlayTracks={playTracks}
-                onAddToQueue={handleAddToQueue}
-                onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
-                onClickArtist={(id) => {
-                  setActiveTab('artist');
-                  setSelectedArtistId(id);
-                }}
-                onAddMemory={(entity, type) => {
-                  setMemoryEditorEntity(entity);
-                  setMemoryEditorType(type);
-                }}
-                rateLimitTimer={rateLimitTimer}
-              />
-            )}
-
-            {activeTab === 'vibes' && (
-              <VibesSection
-                onPlayTrack={playTrack}
-                onPlayTracks={playTracks}
-                onAddToQueue={handleAddToQueue}
-                onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
-                onClickArtist={(id) => {
-                  setActiveTab('artist');
-                  setSelectedArtistId(id);
-                }}
-                onAddMemory={(entity, type) => {
-                  setMemoryEditorEntity(entity);
-                  setMemoryEditorType(type);
-                  setMemoryEditorMemoryId(null);
-                }}
-                rateLimitTimer={rateLimitTimer}
-              />
-            )}
-
-            {activeTab === 'memories' && (
-              <MemoriesSection
-                onPlayTrack={playTrack}
-                onPlayPlaylist={playPlaylist}
-                onAddToQueue={handleAddToQueue}
-                onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
-                onClickArtist={(id) => {
-                  setActiveTab('artist');
-                  setSelectedArtistId(id);
-                }}
-                onClickPlaylist={(id) => {
-                  setActiveTab('playlists');
-                  setSelectedPlaylistId(id);
-                }}
-                onEditMemory={(entity, type, memoryId) => {
-                  setMemoryEditorEntity(entity);
-                  setMemoryEditorType(type);
-                  setMemoryEditorMemoryId(memoryId || null);
-                }}
-              />
-            )}
-
-            {activeTab === 'search' && (
-              <div className="flex flex-col h-full">
-                <SearchResults
-                  query={debouncedSearch}
+              {activeTab === 'frequencies' && (
+                <FrequenciesSection
                   onPlayTrack={playTrack}
+                  onPlayTracks={playTracks}
                   onAddToQueue={handleAddToQueue}
                   onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
-                  onClickPlaylist={(id) => {
-                    setActiveTab('playlists');
-                    setSelectedPlaylistId(id);
-                  }}
-                  onClickAlbum={(id) => {
-                    setActiveTab('album');
-                    setSelectedAlbumId(id);
-                  }}
                   onClickArtist={(id) => {
                     setActiveTab('artist');
                     setSelectedArtistId(id);
@@ -1479,549 +1715,756 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                     setMemoryEditorEntity(entity);
                     setMemoryEditorType(type);
                   }}
+                  rateLimitTimer={rateLimitTimer}
                 />
-              </div>
-            )}
+              )}
 
-            {activeTab === 'album' && selectedAlbumId && (
-              <AlbumDetail
-                albumId={selectedAlbumId}
-                onBack={() => {
-                  setActiveTab('search');
-                  setSelectedAlbumId(null);
-                }}
-                onPlayAlbum={playPlaylist}
-                onPlayTrack={(uri: string, contextUri?: string) => {
-                  playTrack(uri, contextUri);
-                }}
-                onAddToQueue={handleAddToQueue}
-                onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
-                onAddMemory={(entity, type) => {
-                  setMemoryEditorEntity(entity);
-                  setMemoryEditorType(type);
-                }}
-                onShufflePlay={async (uri) => {
-                  if (!isShuffle) {
-                    await toggleShuffle();
-                  }
-                  playPlaylist(uri);
-                }}
-              />
-            )}
+              {activeTab === 'vibes' && (
+                <VibesSection
+                  onPlayTrack={playTrack}
+                  onPlayTracks={playTracks}
+                  onAddToQueue={handleAddToQueue}
+                  onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
+                  onClickArtist={(id) => {
+                    setActiveTab('artist');
+                    setSelectedArtistId(id);
+                  }}
+                  onAddMemory={(entity, type) => {
+                    setMemoryEditorEntity(entity);
+                    setMemoryEditorType(type);
+                    setMemoryEditorMemoryId(null);
+                  }}
+                  rateLimitTimer={rateLimitTimer}
+                />
+              )}
 
-            {activeTab === 'artist' && selectedArtistId && (
-              <ArtistDetail
-                artistId={selectedArtistId}
-                onBack={() => {
-                  setActiveTab('search');
-                  setSelectedArtistId(null);
-                }}
-                onClickAlbum={(id) => {
-                  setActiveTab('album');
-                  setSelectedAlbumId(id);
-                }}
-                onPlayTrack={(uri: string, contextUri?: string) => {
-                  playTrack(uri, contextUri);
-                }}
-                onAddToQueue={handleAddToQueue}
-                onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
-                onAddMemory={(entity, type) => {
-                  setMemoryEditorEntity(entity);
-                  setMemoryEditorType(type);
-                  setMemoryEditorMemoryId(null);
-                }}
-              />
-            )}
-          </div>
+              {activeTab === 'memories' && (
+                <MemoriesSection
+                  onPlayTrack={playTrack}
+                  onPlayPlaylist={playPlaylist}
+                  onAddToQueue={handleAddToQueue}
+                  onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
+                  onClickArtist={(id) => {
+                    setActiveTab('artist');
+                    setSelectedArtistId(id);
+                  }}
+                  onClickPlaylist={(id) => {
+                    setActiveTab('playlists');
+                    setSelectedPlaylistId(id);
+                  }}
+                  onEditMemory={(entity, type, memoryId) => {
+                    setMemoryEditorEntity(entity);
+                    setMemoryEditorType(type);
+                    setMemoryEditorMemoryId(memoryId || null);
+                  }}
+                />
+              )}
 
-          {/* Right Sidebar */}
-          <div 
-            className="w-[380px] lg:w-[400px] xl:w-[420px] 2xl:w-[440px] border-l-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-[var(--color-light)]"
-            
-          >
-            <div className="flex flex-col p-5 pb-3 relative shrink-0">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-[var(--color-vibrant)] text-lg">♥</span>
-                  <span className="font-pixel text-[var(--color-dark)] text-sm font-bold">Now Playing</span>
-                </div>
-                {currentTrack && (
-                  <button
-                    onClick={() => {
-                      setQueueModalTab(rightPanelTab);
-                      setIsQueueModalOpen(true);
+              {activeTab === 'search' && (
+                <div className="flex flex-col h-full">
+                  <SearchResults
+                    query={debouncedSearch}
+                    onPlayTrack={playTrack}
+                    onAddToQueue={handleAddToQueue}
+                    onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
+                    onClickPlaylist={(id) => {
+                      setActiveTab('playlists');
+                      setSelectedPlaylistId(id);
                     }}
-                    className="font-pixel text-xs text-[var(--color-dark)] hover:text-white bg-white hover:bg-[var(--color-vibrant)] border border-[var(--color-muted)] px-3 py-1 rounded-full flex items-center gap-1 transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs font-bold active:scale-95"
-                    title="Open Queue & History Tuner"
-                  >
-                    <span>⤢</span> Expand
-                  </button>
-                )}
-              </div>
-              
-              {currentTrack ? (
-                <div className="flex flex-col">
-                  {/* Art, Vinyl & Frequencies */}
-                  <div className="relative w-full aspect-square mb-3 flex items-center justify-center overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-light)] shadow-[0_8px_24px_var(--color-muted)]">
-                    {/* Audio Visualizer Frequencies */}
-                    {!isPaused && (
-                      <div className="absolute bottom-0 left-0 w-full h-1/2 flex items-end justify-center gap-1 opacity-40 px-2 z-0">
-                        {[...Array(16)].map((_, i) => (
-                          <div key={i} className="w-full bg-gradient-to-t from-[var(--color-muted)] to-[var(--color-muted)] animate-pulse rounded-t-full" style={{ height: `${20 + ((i * 17) % 80)}%`, animationDuration: `${0.2 + ((i * 13) % 50) / 100}s` }} />
-                        ))}
-                      </div>
-                    )}
-                    {/* Record */}
-                    <div className="relative w-4/5 h-4/5 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group cursor-pointer hover:scale-[1.08] z-10">
-                      <img
-                        src={currentTrack.album?.images?.[0]?.url || (typeof currentTrack.album?.images?.[0] === 'string' ? currentTrack.album.images[0] : '') || '/soundscape_ref/finalui.png'}
-                        alt="Album Cover"
-                        className={`w-full h-full object-cover rounded-full shadow-[0_8px_24px_rgba(255,105,180,0.5)] border-4 border-[#FFFFFF] origin-center ${!isPaused ? 'animate-[spin_10s_linear_infinite]' : ''}`}
-                      />
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/4 h-1/4 bg-gradient-to-br from-[var(--color-light)] to-[var(--color-muted)] rounded-full border-2 border-[#FFFFFF] shadow-inner" />
-                    </div>
-
-                    {showLyrics && (
-                      <div className="absolute inset-0 z-20 bg-[var(--color-light)]/95 backdrop-blur-md p-6 flex flex-col overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                        {isLyricsLoading ? (
-                          <div className="flex-1 flex flex-col items-center justify-center gap-4 animate-pulse">
-                            <div className="w-3/4 h-4 bg-[var(--color-muted)] rounded"></div>
-                            <div className="w-1/2 h-4 bg-[var(--color-muted)] rounded"></div>
-                            <div className="w-5/6 h-4 bg-[var(--color-muted)] rounded"></div>
-                          </div>
-                        ) : lyricsData?.synced ? (
-                          <div className="flex flex-col gap-5 pb-[100%] pt-[40%] text-center">
-                            {lyricsData.synced.map((line, i) => (
-                              <div
-                                key={i}
-                                ref={(el) => { lyricsLinesRef.current[i] = el; }}
-                                className={`font-pixel text-sm sm:text-base md:text-lg opacity-50 transition-all duration-300 transform origin-center ${activeLyricIndexRef.current === i ? 'opacity-100 scale-105 text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}
-                              >
-                                {line.text || "♪"}
-                              </div>
-                            ))}
-                          </div>
-                        ) : lyricsData?.plain ? (
-                          <div className="font-pixel text-sm sm:text-base text-[var(--color-dark)] whitespace-pre-wrap leading-relaxed opacity-80 text-center pb-8 pt-4">
-                            {lyricsData.plain}
-                          </div>
-                        ) : (
-                          <div className="flex-1 flex items-center justify-center text-center">
-                            <span className="font-pixel text-sm text-[var(--color-dark)] font-bold opacity-60">No lyrics for this track (；一_一)</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Track Info */}
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex flex-col overflow-hidden flex-1">
-                      <h3 className="font-pixel text-xl font-bold text-[var(--color-dark)] line-clamp-2" title={currentTrack.name}>{currentTrack.name}</h3>
-                      <p className="font-pixel text-xs text-[var(--color-dark)] font-medium truncate" title={currentTrack.artists ? currentTrack.artists.map((a: any) => a.name).join(", ") : "Unknown Artist"}>
-                        {currentTrack.artists ? currentTrack.artists.map((a: any) => a.name).join(", ") : "Unknown Artist"}
-                      </p>
-                    </div>
-                    <div className="flex gap-2 shrink-0 ml-2">
-                      <button onClick={() => setShowLyrics(!showLyrics)} className={`text-xl transition-transform hover:scale-110 active:scale-95 ${showLyrics ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`} aria-label="Toggle Lyrics" title="Lyrics">
-                        ❝
-                      </button>
-                      <button onClick={toggleSaveTrack} className="text-xl transition-transform hover:scale-110 active:scale-95" title={isSaved ? "Remove from Library" : "Save to Library"} aria-label={isSaved ? "Remove from Library" : "Save to Library"}>
-                        {isSaved ? <span className="text-[var(--color-vibrant)]">♥</span> : <span className="text-[var(--color-dark)] hover:text-[var(--color-vibrant)]">♡</span>}
-                      </button>
-                      <button className="text-xl text-[var(--color-dark)] hover:text-[var(--color-dark)] pb-2 font-bold" aria-label="Track options">...</button>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="w-full flex flex-col gap-1 mt-1 group/slider">
-                    <div
-                      ref={progressBarRef}
-                      role="slider"
-                      aria-label="Playback progress"
-                      aria-valuemin={0}
-                      aria-valuemax={duration}
-                      tabIndex={0}
-                      className="w-full h-4 relative flex items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
-                      onPointerDown={handlePointerDown}
-                      onPointerMove={handlePointerMove}
-                      onPointerUp={handlePointerUp}
-                      onPointerCancel={handlePointerUp}
-                    >
-                      <div className="absolute left-0 right-0 h-full overflow-hidden rounded-full pointer-events-none scale-y-[0.6] group-hover/slider:scale-y-[0.85] transition-transform duration-300 ease-out origin-center bg-[var(--color-muted)]">
-                        <div 
-                          ref={progressBarFillRef}
-                          className="absolute left-0 top-0 bottom-0 w-full bg-[var(--color-dark)] rounded-full origin-left" 
-                        />
-                      </div>
-                      <div 
-                        ref={progressBarThumbRef}
-                        className="absolute left-0 top-0 bottom-0 w-full pointer-events-none"
-                      >
-                        <img
-                          src="/hampter/hello_kitty_pin.png"
-                          alt="Kitty Pin"
-                          className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 max-w-none object-contain translate-x-1/2 z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex justify-between w-full mt-1">
-                      <span ref={positionLabelRef} className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
-                      <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">{formatTime(duration)}</span>
-                    </div>
-                  </div>
-
-                  {/* Controls */}
-                  <div className="flex items-center justify-between mt-3 px-2">
-                    <button
-                      onClick={toggleShuffle}
-                      className={`transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${isShuffle ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'}`}
-                      disabled={!isReady && !token}
-                      aria-label="Shuffle"
-                      title="Shuffle"
-                    >
-                      <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" /></svg>
-                    </button>
-                    <button
-                      onClick={prevTrack}
-                      className="text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
-                      disabled={!isReady && !token}
-                      aria-label="Previous track"
-                      title="Previous"
-                    >
-                      <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" /></svg>
-                    </button>
-                    <button
-                      onClick={togglePlay}
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 shadow-[0_4px_14px_var(--color-vibrant)] ${!isPremium ? 'bg-[#1DB954] hover:bg-[#1ed760]' : 'bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)]'}`}
-                      disabled={!isReady && !token && isPremium}
-                      aria-label={!isPremium ? "Open in Spotify" : isPaused ? "Play" : "Pause"}
-                      title={!isPremium ? "Open in Spotify" : isPaused ? "Play" : "Pause"}
-                    >
-                      {!isPremium ? <span className="font-pixel text-[10px] leading-tight text-center px-1 font-bold">OPEN IN<br/>SPOTIFY</span> : isPaused ? <svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> : <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>}
-                    </button>
-                    <button
-                      onClick={nextTrack}
-                      className="text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
-                      disabled={!isReady && !token}
-                      aria-label="Next track"
-                      title="Next"
-                    >
-                      <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg>
-                    </button>
-                    <button
-                      onClick={toggleRepeat}
-                      className={`relative transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${repeatMode !== 'off' ? 'text-[var(--color-vibrant)] drop-shadow-[0_2px_4px_var(--color-vibrant)]' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'}`}
-                      disabled={!isReady && !token}
-                      aria-label="Repeat mode"
-                      title={repeatMode === 'off' ? 'Enable Repeat' : repeatMode === 'context' ? 'Repeat: All (Click for Repeat 1)' : 'Repeat: One (Click to turn off)'}
-                    >
-                      {repeatMode === 'track' ? (
-                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                          <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1l-2 1v1h1.5v4H13z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                          <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
-                        </svg>
-                      )}
-                      {repeatMode === 'context' && (
-                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[var(--color-vibrant)] rounded-full" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col mb-4">
-                  <div className="relative w-full aspect-square mb-4 flex items-center justify-center">
-                     <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4/5 h-4/5 bg-[#1F2937] rounded-full border-[6px] border-[#374151] flex items-center justify-center shadow-lg" style={{ right: '-10%' }}>
-                       <div className="w-1/3 h-1/3 bg-[var(--color-light)] rounded-full border-2 border-[#111827] flex items-center justify-center">
-                         <div className="w-3 h-3 bg-white rounded-full"></div>
-                       </div>
-                    </div>
-                    <div className="w-4/5 h-4/5 bg-[var(--color-light)] rounded-2xl shadow-[0_8px_24px_var(--color-muted)] relative z-10 border-2 border-[var(--color-muted)] flex items-center justify-center">
-                      <span className="text-4xl text-[var(--color-vibrant)]">♪</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex flex-col flex-1">
-                      <h3 className="font-pixel text-xl font-bold text-[var(--color-dark)]">No track loaded</h3>
-                      <p className="font-pixel text-xs text-[var(--color-dark)] font-medium">Select a playlist to begin playback</p>
-                    </div>
-                    <div className="flex gap-2 shrink-0 ml-2">
-                      <button className="text-xl text-[var(--color-dark)]">♡</button>
-                      <button className="text-xl text-[var(--color-dark)] pb-2 font-bold">...</button>
-                    </div>
-                  </div>
-                  <div className="w-full flex flex-col gap-1 mt-2">
-                    <div className="w-full h-2.5 bg-[var(--color-muted)] rounded-full"></div>
-                    <div className="flex justify-between w-full">
-                      <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
-                      <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mt-4 px-2">
-                    <button className="text-[var(--color-dark)]" aria-label="Shuffle disabled"><svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" /></svg></button>
-                    <button className="text-[var(--color-dark)]" aria-label="Previous disabled"><svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" /></svg></button>
-                    <button className="w-12 h-12 bg-[var(--color-light)] rounded-full flex items-center justify-center text-white/80" aria-label="Play disabled"><svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></button>
-                    <button className="text-[var(--color-dark)]" aria-label="Next disabled"><svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg></button>
-                    <button className="text-[var(--color-dark)]" aria-label="Repeat disabled"><svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" /></svg></button>
-                  </div>
+                    onClickAlbum={(id) => {
+                      setActiveTab('album');
+                      setSelectedAlbumId(id);
+                    }}
+                    onClickArtist={(id) => {
+                      setActiveTab('artist');
+                      setSelectedArtistId(id);
+                    }}
+                    onAddMemory={(entity, type) => {
+                      setMemoryEditorEntity(entity);
+                      setMemoryEditorType(type);
+                    }}
+                  />
                 </div>
               )}
+
+              {activeTab === 'album' && selectedAlbumId && (
+                <AlbumDetail
+                  albumId={selectedAlbumId}
+                  onBack={() => {
+                    setActiveTab('search');
+                    setSelectedAlbumId(null);
+                  }}
+                  onPlayAlbum={playPlaylist}
+                  onPlayTrack={(uri: string, contextUri?: string) => {
+                    playTrack(uri, contextUri);
+                  }}
+                  onAddToQueue={handleAddToQueue}
+                  onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
+                  onAddMemory={(entity, type) => {
+                    setMemoryEditorEntity(entity);
+                    setMemoryEditorType(type);
+                  }}
+                  onShufflePlay={async (uri) => {
+                    if (!isShuffle) {
+                      await toggleShuffle();
+                    }
+                    playPlaylist(uri);
+                  }}
+                />
+              )}
+
+              {activeTab === 'artist' && selectedArtistId && (
+                <ArtistDetail
+                  artistId={selectedArtistId}
+                  onBack={() => {
+                    setActiveTab('search');
+                    setSelectedArtistId(null);
+                  }}
+                  onClickAlbum={(id) => {
+                    setActiveTab('album');
+                    setSelectedAlbumId(id);
+                  }}
+                  onPlayTrack={(uri: string, contextUri?: string) => {
+                    playTrack(uri, contextUri);
+                  }}
+                  onAddToQueue={handleAddToQueue}
+                  onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
+                  onAddMemory={(entity, type) => {
+                    setMemoryEditorEntity(entity);
+                    setMemoryEditorType(type);
+                    setMemoryEditorMemoryId(null);
+                  }}
+                />
+              )}
             </div>
-            
-            <div className="flex flex-col flex-1 overflow-hidden px-4 pb-4">
-              {/* Tab Switcher & Bow */}
-              <div className="flex items-center justify-between bg-[var(--color-light)] rounded-full p-1 mb-2.5 shrink-0 border border-[var(--color-muted)]">
-                <div className="flex flex-1 gap-1">
-                  <button
-                    onClick={() => setRightPanelTab('queue')}
-                    className={`flex-1 font-pixel text-xs py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
-                      rightPanelTab === 'queue'
-                        ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
-                        : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
-                    }`}
-                  >
-                    <span>♥</span> Queue ({queue.length})
-                  </button>
-                  <button
-                    onClick={() => setRightPanelTab('recent')}
-                    className={`flex-1 font-pixel text-xs py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
-                      rightPanelTab === 'recent'
-                        ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
-                        : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
-                    }`}
-                  >
-                    <span>🕒</span> Recent
-                  </button>
-                </div>
-                <span className="text-base px-2 select-none" title="Hello Kitty">🎀</span>
-              </div>
-              
-              {/* Header with Title and Clear / Expand */}
-              <div className="flex items-center justify-between mb-1.5 shrink-0 px-1">
-                <span className="font-pixel text-xs text-[var(--color-dark)] font-bold tracking-wide">
-                  {rightPanelTab === 'queue' ? '+ Up Next' : '🕒 Recently Played'}
-                </span>
-                <div className="flex items-center gap-2">
-                  {rightPanelTab === 'queue' && effectiveQueue.length > 0 && (
+
+            {/* Right Sidebar */}
+            <div
+              className="w-[380px] lg:w-[400px] xl:w-[420px] 2xl:w-[440px] border-l-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-[var(--color-light)]"
+
+            >
+              <div className="flex flex-col p-5 pb-3 relative shrink-0">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[var(--color-vibrant)] text-lg">♥</span>
+                    <span className="font-pixel text-[var(--color-dark)] text-sm font-bold">Now Playing</span>
+                  </div>
+                  {currentTrack && (
                     <button
-                      onClick={() => clearQueue()}
-                      className="font-pixel text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors font-bold"
+                      onClick={() => setShowLyrics(!showLyrics)}
+                      className={`font-pixel text-xs px-3 py-1 rounded-full flex items-center gap-1 transition-all duration-150 ease-in-out shadow-xs font-bold active:scale-95 border ${showLyrics ? 'bg-[var(--color-vibrant)] text-white border-[var(--color-vibrant)]' : 'text-[var(--color-dark)] hover:text-white bg-white hover:bg-[var(--color-vibrant)] border-[var(--color-muted)]'}`}
+                      title="Toggle Lyrics"
                     >
-                      Clear
+                      <span>{showLyrics ? '▼' : '❝'}</span> Lyrics
                     </button>
                   )}
-                  <button
-                    onClick={() => {
-                      setQueueModalTab(rightPanelTab);
-                      setIsQueueModalOpen(true);
-                    }}
-                    className="font-pixel text-xs text-[var(--color-dark)] hover:text-white bg-white hover:bg-[var(--color-vibrant)] border border-[var(--color-muted)] px-2.5 py-0.5 rounded-full flex items-center gap-1 transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs font-bold active:scale-95 will-change-transform"
-                    title="Open large pop-up screen to tune queue & history"
-                  >
-                    <span>⤢</span> Expand
-                  </button>
                 </div>
-              </div>
 
-              {/* Tracks List */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1">
-                {rightPanelTab === 'queue' ? (
-                  effectiveQueue.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
-                      <div className="text-xl mb-1">🌸</div>
-                      <div className="text-[var(--color-dark)] font-pixel text-xs font-bold">QUEUE IS EMPTY</div>
-                      <p className="text-[var(--color-dark)] font-pixel text-xs mt-0.5 font-medium">Play or add tracks to build your list</p>
-                      <button
-                        onClick={() => {
-                          setQueueModalTab('recent');
-                          setIsQueueModalOpen(true);
-                        }}
-                        className="mt-2 font-pixel text-xs text-[var(--color-dark)] bg-white border border-[var(--color-muted)] px-3 py-1 rounded-full hover:bg-[var(--color-light)] transition-all font-bold shadow-xs"
+                {currentTrack ? (
+                  <div className="flex flex-col">
+                    {/* Art, Vinyl & Frequencies */}
+                    <div className="relative w-full aspect-square mb-3 flex items-center justify-center overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-light)] shadow-[0_8px_24px_var(--color-muted)]">
+                      {/* Audio Visualizer Frequencies */}
+                      {!isPaused && (
+                        <div className="absolute bottom-0 left-0 w-full h-1/2 flex items-end justify-center gap-1 opacity-40 px-2 z-0">
+                          {[...Array(16)].map((_, i) => (
+                            <div key={i} className="w-full bg-gradient-to-t from-[var(--color-muted)] to-[var(--color-muted)] animate-pulse rounded-t-full" style={{ height: `${20 + ((i * 17) % 80)}%`, animationDuration: `${0.2 + ((i * 13) % 50) / 100}s` }} />
+                          ))}
+                        </div>
+                      )}
+                      {/* Record */}
+                      <div className="relative w-4/5 h-4/5 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group cursor-pointer hover:scale-[1.08] z-10">
+                        <img
+                          src={currentTrack.album?.images?.[0]?.url || (typeof currentTrack.album?.images?.[0] === 'string' ? currentTrack.album.images[0] : '') || '/soundscape_ref/finalui.png'}
+                          alt="Album Cover"
+                          className={`w-full h-full object-cover rounded-full shadow-[0_8px_24px_rgba(255,105,180,0.5)] border-4 border-[#FFFFFF] origin-center ${!isPaused ? 'animate-[spin_10s_linear_infinite]' : ''}`}
+                        />
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/4 h-1/4 bg-gradient-to-br from-[var(--color-light)] to-[var(--color-muted)] rounded-full border-2 border-[#FFFFFF] shadow-inner" />
+                      </div>
+                    </div>
+
+                    {/* Track Info */}
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex flex-col overflow-hidden flex-1">
+                        <h3 className="font-pixel text-xl font-bold text-[var(--color-dark)] line-clamp-2" title={currentTrack.name}>{currentTrack.name}</h3>
+                        <p className="font-pixel text-xs text-[var(--color-dark)] font-medium truncate" title={currentTrack.artists ? currentTrack.artists.map((a: any) => a.name).join(", ") : "Unknown Artist"}>
+                          {currentTrack.artists ? currentTrack.artists.map((a: any) => a.name).join(", ") : "Unknown Artist"}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 shrink-0 ml-2">
+                        <button onClick={toggleSaveTrack} className="text-xl transition-transform hover:scale-110 active:scale-95" title={isSaved ? "Remove from Library" : "Save to Library"} aria-label={isSaved ? "Remove from Library" : "Save to Library"}>
+                          {isSaved ? <span className="text-[var(--color-vibrant)]">♥</span> : <span className="text-[var(--color-dark)] hover:text-[var(--color-vibrant)]">♡</span>}
+                        </button>
+                        <button className="text-xl text-[var(--color-dark)] hover:text-[var(--color-dark)] pb-2 font-bold" aria-label="Track options">...</button>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full flex flex-col gap-1 mt-1 group/slider">
+                      <div
+                        ref={progressBarRef}
+                        role="slider"
+                        aria-label="Playback progress"
+                        aria-valuemin={0}
+                        aria-valuemax={duration}
+                        tabIndex={0}
+                        className="w-full h-4 relative flex items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
+                        onPointerDown={handlePointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUp}
+                        onPointerCancel={handlePointerUp}
                       >
-                        Browse History ➔
+                        <div className="absolute left-0 right-0 h-full overflow-hidden rounded-full pointer-events-none scale-y-[0.6] group-hover/slider:scale-y-[0.85] transition-transform duration-300 ease-out origin-center bg-[var(--color-muted)]">
+                          <div
+                            ref={progressBarFillRef}
+                            className="absolute left-0 top-0 bottom-0 w-full bg-[var(--color-dark)] rounded-full origin-left"
+                          />
+                        </div>
+                        <div
+                          ref={progressBarThumbRef}
+                          className="absolute left-0 top-0 bottom-0 w-full pointer-events-none"
+                        >
+                          <img
+                            src="/hampter/hello_kitty_pin.png"
+                            alt="Kitty Pin"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 max-w-none object-contain translate-x-1/2 z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-between w-full mt-1">
+                        <span ref={positionLabelRef} className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
+                        <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">{formatTime(duration)}</span>
+                      </div>
+                    </div>
+
+                    {/* Controls */}
+                    <div className="flex items-center justify-between mt-3 px-2">
+                      <button
+                        onClick={toggleShuffle}
+                        className={`transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${isShuffle ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'}`}
+                        disabled={!isReady && !token}
+                        aria-label="Shuffle"
+                        title="Shuffle"
+                      >
+                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" /></svg>
+                      </button>
+                      <button
+                        onClick={prevTrack}
+                        className="text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
+                        disabled={!isReady && !token}
+                        aria-label="Previous track"
+                        title="Previous"
+                      >
+                        <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" /></svg>
+                      </button>
+                      <button
+                        onClick={togglePlay}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 shadow-[0_4px_14px_var(--color-vibrant)] ${!isPremium ? 'bg-[#1DB954] hover:bg-[#1ed760]' : 'bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)]'}`}
+                        disabled={!isReady && !token && isPremium}
+                        aria-label={!isPremium ? "Open in Spotify" : isPaused ? "Play" : "Pause"}
+                        title={!isPremium ? "Open in Spotify" : isPaused ? "Play" : "Pause"}
+                      >
+                        {!isPremium ? <span className="font-pixel text-[10px] leading-tight text-center px-1 font-bold">OPEN IN<br />SPOTIFY</span> : isPaused ? <svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> : <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>}
+                      </button>
+                      <button
+                        onClick={nextTrack}
+                        className="text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
+                        disabled={!isReady && !token}
+                        aria-label="Next track"
+                        title="Next"
+                      >
+                        <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg>
+                      </button>
+                      <button
+                        onClick={toggleRepeat}
+                        className={`relative transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${repeatMode !== 'off' ? 'text-[var(--color-vibrant)] drop-shadow-[0_2px_4px_var(--color-vibrant)]' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'}`}
+                        disabled={!isReady && !token}
+                        aria-label="Repeat mode"
+                        title={repeatMode === 'off' ? 'Enable Repeat' : repeatMode === 'context' ? 'Repeat: All (Click for Repeat 1)' : 'Repeat: One (Click to turn off)'}
+                      >
+                        {repeatMode === 'track' ? (
+                          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                            <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1l-2 1v1h1.5v4H13z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                            <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
+                          </svg>
+                        )}
+                        {repeatMode === 'context' && (
+                          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[var(--color-vibrant)] rounded-full" />
+                        )}
                       </button>
                     </div>
-                  ) : (
-                    effectiveQueue.map((item: any, idx: number) => (
-                      <div
-                        key={`${item.track?.id || item.track?.uri || 'queue'}-${idx}`}
-                        draggable={queue.length > 0}
-                        onDragStart={(e) => {
-                          if (queue.length === 0) return;
-                          setDraggedQueueIndex(idx);
-                          e.dataTransfer.effectAllowed = 'move';
-                        }}
-                        onDragOver={(e) => {
-                          if (queue.length === 0) return;
-                          e.preventDefault();
-                          setDragOverQueueIndex(idx);
-                        }}
-                        onDragEnd={() => {
-                          setDraggedQueueIndex(null);
-                          setDragOverQueueIndex(null);
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (queue.length > 0 && draggedQueueIndex !== null && draggedQueueIndex !== idx) {
-                            reorderQueue(draggedQueueIndex, idx);
-                          }
-                          setDraggedQueueIndex(null);
-                          setDragOverQueueIndex(null);
-                        }}
-                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[var(--color-light)] transition-colors group cursor-pointer border ${
-                          dragOverQueueIndex === idx
-                            ? draggedQueueIndex !== null && draggedQueueIndex < idx
-                              ? 'border-b-[var(--color-vibrant)] border-b-2'
-                              : 'border-t-[var(--color-vibrant)] border-t-2'
-                            : 'border-transparent'
-                        } ${draggedQueueIndex === idx ? 'opacity-50' : 'opacity-100'}`}
-                        onClick={() => playQueueItem(idx)}
-                      >
-                        <span className={`font-pixel text-xs w-4 text-center shrink-0 font-bold ${idx === queueIndex ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}>
-                          {idx + 1}
-                        </span>
-                        {item.track?.album?.images?.[0]?.url ? (
-                          <img src={(item.track.album.images[2] || item.track.album.images[0]).url} loading="lazy" alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]" />
-                        ) : (
-                          <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)] text-xs font-bold">♪</div>
-                        )}
-                        <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                          <span className={`font-pixel text-sm font-bold truncate ${idx === queueIndex ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}>
-                            {item.track?.name}
-                          </span>
-                          <span className="font-pixel text-sm text-[var(--color-dark)] font-medium truncate">
-                            {item.track?.artists?.map((a: any) => a.name).join(', ')}
-                          </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col mb-4">
+                    <div className="relative w-full aspect-square mb-4 flex items-center justify-center">
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4/5 h-4/5 bg-[#1F2937] rounded-full border-[6px] border-[#374151] flex items-center justify-center shadow-lg" style={{ right: '-10%' }}>
+                        <div className="w-1/3 h-1/3 bg-[var(--color-light)] rounded-full border-2 border-[#111827] flex items-center justify-center">
+                          <div className="w-3 h-3 bg-white rounded-full"></div>
                         </div>
-                        <span className="font-pixel text-xs text-[var(--color-dark)] font-bold shrink-0">
-                          {formatTime(item.track?.duration_ms || 0)}
-                        </span>
+                      </div>
+                      <div className="w-4/5 h-4/5 bg-[var(--color-light)] rounded-2xl shadow-[0_8px_24px_var(--color-muted)] relative z-10 border-2 border-[var(--color-muted)] flex items-center justify-center">
+                        <span className="text-4xl text-[var(--color-vibrant)]">♪</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex flex-col flex-1">
+                        <h3 className="font-pixel text-xl font-bold text-[var(--color-dark)]">No track loaded</h3>
+                        <p className="font-pixel text-xs text-[var(--color-dark)] font-medium">Select a playlist to begin playback</p>
+                      </div>
+                      <div className="flex gap-2 shrink-0 ml-2">
+                        <button className="text-xl text-[var(--color-dark)]">♡</button>
+                        <button className="text-xl text-[var(--color-dark)] pb-2 font-bold">...</button>
+                      </div>
+                    </div>
+                    <div className="w-full flex flex-col gap-1 mt-2">
+                      <div className="w-full h-2.5 bg-[var(--color-muted)] rounded-full"></div>
+                      <div className="flex justify-between w-full">
+                        <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
+                        <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-4 px-2">
+                      <button className="text-[var(--color-dark)]" aria-label="Shuffle disabled"><svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" /></svg></button>
+                      <button className="text-[var(--color-dark)]" aria-label="Previous disabled"><svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" /></svg></button>
+                      <button className="w-12 h-12 bg-[var(--color-light)] rounded-full flex items-center justify-center text-white/80" aria-label="Play disabled"><svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></button>
+                      <button className="text-[var(--color-dark)]" aria-label="Next disabled"><svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg></button>
+                      <button className="text-[var(--color-dark)]" aria-label="Repeat disabled"><svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" /></svg></button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col flex-1 overflow-hidden px-4 pb-4">
+                {/* Tab Switcher & Bow */}
+                <div className="flex items-center justify-between bg-[var(--color-light)] rounded-full p-1 mb-2.5 shrink-0 border border-[var(--color-muted)]">
+                  <div className="flex flex-1 gap-1">
+                    <button
+                      onClick={() => setRightPanelTab('queue')}
+                      className={`flex-1 font-pixel text-xs py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${rightPanelTab === 'queue'
+                          ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
+                          : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
+                        }`}
+                    >
+                      <span>♥</span> Queue ({queue.length})
+                    </button>
+                    <button
+                      onClick={() => setRightPanelTab('recent')}
+                      className={`flex-1 font-pixel text-xs py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${rightPanelTab === 'recent'
+                          ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
+                          : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
+                        }`}
+                    >
+                      <span>🕒</span> Recent
+                    </button>
+                  </div>
+                  <span className="text-base px-2 select-none" title="Hello Kitty">🎀</span>
+                </div>
+
+                {/* Header with Title and Clear / Expand */}
+                <div className="flex items-center justify-between mb-1.5 shrink-0 px-1">
+                  <span className="font-pixel text-xs text-[var(--color-dark)] font-bold tracking-wide">
+                    {rightPanelTab === 'queue' ? '+ Up Next' : '🕒 Recently Played'}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {rightPanelTab === 'queue' && effectiveQueue.length > 0 && (
+                      <button
+                        onClick={() => clearQueue()}
+                        className="font-pixel text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors font-bold"
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setQueueModalTab(rightPanelTab);
+                        setIsQueueModalOpen(true);
+                      }}
+                      className="font-pixel text-xs text-[var(--color-dark)] hover:text-white bg-white hover:bg-[var(--color-vibrant)] border border-[var(--color-muted)] px-2.5 py-0.5 rounded-full flex items-center gap-1 transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs font-bold active:scale-95 will-change-transform"
+                      title="Open large pop-up screen to tune queue & history"
+                    >
+                      <span>⤢</span> Expand
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tracks List */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1">
+                  {rightPanelTab === 'queue' ? (
+                    effectiveQueue.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
+                        <div className="text-xl mb-1">🌸</div>
+                        <div className="text-[var(--color-dark)] font-pixel text-xs font-bold">QUEUE IS EMPTY</div>
+                        <p className="text-[var(--color-dark)] font-pixel text-xs mt-0.5 font-medium">Play or add tracks to build your list</p>
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (queue.length > 0) {
-                              removeFromQueue(idx);
-                            }
+                          onClick={() => {
+                            setQueueModalTab('recent');
+                            setIsQueueModalOpen(true);
                           }}
-                          className={`text-[var(--color-dark)] hover:text-[var(--color-dark)] px-1 py-0.5 rounded shrink-0 font-bold text-xs ${queue.length > 0 ? 'opacity-0 group-hover:opacity-100' : 'hidden'}`}
-                          aria-label="Remove from queue"
-                          title="Remove from queue"
+                          className="mt-2 font-pixel text-xs text-[var(--color-dark)] bg-white border border-[var(--color-muted)] px-3 py-1 rounded-full hover:bg-[var(--color-light)] transition-all font-bold shadow-xs"
                         >
-                          ✕
+                          Browse History ➔
                         </button>
                       </div>
-                    ))
-                  )
-                ) : (
-                  /* Recently Played in right sidebar */
-                  recentTracks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
-                      <div className="text-xl mb-1">🕒</div>
-                      <div className="text-[var(--color-dark)] font-pixel text-xs font-bold">NO RECENT TRACKS</div>
-                      <p className="text-[var(--color-dark)] font-pixel text-xs mt-0.5 font-medium">Play some tunes to see them here</p>
-                    </div>
-                  ) : (
-                    recentTracks.slice(0, 15).map((item: any, idx: number) => {
-                      const track = item.track;
-                      if (!track) return null;
-                      return (
+                    ) : (
+                      effectiveQueue.map((item: any, idx: number) => (
                         <div
-                          key={`${track.id}-${idx}`}
-                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[var(--color-light)] transition-colors group cursor-pointer"
-                          onClick={() => {
-                            if (item.context?.uri) playContextTrack(item.context.uri, track.uri);
-                            else playTrack(track.uri, undefined, track);
+                          key={`${item.track?.id || item.track?.uri || 'queue'}-${idx}`}
+                          draggable={queue.length > 0}
+                          onDragStart={(e) => {
+                            if (queue.length === 0) return;
+                            setDraggedQueueIndex(idx);
+                            e.dataTransfer.effectAllowed = 'move';
                           }}
+                          onDragOver={(e) => {
+                            if (queue.length === 0) return;
+                            e.preventDefault();
+                            setDragOverQueueIndex(idx);
+                          }}
+                          onDragEnd={() => {
+                            setDraggedQueueIndex(null);
+                            setDragOverQueueIndex(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (queue.length > 0 && draggedQueueIndex !== null && draggedQueueIndex !== idx) {
+                              reorderQueue(draggedQueueIndex, idx);
+                            }
+                            setDraggedQueueIndex(null);
+                            setDragOverQueueIndex(null);
+                          }}
+                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[var(--color-light)] transition-colors group cursor-pointer border ${dragOverQueueIndex === idx
+                              ? draggedQueueIndex !== null && draggedQueueIndex < idx
+                                ? 'border-b-[var(--color-vibrant)] border-b-2'
+                                : 'border-t-[var(--color-vibrant)] border-t-2'
+                              : 'border-transparent'
+                            } ${draggedQueueIndex === idx ? 'opacity-50' : 'opacity-100'}`}
+                          onClick={() => playQueueItem(idx)}
                         >
-                          <span className="font-pixel text-xs w-4 text-center shrink-0 text-[var(--color-dark)] font-bold">
+                          <span className={`font-pixel text-xs w-4 text-center shrink-0 font-bold ${idx === queueIndex ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}>
                             {idx + 1}
                           </span>
-                          {track.album?.images?.[0]?.url ? (
-                            <img src={(track.album.images[2] || track.album.images[0]).url} loading="lazy" alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]" />
+                          {item.track?.album?.images?.[0]?.url ? (
+                            <img src={(item.track.album.images[2] || item.track.album.images[0]).url} loading="lazy" alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]" />
                           ) : (
                             <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)] text-xs font-bold">♪</div>
                           )}
                           <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                            <span className="font-pixel text-sm font-bold text-[var(--color-dark)] truncate">
-                              {track.name}
+                            <span className={`font-pixel text-sm font-bold truncate ${idx === queueIndex ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}>
+                              {item.track?.name}
                             </span>
                             <span className="font-pixel text-sm text-[var(--color-dark)] font-medium truncate">
-                              {track.artists?.map((a: any) => a.name).join(', ')}
+                              {item.track?.artists?.map((a: any) => a.name).join(', ')}
                             </span>
                           </div>
+                          <span className="font-pixel text-xs text-[var(--color-dark)] font-bold shrink-0">
+                            {formatTime(item.track?.duration_ms || 0)}
+                          </span>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleAddToQueue(track, item.context?.uri);
+                              if (queue.length > 0) {
+                                removeFromQueue(idx);
+                              }
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white px-2.5 py-1 rounded-full font-pixel text-xs font-bold transition-all shadow-xs shrink-0"
-                            title="Add to queue"
+                            className={`text-[var(--color-dark)] hover:text-[var(--color-dark)] px-1 py-0.5 rounded shrink-0 font-bold text-xs ${queue.length > 0 ? 'opacity-0 group-hover:opacity-100' : 'hidden'}`}
+                            aria-label="Remove from queue"
+                            title="Remove from queue"
                           >
-                            + Queue
+                            ✕
                           </button>
                         </div>
-                      );
-                    })
-                  )
-                )}
+                      ))
+                    )
+                  ) : (
+                    /* Recently Played in right sidebar */
+                    recentTracks.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
+                        <div className="text-xl mb-1">🕒</div>
+                        <div className="text-[var(--color-dark)] font-pixel text-xs font-bold">NO RECENT TRACKS</div>
+                        <p className="text-[var(--color-dark)] font-pixel text-xs mt-0.5 font-medium">Play some tunes to see them here</p>
+                      </div>
+                    ) : (
+                      recentTracks.slice(0, 15).map((item: any, idx: number) => {
+                        const track = item.track;
+                        if (!track) return null;
+                        return (
+                          <div
+                            key={`${track.id}-${idx}`}
+                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[var(--color-light)] transition-colors group cursor-pointer"
+                            onClick={() => {
+                              if (item.context?.uri) playContextTrack(item.context.uri, track.uri);
+                              else playTrack(track.uri, undefined, track);
+                            }}
+                          >
+                            <span className="font-pixel text-xs w-4 text-center shrink-0 text-[var(--color-dark)] font-bold">
+                              {idx + 1}
+                            </span>
+                            {track.album?.images?.[0]?.url ? (
+                              <img src={(track.album.images[2] || track.album.images[0]).url} loading="lazy" alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]" />
+                            ) : (
+                              <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)] text-xs font-bold">♪</div>
+                            )}
+                            <div className="flex flex-col overflow-hidden flex-1 min-w-0">
+                              <span className="font-pixel text-sm font-bold text-[var(--color-dark)] truncate">
+                                {track.name}
+                              </span>
+                              <span className="font-pixel text-sm text-[var(--color-dark)] font-medium truncate">
+                                {track.artists?.map((a: any) => a.name).join(', ')}
+                              </span>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddToQueue(track, item.context?.uri);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white px-2.5 py-1 rounded-full font-pixel text-xs font-bold transition-all shadow-xs shrink-0"
+                              title="Add to queue"
+                            >
+                              + Queue
+                            </button>
+                          </div>
+                        );
+                      })
+                    )
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* Lyrics View Overlay */}
+            {showLyrics && (
+              <div
+                className="absolute top-0 bottom-0 z-40 bg-[var(--color-bg)]/95 backdrop-blur-xl flex flex-col pointer-events-auto transition-all duration-300 max-lg:left-auto max-lg:right-0 max-lg:w-[380px] lg:left-64 lg:right-[400px] xl:right-[420px] 2xl:right-[440px]"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 shrink-0 border-b-2 border-[var(--color-muted)] bg-[var(--color-light)]/50">
+                  <span className="font-pixel text-sm font-bold text-[var(--color-dark)] flex items-center gap-2">
+                    <span className="text-[var(--color-vibrant)] text-lg">❝</span> Lyrics
+                  </span>
+                  <button onClick={() => setShowLyrics(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-white border border-[var(--color-muted)] transition-colors shadow-xs active:scale-95" aria-label="Close Lyrics">
+                    ✕
+                  </button>
+                </div>
+                
+                {/* Content */}
+                <div 
+                  ref={lyricsContainerRef}
+                  className="flex-1 overflow-hidden relative px-6 select-none"
+                  style={{
+                    position: 'relative',
+                    maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
+                  }}
+                >
+                  {isLyricsLoading ? (
+                    <div className="flex flex-col items-center justify-center gap-8 py-20 opacity-60">
+                      <div className="w-3/4 h-6 bg-[var(--color-muted)] rounded animate-pulse" />
+                      <div className="w-1/2 h-6 bg-[var(--color-muted)] rounded animate-pulse" />
+                      <div className="w-5/6 h-6 bg-[var(--color-muted)] rounded animate-pulse" />
+                    </div>
+                  ) : lyricsData?.synced && lyricsData.synced.length > 0 ? (
+                    <div className="flex flex-col gap-[3vh] sm:gap-[4vh] text-center w-full py-8">
+                      {lyricsData.synced.map((line, i) => {
+                        const prevLine = lyricsData.synced?.[i-1];
+                        const isLongGap = i > 0 && prevLine && (line.timeMs - prevLine.timeMs > 8000);
+                        const isReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                        const isActive = i === activeLyricIndex;
+                        const distance = activeLyricIndex === -1 ? 0 : Math.abs(i - activeLyricIndex);
+
+                        let opacity = 0.25;
+                        let blurPx = 3;
+                        let scale = 1;
+
+                        if (isActive) {
+                          opacity = 1;
+                          blurPx = 0;
+                          scale = isReduced ? 1 : 1.06;
+                        } else if (activeLyricIndex === -1) {
+                          opacity = 0.5;
+                          blurPx = 0;
+                          scale = 1;
+                        } else if (distance === 1) {
+                          opacity = 0.5;
+                          blurPx = 1;
+                          scale = 1;
+                        } else if (distance === 2) {
+                          opacity = 0.35;
+                          blurPx = 2;
+                          scale = 1;
+                        } else {
+                          opacity = 0.25;
+                          blurPx = 3;
+                          scale = 1;
+                        }
+
+                        if (isManualBrowsing) {
+                          blurPx = 0;
+                        }
+
+                        let delayMs = 0;
+                        if (!isReduced && !isManualBrowsing && !skipCascade && activeLyricIndex !== -1) {
+                          if (i >= activeLyricIndex) {
+                            const step = Math.min(i - activeLyricIndex, 8);
+                            delayMs = step * 40;
+                          }
+                        }
+
+                        const durationMs = (isReduced || isManualBrowsing || skipCascade) ? 0 : 600;
+
+                        return (
+                          <React.Fragment key={i}>
+                            {isLongGap && (
+                              <div 
+                                className="flex justify-center items-center gap-3 py-6 select-none"
+                                style={{
+                                  transform: 'translateY(var(--lyrics-y, 0px))',
+                                  transitionProperty: 'transform',
+                                  transitionDuration: `${durationMs}ms`,
+                                  transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                                  transitionDelay: `${delayMs}ms`,
+                                }}
+                              >
+                                <div 
+                                  className={`w-2.5 h-2.5 rounded-full bg-[var(--color-dark)] ${
+                                    activeLyricIndex === i - 1 
+                                      ? 'interlude-dot-1' 
+                                      : activeLyricIndex < i - 1 ? 'opacity-25 scale-75' : 'opacity-0 scale-0'
+                                  } transition-all duration-300`} 
+                                />
+                                <div 
+                                  className={`w-2.5 h-2.5 rounded-full bg-[var(--color-dark)] ${
+                                    activeLyricIndex === i - 1 
+                                      ? 'interlude-dot-2' 
+                                      : activeLyricIndex < i - 1 ? 'opacity-25 scale-75' : 'opacity-0 scale-0'
+                                  } transition-all duration-300`} 
+                                />
+                                <div 
+                                  className={`w-2.5 h-2.5 rounded-full bg-[var(--color-dark)] ${
+                                    activeLyricIndex === i - 1 
+                                      ? 'interlude-dot-3' 
+                                      : activeLyricIndex < i - 1 ? 'opacity-25 scale-75' : 'opacity-0 scale-0'
+                                  } transition-all duration-300`} 
+                                />
+                              </div>
+                            )}
+                            <div
+                              ref={(el) => { lyricsLinesRef.current[i] = el; }}
+                              onClick={() => {
+                                skipCascadeRef.current = true;
+                                setSkipCascade(true);
+                                handleSeek(line.timeMs);
+                                resumeToActive();
+                                requestAnimationFrame(() => {
+                                  skipCascadeRef.current = false;
+                                  setSkipCascade(false);
+                                });
+                              }}
+                              className="relative w-full max-w-[640px] mx-auto font-pixel font-bold text-center leading-relaxed origin-center cursor-pointer select-none hover:opacity-100 transition-opacity"
+                              style={{
+                                fontSize: 'clamp(1.5rem, 2.2vw, 2.25rem)',
+                                transform: `translateY(var(--lyrics-y, 0px)) ${scale !== 1 ? `scale(${scale})` : ''}`,
+                                opacity,
+                                filter: blurPx > 0 ? `blur(${blurPx}px)` : 'none',
+                                transitionProperty: 'transform, opacity, filter',
+                                transitionDuration: `${durationMs}ms, ${durationMs}ms, 250ms`,
+                                transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1), ease',
+                                transitionDelay: `${delayMs}ms, ${delayMs}ms, 0ms`,
+                                willChange: 'transform, opacity',
+                              }}
+                            >
+                              <div 
+                                className={`absolute right-[100%] mr-4 top-1/2 -translate-y-1/2 text-[var(--color-vibrant)] text-2xl transition-opacity duration-300 ${
+                                  isActive ? 'opacity-100' : 'opacity-0'
+                                }`}
+                              >
+                                ♥
+                              </div>
+                              {line.text || "♪"}
+                            </div>
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  ) : lyricsData?.plain ? (
+                    <div className="font-pixel font-bold text-lg sm:text-xl md:text-2xl text-[var(--color-dark)] whitespace-pre-wrap leading-relaxed opacity-60 text-center py-10 max-w-[640px] mx-auto select-none">
+                      <div className="mb-6 font-pixel text-xs font-bold text-[var(--color-vibrant)] bg-[var(--color-light)] inline-block px-3 py-1 rounded-full border border-[var(--color-muted)]">NOT SYNCED</div>
+                      <br/>
+                      {lyricsData.plain}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center py-20 opacity-50 select-none">
+                      <div className="text-4xl mb-4 text-[var(--color-dark)]">ʕ•́ᴥ•̀ʔっ</div>
+                      <span className="font-pixel text-sm text-[var(--color-dark)] font-bold">No lyrics found for this track.</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Back to now pill */}
+                <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 transition-all duration-300 z-50 ${isManualBrowsing ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+                  <button 
+                    onClick={resumeToActive} 
+                    className="bg-[var(--color-dark)] text-white font-pixel text-xs font-bold px-4 py-2 rounded-full shadow-lg hover:bg-[var(--color-vibrant)] transition-colors active:scale-95 flex items-center gap-2"
+                  >
+                    <span className="text-white/70">↓</span> Back to now
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
 
-        </div>
-
-        <QueueModal
-          isOpen={isQueueModalOpen}
-          onClose={() => setIsQueueModalOpen(false)}
-          initialTab={queueModalTab}
-          onPlayTrack={(uri, contextUri) => {
-            if (contextUri) playContextTrack(contextUri, uri);
-            else playTrack(uri);
-          }}
-          onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
-        />
-
-        <MemoryEditorModal
-          isOpen={!!memoryEditorEntity || !!memoryEditorMemoryId}
-          onClose={() => { setMemoryEditorEntity(null); setMemoryEditorType(null); setMemoryEditorMemoryId(null); }}
-          entity={memoryEditorEntity}
-          entityType={memoryEditorType}
-          memoryId={memoryEditorMemoryId}
-        />
-
-        {addingTrackUri && (
-          <AddToPlaylistModal
-            trackUri={addingTrackUri}
-            onClose={() => setAddingTrackUri(null)}
-          />
-        )}
-        {isCreatingPlaylist && (
-          <CreatePlaylistModal
-            onClose={() => setIsCreatingPlaylist(false)}
-          />
-        )}
-        {editingPlaylist && (
-          <CreatePlaylistModal
-            onClose={() => setEditingPlaylist(null)}
-            playlistToEdit={editingPlaylist}
-          />
-        )}
-        {removingPlaylist && (
-          <RemovePlaylistModal
-            playlist={removingPlaylist}
-            onClose={() => setRemovingPlaylist(null)}
-            onComplete={() => {
-              if (selectedPlaylistId === removingPlaylist.id) {
-                setSelectedPlaylistId(null);
-              }
+          <QueueModal
+            isOpen={isQueueModalOpen}
+            onClose={() => setIsQueueModalOpen(false)}
+            initialTab={queueModalTab}
+            onPlayTrack={(uri, contextUri) => {
+              if (contextUri) playContextTrack(contextUri, uri);
+              else playTrack(uri);
             }}
+            onAddToPlaylist={(uri) => setAddingTrackUri(uri)}
           />
-        )}
+
+          <MemoryEditorModal
+            isOpen={!!memoryEditorEntity || !!memoryEditorMemoryId}
+            onClose={() => { setMemoryEditorEntity(null); setMemoryEditorType(null); setMemoryEditorMemoryId(null); }}
+            entity={memoryEditorEntity}
+            entityType={memoryEditorType}
+            memoryId={memoryEditorMemoryId}
+          />
+
+          {addingTrackUri && (
+            <AddToPlaylistModal
+              trackUri={addingTrackUri}
+              onClose={() => setAddingTrackUri(null)}
+            />
+          )}
+          {isCreatingPlaylist && (
+            <CreatePlaylistModal
+              onClose={() => setIsCreatingPlaylist(false)}
+            />
+          )}
+          {editingPlaylist && (
+            <CreatePlaylistModal
+              onClose={() => setEditingPlaylist(null)}
+              playlistToEdit={editingPlaylist}
+            />
+          )}
+          {removingPlaylist && (
+            <RemovePlaylistModal
+              playlist={removingPlaylist}
+              onClose={() => setRemovingPlaylist(null)}
+              onComplete={() => {
+                if (selectedPlaylistId === removingPlaylist.id) {
+                  setSelectedPlaylistId(null);
+                }
+              }}
+            />
+          )}
         </div>
       </div>
-      </>
+    </>
   );
 }
