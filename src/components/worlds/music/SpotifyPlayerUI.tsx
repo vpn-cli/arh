@@ -23,8 +23,9 @@ import { usePlaylistMutations } from "@/hooks/usePlaylistMutations";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { VIBES } from "@/config/vibes";
 import { proxyFetch, getFreshToken, onLoginRequired } from "@/lib/spotifyClient";
-import { registerPlayerForRecovery, subscribeRecoveryState, recoverPlaybackDevice, markNeedsRecovery, clearNeedsRecovery } from "@/lib/spotifyRecovery";
+import { subscribeRecoveryState, recoverPlaybackDevice, markNeedsRecovery, clearNeedsRecovery } from "@/lib/spotifyRecovery";
 import { attachEstimatedWordTimings, LyricLine } from "@/lib/lyrics";
+import { useSpotifyPlayer } from "@/providers/SpotifyPlayerProvider";
 
 const sfx: any = { select: () => { }, hover: () => { }, pop: () => { }, move: () => { }, error: () => { } };
 
@@ -44,12 +45,17 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
-  const deviceIdRef = React.useRef<string | null>(null);
-  const needsRecoveryRef = React.useRef(false);
-  const notReadyFiredRef = React.useRef(false);
+  const {
+    player: providerPlayer,
+    deviceIdRef,
+    needsRecoveryRef,
+    notReadyFiredRef,
+    latestStateRef,
+    subscribe,
+  } = useSpotifyPlayer();
 
   const {
-    player, setPlayer,
+    player: storePlayer, setPlayer,
     deviceId, setDeviceId,
     isReady, setIsReady,
     currentTrack, setCurrentTrack,
@@ -62,6 +68,8 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     isPremium, setIsPremium,
     queue, queueIndex, setQueueIndex, addToQueue, removeFromQueue, clearQueue, reorderQueue, setQueue
   } = useSpotifyPlayerStore();
+
+  const player = providerPlayer || storePlayer;
 
   const [draggedQueueIndex, setDraggedQueueIndex] = useState<number | null>(null);
   const [dragOverQueueIndex, setDragOverQueueIndex] = useState<number | null>(null);
@@ -115,12 +123,8 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     }
     return false;
   });
-  const [sessionSecret, setSessionSecret] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return window.localStorage.getItem('arh_admin_secret') || '';
-    }
-    return '';
-  });
+  const [sessionSecret, setSessionSecret] = useState<string>('');
+  const isReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const [isAddLyricsOpen, setIsAddLyricsOpen] = useState(false);
   const [manualLyricsInput, setManualLyricsInput] = useState('');
   const [manualSecretInput, setManualSecretInput] = useState('');
@@ -170,9 +174,6 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
       const data = await res.json();
       setSessionSecret(secretToUse);
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('arh_admin_secret', secretToUse);
-      }
 
       if (data.synced) {
         data.synced = attachEstimatedWordTimings(data.synced);
@@ -256,7 +257,11 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       wordEl.style.animationName = 'none';
       wordEl.style.animationDuration = `${durationMs}ms`;
       wordEl.style.animationDelay = `${delayMs}ms`;
-      wordEl.offsetHeight; // trigger reflow to apply new delay immediately
+    });
+
+    lineEl.offsetHeight; // force reflow once for the whole line
+
+    wordEls.forEach((wordEl) => {
       wordEl.style.animationName = 'lyric-word-wipe';
     });
   }, [lyricsData]);
@@ -733,6 +738,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   // Update numeric time label in rAF loop
   useEffect(() => {
     let frameId: number;
+    let lastAriaUpdate = 0;
     const updateLabel = () => {
       if (!isPaused && !isDragging) {
         const elapsed = Date.now() - trackStartTimeRef.current - pausedDurationRef.current;
@@ -741,8 +747,12 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
           const ts = Math.floor(currentPos / 1000);
           positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
         }
-        if (progressBarRef.current) {
-          progressBarRef.current.setAttribute('aria-valuenow', Math.floor(currentPos).toString());
+        const now = Date.now();
+        if (now - lastAriaUpdate >= 1000) {
+          if (progressBarRef.current) {
+            progressBarRef.current.setAttribute('aria-valuenow', Math.floor(currentPos).toString());
+          }
+          lastAriaUpdate = now;
         }
 
         if (showLyrics && lyricsData?.synced) {
@@ -794,236 +804,189 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     };
   }, [setDeviceId]);
 
-  // Tab visibility and network reconnect health check
-  useEffect(() => {
-    const checkStateHealth = async () => {
-      if (!player) return;
+  const applyPlayerState = React.useCallback(async (state: any) => {
+    if (!state) return;
+    const newTrack = state.track_window?.current_track;
+    const storeState = useSpotifyPlayerStore.getState();
 
-      // Reconnect proactively (player.connect() only, no transfer) only if the SDK
-      // fired not_ready or the device ID ref is null.
-      if (notReadyFiredRef.current || !deviceIdRef.current) {
-        console.log(`[${new Date().toISOString()}] [Spotify Health Check] Proactively reconnecting player (no transfer) because not_ready fired or deviceId is null.`);
-        player.connect().catch((err: any) => {
-          console.warn(`[${new Date().toISOString()}] [Spotify Health Check] player.connect() error:`, err);
-        });
+    if (newTrack?.id !== storeState.currentTrack?.id) {
+      setCurrentTrack(newTrack);
+    }
+    if (storeState.isPaused !== state.paused) {
+      setIsPaused(state.paused);
+    }
+    if (storeState.isShuffle !== state.shuffle) {
+      setIsShuffle(state.shuffle);
+    }
+    if (state.repeat_mode !== undefined) {
+      let nextRepeat: 'off' | 'context' | 'track' = 'off';
+      if (state.repeat_mode === 0 || state.repeat_mode === '0' || state.repeat_mode === 'off') {
+        nextRepeat = 'off';
+      } else if (state.repeat_mode === 1 || state.repeat_mode === '1' || state.repeat_mode === 'context') {
+        nextRepeat = 'context';
+      } else if (state.repeat_mode === 2 || state.repeat_mode === '2' || state.repeat_mode === 'track') {
+        nextRepeat = 'track';
       }
-
-      try {
-        const state = await player.getCurrentState();
-        if (state === null) {
-          // getCurrentState() === null also means "this browser is not the active device",
-          // which is normal when listening on another device (e.g. phone) or hasn't played yet.
-          // Do NOT call recoverPlaybackDevice(). Only set the needs-recovery flag;
-          // recovery runs when the user next presses play in this tab.
-          console.log(`[${new Date().toISOString()}] [Spotify Health Check] player.getCurrentState() returned null (browser not active device). Setting needs-recovery flag.`);
-          needsRecoveryRef.current = true;
-          markNeedsRecovery();
-        } else {
-          needsRecoveryRef.current = false;
-          clearNeedsRecovery();
-        }
-      } catch (err) {
-        console.warn(`[${new Date().toISOString()}] [Spotify Health Check] Error checking player state:`, err);
-        needsRecoveryRef.current = true;
-        markNeedsRecovery();
+      if (storeState.repeatMode !== nextRepeat) {
+        setRepeatMode(nextRepeat);
       }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        checkStateHealth();
-      }
-    };
-
-    const handleOnline = () => {
-      checkStateHealth();
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('online', handleOnline);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('online', handleOnline);
-    };
-  }, [player]);
-
-  // Load SDK and initialize
-  useEffect(() => {
-    if (!token) return;
-
-    const initializePlayer = () => {
-      const spotifyPlayer = new window.Spotify.Player({
-        name: "Kawaii Web Player",
-        getOAuthToken: async (cb: (token: string) => void) => {
-          try {
-            const freshToken = await getFreshToken();
-            if (freshToken) {
-              cb(freshToken);
-            } else {
-              setShowLoginPrompt(true);
-            }
-          } catch (error) {
-            console.error(`[${new Date().toISOString()}] [Spotify SDK getOAuthToken Error]`, error);
-            setShowLoginPrompt(true);
-          }
-        },
-        volume: 0.5
-      });
-
-      registerPlayerForRecovery(spotifyPlayer, deviceIdRef, notReadyFiredRef);
-      setPlayer(spotifyPlayer);
-
-      spotifyPlayer.addListener('ready', ({ device_id }: { device_id: string }) => {
-        console.log(`[${new Date().toISOString()}] [Spotify SDK Event: ready] Device ID: ${device_id}`);
-        deviceIdRef.current = device_id;
-        notReadyFiredRef.current = false;
-        setDeviceId(device_id);
-        setIsReady(true);
-      });
-
-      spotifyPlayer.addListener('not_ready', ({ device_id }: { device_id: string }) => {
-        console.warn(`[${new Date().toISOString()}] [Spotify SDK Event: not_ready] Device ID: ${device_id}`);
-        deviceIdRef.current = null;
-        notReadyFiredRef.current = true;
-        setDeviceId(null);
-        setIsReady(false);
-      });
-
-      spotifyPlayer.addListener('player_state_changed', async (state: any) => {
-        if (!state) return;
-        const newTrack = state.track_window?.current_track;
-        setCurrentTrack(newTrack);
-        setIsPaused(state.paused);
-        setIsShuffle(state.shuffle);
-        if (state.repeat_mode !== undefined) {
-          if (state.repeat_mode === 0 || state.repeat_mode === '0' || state.repeat_mode === 'off') {
-            setRepeatMode('off');
-          } else if (state.repeat_mode === 1 || state.repeat_mode === '1' || state.repeat_mode === 'context') {
-            setRepeatMode('context');
-          } else if (state.repeat_mode === 2 || state.repeat_mode === '2' || state.repeat_mode === 'track') {
-            setRepeatMode('track');
-          }
-        }
-
-        // Only reset the accumulator when the track ACTUALLY changes to avoid stale event freezing
-        const incomingTrackId = state.track_window?.current_track?.id;
-        if (incomingTrackId && incomingTrackId !== lastActiveTrackIdRef.current) {
-          lastActiveTrackIdRef.current = incomingTrackId;
-          trackStartTimeRef.current = Date.now() - state.position;
-          pausedDurationRef.current = 0;
-          pauseTimestampRef.current = state.paused ? Date.now() : null;
-        }
-
-        if (progressBarFillRef.current && progressBarThumbRef.current) {
-          const fill = progressBarFillRef.current;
-          const thumb = progressBarThumbRef.current;
-          fill.style.animationName = 'none';
-          thumb.style.animationName = 'none';
-          fill.style.transform = '';
-          thumb.style.transform = '';
-          fill.offsetHeight; // trigger reflow
-
-          fill.style.animationName = 'progress-fill';
-          fill.style.animationDuration = `${state.duration}ms`;
-          fill.style.animationDelay = `-${state.position}ms`;
-          fill.style.animationPlayState = state.paused ? 'paused' : 'running';
-          fill.style.animationTimingFunction = 'linear';
-          fill.style.animationFillMode = 'forwards';
-
-          thumb.style.animationName = 'progress-thumb';
-          thumb.style.animationDuration = `${state.duration}ms`;
-          thumb.style.animationDelay = `-${state.position}ms`;
-          thumb.style.animationPlayState = state.paused ? 'paused' : 'running';
-          thumb.style.animationTimingFunction = 'linear';
-          thumb.style.animationFillMode = 'forwards';
-        }
-
-        if (positionLabelRef.current) {
-          const ts = Math.floor(state.position / 1000);
-          positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
-        }
-
-        setDuration(state.duration);
-
-        // Sync queue position if track is in store queue
-        if (newTrack?.uri) {
-          lastActiveTrackUriRef.current = newTrack.uri;
-          const currentQueue = useSpotifyPlayerStore.getState().queue;
-          const idx = currentQueue.findIndex(item => item.track?.uri === newTrack.uri);
-          if (idx !== -1) {
-            setQueueIndex(idx);
-          }
-        }
-
-        // Continuous playback: if playback ended and next_tracks is empty
-        const nextTracks = state.track_window?.next_tracks || [];
-        const isEnded = state.paused && state.position === 0 && !userPausedRef.current && !!lastActiveTrackUriRef.current;
-        if (isEnded && nextTracks.length === 0 && !isAutoplayingRef.current) {
-          isAutoplayingRef.current = true;
-          try {
-            const trackForAutoplay = newTrack || currentTrack;
-            if (trackForAutoplay) {
-              const { getRelevantTracks } = await import('@/lib/spotify/player');
-              const relevant = await getRelevantTracks(trackForAutoplay, 12);
-              if (relevant.length > 0) {
-                const targetDevice = selectedDevice || deviceIdRef.current || deviceId;
-                await play.mutateAsync({
-                  uris: relevant.map((t: any) => t.uri),
-                  device_id: targetDevice || undefined
-                });
-                setQueue(relevant.map((t: any) => ({ track: t })));
-                setQueueIndex(0);
-              }
-            }
-          } catch (e) {
-            console.error('Autoplay error:', e);
-          } finally {
-            setTimeout(() => {
-              isAutoplayingRef.current = false;
-            }, 3000);
-          }
-        }
-      });
-
-      spotifyPlayer.addListener('initialization_error', ({ message }: { message: string }) => {
-        console.error(`[${new Date().toISOString()}] [Spotify SDK Event: initialization_error] ${message}`);
-        setError(message);
-      });
-      spotifyPlayer.addListener('authentication_error', ({ message }: { message: string }) => {
-        console.error(`[${new Date().toISOString()}] [Spotify SDK Event: authentication_error] ${message}`);
-        setError(message);
-        setShowLoginPrompt(true);
-      });
-      spotifyPlayer.addListener('account_error', ({ message }: { message: string }) => {
-        console.error(`[${new Date().toISOString()}] [Spotify SDK Event: account_error] ${message}`);
-        setIsPremium(false);
-        setError("Premium required for web playback.");
-      });
-      spotifyPlayer.addListener('playback_error', ({ message }: { message: string }) => {
-        console.error(`[${new Date().toISOString()}] [Spotify SDK Event: playback_error] ${message}`);
-        setError(message);
-      });
-
-      spotifyPlayer.connect();
-    };
-
-    if (!window.Spotify) {
-      window.onSpotifyWebPlaybackSDKReady = initializePlayer;
-      if (!document.querySelector('script[src="https://sdk.scdn.co/spotify-player.js"]')) {
-        const script = document.createElement("script");
-        script.src = "https://sdk.scdn.co/spotify-player.js";
-        script.async = true;
-        document.body.appendChild(script);
-      }
-    } else {
-      initializePlayer();
     }
 
+    // Only reset the accumulator when the track ACTUALLY changes to avoid stale event freezing
+    const incomingTrackId = state.track_window?.current_track?.id;
+    if (incomingTrackId && incomingTrackId !== lastActiveTrackIdRef.current) {
+      lastActiveTrackIdRef.current = incomingTrackId;
+    }
+    trackStartTimeRef.current = Date.now() - state.position;
+    pausedDurationRef.current = 0;
+    pauseTimestampRef.current = state.paused ? Date.now() : null;
+
+    if (progressBarFillRef.current && progressBarThumbRef.current) {
+      const fill = progressBarFillRef.current;
+      const thumb = progressBarThumbRef.current;
+      fill.style.animationName = 'none';
+      thumb.style.animationName = 'none';
+      fill.style.transform = '';
+      thumb.style.transform = '';
+      fill.offsetHeight; // trigger reflow
+
+      fill.style.animationName = 'progress-fill';
+      fill.style.animationDuration = `${state.duration}ms`;
+      fill.style.animationDelay = `-${state.position}ms`;
+      fill.style.animationPlayState = state.paused ? 'paused' : 'running';
+      fill.style.animationTimingFunction = 'linear';
+      fill.style.animationFillMode = 'forwards';
+
+      thumb.style.animationName = 'progress-thumb';
+      thumb.style.animationDuration = `${state.duration}ms`;
+      thumb.style.animationDelay = `-${state.position}ms`;
+      thumb.style.animationPlayState = state.paused ? 'paused' : 'running';
+      thumb.style.animationTimingFunction = 'linear';
+      thumb.style.animationFillMode = 'forwards';
+    }
+
+    if (positionLabelRef.current) {
+      const ts = Math.floor(state.position / 1000);
+      positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
+    }
+
+    if (lyricsContainerRef.current) {
+      lyricsContainerRef.current.style.setProperty(
+        '--lyrics-play-state',
+        state.paused ? 'paused' : 'running'
+      );
+    }
+
+    if (lyricsData?.synced && lyricsData.synced.length > 0) {
+      const lines = lyricsData.synced;
+      let targetIndex = -1;
+      for (let i = lines.length - 1; i >= 0; i--) {
+        if (lines[i].timeMs <= state.position) {
+          targetIndex = i;
+          break;
+        }
+      }
+      if (targetIndex !== activeLyricIndexRef.current) {
+        activeLyricIndexRef.current = targetIndex;
+        setActiveLyricIndex(targetIndex);
+        if (!isManualBrowsingRef.current) {
+          updateLyricsPosition(targetIndex, true);
+        }
+      }
+      syncActiveLineWordDelays(targetIndex, state.position);
+    }
+
+    if (storeState.duration !== state.duration) {
+      setDuration(state.duration);
+    }
+
+    // Sync queue position if track is in store queue
+    if (newTrack?.uri) {
+      lastActiveTrackUriRef.current = newTrack.uri;
+      const currentQueue = storeState.queue;
+      const idx = currentQueue.findIndex(item => item.track?.uri === newTrack.uri);
+      if (idx !== -1 && storeState.queueIndex !== idx) {
+        setQueueIndex(idx);
+      }
+    }
+
+    // Continuous playback: if playback ended and next_tracks is empty
+    const nextTracks = state.track_window?.next_tracks || [];
+    const isEnded = state.paused && state.position === 0 && !userPausedRef.current && !!lastActiveTrackUriRef.current;
+    if (isEnded && nextTracks.length === 0 && !isAutoplayingRef.current) {
+      isAutoplayingRef.current = true;
+      try {
+        const trackForAutoplay = newTrack || currentTrack;
+        if (trackForAutoplay) {
+          const { getRelevantTracks } = await import('@/lib/spotify/player');
+          const relevant = await getRelevantTracks(trackForAutoplay, 12);
+          if (relevant.length > 0) {
+            const targetDevice = selectedDevice || deviceIdRef.current || deviceId;
+            await play.mutateAsync({
+              uris: relevant.map((t: any) => t.uri),
+              device_id: targetDevice || undefined
+            });
+            setQueue(relevant.map((t: any) => ({ track: t })));
+            setQueueIndex(0);
+          }
+        }
+      } catch (e) {
+        console.error('Autoplay error:', e);
+      } finally {
+        setTimeout(() => {
+          isAutoplayingRef.current = false;
+        }, 3000);
+      }
+    }
+  }, [
+    setCurrentTrack,
+    setIsPaused,
+    setIsShuffle,
+    setRepeatMode,
+    setDuration,
+    setQueueIndex,
+    currentTrack,
+    selectedDevice,
+    deviceId,
+    deviceIdRef,
+    play,
+    setQueue,
+    lyricsData,
+    updateLyricsPosition,
+    syncActiveLineWordDelays
+  ]);
+
+  const applyPlayerStateRef = React.useRef(applyPlayerState);
+  applyPlayerStateRef.current = applyPlayerState;
+
+  const resyncedPlayerRef = React.useRef<any>(null);
+
+  // Hook subscription and on-mount resync from player.getCurrentState()
+  useEffect(() => {
+    if (!player) return;
+
+    if (resyncedPlayerRef.current !== player) {
+      resyncedPlayerRef.current = player;
+      if (latestStateRef?.current) {
+        applyPlayerStateRef.current(latestStateRef.current);
+      }
+      if (typeof player.getCurrentState === 'function') {
+        player.getCurrentState().then((state: any) => {
+          if (state) {
+            applyPlayerStateRef.current(state);
+          }
+        });
+      }
+    }
+
+    const unsubscribe = subscribe((state: any) => {
+      applyPlayerStateRef.current(state);
+    });
+
     return () => {
-      // Cleanup is tricky if player changes, but we'll leave it simple
+      unsubscribe();
     };
-  }, [token]);
+  }, [player, subscribe]);
 
   const handleAddToQueue = async (trackOrUri: any, contextUri?: string) => {
     const uri = typeof trackOrUri === 'string' ? trackOrUri : trackOrUri?.uri;
@@ -2639,7 +2602,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             {/* Lyrics View Overlay */}
             {showLyrics && (
               <div
-                className="absolute top-0 bottom-0 z-40 bg-[var(--color-bg)]/95 backdrop-blur-xl flex flex-col pointer-events-auto transition-all duration-300 max-lg:left-auto max-lg:right-0 max-lg:w-[380px] lg:left-64 lg:right-[400px] xl:right-[420px] 2xl:right-[440px]"
+                className="absolute top-0 bottom-0 z-40 bg-[var(--color-bg)] flex flex-col pointer-events-auto transition-all duration-300 max-lg:left-auto max-lg:right-0 max-lg:w-[380px] lg:left-64 lg:right-[400px] xl:right-[420px] 2xl:right-[440px]"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 shrink-0 border-b-2 border-[var(--color-muted)] bg-[var(--color-light)]/50">
@@ -2702,9 +2665,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                       {lyricsData.synced.map((line, i) => {
                         const prevLine = lyricsData.synced?.[i-1];
                         const isLongGap = i > 0 && prevLine && (line.timeMs - prevLine.timeMs > 8000);
-                        const isReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                         const isActive = i === activeLyricIndex;
                         const distance = activeLyricIndex === -1 ? 0 : Math.abs(i - activeLyricIndex);
+                        const isNearby = distance <= 6;
 
                         let opacity = 0.25;
                         let blurPx = 3;
@@ -2713,7 +2676,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                         if (isActive) {
                           opacity = 1;
                           blurPx = 0;
-                          scale = isReduced ? 1 : 1.06;
+                          scale = isReducedMotion ? 1 : 1.06;
                         } else if (activeLyricIndex === -1) {
                           opacity = 0.5;
                           blurPx = 0;
@@ -2726,9 +2689,13 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                           opacity = 0.35;
                           blurPx = 2;
                           scale = 1;
-                        } else {
+                        } else if (isNearby) {
                           opacity = 0.25;
                           blurPx = 3;
+                          scale = 1;
+                        } else {
+                          opacity = isManualBrowsing ? 0.25 : 0;
+                          blurPx = 0;
                           scale = 1;
                         }
 
@@ -2737,14 +2704,14 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                         }
 
                         let delayMs = 0;
-                        if (!isReduced && !isManualBrowsing && !skipCascade && activeLyricIndex !== -1) {
+                        if (!isReducedMotion && !isManualBrowsing && !skipCascade && activeLyricIndex !== -1 && isNearby) {
                           if (i >= activeLyricIndex) {
                             const step = Math.min(i - activeLyricIndex, 8);
                             delayMs = step * 40;
                           }
                         }
 
-                        const durationMs = (isReduced || isManualBrowsing || skipCascade) ? 0 : 600;
+                        const durationMs = (isReducedMotion || isManualBrowsing || skipCascade) ? 0 : 600;
 
                         return (
                           <React.Fragment key={i}>
@@ -2753,10 +2720,10 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                                 className="flex justify-center items-center gap-3 py-6 select-none"
                                 style={{
                                   transform: 'translateY(var(--lyrics-y, 0px))',
-                                  transitionProperty: 'transform',
-                                  transitionDuration: `${durationMs}ms`,
+                                  transitionProperty: isNearby ? 'transform' : 'none',
+                                  transitionDuration: isNearby ? `${durationMs}ms` : '0ms',
                                   transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
-                                  transitionDelay: `${delayMs}ms`,
+                                  transitionDelay: isNearby ? `${delayMs}ms` : '0ms',
                                 }}
                               >
                                 <div 
@@ -2801,12 +2768,12 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                                 fontSize: 'clamp(1.5rem, 2.2vw, 2.25rem)',
                                 transform: `translateY(var(--lyrics-y, 0px)) ${scale !== 1 ? `scale(${scale})` : ''}`,
                                 opacity,
-                                filter: blurPx > 0 ? `blur(${blurPx}px)` : 'none',
-                                transitionProperty: 'transform, opacity, filter',
-                                transitionDuration: `${durationMs}ms, ${durationMs}ms, 250ms`,
-                                transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1), ease',
-                                transitionDelay: `${delayMs}ms, ${delayMs}ms, 0ms`,
-                                willChange: 'transform, opacity',
+                                filter: (isNearby && blurPx > 0) ? `blur(${blurPx}px)` : 'none',
+                                transitionProperty: isNearby ? 'transform, opacity, filter' : 'none',
+                                transitionDuration: isNearby ? `${durationMs}ms, ${durationMs}ms, 250ms` : '0ms',
+                                transitionTimingFunction: isNearby ? 'cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1), ease' : undefined,
+                                transitionDelay: isNearby ? `${delayMs}ms, ${delayMs}ms, 0ms` : undefined,
+                                willChange: isNearby ? 'transform, opacity' : undefined,
                               }}
                             >
                               <div 
@@ -2819,16 +2786,13 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                               {line.words && line.words.length > 0 ? (
                                 line.words.map((word, wIdx, arr) => {
                                   const wordDurationMs = word.endMs - word.startMs;
-                                  const activeElapsed = isActive
-                                    ? Math.max(0, (Date.now() - trackStartTimeRef.current - pausedDurationRef.current) - line.timeMs)
-                                    : 0;
-                                  const wordDelayMs = (word.startMs - line.timeMs) - activeElapsed;
+                                  const wordDelayMs = word.startMs - line.timeMs;
 
                                   return (
                                     <React.Fragment key={wIdx}>
                                       <span
                                         className={`lyric-word ${isActive ? 'lyric-word-active' : ''}`}
-                                        style={isActive && !isReduced ? {
+                                        style={isActive && !isReducedMotion ? {
                                           animationDuration: `${wordDurationMs}ms`,
                                           animationDelay: `${wordDelayMs}ms`,
                                         } : undefined}

@@ -9,6 +9,7 @@ import ClickToEnterScreen from "../ui/ClickToEnterScreen";
 import AuthLoadingOverlay from "../ui/AuthLoadingOverlay";
 import StoryFlow from "./StoryFlow";
 import WorldRouter from "../worlds/WorldRouter";
+import { SpotifyPlayerProvider } from "@/providers/SpotifyPlayerProvider";
 
 /* ═══════════════════════════════════════════════════════
    LANDING PAGE — Master orchestrator
@@ -106,7 +107,11 @@ export default function LandingPage() {
       )}
 
       {/* ═══ PHASE 4: World System (Home → Main/Music/Scrapbook) ═══ */}
-      {storyComplete && <WorldRouter />}
+      {storyComplete && (
+        <SpotifyPlayerProvider>
+          <WorldRouter />
+        </SpotifyPlayerProvider>
+      )}
     </div>
   );
 }
