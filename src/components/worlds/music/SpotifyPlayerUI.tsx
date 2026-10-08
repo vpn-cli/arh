@@ -22,7 +22,9 @@ import { QueueModal } from "./QueueModal";
 import { usePlaylistMutations } from "@/hooks/usePlaylistMutations";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { VIBES } from "@/config/vibes";
-import { proxyFetch } from "@/lib/spotifyClient";
+import { proxyFetch, getFreshToken, onLoginRequired } from "@/lib/spotifyClient";
+import { registerPlayerForRecovery, subscribeRecoveryState, recoverPlaybackDevice, markNeedsRecovery, clearNeedsRecovery } from "@/lib/spotifyRecovery";
+import { attachEstimatedWordTimings, LyricLine } from "@/lib/lyrics";
 
 const sfx: any = { select: () => { }, hover: () => { }, pop: () => { }, move: () => { }, error: () => { } };
 
@@ -37,7 +39,14 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const queryClient = useQueryClient();
   const { data: sessionData, isError: sessionError } = useSpotifySession();
   const token = sessionData?.accessToken || null;
-  const isSessionExpired = sessionError;
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const isSessionExpired = sessionError || showLoginPrompt;
+
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const deviceIdRef = React.useRef<string | null>(null);
+  const needsRecoveryRef = React.useRef(false);
+  const notReadyFiredRef = React.useRef(false);
 
   const {
     player, setPlayer,
@@ -85,11 +94,99 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const [globalSearch, setGlobalSearch] = useState("");
 
   const [showLyrics, setShowLyrics] = useState(false);
-  const [lyricsData, setLyricsData] = useState<{ synced: any[] | null, plain: string | null } | null>(null);
+  const [lyricsData, setLyricsData] = useState<{
+    synced: LyricLine[] | null;
+    plain: string | null;
+    instrumental?: boolean;
+    notFound?: boolean;
+    source?: string;
+  } | null>(null);
   const [isLyricsLoading, setIsLyricsLoading] = useState(false);
   const lyricsCache = React.useRef<Record<string, any>>({});
   const activeLyricIndexRef = React.useRef<number>(-1);
   const lyricsLinesRef = React.useRef<(HTMLDivElement | null)[]>([]);
+  
+  // Edit mode & manual lyrics states
+  const [editMode, setEditMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('edit') === 'true') return true;
+      return window.localStorage.getItem('arh_edit_mode') === 'true';
+    }
+    return false;
+  });
+  const [sessionSecret, setSessionSecret] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return window.localStorage.getItem('arh_admin_secret') || '';
+    }
+    return '';
+  });
+  const [isAddLyricsOpen, setIsAddLyricsOpen] = useState(false);
+  const [manualLyricsInput, setManualLyricsInput] = useState('');
+  const [manualSecretInput, setManualSecretInput] = useState('');
+  const [isSavingLyrics, setIsSavingLyrics] = useState(false);
+  const [saveLyricsError, setSaveLyricsError] = useState<string | null>(null);
+
+  const handleSaveManualLyrics = async () => {
+    if (!currentTrack?.id) return;
+    const secretToUse = sessionSecret || manualSecretInput;
+    if (!secretToUse) {
+      setSaveLyricsError("Admin Secret is required.");
+      return;
+    }
+    if (!manualLyricsInput.trim()) {
+      setSaveLyricsError("Please paste some lyrics.");
+      return;
+    }
+
+    setIsSavingLyrics(true);
+    setSaveLyricsError(null);
+
+    try {
+      const res = await fetch('/api/lyrics', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-scrapbook-secret': secretToUse,
+        },
+        body: JSON.stringify({
+          trackId: currentTrack.id,
+          lyrics: manualLyricsInput,
+        }),
+      });
+
+      if (res.status === 401) {
+        setSaveLyricsError("Invalid Admin Secret.");
+        setIsSavingLyrics(false);
+        return;
+      }
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setSaveLyricsError(errData.error || "Failed to save lyrics.");
+        setIsSavingLyrics(false);
+        return;
+      }
+
+      const data = await res.json();
+      setSessionSecret(secretToUse);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('arh_admin_secret', secretToUse);
+      }
+
+      if (data.synced) {
+        data.synced = attachEstimatedWordTimings(data.synced);
+      }
+      lyricsCache.current[currentTrack.id] = data;
+      setLyricsData(data);
+      setIsAddLyricsOpen(false);
+      setManualLyricsInput('');
+    } catch (e: any) {
+      setSaveLyricsError(e?.message || "An error occurred.");
+    } finally {
+      setIsSavingLyrics(false);
+    }
+  };
   
   const [activeLyricIndex, setActiveLyricIndex] = useState(-1);
   const lyricsContainerRef = React.useRef<HTMLDivElement | null>(null);
@@ -140,6 +237,30 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     container.style.setProperty('--lyrics-y', `${totalY}px`);
   }, []);
 
+  const syncActiveLineWordDelays = React.useCallback((lineIndex: number, currentPosMs: number) => {
+    if (lineIndex < 0) return;
+    const lineEl = lyricsLinesRef.current[lineIndex];
+    if (!lineEl || !lyricsData?.synced) return;
+    const line = lyricsData.synced[lineIndex];
+    if (!line || !line.words) return;
+
+    const elapsedWithinLine = Math.max(0, currentPosMs - line.timeMs);
+    const wordEls = lineEl.querySelectorAll<HTMLElement>('.lyric-word');
+
+    wordEls.forEach((wordEl, wIdx) => {
+      const word = line.words?.[wIdx];
+      if (!word) return;
+      const durationMs = word.endMs - word.startMs;
+      const delayMs = (word.startMs - line.timeMs) - elapsedWithinLine;
+
+      wordEl.style.animationName = 'none';
+      wordEl.style.animationDuration = `${durationMs}ms`;
+      wordEl.style.animationDelay = `${delayMs}ms`;
+      wordEl.offsetHeight; // trigger reflow to apply new delay immediately
+      wordEl.style.animationName = 'lyric-word-wipe';
+    });
+  }, [lyricsData]);
+
   const resumeToActive = React.useCallback(() => {
     if (manualTimeoutRef.current) {
       clearTimeout(manualTimeoutRef.current);
@@ -168,7 +289,25 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       progressBarThumbRef.current.style.animationName = 'none';
       progressBarThumbRef.current.style.transform = `translateX(${percent * 100 - 100}%)`;
     }
-  }, [player, duration]);
+    if (lyricsData?.synced && lyricsData.synced.length > 0) {
+      const lines = lyricsData.synced;
+      let targetIndex = -1;
+      for (let i = lines.length - 1; i >= 0; i--) {
+        if (lines[i].timeMs <= targetMs) {
+          targetIndex = i;
+          break;
+        }
+      }
+      if (targetIndex !== activeLyricIndexRef.current) {
+        activeLyricIndexRef.current = targetIndex;
+        setActiveLyricIndex(targetIndex);
+        if (!isManualBrowsingRef.current) {
+          updateLyricsPosition(targetIndex, true);
+        }
+      }
+      syncActiveLineWordDelays(targetIndex, targetMs);
+    }
+  }, [player, duration, lyricsData, updateLyricsPosition, syncActiveLineWordDelays]);
 
   // Recompute lyrics on container resize
   useEffect(() => {
@@ -196,22 +335,31 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   // Recompute when lyrics load or change
   useEffect(() => {
     if (!showLyrics || !lyricsData?.synced) return;
+    const currentPos = Math.max(0, Date.now() - trackStartTimeRef.current - pausedDurationRef.current);
+    syncActiveLineWordDelays(activeLyricIndexRef.current, currentPos);
+    updateLyricsPosition(activeLyricIndexRef.current, true);
     const timer = setTimeout(() => {
       updateLyricsPosition(activeLyricIndexRef.current, true);
+      const updatedPos = Math.max(0, Date.now() - trackStartTimeRef.current - pausedDurationRef.current);
+      syncActiveLineWordDelays(activeLyricIndexRef.current, updatedPos);
     }, 50);
     return () => clearTimeout(timer);
-  }, [lyricsData, showLyrics, updateLyricsPosition]);
+  }, [lyricsData, showLyrics, updateLyricsPosition, syncActiveLineWordDelays]);
 
   // Snap to active line when opening lyrics view
   useEffect(() => {
     if (showLyrics) {
       resumeToActive();
+      const currentPos = Math.max(0, Date.now() - trackStartTimeRef.current - pausedDurationRef.current);
+      syncActiveLineWordDelays(activeLyricIndexRef.current, currentPos);
       const timer = setTimeout(() => {
         updateLyricsPosition(activeLyricIndexRef.current, true);
+        const updatedPos = Math.max(0, Date.now() - trackStartTimeRef.current - pausedDurationRef.current);
+        syncActiveLineWordDelays(activeLyricIndexRef.current, updatedPos);
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [showLyrics, resumeToActive, updateLyricsPosition]);
+  }, [showLyrics, resumeToActive, updateLyricsPosition, syncActiveLineWordDelays]);
 
   // Manual wheel and touch browsing with non-passive listeners
   useEffect(() => {
@@ -497,6 +645,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         const res = await fetch(`/api/lyrics?trackId=${encodeURIComponent(trackId)}`);
         if (res.ok) {
           const data = await res.json();
+          if (data?.synced) {
+            data.synced = attachEstimatedWordTimings(data.synced);
+          }
           lyricsCache.current[trackId] = data;
           return data;
         }
@@ -571,6 +722,12 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         pauseTimestampRef.current = null;
       }
     }
+    if (lyricsContainerRef.current) {
+      lyricsContainerRef.current.style.setProperty(
+        '--lyrics-play-state',
+        isPaused ? 'paused' : 'running'
+      );
+    }
   }, [isPaused]);
 
   // Update numeric time label in rAF loop
@@ -620,6 +777,77 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     return () => cancelAnimationFrame(frameId);
   }, [isPaused, isDragging, duration, showLyrics, lyricsData]);
 
+  // Recovery state subscription and login prompt listener
+  useEffect(() => {
+    onLoginRequired(() => setShowLoginPrompt(true));
+    const unsubscribe = subscribeRecoveryState({
+      onReconnectingChange: (reconnecting) => setIsReconnecting(reconnecting),
+      onErrorChange: (err) => setRecoveryError(err),
+      onDeviceIdChange: (newId) => {
+        deviceIdRef.current = newId;
+        setDeviceId(newId);
+      },
+    });
+    return () => {
+      onLoginRequired(null);
+      unsubscribe();
+    };
+  }, [setDeviceId]);
+
+  // Tab visibility and network reconnect health check
+  useEffect(() => {
+    const checkStateHealth = async () => {
+      if (!player) return;
+
+      // Reconnect proactively (player.connect() only, no transfer) only if the SDK
+      // fired not_ready or the device ID ref is null.
+      if (notReadyFiredRef.current || !deviceIdRef.current) {
+        console.log(`[${new Date().toISOString()}] [Spotify Health Check] Proactively reconnecting player (no transfer) because not_ready fired or deviceId is null.`);
+        player.connect().catch((err: any) => {
+          console.warn(`[${new Date().toISOString()}] [Spotify Health Check] player.connect() error:`, err);
+        });
+      }
+
+      try {
+        const state = await player.getCurrentState();
+        if (state === null) {
+          // getCurrentState() === null also means "this browser is not the active device",
+          // which is normal when listening on another device (e.g. phone) or hasn't played yet.
+          // Do NOT call recoverPlaybackDevice(). Only set the needs-recovery flag;
+          // recovery runs when the user next presses play in this tab.
+          console.log(`[${new Date().toISOString()}] [Spotify Health Check] player.getCurrentState() returned null (browser not active device). Setting needs-recovery flag.`);
+          needsRecoveryRef.current = true;
+          markNeedsRecovery();
+        } else {
+          needsRecoveryRef.current = false;
+          clearNeedsRecovery();
+        }
+      } catch (err) {
+        console.warn(`[${new Date().toISOString()}] [Spotify Health Check] Error checking player state:`, err);
+        needsRecoveryRef.current = true;
+        markNeedsRecovery();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkStateHealth();
+      }
+    };
+
+    const handleOnline = () => {
+      checkStateHealth();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [player]);
+
   // Load SDK and initialize
   useEffect(() => {
     if (!token) return;
@@ -629,37 +857,37 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         name: "Kawaii Web Player",
         getOAuthToken: async (cb: (token: string) => void) => {
           try {
-            const res = await fetch('/api/spotify/session', {
-              credentials: 'include',
-              cache: 'no-store'
-            });
-            if (!res.ok) {
-              console.error('[Spotify SDK] Failed to obtain current token:', res.status);
-              return;
+            const freshToken = await getFreshToken();
+            if (freshToken) {
+              cb(freshToken);
+            } else {
+              setShowLoginPrompt(true);
             }
-            const data = await res.json();
-            if (!data.accessToken) {
-              console.error('[Spotify SDK] Session returned no access token');
-              return;
-            }
-            cb(data.accessToken);
           } catch (error) {
-            console.error('[Spotify SDK] Failed to obtain current token', error);
+            console.error(`[${new Date().toISOString()}] [Spotify SDK getOAuthToken Error]`, error);
+            setShowLoginPrompt(true);
           }
         },
         volume: 0.5
       });
 
+      registerPlayerForRecovery(spotifyPlayer, deviceIdRef);
       setPlayer(spotifyPlayer);
 
       spotifyPlayer.addListener('ready', ({ device_id }: { device_id: string }) => {
+        console.log(`[${new Date().toISOString()}] [Spotify SDK Event: ready] Device ID: ${device_id}`);
+        deviceIdRef.current = device_id;
+        notReadyFiredRef.current = false;
         setDeviceId(device_id);
         setIsReady(true);
       });
 
       spotifyPlayer.addListener('not_ready', ({ device_id }: { device_id: string }) => {
+        console.warn(`[${new Date().toISOString()}] [Spotify SDK Event: not_ready] Device ID: ${device_id}`);
+        deviceIdRef.current = null;
+        notReadyFiredRef.current = true;
+        setDeviceId(null);
         setIsReady(false);
-        setDeviceId("");
       });
 
       spotifyPlayer.addListener('player_state_changed', async (state: any) => {
@@ -739,7 +967,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
               const { getRelevantTracks } = await import('@/lib/spotify/player');
               const relevant = await getRelevantTracks(trackForAutoplay, 12);
               if (relevant.length > 0) {
-                const targetDevice = selectedDevice || deviceId;
+                const targetDevice = selectedDevice || deviceIdRef.current || deviceId;
                 await play.mutateAsync({
                   uris: relevant.map((t: any) => t.uri),
                   device_id: targetDevice || undefined
@@ -758,13 +986,24 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         }
       });
 
-      spotifyPlayer.addListener('initialization_error', ({ message }: { message: string }) => setError(message));
-      spotifyPlayer.addListener('authentication_error', ({ message }: { message: string }) => setError(message));
+      spotifyPlayer.addListener('initialization_error', ({ message }: { message: string }) => {
+        console.error(`[${new Date().toISOString()}] [Spotify SDK Event: initialization_error] ${message}`);
+        setError(message);
+      });
+      spotifyPlayer.addListener('authentication_error', ({ message }: { message: string }) => {
+        console.error(`[${new Date().toISOString()}] [Spotify SDK Event: authentication_error] ${message}`);
+        setError(message);
+        setShowLoginPrompt(true);
+      });
       spotifyPlayer.addListener('account_error', ({ message }: { message: string }) => {
+        console.error(`[${new Date().toISOString()}] [Spotify SDK Event: account_error] ${message}`);
         setIsPremium(false);
         setError("Premium required for web playback.");
       });
-      spotifyPlayer.addListener('playback_error', ({ message }: { message: string }) => setError(message));
+      spotifyPlayer.addListener('playback_error', ({ message }: { message: string }) => {
+        console.error(`[${new Date().toISOString()}] [Spotify SDK Event: playback_error] ${message}`);
+        setError(message);
+      });
 
       spotifyPlayer.connect();
     };
@@ -795,7 +1034,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
     try {
       const { addTrackToPlayerQueue } = await import('@/lib/spotify/player');
-      const targetDevice = selectedDevice || deviceId;
+      const targetDevice = selectedDevice || deviceIdRef.current || deviceId;
       await addTrackToPlayerQueue(uri, targetDevice || undefined);
     } catch (err) {
       console.warn('Could not add to Spotify queue:', err);
@@ -811,7 +1050,18 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       return;
     }
     userPausedRef.current = false;
-    const targetDevice = selectedDevice || deviceId;
+    let targetDevice = selectedDevice || deviceIdRef.current || deviceId;
+
+    if (needsRecoveryRef.current || (!targetDevice && isPremium)) {
+      try {
+        const recoveredId = await recoverPlaybackDevice();
+        needsRecoveryRef.current = false;
+        targetDevice = selectedDevice || recoveredId;
+      } catch (err: any) {
+        setRecoveryError(err.message || 'Error reconnecting to Spotify device');
+        return;
+      }
+    }
 
     try {
       if (contextUri) {
@@ -851,7 +1101,8 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       setQueue(fullQueue);
       setQueueIndex(0);
     } catch (e: any) {
-      alert(e.message || 'Error playing track');
+      console.error(`[${new Date().toISOString()}] [Play Track Error]`, e);
+      setRecoveryError(e.message || 'Error playing track');
     }
   };
 
@@ -864,7 +1115,19 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       return;
     }
     userPausedRef.current = false;
-    const targetDevice = selectedDevice || deviceId;
+    let targetDevice = selectedDevice || deviceIdRef.current || deviceId;
+
+    if (needsRecoveryRef.current || (!targetDevice && isPremium)) {
+      try {
+        const recoveredId = await recoverPlaybackDevice();
+        needsRecoveryRef.current = false;
+        targetDevice = selectedDevice || recoveredId;
+      } catch (err: any) {
+        setRecoveryError(err.message || 'Error reconnecting to Spotify device');
+        return;
+      }
+    }
+
     try {
       await play.mutateAsync({ uris, device_id: targetDevice || undefined });
 
@@ -876,7 +1139,8 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         setQueueIndex(0);
       }
     } catch (e: any) {
-      alert(e.message || 'Error playing tracks');
+      console.error(`[${new Date().toISOString()}] [Play Tracks Error]`, e);
+      setRecoveryError(e.message || 'Error playing tracks');
     }
   };
 
@@ -897,7 +1161,19 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       return;
     }
     userPausedRef.current = false;
-    const targetDevice = selectedDevice || deviceId;
+    let targetDevice = selectedDevice || deviceIdRef.current || deviceId;
+
+    if (needsRecoveryRef.current || (!targetDevice && isPremium)) {
+      try {
+        const recoveredId = await recoverPlaybackDevice();
+        needsRecoveryRef.current = false;
+        targetDevice = selectedDevice || recoveredId;
+      } catch (err: any) {
+        setRecoveryError(err.message || 'Error reconnecting to Spotify device');
+        return;
+      }
+    }
+
     try {
       await play.mutateAsync({ context_uri: uri, device_id: targetDevice || undefined });
       if (playlistTracks && playlistTracks.length > 0) {
@@ -905,7 +1181,8 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         setQueueIndex(0);
       }
     } catch (e: any) {
-      alert(e.message || 'Error playing playlist');
+      console.error(`[${new Date().toISOString()}] [Play Playlist Error]`, e);
+      setRecoveryError(e.message || 'Error playing playlist');
     }
   };
 
@@ -918,11 +1195,24 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       return;
     }
     userPausedRef.current = false;
-    const targetDevice = selectedDevice || deviceId;
+    let targetDevice = selectedDevice || deviceIdRef.current || deviceId;
+
+    if (needsRecoveryRef.current || (!targetDevice && isPremium)) {
+      try {
+        const recoveredId = await recoverPlaybackDevice();
+        needsRecoveryRef.current = false;
+        targetDevice = selectedDevice || recoveredId;
+      } catch (err: any) {
+        setRecoveryError(err.message || 'Error reconnecting to Spotify device');
+        return;
+      }
+    }
+
     try {
       await play.mutateAsync({ context_uri: contextUri, offset: { uri: trackUri }, device_id: targetDevice || undefined });
     } catch (e: any) {
-      alert(e.message || 'Error playing track in context');
+      console.error(`[${new Date().toISOString()}] [Play Context Track Error]`, e);
+      setRecoveryError(e.message || 'Error playing track in context');
     }
   };
 
@@ -947,6 +1237,17 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       }
       return;
     }
+
+    if (needsRecoveryRef.current || (!deviceIdRef.current && !selectedDevice && isPremium)) {
+      try {
+        await recoverPlaybackDevice();
+        needsRecoveryRef.current = false;
+      } catch (err: any) {
+        setRecoveryError(err.message || 'Error reconnecting to Spotify device');
+        return;
+      }
+    }
+
     if (!player) {
       if (currentTrack?.uri) {
         userPausedRef.current = false;
@@ -967,7 +1268,8 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         }
         await player.togglePlay();
       }
-    } catch {
+    } catch (e: any) {
+      console.warn(`[${new Date().toISOString()}] [togglePlay State Exception]`, e);
       if (currentTrack?.uri) {
         userPausedRef.current = false;
         await playTrack(currentTrack.uri, undefined, currentTrack);
@@ -1075,7 +1377,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     e.currentTarget.releasePointerCapture(e.pointerId);
     const percent = updatePositionFromPointer(e.clientX);
     if (percent !== undefined) {
-      player.seek(percent * duration);
+      handleSeek(percent * duration);
     }
   };
 
@@ -1176,6 +1478,67 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
           .interlude-dot-3 {
             animation: interludeDot3 8s ease-in-out infinite;
           }
+          @keyframes lyric-word-wipe {
+            0% {
+              background-position: 100% 0;
+              transform: translateY(0);
+            }
+            20% {
+              transform: translateY(-2px);
+            }
+            80% {
+              transform: translateY(-2px);
+            }
+            100% {
+              background-position: 0% 0;
+              transform: translateY(0);
+            }
+          }
+          .lyrics-container {
+            --lyrics-play-state: running;
+          }
+          .lyrics-container[data-paused="true"] .lyric-word {
+            animation-play-state: paused !important;
+          }
+          .lyric-word {
+            display: inline-block;
+            vertical-align: baseline;
+            line-height: inherit;
+          }
+          .lyric-line-active .lyric-word {
+            --word-dim: color-mix(in srgb, var(--color-dark) 28%, transparent);
+            --word-full: var(--color-dark);
+            background-image: linear-gradient(
+              90deg,
+              var(--word-full) 0%,
+              var(--word-full) 38%,
+              var(--word-dim) 62%,
+              var(--word-dim) 100%
+            );
+            background-size: 260% 100%;
+            background-position: 100% 0;
+            background-repeat: no-repeat;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            animation-name: lyric-word-wipe;
+            animation-timing-function: linear;
+            animation-fill-mode: both;
+            animation-play-state: var(--lyrics-play-state, running);
+            will-change: background-position, transform;
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .lyric-line-active .lyric-word {
+              animation: none !important;
+              background: none !important;
+              -webkit-background-clip: unset !important;
+              background-clip: unset !important;
+              -webkit-text-fill-color: var(--color-dark) !important;
+              color: var(--color-dark) !important;
+              transform: none !important;
+            }
+          }
         `}} />
       <div
         className="w-full h-[100dvh] flex flex-col text-[var(--color-dark)] font-sans relative overflow-hidden"
@@ -1183,6 +1546,30 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         <div className={`absolute inset-0 z-0 transition-opacity duration-[600ms] ease-in-out bg-layer-0 ${activeLayerIndex === 0 ? 'opacity-95' : 'opacity-0'}`} style={{ backgroundColor: layerPalettes[0]?.computed?.bg || `color-mix(in srgb, ${layerPalettes[0]?.vibrant || '#C2185B'} 8%, #ffffff)` }} />
         <div className={`absolute inset-0 z-0 transition-opacity duration-[600ms] ease-in-out bg-layer-1 ${activeLayerIndex === 1 ? 'opacity-95' : 'opacity-0'}`} style={{ backgroundColor: layerPalettes[1]?.computed?.bg || `color-mix(in srgb, ${layerPalettes[1]?.vibrant || '#C2185B'} 8%, #ffffff)` }} />
         <div className="relative z-10 flex flex-col h-full w-full flex-1 min-h-0">
+
+          {/* Inline Reconnecting Notice / Recovery Error Banner */}
+          {(isReconnecting || recoveryError) && (
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center pointer-events-none transition-all duration-300">
+              {isReconnecting && (
+                <div className="pointer-events-auto bg-[#1DB954] text-white px-4 py-2 rounded-full font-pixel text-xs flex items-center gap-2 shadow-[0_4px_12px_rgba(29,185,84,0.4)] border border-white/20 animate-pulse">
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Reconnecting to Spotify...</span>
+                </div>
+              )}
+              {recoveryError && !isReconnecting && (
+                <div className="pointer-events-auto bg-[#E11D48] text-white px-4 py-2 rounded-full font-pixel text-xs flex items-center gap-2 shadow-[0_4px_12px_rgba(225,29,72,0.4)] border border-white/20">
+                  <span>⚠️ {recoveryError}</span>
+                  <button
+                    onClick={() => setRecoveryError(null)}
+                    className="ml-2 hover:opacity-75 font-bold px-1"
+                    aria-label="Dismiss error notice"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {isSessionExpired && (
             <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-light)]/80 backdrop-blur-sm">
@@ -2244,19 +2631,49 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                   <span className="font-pixel text-sm font-bold text-[var(--color-dark)] flex items-center gap-2">
                     <span className="text-[var(--color-vibrant)] text-lg">❝</span> Lyrics
                   </span>
-                  <button onClick={() => setShowLyrics(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-white border border-[var(--color-muted)] transition-colors shadow-xs active:scale-95" aria-label="Close Lyrics">
-                    ✕
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const next = !editMode;
+                        setEditMode(next);
+                        if (typeof window !== 'undefined') {
+                          window.localStorage.setItem('arh_edit_mode', next ? 'true' : 'false');
+                        }
+                      }}
+                      className={`font-pixel text-[10px] px-2.5 py-1 rounded-full border transition-all active:scale-95 ${
+                        editMode
+                          ? 'bg-[#FFD0DC] text-[#20233F] border-[#20233F] font-bold shadow-xs'
+                          : 'bg-white hover:bg-[var(--color-light)] text-[var(--color-dark)]/70 border-[var(--color-muted)]'
+                      }`}
+                      title="Toggle Edit Mode (for VPN)"
+                    >
+                      {editMode ? 'EDIT MODE: ON' : 'EDIT MODE'}
+                    </button>
+                    <button onClick={() => setShowLyrics(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-white border border-[var(--color-muted)] transition-colors shadow-xs active:scale-95" aria-label="Close Lyrics">
+                      ✕
+                    </button>
+                  </div>
                 </div>
                 
                 {/* Content */}
                 <div 
                   ref={lyricsContainerRef}
-                  className="flex-1 overflow-hidden relative px-6 select-none"
+                  data-paused={isPaused}
+                  className={`flex-1 relative select-none lyrics-container ${
+                    lyricsData?.synced && lyricsData.synced.length > 0
+                      ? 'overflow-hidden px-6'
+                      : 'overflow-y-auto px-4'
+                  }`}
                   style={{
                     position: 'relative',
-                    maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)',
-                    WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
+                    maskImage: lyricsData?.synced && lyricsData.synced.length > 0
+                      ? 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
+                      : 'none',
+                    WebkitMaskImage: lyricsData?.synced && lyricsData.synced.length > 0
+                      ? 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
+                      : 'none',
+                    animationPlayState: isPaused ? 'paused' : 'running',
+                    ['--lyrics-play-state' as any]: isPaused ? 'paused' : 'running',
                   }}
                 >
                   {isLyricsLoading ? (
@@ -2362,7 +2779,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                                   setSkipCascade(false);
                                 });
                               }}
-                              className="relative w-full max-w-[640px] mx-auto font-pixel font-bold text-center leading-relaxed origin-center cursor-pointer select-none hover:opacity-100 transition-opacity"
+                              className={`relative w-full max-w-[640px] mx-auto font-pixel font-bold text-center leading-relaxed origin-center cursor-pointer select-none hover:opacity-100 transition-opacity ${
+                                isActive ? 'lyric-line-active' : ''
+                              }`}
                               style={{
                                 fontSize: 'clamp(1.5rem, 2.2vw, 2.25rem)',
                                 transform: `translateY(var(--lyrics-y, 0px)) ${scale !== 1 ? `scale(${scale})` : ''}`,
@@ -2382,22 +2801,125 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                               >
                                 ♥
                               </div>
-                              {line.text || "♪"}
+                              {line.words && line.words.length > 0 ? (
+                                line.words.map((word, wIdx, arr) => {
+                                  const wordDurationMs = word.endMs - word.startMs;
+                                  const activeElapsed = isActive
+                                    ? Math.max(0, (Date.now() - trackStartTimeRef.current - pausedDurationRef.current) - line.timeMs)
+                                    : 0;
+                                  const wordDelayMs = (word.startMs - line.timeMs) - activeElapsed;
+
+                                  return (
+                                    <React.Fragment key={wIdx}>
+                                      <span
+                                        className={`lyric-word ${isActive ? 'lyric-word-active' : ''}`}
+                                        style={isActive && !isReduced ? {
+                                          animationDuration: `${wordDurationMs}ms`,
+                                          animationDelay: `${wordDelayMs}ms`,
+                                        } : undefined}
+                                      >
+                                        {word.text}
+                                      </span>
+                                      {wIdx < arr.length - 1 ? ' ' : ''}
+                                    </React.Fragment>
+                                  );
+                                })
+                              ) : (
+                                line.text || "♪"
+                              )}
                             </div>
                           </React.Fragment>
                         );
                       })}
                     </div>
+                  ) : lyricsData?.instrumental ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-4 select-none min-h-[300px]">
+                      <div className="w-20 h-20 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-3xl shadow-inner mb-4 text-[var(--color-vibrant)]">
+                        ♫
+                      </div>
+                      <div className="font-pixel text-[11px] font-bold text-[var(--color-vibrant)] bg-[var(--color-light)] px-3 py-1 rounded-full border border-[var(--color-muted)] mb-3 shadow-xs">
+                        INSTRUMENTAL
+                      </div>
+                      <h4 className="font-pixel text-lg sm:text-xl font-bold text-[var(--color-dark)] mb-1">
+                        This track is an instrumental
+                      </h4>
+                      <p className="font-pixel text-xs text-[var(--color-dark)]/70 max-w-xs">
+                        No lyrics needed — just enjoy the melody ✨
+                      </p>
+                      {editMode && (
+                        <button
+                          onClick={() => {
+                            setManualLyricsInput('');
+                            setSaveLyricsError(null);
+                            setIsAddLyricsOpen(true);
+                          }}
+                          className="mt-6 border-2 border-[var(--color-dark)] px-4 py-2 font-pixel text-xs font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 transition-all bg-[#FFE4A1] text-[var(--color-dark)] active:scale-95"
+                        >
+                          + ADD LYRICS (EDIT MODE)
+                        </button>
+                      )}
+                    </div>
                   ) : lyricsData?.plain ? (
-                    <div className="font-pixel font-bold text-lg sm:text-xl md:text-2xl text-[var(--color-dark)] whitespace-pre-wrap leading-relaxed opacity-60 text-center py-10 max-w-[640px] mx-auto select-none">
-                      <div className="mb-6 font-pixel text-xs font-bold text-[var(--color-vibrant)] bg-[var(--color-light)] inline-block px-3 py-1 rounded-full border border-[var(--color-muted)]">NOT SYNCED</div>
+                    <div className="font-pixel font-bold text-base sm:text-lg md:text-xl text-[var(--color-dark)] whitespace-pre-wrap leading-relaxed opacity-75 text-center py-8 max-w-[640px] mx-auto select-text">
+                      <div className="mb-6 font-pixel text-xs font-bold text-[var(--color-vibrant)] bg-[var(--color-light)] inline-block px-3 py-1 rounded-full border border-[var(--color-muted)] shadow-xs">
+                        NOT SYNCED
+                      </div>
                       <br/>
                       {lyricsData.plain}
+                      {editMode && (
+                        <div className="mt-8 pt-6 border-t border-[var(--color-muted)]/50">
+                          <button
+                            onClick={() => {
+                              setManualLyricsInput(lyricsData.plain || '');
+                              setSaveLyricsError(null);
+                              setIsAddLyricsOpen(true);
+                            }}
+                            className="font-pixel text-xs px-4 py-2 rounded-full border-2 border-[var(--color-dark)] bg-[#FFE4A1] text-[var(--color-dark)] font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 active:scale-95 transition-all"
+                          >
+                            + Paste Synced LRC (Edit Mode)
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center text-center py-20 opacity-50 select-none">
-                      <div className="text-4xl mb-4 text-[var(--color-dark)]">ʕ•́ᴥ•̀ʔっ</div>
-                      <span className="font-pixel text-sm text-[var(--color-dark)] font-bold">No lyrics found for this track.</span>
+                    <div className="flex-1 flex flex-col items-center justify-center text-center py-12 px-4 select-none min-h-[300px]">
+                      {/* Album Art */}
+                      <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-2xl overflow-hidden border-3 border-[var(--color-dark)] shadow-[4px_4px_0_var(--color-dark)] mb-4 bg-[var(--color-light)]">
+                        <img
+                          src={
+                            currentTrack?.album?.images?.[0]?.url ||
+                            (typeof currentTrack?.album?.images?.[0] === 'string' ? currentTrack.album.images[0] : '') ||
+                            '/soundscape_ref/finalui.png'
+                          }
+                          alt={currentTrack?.name || 'Album Art'}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <h4 className="font-pixel text-base sm:text-lg font-bold text-[var(--color-dark)] mb-0.5 max-w-xs truncate" title={currentTrack?.name}>
+                        {currentTrack?.name || 'Unknown Track'}
+                      </h4>
+                      <p className="font-pixel text-xs text-[var(--color-dark)]/70 mb-3 max-w-xs truncate">
+                        {currentTrack?.artists ? currentTrack.artists.map((a: any) => a.name).join(', ') : 'Unknown Artist'}
+                      </p>
+                      <div className="flex flex-col items-center gap-1 mb-5">
+                        <div className="text-2xl text-[var(--color-dark)]">ʕ•́ᴥ•̀ʔっ</div>
+                        <span className="font-pixel text-xs text-[var(--color-dark)]/70 font-bold">
+                          No lyrics found for this track
+                        </span>
+                      </div>
+                      {/* Add lyrics button visible ONLY in edit mode */}
+                      {editMode && (
+                        <button
+                          onClick={() => {
+                            setManualLyricsInput('');
+                            setSaveLyricsError(null);
+                            setIsAddLyricsOpen(true);
+                          }}
+                          className="border-3 border-[var(--color-dark)] px-5 py-2.5 font-pixel text-xs font-bold shadow-[3px_3px_0_var(--color-dark)] hover:-translate-y-0.5 hover:shadow-[3px_5px_0_var(--color-dark)] transition-all bg-[#FFE4A1] text-[var(--color-dark)] active:scale-95"
+                        >
+                          + ADD LYRICS
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2462,6 +2984,82 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                 }
               }}
             />
+          )}
+
+          {/* Manual Lyrics Modal */}
+          {isAddLyricsOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+              <div className="w-full max-w-lg bg-[var(--color-bg)] border-4 border-[#20233F] rounded-2xl shadow-[6px_6px_0_#20233F] p-6 flex flex-col gap-4 text-[var(--color-dark)]">
+                <div className="flex items-center justify-between border-b-2 border-[var(--color-muted)] pb-3">
+                  <div>
+                    <h3 className="font-pixel text-base font-bold text-[#20233F] flex items-center gap-2">
+                      <span>✍</span> ADD LYRICS (EDIT MODE)
+                    </h3>
+                    <p className="font-pixel text-xs text-[var(--color-dark)]/70 truncate mt-0.5">
+                      {currentTrack?.name} — {currentTrack?.artists?.map((a: any) => a.name).join(', ')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsAddLyricsOpen(false)}
+                    className="w-7 h-7 flex items-center justify-center rounded-full bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-pixel text-xs font-bold text-[#20233F]">
+                    Lyrics (Paste LRC with timestamps or plain text):
+                  </label>
+                  <textarea
+                    rows={10}
+                    value={manualLyricsInput}
+                    onChange={(e) => setManualLyricsInput(e.target.value)}
+                    placeholder={`[00:12.34] Line one with timestamp\n[00:15.67] Line two\n\n...or just paste plain lyrics text.`}
+                    className="w-full font-mono text-xs p-3 border-2 border-[#20233F] rounded-xl outline-none focus:bg-[#FFF0F5] resize-y"
+                  />
+                </div>
+
+                {!sessionSecret && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="font-pixel text-xs font-bold text-[#20233F]">
+                      Admin Secret:
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="Enter admin secret..."
+                      value={manualSecretInput}
+                      onChange={(e) => setManualSecretInput(e.target.value)}
+                      className="w-full font-pixel text-xs p-2.5 border-2 border-[#20233F] rounded-xl outline-none focus:bg-[#FFF0F5]"
+                    />
+                  </div>
+                )}
+
+                {saveLyricsError && (
+                  <div className="font-pixel text-xs text-red-600 bg-red-50 border border-red-200 p-2.5 rounded-lg">
+                    {saveLyricsError}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddLyricsOpen(false)}
+                    className="font-pixel text-xs px-4 py-2 rounded-xl border-2 border-[#20233F] bg-white text-[#20233F] hover:bg-gray-50 active:scale-95"
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveManualLyrics}
+                    disabled={isSavingLyrics}
+                    className="font-pixel text-xs px-5 py-2 rounded-xl border-2 border-[#20233F] bg-[#B8E6D0] text-[#20233F] font-bold shadow-[2px_2px_0_#20233F] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
+                  >
+                    {isSavingLyrics ? 'SAVING...' : '✓ SAVE LYRICS'}
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

@@ -148,36 +148,11 @@ export function useSpotifyMutations() {
       
       const payload = Object.keys(body).length > 0 ? JSON.stringify(body) : undefined;
       
-      try {
-        await proxyFetch(url, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload,
-        });
-      } catch (err: any) {
-        if (err?.status === 404 && device_id) {
-          // Device not found/active. Try transferring playback first.
-          try {
-            await proxyFetch('/me/player', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ device_ids: [device_id], play: false })
-            });
-            // Wait a moment for Spotify to register the transfer (Spotify often needs >1s)
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            // Retry the play request
-            await proxyFetch(url, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: payload,
-            });
-            return;
-          } catch (retryErr) {
-            throw retryErr;
-          }
-        }
-        throw err;
-      }
+      await proxyFetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+      });
     }
   });
 

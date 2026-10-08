@@ -15,3 +15,16 @@ export const scrapbookVersions = pgTable("scrapbook_versions", {
 
 export type ScrapbookVersion = typeof scrapbookVersions.$inferSelect;
 export type NewScrapbookVersion = typeof scrapbookVersions.$inferInsert;
+
+export const lyricsCache = pgTable("lyrics_cache", {
+  spotifyId: text("spotify_id").primaryKey(),
+  source: text("source").notNull(),
+  synced: text("synced"),
+  plain: text("plain"),
+  instrumental: boolean("instrumental").default(false).notNull(),
+  fetchedAt: timestamp("fetched_at").defaultNow().notNull(),
+});
+
+export type LyricsCacheEntry = typeof lyricsCache.$inferSelect;
+export type NewLyricsCacheEntry = typeof lyricsCache.$inferInsert;
+

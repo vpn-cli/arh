@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { writeFileSync } from 'fs';
-import { join } from 'path';
 
-// Diagnostic endpoint that writes results to a file for inspection
-// Access via browser at /api/spotify/diagnose
-
+// Diagnostic endpoint for Spotify integration
+// Only accessible when NODE_ENV === 'development'
 export async function GET() {
+  if (process.env.NODE_ENV !== 'development') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('spotify_access_token')?.value;
   const refreshToken = cookieStore.get('spotify_refresh_token')?.value;
@@ -16,7 +17,6 @@ export async function GET() {
       error: 'No spotify_access_token cookie found.',
       has_refresh: !!refreshToken,
     };
-    writeResults(result);
     return NextResponse.json(result, { status: 401 });
   }
 
@@ -44,7 +44,6 @@ export async function GET() {
 
   if (me.status !== 200) {
     results.step1_error = me.body;
-    writeResults(results);
     return NextResponse.json(results);
   }
 
@@ -59,7 +58,6 @@ export async function GET() {
 
   if (pl.status !== 200 || !pl.body?.items) {
     results.step2_error = pl.body;
-    writeResults(results);
     return NextResponse.json(results);
   }
 
@@ -145,16 +143,5 @@ export async function GET() {
     results.step4_owned_test = 'NO_OWNED_PLAYLISTS_FOUND';
   }
 
-  writeResults(results);
   return NextResponse.json(results, { status: 200 });
-}
-
-function writeResults(data: any) {
-  try {
-    const filePath = join(process.cwd(), 'diagnose-results.json');
-    writeFileSync(filePath, JSON.stringify(data, null, 2));
-    console.log('[DIAGNOSE] Results written to:', filePath);
-  } catch (e) {
-    console.error('[DIAGNOSE] Failed to write results:', e);
-  }
 }

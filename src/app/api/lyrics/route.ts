@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parseLrc, LyricLine } from '@/lib/lyrics';
-import { Redis } from '@upstash/redis';
+import { lookupLyrics, extractPlainFromLrc } from '@/lib/lyricsLookup';
+import { db, lyricsCache } from '@/db';
+import { eq, sql } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 
-const isRedisConfigured = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_URL !== 'todo';
-const redis = isRedisConfigured ? new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-}) : null;
-
-const CACHE_TTL_SUCCESS = 60 * 60 * 24 * 30; // 30 days
-const CACHE_TTL_404 = 60 * 60 * 24; // 1 day
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -20,82 +15,249 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing trackId' }, { status: 400 });
   }
 
-  const cacheKey = `lyrics:${trackId}`;
-
   try {
-    // 1. Check Redis Cache
-    if (redis) {
-      const cached = await redis.get(cacheKey);
-      if (cached) {
-        // If it's a cached 404
-        if (cached === '404') {
-          return NextResponse.json({ synced: null, plain: null });
+    // 1. Check Neon Database Cache
+    const cachedRows = await db
+      .select()
+      .from(lyricsCache)
+      .where(eq(lyricsCache.spotifyId, trackId))
+      .limit(1);
+
+    if (cachedRows.length > 0) {
+      const row = cachedRows[0];
+
+      // Manual entries ALWAYS win and are NEVER overwritten
+      if (row.source === 'manual') {
+        console.log(`[Lyrics Cache] HIT for track "${trackId}" (source: manual)`);
+        return NextResponse.json({
+          synced: row.synced ? parseLrc(row.synced) : null,
+          plain: row.plain || null,
+          instrumental: row.instrumental,
+          source: 'manual',
+          notFound: false,
+        });
+      }
+
+      // Check if negative (not_found) cache is still valid (< 7 days)
+      if (row.source === 'not_found') {
+        const age = Date.now() - new Date(row.fetchedAt).getTime();
+        if (age < SEVEN_DAYS_MS) {
+          console.log(`[Lyrics Cache] HIT for track "${trackId}" (source: not_found, cached)`);
+          return NextResponse.json({
+            synced: null,
+            plain: null,
+            instrumental: false,
+            source: 'not_found',
+            notFound: true,
+          });
         }
-        return NextResponse.json(typeof cached === 'string' ? JSON.parse(cached) : cached);
+        console.log(`[Lyrics Cache] EXPIRED negative cache for track "${trackId}" (> 7 days) -> retrying lookup`);
+        // If older than 7 days, proceed to re-query LRCLIB
+      } else if (row.source === 'lrclib') {
+        console.log(`[Lyrics Cache] HIT for track "${trackId}" (source: lrclib)`);
+        return NextResponse.json({
+          synced: row.synced ? parseLrc(row.synced) : null,
+          plain: row.plain || null,
+          instrumental: row.instrumental,
+          source: 'lrclib',
+          notFound: false,
+        });
       }
     }
 
-    // 2. Fetch Track details from Spotify API via proxy
-    const proxyUrl = new URL(`/api/spotify/proxy/tracks/${trackId}`, request.url);
-    const cookieStore = await cookies();
-    const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+    console.log(`[Lyrics Cache] MISS for track "${trackId}"`);
 
-    const spotifyRes = await fetch(proxyUrl, {
-      headers: { 'Cookie': cookieHeader }
-    });
+    // 2. Fetch Track details (from query params if provided, or from Spotify API via proxy)
+    let trackName = searchParams.get('title') || searchParams.get('track_name');
+    let artistName = searchParams.get('artist') || searchParams.get('artist_name');
+    let albumName = searchParams.get('album') || searchParams.get('album_name') || undefined;
+    const durParam = searchParams.get('duration');
+    let durationSec = durParam ? parseInt(durParam, 10) : 0;
 
-    if (!spotifyRes.ok) {
-      return NextResponse.json({ error: 'Failed to fetch track from Spotify' }, { status: spotifyRes.status });
+    if (!trackName || !artistName) {
+      const proxyUrl = new URL(`/api/spotify/proxy/tracks/${trackId}`, request.url);
+      const cookieStore = await cookies();
+      const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+
+      const spotifyRes = await fetch(proxyUrl, {
+        headers: { 'Cookie': cookieHeader }
+      });
+
+      if (!spotifyRes.ok) {
+        return NextResponse.json({ error: 'Failed to fetch track from Spotify' }, { status: spotifyRes.status });
+      }
+
+      const track = await spotifyRes.json();
+      artistName = track.artists?.[0]?.name;
+      trackName = track.name;
+      albumName = track.album?.name;
+      durationSec = Math.round((track.duration_ms || 0) / 1000);
     }
-
-    const track = await spotifyRes.json();
-    const artistName = track.artists?.[0]?.name;
-    const trackName = track.name;
-    const durationSec = Math.round(track.duration_ms / 1000);
 
     if (!artistName || !trackName) {
       return NextResponse.json({ error: 'Invalid track data' }, { status: 400 });
     }
 
-    // 3. Query LRCLIB
-    const queryParams = new URLSearchParams();
-    queryParams.append('artist_name', artistName);
-    queryParams.append('track_name', trackName);
-    queryParams.append('duration', durationSec.toString());
-
-    const lrclibRes = await fetch(`https://lrclib.net/api/get?${queryParams.toString()}`, {
-      headers: {
-        'User-Agent': 'Arh-Music-Player (https://github.com/vipin/arh)'
-      }
+    // 3. Execute 4-step lookup chain (a, b, c, d)
+    const { result, matchedStep, hasUpstreamError, upstreamError } = await lookupLyrics({
+      trackId,
+      title: trackName,
+      artist: artistName,
+      album: albumName,
+      durationSec,
     });
 
-    if (!lrclibRes.ok) {
-      if (lrclibRes.status === 404 && redis) {
-        await redis.set(cacheKey, '404', { ex: CACHE_TTL_404 });
-      }
-      return NextResponse.json({ synced: null, plain: null });
+    // 4. Cache results in Neon
+    if (result) {
+      console.log(`[Lyrics Lookup] Track "${trackName}" (${trackId}) by "${artistName}": matched step ${matchedStep}`);
+      await db
+        .insert(lyricsCache)
+        .values({
+          spotifyId: trackId,
+          source: 'lrclib',
+          synced: result.syncedLyrics,
+          plain: result.plainLyrics,
+          instrumental: result.instrumental,
+          fetchedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: lyricsCache.spotifyId,
+          set: {
+            source: 'lrclib',
+            synced: result.syncedLyrics,
+            plain: result.plainLyrics,
+            instrumental: result.instrumental,
+            fetchedAt: new Date(),
+          },
+          where: sql`${lyricsCache.source} != 'manual'`,
+        });
+
+      return NextResponse.json({
+        synced: result.syncedLyrics ? parseLrc(result.syncedLyrics) : null,
+        plain: result.plainLyrics,
+        instrumental: result.instrumental,
+        source: 'lrclib',
+        notFound: false,
+        step: matchedStep,
+      });
     }
 
-    const data = await lrclibRes.json();
-    
-    const result = { synced: null as LyricLine[] | null, plain: null as string | null };
-
-    if (data && data.syncedLyrics) {
-      result.synced = parseLrc(data.syncedLyrics);
-      result.plain = data.plainLyrics || null;
-    } else if (data && data.plainLyrics) {
-      result.plain = data.plainLyrics;
+    // If an upstream error occurred (timeout, 429, 5xx), NEVER cache as not_found!
+    if (hasUpstreamError) {
+      console.warn(`[Lyrics Lookup] Track "${trackName}" (${trackId}): upstream error (${upstreamError}). NOT caching as not_found.`);
+      return NextResponse.json({
+        synced: null,
+        plain: null,
+        instrumental: false,
+        source: null,
+        notFound: true,
+        step: 'none',
+        error: `LRCLIB upstream failure: ${upstreamError}`,
+      }, { status: 503 });
     }
 
-    // 4. Cache successful result
-    if (redis) {
-      await redis.set(cacheKey, JSON.stringify(result), { ex: CACHE_TTL_SUCCESS });
-    }
+    // Clean "no results" response: safe to negative cache for 7 days
+    console.log(`[Lyrics Lookup] Track "${trackName}" (${trackId}) by "${artistName}": matched step none (clean not found) -> caching as not_found`);
+    await db
+      .insert(lyricsCache)
+      .values({
+        spotifyId: trackId,
+        source: 'not_found',
+        synced: null,
+        plain: null,
+        instrumental: false,
+        fetchedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: lyricsCache.spotifyId,
+        set: {
+          source: 'not_found',
+          synced: null,
+          plain: null,
+          instrumental: false,
+          fetchedAt: new Date(),
+        },
+        where: sql`${lyricsCache.source} != 'manual'`,
+      });
 
-    return NextResponse.json(result);
-
+    return NextResponse.json({
+      synced: null,
+      plain: null,
+      instrumental: false,
+      source: 'not_found',
+      notFound: true,
+      step: 'none',
+    });
   } catch (error) {
     console.error('Error fetching lyrics:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+
+export async function POST(req: NextRequest) {
+  try {
+    const adminSecret = process.env.SCRAPBOOK_ADMIN_SECRET;
+
+    if (!adminSecret) {
+      return NextResponse.json({ error: 'Server misconfiguration: SCRAPBOOK_ADMIN_SECRET is unset' }, { status: 500 });
+    }
+
+    const secret = req.headers.get('x-scrapbook-secret');
+    if (secret !== adminSecret) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { trackId, lyrics } = body;
+
+    if (!trackId || typeof lyrics !== 'string') {
+      return NextResponse.json({ error: 'Invalid payload: trackId and lyrics string are required' }, { status: 400 });
+    }
+
+    const trimmedLyrics = lyrics.trim();
+    if (!trimmedLyrics) {
+      return NextResponse.json({ error: 'Lyrics cannot be empty' }, { status: 400 });
+    }
+
+    // Check if input has LRC timestamps e.g. [01:23.45]
+    const isLrc = /\[\d{2}:\d{2}(?:\.\d{2,3})?\]/.test(trimmedLyrics);
+    const synced = isLrc ? trimmedLyrics : null;
+    const plain = isLrc ? extractPlainFromLrc(trimmedLyrics) : trimmedLyrics;
+
+    await db
+      .insert(lyricsCache)
+      .values({
+        spotifyId: trackId,
+        source: 'manual',
+        synced,
+        plain,
+        instrumental: false,
+        fetchedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: lyricsCache.spotifyId,
+        set: {
+          source: 'manual',
+          synced,
+          plain,
+          instrumental: false,
+          fetchedAt: new Date(),
+        },
+      });
+
+    console.log(`[Lyrics Manual] Saved manual lyrics for track ${trackId} (isLrc: ${isLrc})`);
+
+    return NextResponse.json({
+      success: true,
+      source: 'manual',
+      synced: synced ? parseLrc(synced) : null,
+      plain,
+      instrumental: false,
+      notFound: false,
+    });
+  } catch (error) {
+    console.error('Error saving manual lyrics:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
