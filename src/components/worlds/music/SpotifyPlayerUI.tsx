@@ -871,7 +871,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         volume: 0.5
       });
 
-      registerPlayerForRecovery(spotifyPlayer, deviceIdRef);
+      registerPlayerForRecovery(spotifyPlayer, deviceIdRef, notReadyFiredRef);
       setPlayer(spotifyPlayer);
 
       spotifyPlayer.addListener('ready', ({ device_id }: { device_id: string }) => {
@@ -1044,6 +1044,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const playTrack = async (uri: string, contextUri?: string, trackObj?: any) => {
     if (!token) return;
     sfx?.select?.();
+    if (player && typeof player.activateElement === 'function') {
+      player.activateElement().catch(() => {});
+    }
     if (!isPremium) {
       const parts = uri.split(':');
       if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
@@ -1109,6 +1112,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const playTracks = async (uris: string[], tracksList?: any[]) => {
     if (!token || uris.length === 0) return;
     sfx?.select?.();
+    if (player && typeof player.activateElement === 'function') {
+      player.activateElement().catch(() => {});
+    }
     if (!isPremium) {
       const parts = uris[0].split(':');
       if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
@@ -1155,6 +1161,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const playPlaylist = async (uri: string, playlistTracks?: any[]) => {
     if (!token) return;
     sfx?.select?.();
+    if (player && typeof player.activateElement === 'function') {
+      player.activateElement().catch(() => {});
+    }
     if (!isPremium) {
       const parts = uri.split(':');
       if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
@@ -1189,6 +1198,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const playContextTrack = async (contextUri: string, trackUri: string) => {
     if (!token) return;
     sfx?.select?.();
+    if (player && typeof player.activateElement === 'function') {
+      player.activateElement().catch(() => {});
+    }
     if (!isPremium) {
       const parts = trackUri.split(':');
       if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
@@ -1230,6 +1242,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
   const togglePlay = async () => {
     sfx?.select?.();
+    if (player && typeof player.activateElement === 'function') {
+      player.activateElement().catch(() => {});
+    }
     if (!isPremium) {
       if (currentTrack?.uri) {
         const parts = currentTrack.uri.split(':');
