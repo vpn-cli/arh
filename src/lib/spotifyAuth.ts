@@ -1,3 +1,5 @@
+import { disconnectSpotifyPlayer } from '@/providers/SpotifyPlayerProvider';
+
 export const getRedirectUri = () => {
   if (typeof window !== 'undefined') {
     return `${window.location.origin}/api/spotify/callback`;
@@ -11,6 +13,11 @@ export function redirectToSpotifyAuth() {
 }
 
 export async function logoutSpotify() {
+  try {
+    disconnectSpotifyPlayer();
+  } catch (e) {
+    console.warn('Error disconnecting player on logout:', e);
+  }
   await fetch('/api/spotify/logout', { method: 'POST' });
   if (typeof window !== 'undefined') {
     window.location.href = '/';
