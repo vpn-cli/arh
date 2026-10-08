@@ -12,4 +12,5 @@ export function redirectToSpotifyAuth() {
 
 export async function logoutSpotify() {
   await fetch('/api/spotify/logout', { method: 'POST' });
+  window.location.reload();
 }
