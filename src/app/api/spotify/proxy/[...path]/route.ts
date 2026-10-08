@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { cookies } from 'next/headers';
 
-const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || "";
-
 const isRedisConfigured = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_URL !== 'todo';
 const redis = isRedisConfigured ? new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL,
@@ -12,27 +10,6 @@ const redis = isRedisConfigured ? new Redis({
 
 // Cache TTL in seconds (1 hour)
 const CACHE_TTL = 3600;
-
-async function refreshAccessToken(refreshToken: string, redirectUri: string) {
-  const payload = {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: SPOTIFY_CLIENT_ID,
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken,
-    }),
-  };
-
-  const body = await fetch("https://accounts.spotify.com/api/token", payload);
-  if (!body.ok) {
-    const errorText = await body.text();
-    console.error("Token refresh failed with status", body.status, "and body:", errorText);
-    return null;
-  }
-  const response = await body.json();
-  return response;
-}
 
 async function handleReq(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
@@ -52,17 +29,10 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
   const spotifyUrl = `https://api.spotify.com/v1/${pathString}${qs ? '?' + qs : ''}`;
 
   const cookieStore = await cookies();
-  let accessToken = cookieStore.get('spotify_access_token')?.value;
-  const refreshToken = cookieStore.get('spotify_refresh_token')?.value;
+  const accessToken = cookieStore.get('spotify_access_token')?.value;
 
-  if (!accessToken && !refreshToken) {
+  if (!accessToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // If we have no access token but we have a refresh token, we want to trigger the 401 refresh flow below.
-  // Sending 'Bearer undefined' might cause a 400 Bad Request instead of 401 Unauthorized.
-  if (!accessToken && refreshToken) {
-    accessToken = 'invalid_token';
   }
 
   try {
@@ -116,40 +86,17 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
 
     let response = await fetch(spotifyUrl, options);
 
-    // 4. Handle 401 (Exactly one refresh attempt)
-    if (response.status === 401 && refreshToken) {
-      const host = url.host;
-      const protocol = url.protocol;
-      const redirectUri = `${protocol}//${host}/api/spotify/callback`; // Even though refresh doesn't strictly need it, it's good practice.
-      
-      const newTokens = await refreshAccessToken(refreshToken, redirectUri);
-      if (newTokens && newTokens.access_token) {
-        // Update cookie
-        cookieStore.set('spotify_access_token', newTokens.access_token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          path: '/',
-          maxAge: newTokens.expires_in,
-        });
-        if (newTokens.refresh_token) {
-          cookieStore.set('spotify_refresh_token', newTokens.refresh_token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            path: '/',
-            maxAge: 60 * 60 * 24 * 30, // 30 days
-          });
-        }
-        
-        // Retry exact same request with new token
-        headers.set('Authorization', `Bearer ${newTokens.access_token}`);
-        options.headers = headers;
-        response = await fetch(spotifyUrl, options);
-      } else {
-        // Token refresh failed, clear cookies and return 401
-        cookieStore.delete('spotify_access_token');
-        cookieStore.delete('spotify_refresh_token');
-        return NextResponse.json({ error: 'Unauthorized (Session Expired)' }, { status: 401 });
-      }
+    // 4. Handle 401: return 401 directly so client wrapper's single-flight getFreshToken refreshes via /api/spotify/session
+    if (response.status === 401) {
+      console.warn(`[${new Date().toISOString()}] [Spotify Proxy] Upstream 401 Unauthorized for ${request.method} ${spotifyUrl}. Returning 401 to client.`);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Log status code and response body for every failed Spotify API call
+    if (!response.ok && response.status !== 204) {
+      const cloned = response.clone();
+      const bodyText = await cloned.text().catch(() => '');
+      console.error(`[${new Date().toISOString()}] [Spotify API Failed] ${request.method} ${spotifyUrl} - Status: ${response.status}, Body:`, bodyText);
     }
 
     // 5. Handle 403 (Pass directly to client, no retry)
