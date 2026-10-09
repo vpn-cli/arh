@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
 import { useSpotifySession, usePlaylists, useDevices, useBirthdayMix, useTrackSavedStatus, useSpotifyMutations, useRecentlyPlayed, usePlayerQueue, useAddToSpotifyQueue } from "@/hooks/useSpotify";
@@ -35,6 +35,16 @@ declare global {
     Spotify?: any;
   }
 }
+
+export const isValidContextUri = (uri: unknown): uri is string => {
+  return (
+    typeof uri === 'string' &&
+    (uri.startsWith('spotify:playlist:') ||
+      uri.startsWith('spotify:album:') ||
+      uri.startsWith('spotify:artist:') ||
+      uri.startsWith('spotify:show:'))
+  );
+};
 
 export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void }) {
   const queryClient = useQueryClient();
@@ -196,8 +206,6 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const isManualBrowsingRef = React.useRef<boolean>(false);
   const [isManualBrowsing, setIsManualBrowsing] = useState<boolean>(false);
   const manualTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const skipCascadeRef = React.useRef<boolean>(false);
-  const [skipCascade, setSkipCascade] = useState<boolean>(false);
 
   const getLineCenter = (lineEl: HTMLElement, containerEl: HTMLElement): number => {
     let offset = lineEl.offsetTop + lineEl.offsetHeight / 2;
@@ -225,17 +233,17 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     const baseY = containerHeight / 2 - lineCenter;
     baseLyricsYRef.current = baseY;
 
-    if (instant) {
-      skipCascadeRef.current = true;
-      setSkipCascade(true);
-      requestAnimationFrame(() => {
-        skipCascadeRef.current = false;
-        setSkipCascade(false);
-      });
-    }
-
     const totalY = isManualBrowsingRef.current ? baseY + manualOffsetRef.current : baseY;
-    container.style.setProperty('--lyrics-y', `${totalY}px`);
+
+    if (instant) {
+      container.setAttribute('data-instant', 'true');
+      container.style.setProperty('--lyrics-y', `${totalY}px`);
+      requestAnimationFrame(() => {
+        container.removeAttribute('data-instant');
+      });
+    } else {
+      container.style.setProperty('--lyrics-y', `${totalY}px`);
+    }
   }, []);
 
   const syncActiveLineWordDelays = React.useCallback((lineIndex: number, currentPosMs: number) => {
@@ -271,9 +279,11 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       clearTimeout(manualTimeoutRef.current);
       manualTimeoutRef.current = null;
     }
-    isManualBrowsingRef.current = false;
+    if (isManualBrowsingRef.current) {
+      isManualBrowsingRef.current = false;
+      setIsManualBrowsing(false);
+    }
     manualOffsetRef.current = 0;
-    setIsManualBrowsing(false);
 
     updateLyricsPosition(activeLyricIndexRef.current, false);
   }, [updateLyricsPosition]);
@@ -320,7 +330,12 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     const container = lyricsContainerRef.current;
     if (!container) return;
 
+    let isFirst = true;
     const ro = new ResizeObserver(() => {
+      if (isFirst) {
+        isFirst = false;
+        return;
+      }
       updateLyricsPosition(activeLyricIndexRef.current, true);
     });
     ro.observe(container);
@@ -331,40 +346,53 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   useEffect(() => {
     if (!showLyrics) return;
     if (typeof document !== 'undefined' && document.fonts) {
-      document.fonts.ready.then(() => {
-        updateLyricsPosition(activeLyricIndexRef.current, true);
-      });
+      if (document.fonts.status !== 'loaded') {
+        document.fonts.ready.then(() => {
+          updateLyricsPosition(activeLyricIndexRef.current, true);
+        });
+      }
     }
   }, [showLyrics, updateLyricsPosition]);
 
-  // Recompute when lyrics load or change
-  useEffect(() => {
-    if (!showLyrics || !lyricsData?.synced) return;
-    const currentPos = Math.max(0, Date.now() - trackStartTimeRef.current - pausedDurationRef.current);
-    syncActiveLineWordDelays(activeLyricIndexRef.current, currentPos);
-    updateLyricsPosition(activeLyricIndexRef.current, true);
-    const timer = setTimeout(() => {
-      updateLyricsPosition(activeLyricIndexRef.current, true);
-      const updatedPos = Math.max(0, Date.now() - trackStartTimeRef.current - pausedDurationRef.current);
-      syncActiveLineWordDelays(activeLyricIndexRef.current, updatedPos);
-    }, 50);
-    return () => clearTimeout(timer);
-  }, [lyricsData, showLyrics, updateLyricsPosition, syncActiveLineWordDelays]);
+  // Position lyrics and sync active line word delays
+  useLayoutEffect(() => {
+    if (!showLyrics) return;
 
-  // Snap to active line when opening lyrics view
-  useEffect(() => {
-    if (showLyrics) {
-      resumeToActive();
-      const currentPos = Math.max(0, Date.now() - trackStartTimeRef.current - pausedDurationRef.current);
-      syncActiveLineWordDelays(activeLyricIndexRef.current, currentPos);
-      const timer = setTimeout(() => {
-        updateLyricsPosition(activeLyricIndexRef.current, true);
-        const updatedPos = Math.max(0, Date.now() - trackStartTimeRef.current - pausedDurationRef.current);
-        syncActiveLineWordDelays(activeLyricIndexRef.current, updatedPos);
-      }, 50);
-      return () => clearTimeout(timer);
+    if (manualTimeoutRef.current) {
+      clearTimeout(manualTimeoutRef.current);
+      manualTimeoutRef.current = null;
     }
-  }, [showLyrics, resumeToActive, updateLyricsPosition, syncActiveLineWordDelays]);
+    isManualBrowsingRef.current = false;
+    manualOffsetRef.current = 0;
+    setIsManualBrowsing(prev => (prev ? false : prev));
+
+    if (!lyricsData?.synced || lyricsData.synced.length === 0) return;
+
+    const currentPos = Math.max(0, Date.now() - trackStartTimeRef.current - pausedDurationRef.current);
+    const lines = lyricsData.synced;
+    let activeIndex = -1;
+
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].timeMs <= currentPos) {
+        activeIndex = i;
+        break;
+      }
+    }
+
+    activeLyricIndexRef.current = activeIndex;
+    setActiveLyricIndex(activeIndex);
+
+    updateLyricsPosition(activeIndex, true);
+    syncActiveLineWordDelays(activeIndex, currentPos);
+  }, [showLyrics, lyricsData]);
+
+  // Sync word highlight timing after active line render commits
+  useLayoutEffect(() => {
+    if (activeLyricIndex < 0) return;
+    const now = pauseTimestampRef.current ?? Date.now();
+    const currentPos = Math.max(0, now - trackStartTimeRef.current - pausedDurationRef.current);
+    syncActiveLineWordDelays(activeLyricIndex, currentPos);
+  }, [activeLyricIndex]);
 
   // Manual wheel and touch browsing with non-passive listeners
   useEffect(() => {
@@ -675,18 +703,11 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       }
       fetchLyrics(trackId).then(data => {
         if (currentTrack?.id === trackId) {
-          setLyricsData(prev => {
-            // Only wipe refs if the track actually changed
-            if (prev?.synced !== data?.synced) {
-              activeLyricIndexRef.current = -1;
-              setActiveLyricIndex(-1);
-              lyricsLinesRef.current = [];
-              resumeToActive();
-              skipCascadeRef.current = true;
-              setSkipCascade(true);
-            }
-            return data;
-          });
+          activeLyricIndexRef.current = -1;
+          setActiveLyricIndex(-1);
+          lyricsLinesRef.current = [];
+          resumeToActive();
+          setLyricsData(data);
           setIsLyricsLoading(false);
         }
       });
@@ -988,12 +1009,19 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     };
   }, [player, subscribe]);
 
-  const handleAddToQueue = async (trackOrUri: any, contextUri?: string) => {
+  const handleAddToQueue = async (trackOrUri: any, contextUri?: any) => {
     const uri = typeof trackOrUri === 'string' ? trackOrUri : trackOrUri?.uri;
-    const track = typeof trackOrUri === 'object' ? trackOrUri : { uri, name: 'Queued Track' };
+    let track = typeof trackOrUri === 'object' ? trackOrUri : null;
+    if (!track && typeof contextUri === 'object' && contextUri !== null) {
+      track = contextUri;
+    }
+    if (!track) {
+      track = { uri, name: 'Queued Track' };
+    }
     if (!uri) return;
 
-    addToQueue(track, contextUri);
+    const validContext = isValidContextUri(contextUri) ? contextUri : undefined;
+    addToQueue(track, validContext);
 
     try {
       const { addTrackToPlayerQueue } = await import('@/lib/spotify/player');
@@ -1004,7 +1032,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     }
   };
 
-  const playTrack = async (uri: string, contextUri?: string, trackObj?: any) => {
+  const playTrack = async (uri: string, contextUri?: any, trackObj?: any) => {
     if (!token) return;
     sfx?.select?.();
     if (player && typeof player.activateElement === 'function') {
@@ -1030,13 +1058,16 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     }
 
     try {
-      if (contextUri) {
+      if (isValidContextUri(contextUri)) {
         await playContextTrack(contextUri, uri);
         return;
       }
 
       // Identify track info
       let track = trackObj;
+      if (!track && typeof contextUri === 'object' && contextUri !== null) {
+        track = contextUri;
+      }
       if (!track && currentTrack?.uri === uri) track = currentTrack;
       if (!track) {
         track =
@@ -1061,8 +1092,8 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
       // Populate Zustand queue with active track + upcoming relevant tracks
       const fullQueue = [
-        { track: track || { uri, name: 'Playing Track' }, contextUri },
-        ...relevant.map((t: any) => ({ track: t, contextUri }))
+        { track: track || { uri, name: 'Playing Track' }, contextUri: undefined },
+        ...relevant.map((t: any) => ({ track: t, contextUri: undefined }))
       ];
       setQueue(fullQueue);
       setQueueIndex(0);
@@ -1072,14 +1103,15 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     }
   };
 
-  const playTracks = async (uris: string[], tracksList?: any[]) => {
+  const playTracks = async (uris: string[], tracksList?: any[], offsetPosition?: number) => {
     if (!token || uris.length === 0) return;
     sfx?.select?.();
     if (player && typeof player.activateElement === 'function') {
       player.activateElement().catch(() => {});
     }
+    const startIndex = typeof offsetPosition === 'number' && offsetPosition >= 0 && offsetPosition < uris.length ? offsetPosition : 0;
     if (!isPremium) {
-      const parts = uris[0].split(':');
+      const parts = uris[startIndex].split(':');
       if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
       return;
     }
@@ -1098,14 +1130,18 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     }
 
     try {
-      await play.mutateAsync({ uris, device_id: targetDevice || undefined });
+      await play.mutateAsync({
+        uris,
+        offset: typeof offsetPosition === 'number' ? { position: offsetPosition } : undefined,
+        device_id: targetDevice || undefined
+      });
 
       if (tracksList && tracksList.length > 0) {
         setQueue(tracksList.map(t => ({ track: t })));
-        setQueueIndex(0);
+        setQueueIndex(startIndex);
       } else {
         setQueue(uris.map(u => ({ track: { uri: u, name: 'Queued Track' } })));
-        setQueueIndex(0);
+        setQueueIndex(startIndex);
       }
     } catch (e: any) {
       console.error(`[${new Date().toISOString()}] [Play Tracks Error]`, e);
@@ -1159,6 +1195,10 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   };
 
   const playContextTrack = async (contextUri: string, trackUri: string) => {
+    if (!isValidContextUri(contextUri)) {
+      await playTrack(trackUri);
+      return;
+    }
     if (!token) return;
     sfx?.select?.();
     if (player && typeof player.activateElement === 'function') {
@@ -1474,6 +1514,10 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
           }
           .lyrics-container {
             --lyrics-play-state: running;
+          }
+          .lyrics-container[data-instant="true"] * {
+            transition-duration: 0ms !important;
+            transition-delay: 0ms !important;
           }
           .lyrics-container[data-paused="true"] .lyric-word {
             animation-play-state: paused !important;
@@ -2704,14 +2748,14 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                         }
 
                         let delayMs = 0;
-                        if (!isReducedMotion && !isManualBrowsing && !skipCascade && activeLyricIndex !== -1 && isNearby) {
+                        if (!isReducedMotion && !isManualBrowsing && activeLyricIndex !== -1 && isNearby) {
                           if (i >= activeLyricIndex) {
                             const step = Math.min(i - activeLyricIndex, 8);
                             delayMs = step * 40;
                           }
                         }
 
-                        const durationMs = (isReducedMotion || isManualBrowsing || skipCascade) ? 0 : 600;
+                        const durationMs = (isReducedMotion || isManualBrowsing) ? 0 : 600;
 
                         return (
                           <React.Fragment key={i}>
@@ -2752,14 +2796,8 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                             <div
                               ref={(el) => { lyricsLinesRef.current[i] = el; }}
                               onClick={() => {
-                                skipCascadeRef.current = true;
-                                setSkipCascade(true);
                                 handleSeek(line.timeMs);
                                 resumeToActive();
-                                requestAnimationFrame(() => {
-                                  skipCascadeRef.current = false;
-                                  setSkipCascade(false);
-                                });
                               }}
                               className={`relative w-full max-w-[640px] mx-auto font-pixel font-bold text-center leading-relaxed origin-center cursor-pointer select-none hover:opacity-100 transition-opacity ${
                                 isActive ? 'lyric-line-active' : ''

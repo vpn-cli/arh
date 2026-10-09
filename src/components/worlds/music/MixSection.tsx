@@ -7,7 +7,7 @@ import { PlaylistCard } from './PlaylistCard';
 
 interface MixSectionProps {
   onPlayTrack: (uri: string, contextUri?: string, track?: any) => void;
-  onPlayTracks: (uris: string[], tracks?: any[]) => void;
+  onPlayTracks: (uris: string[], tracks?: any[], offsetPosition?: number) => void;
   onAddToQueue: (uri: string, track?: any) => void;
   onAddToPlaylist: (uri: string) => void;
   onClickArtist: (id: string) => void;
@@ -127,8 +127,9 @@ export function MixSection({
              <TrackList 
                tracks={filteredMix} 
                onPlayTrack={(uri) => {
-                 const trackObj = filteredMix.find((t: any) => t.uri === uri);
-                 onPlayTrack(uri, 'spotify:mix', trackObj);
+                 const tappedIndex = filteredMix.findIndex((t: any) => t.uri === uri);
+                 const position = tappedIndex >= 0 ? tappedIndex : 0;
+                 onPlayTracks(filteredMix.map((t: any) => t.uri), filteredMix, position);
                }} 
                onAddToQueue={(uri) => {
                  const trackObj = filteredMix.find((t: any) => t.uri === uri);
