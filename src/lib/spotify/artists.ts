@@ -9,7 +9,10 @@ export async function getArtistAlbums(id: string) {
   return await proxyFetch(`/artists/${id}/albums?limit=10&offset=0`);
 }
 
-export async function getArtistTopTracks(id: string) {
-  // The market=from_token is usually required or recommended for this endpoint
-  return await proxyFetch(`/artists/${id}/top-tracks?market=from_token`);
+/**
+ * Note: GET /artists/{id}/top-tracks was removed in the February 2026 Spotify Web API update
+ * with no direct replacement. Degraded gracefully to return empty tracks.
+ */
+export async function getArtistTopTracks(_id: string) {
+  return { tracks: [] };
 }

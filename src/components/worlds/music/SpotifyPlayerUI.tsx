@@ -587,10 +587,10 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
             for (const item of res.playlists.items) {
               if (!item) continue;
-              const trackCount = item.tracks?.total || 0;
-              if (trackCount >= 20) {
+              const trackCount = item.items?.total ?? item.tracks?.total ?? 0;
+              if (trackCount >= 20 || !bestPlaylist) {
                 const followers = item.followers?.total || 0;
-                if (followers > maxFollowers) {
+                if (followers > maxFollowers || !bestPlaylist) {
                   maxFollowers = followers;
                   bestPlaylist = item;
                 }
@@ -940,7 +940,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         const trackForAutoplay = newTrack || currentTrack;
         if (trackForAutoplay) {
           const { getRelevantTracks } = await import('@/lib/spotify/player');
-          const relevant = await getRelevantTracks(trackForAutoplay, 12);
+          const relevant = await getRelevantTracks(trackForAutoplay, 10);
           if (relevant.length > 0) {
             const targetDevice = selectedDevice || deviceIdRef.current || deviceId;
             await play.mutateAsync({
@@ -1080,7 +1080,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       let relevant: any[] = [];
       try {
         const { getRelevantTracks } = await import('@/lib/spotify/player');
-        relevant = track ? await getRelevantTracks(track, 15) : [];
+        relevant = track ? await getRelevantTracks(track, 10) : [];
       } catch (err) {
         console.warn('Could not fetch relevant tracks:', err);
       }

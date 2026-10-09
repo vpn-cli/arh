@@ -104,6 +104,12 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
     }
   };
 
+  const isRestricted = 
+    !isLoadingPlaylist &&
+    !isLoadingItems &&
+    resolvedTracks.length === 0 &&
+    (Boolean((itemsError as any)?.status === 403) || !itemsData);
+
   return (
     <div className="flex flex-col h-full w-full">
       <PlaylistHeader 
@@ -117,23 +123,26 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
           }
         }} 
         onBack={onBack} 
-        isRestricted={isItemsError && (itemsError as any)?.status === 403 && resolvedTracks.length === 0}
+        isRestricted={isRestricted}
         onEdit={onEdit}
         onRemove={onRemove}
       />
       <PlaylistActions 
         onPlay={handlePlay} 
         onShuffle={handleShuffle} 
-        disabled={(isLoadingItems && resolvedTracks.length === 0) || resolvedTracks.length === 0} 
+        playDisabled={!playlist?.uri}
+        shuffleDisabled={resolvedTracks.length === 0}
       />
       {isItemsError && (itemsError as any)?.status === 429 ? (
         <div className="flex-1 flex items-center justify-center text-[var(--color-dark)] font-pixel text-xs font-bold text-center px-4">
           Rate limited by Spotify.<br/>Wait {rateLimitTimer || ((itemsError as any)?.retryAfter ?? 60)} seconds.
         </div>
-      ) : isItemsError && (itemsError as any)?.status === 403 && resolvedTracks.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center font-pixel text-xs text-center px-4 gap-2">
-          <span className="text-[var(--color-dark)] font-bold">Tracks Unavailable</span>
-          <span className="text-[var(--color-dark)] leading-relaxed">Spotify does not allow this app to read tracks from this playlist.</span>
+      ) : isRestricted ? (
+        <div className="flex-1 flex flex-col items-center justify-center font-pixel text-xs text-center px-4 gap-2 text-[var(--color-dark)]">
+          <span className="font-bold text-sm">Track list unavailable</span>
+          <span className="text-[var(--color-muted)] text-[11px] max-w-xs leading-relaxed">
+            Track list is unavailable for playlists you do not own. You can still play this playlist using the Play button above.
+          </span>
         </div>
       ) : (
         <PlaylistTrackList 

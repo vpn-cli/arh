@@ -4,15 +4,20 @@ interface PlaylistActionsProps {
   onPlay: () => void;
   onShuffle: () => void;
   disabled?: boolean;
+  playDisabled?: boolean;
+  shuffleDisabled?: boolean;
 }
 
-export function PlaylistActions({ onPlay, onShuffle, disabled }: PlaylistActionsProps) {
+export function PlaylistActions({ onPlay, onShuffle, disabled, playDisabled, shuffleDisabled }: PlaylistActionsProps) {
+  const isPlayDisabled = playDisabled !== undefined ? playDisabled : disabled;
+  const isShuffleDisabled = shuffleDisabled !== undefined ? shuffleDisabled : disabled;
+
   return (
     <div className="flex items-center gap-3 p-4 shrink-0">
       <button 
         onClick={onPlay}
-        disabled={disabled}
-        className={`flex-1 shrink-0 bg-gradient-to-r from-[var(--color-vibrant)] to-[var(--color-vibrant)] text-white py-3 rounded-xl shadow-[0_4px_14px_var(--color-vibrant)] transition-all flex flex-col items-center justify-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] ${disabled ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
+        disabled={isPlayDisabled}
+        className={`flex-1 shrink-0 bg-gradient-to-r from-[var(--color-vibrant)] to-[var(--color-vibrant)] text-white py-3 rounded-xl shadow-[0_4px_14px_var(--color-vibrant)] transition-all flex flex-col items-center justify-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] ${isPlayDisabled ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
       >
         <span className="font-pixel text-sm font-bold tracking-widest">
           ✨ PLAY ✨

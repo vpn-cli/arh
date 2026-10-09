@@ -18,8 +18,12 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
   
   const searchParams = new URLSearchParams(url.search);
   if (searchParams.has('limit')) {
-    const limit = parseInt(searchParams.get('limit') || '', 10);
+    let limit = parseInt(searchParams.get('limit') || '', 10);
     if (!isNaN(limit)) {
+      // February 2026: Search endpoint limit parameter maximum value is 10
+      if (pathString.startsWith('search')) {
+        limit = Math.min(Math.max(1, limit), 10);
+      }
       searchParams.set('limit', limit.toString());
     } else {
       searchParams.delete('limit');
