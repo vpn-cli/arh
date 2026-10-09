@@ -23,10 +23,12 @@ import { usePlaylistMutations } from "@/hooks/usePlaylistMutations";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { VIBES } from "@/config/vibes";
 import { proxyFetch, getFreshToken, onLoginRequired } from "@/lib/spotifyClient";
-import { subscribeRecoveryState, recoverPlaybackDevice, markNeedsRecovery, clearNeedsRecovery } from "@/lib/spotifyRecovery";
+import { subscribeRecoveryState } from "@/lib/spotifyRecovery";
 import { LyricsView, LyricsViewHandle } from "./lyrics/LyricsView";
 import { prefetchLyrics } from "./lyrics/useLyrics";
 import { useSpotifyPlayer } from "@/providers/SpotifyPlayerProvider";
+import { usePlaybackActions } from "./playback/usePlaybackActions";
+export { isValidContextUri } from "./playback/playbackHelpers";
 
 const sfx: any = { select: () => { }, hover: () => { }, pop: () => { }, move: () => { }, error: () => { } };
 
@@ -36,16 +38,6 @@ declare global {
     Spotify?: any;
   }
 }
-
-export const isValidContextUri = (uri: unknown): uri is string => {
-  return (
-    typeof uri === 'string' &&
-    (uri.startsWith('spotify:playlist:') ||
-      uri.startsWith('spotify:album:') ||
-      uri.startsWith('spotify:artist:') ||
-      uri.startsWith('spotify:show:'))
-  );
-};
 
 export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void }) {
   const queryClient = useQueryClient();
@@ -77,7 +69,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     duration, setDuration,
     error, setError,
     isPremium, setIsPremium,
-    queue, queueIndex, setQueueIndex, addToQueue, removeFromQueue, clearQueue, reorderQueue, setQueue
+    queue, queueIndex, setQueueIndex, removeFromQueue, clearQueue, reorderQueue, setQueue
   } = useSpotifyPlayerStore();
 
   const player = providerPlayer || storePlayer;
@@ -95,7 +87,6 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const positionLabelRef = React.useRef<HTMLSpanElement>(null);
   const progressBarFillRef = React.useRef<HTMLDivElement>(null);
   const progressBarThumbRef = React.useRef<HTMLDivElement>(null);
-  const userPausedRef = React.useRef(false);
   const isAutoplayingRef = React.useRef(false);
   const lastActiveTrackUriRef = React.useRef<string | null>(null);
 
@@ -212,7 +203,31 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   }, [globalSearch]);
 
   const { data: isSaved = false } = useTrackSavedStatus(currentTrack?.id);
-  const { play, toggleSave: toggleSaveMutation, toggleShuffle: toggleShuffleMutation, toggleRepeat: toggleRepeatMutation } = useSpotifyMutations();
+  const { play } = useSpotifyMutations();
+
+  const {
+    playTrack,
+    playTracks,
+    playPlaylist,
+    playContextTrack,
+    playQueueItem,
+    togglePlay,
+    nextTrack,
+    prevTrack,
+    toggleShuffle,
+    toggleRepeat,
+    toggleSaveTrack,
+    handleAddToQueue,
+    userPausedRef,
+  } = usePlaybackActions({
+    selectedDevice,
+    setRecoveryError,
+    birthdayMixTracks,
+    likedTracks: likedData?.tracks,
+    recentTracks,
+    isSaved,
+    effectiveQueue,
+  });
 
 
 
@@ -606,351 +621,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     };
   }, [player, subscribe]);
 
-  const handleAddToQueue = async (trackOrUri: any, contextUri?: any) => {
-    const uri = typeof trackOrUri === 'string' ? trackOrUri : trackOrUri?.uri;
-    let track = typeof trackOrUri === 'object' ? trackOrUri : null;
-    if (!track && typeof contextUri === 'object' && contextUri !== null) {
-      track = contextUri;
-    }
-    if (!track) {
-      track = { uri, name: 'Queued Track' };
-    }
-    if (!uri) return;
 
-    const validContext = isValidContextUri(contextUri) ? contextUri : undefined;
-    addToQueue(track, validContext);
-
-    try {
-      const { addTrackToPlayerQueue } = await import('@/lib/spotify/player');
-      const targetDevice = selectedDevice || deviceIdRef.current || deviceId;
-      await addTrackToPlayerQueue(uri, targetDevice || undefined);
-    } catch (err) {
-      console.warn('Could not add to Spotify queue:', err);
-    }
-  };
-
-  const playTrack = async (uri: string, contextUri?: any, trackObj?: any) => {
-    if (!token) return;
-    sfx?.select?.();
-    if (player && typeof player.activateElement === 'function') {
-      player.activateElement().catch(() => {});
-    }
-    if (!isPremium) {
-      const parts = uri.split(':');
-      if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
-      return;
-    }
-    userPausedRef.current = false;
-    let targetDevice = selectedDevice || deviceIdRef.current || deviceId;
-
-    if (needsRecoveryRef.current || (!targetDevice && isPremium)) {
-      try {
-        const recoveredId = await recoverPlaybackDevice();
-        needsRecoveryRef.current = false;
-        targetDevice = selectedDevice || recoveredId;
-      } catch (err: any) {
-        setRecoveryError(err.message || 'Error reconnecting to Spotify device');
-        return;
-      }
-    }
-
-    try {
-      if (isValidContextUri(contextUri)) {
-        await playContextTrack(contextUri, uri);
-        return;
-      }
-
-      // Identify track info
-      let track = trackObj;
-      if (!track && typeof contextUri === 'object' && contextUri !== null) {
-        track = contextUri;
-      }
-      if (!track && currentTrack?.uri === uri) track = currentTrack;
-      if (!track) {
-        track =
-          birthdayMixTracks.find((t: any) => t.uri === uri) ||
-          likedData?.tracks?.find((t: any) => t.uri === uri) ||
-          recentTracks.find((item: any) => item.track?.uri === uri)?.track;
-      }
-
-      // Continuous Playback: Fetch relevant tracks so playback keeps going continuously
-      let relevant: any[] = [];
-      try {
-        const { getRelevantTracks } = await import('@/lib/spotify/player');
-        relevant = track ? await getRelevantTracks(track, 10) : [];
-      } catch (err) {
-        console.warn('Could not fetch relevant tracks:', err);
-      }
-
-      const relevantUris = relevant.map((t: any) => t.uri).filter(Boolean);
-      const allUris = [uri, ...relevantUris];
-
-      await play.mutateAsync({ uris: allUris, device_id: targetDevice || undefined });
-
-      // Populate Zustand queue with active track + upcoming relevant tracks
-      const fullQueue = [
-        { track: track || { uri, name: 'Playing Track' }, contextUri: undefined },
-        ...relevant.map((t: any) => ({ track: t, contextUri: undefined }))
-      ];
-      setQueue(fullQueue);
-      setQueueIndex(0);
-    } catch (e: any) {
-      console.error(`[${new Date().toISOString()}] [Play Track Error]`, e);
-      setRecoveryError(e.message || 'Error playing track');
-    }
-  };
-
-  const playTracks = async (uris: string[], tracksList?: any[], offsetPosition?: number) => {
-    if (!token || uris.length === 0) return;
-    sfx?.select?.();
-    if (player && typeof player.activateElement === 'function') {
-      player.activateElement().catch(() => {});
-    }
-    const startIndex = typeof offsetPosition === 'number' && offsetPosition >= 0 && offsetPosition < uris.length ? offsetPosition : 0;
-    if (!isPremium) {
-      const parts = uris[startIndex].split(':');
-      if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
-      return;
-    }
-    userPausedRef.current = false;
-    let targetDevice = selectedDevice || deviceIdRef.current || deviceId;
-
-    if (needsRecoveryRef.current || (!targetDevice && isPremium)) {
-      try {
-        const recoveredId = await recoverPlaybackDevice();
-        needsRecoveryRef.current = false;
-        targetDevice = selectedDevice || recoveredId;
-      } catch (err: any) {
-        setRecoveryError(err.message || 'Error reconnecting to Spotify device');
-        return;
-      }
-    }
-
-    try {
-      await play.mutateAsync({
-        uris,
-        offset: typeof offsetPosition === 'number' ? { position: offsetPosition } : undefined,
-        device_id: targetDevice || undefined
-      });
-
-      if (tracksList && tracksList.length > 0) {
-        setQueue(tracksList.map(t => ({ track: t })));
-        setQueueIndex(startIndex);
-      } else {
-        setQueue(uris.map(u => ({ track: { uri: u, name: 'Queued Track' } })));
-        setQueueIndex(startIndex);
-      }
-    } catch (e: any) {
-      console.error(`[${new Date().toISOString()}] [Play Tracks Error]`, e);
-      setRecoveryError(e.message || 'Error playing tracks');
-    }
-  };
-
-  const toggleSaveTrack = async () => {
-    if (!token || !currentTrack) return;
-    sfx?.select?.();
-    try {
-      await toggleSaveMutation.mutateAsync({ trackId: currentTrack.id, isSaved });
-    } catch (e: any) { }
-  };
-
-  const playPlaylist = async (uri: string, playlistTracks?: any[]) => {
-    if (!token) return;
-    sfx?.select?.();
-    if (player && typeof player.activateElement === 'function') {
-      player.activateElement().catch(() => {});
-    }
-    if (!isPremium) {
-      const parts = uri.split(':');
-      if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
-      return;
-    }
-    userPausedRef.current = false;
-    let targetDevice = selectedDevice || deviceIdRef.current || deviceId;
-
-    if (needsRecoveryRef.current || (!targetDevice && isPremium)) {
-      try {
-        const recoveredId = await recoverPlaybackDevice();
-        needsRecoveryRef.current = false;
-        targetDevice = selectedDevice || recoveredId;
-      } catch (err: any) {
-        setRecoveryError(err.message || 'Error reconnecting to Spotify device');
-        return;
-      }
-    }
-
-    try {
-      await play.mutateAsync({ context_uri: uri, device_id: targetDevice || undefined });
-      if (playlistTracks && playlistTracks.length > 0) {
-        setQueue(playlistTracks.map(t => ({ track: t, contextUri: uri })));
-        setQueueIndex(0);
-      }
-    } catch (e: any) {
-      console.error(`[${new Date().toISOString()}] [Play Playlist Error]`, e);
-      setRecoveryError(e.message || 'Error playing playlist');
-    }
-  };
-
-  const playContextTrack = async (contextUri: string, trackUri: string) => {
-    if (!isValidContextUri(contextUri)) {
-      await playTrack(trackUri);
-      return;
-    }
-    if (!token) return;
-    sfx?.select?.();
-    if (player && typeof player.activateElement === 'function') {
-      player.activateElement().catch(() => {});
-    }
-    if (!isPremium) {
-      const parts = trackUri.split(':');
-      if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
-      return;
-    }
-    userPausedRef.current = false;
-    let targetDevice = selectedDevice || deviceIdRef.current || deviceId;
-
-    if (needsRecoveryRef.current || (!targetDevice && isPremium)) {
-      try {
-        const recoveredId = await recoverPlaybackDevice();
-        needsRecoveryRef.current = false;
-        targetDevice = selectedDevice || recoveredId;
-      } catch (err: any) {
-        setRecoveryError(err.message || 'Error reconnecting to Spotify device');
-        return;
-      }
-    }
-
-    try {
-      await play.mutateAsync({ context_uri: contextUri, offset: { uri: trackUri }, device_id: targetDevice || undefined });
-    } catch (e: any) {
-      console.error(`[${new Date().toISOString()}] [Play Context Track Error]`, e);
-      setRecoveryError(e.message || 'Error playing track in context');
-    }
-  };
-
-  const playQueueItem = async (index: number) => {
-    const list = effectiveQueue;
-    if (index < 0 || index >= list.length) return;
-    const item = list[index];
-    setQueueIndex(index);
-    if (item.contextUri) {
-      await playContextTrack(item.contextUri, item.track.uri);
-    } else {
-      await playTrack(item.track.uri, undefined, item.track);
-    }
-  };
-
-  const togglePlay = async () => {
-    sfx?.select?.();
-    if (player && typeof player.activateElement === 'function') {
-      player.activateElement().catch(() => {});
-    }
-    if (!isPremium) {
-      if (currentTrack?.uri) {
-        const parts = currentTrack.uri.split(':');
-        if (parts.length === 3) window.open(`https://open.spotify.com/${parts[1]}/${parts[2]}`, '_blank');
-      }
-      return;
-    }
-
-    if (needsRecoveryRef.current || (!deviceIdRef.current && !selectedDevice && isPremium)) {
-      try {
-        await recoverPlaybackDevice();
-        needsRecoveryRef.current = false;
-      } catch (err: any) {
-        setRecoveryError(err.message || 'Error reconnecting to Spotify device');
-        return;
-      }
-    }
-
-    if (!player) {
-      if (currentTrack?.uri) {
-        userPausedRef.current = false;
-        await playTrack(currentTrack.uri, undefined, currentTrack);
-      }
-      return;
-    }
-    try {
-      const state = await player.getCurrentState();
-      if ((!state || !state.track_window?.current_track) && currentTrack?.uri) {
-        userPausedRef.current = false;
-        await playTrack(currentTrack.uri, undefined, currentTrack);
-      } else {
-        if (!state.paused) {
-          userPausedRef.current = true;
-        } else {
-          userPausedRef.current = false;
-        }
-        await player.togglePlay();
-      }
-    } catch (e: any) {
-      console.warn(`[${new Date().toISOString()}] [togglePlay State Exception]`, e);
-      if (currentTrack?.uri) {
-        userPausedRef.current = false;
-        await playTrack(currentTrack.uri, undefined, currentTrack);
-      } else {
-        player.togglePlay();
-      }
-    }
-  };
-
-  const nextTrack = () => {
-    if (!player) return;
-    sfx?.select?.();
-    const list = effectiveQueue;
-    if (repeatMode === 'track' && list.length > 0 && queueIndex >= 0) {
-      playQueueItem(queueIndex);
-    } else if (list.length > 0 && queueIndex < list.length - 1) {
-      playQueueItem(queueIndex + 1);
-    } else if (list.length > 0 && repeatMode === 'context') {
-      playQueueItem(0);
-    } else {
-      player.nextTrack();
-    }
-  };
-
-  const prevTrack = () => {
-    if (!player) return;
-    sfx?.select?.();
-    const list = effectiveQueue;
-    if (repeatMode === 'track' && list.length > 0 && queueIndex >= 0) {
-      playQueueItem(queueIndex);
-    } else if (list.length > 0 && queueIndex > 0) {
-      playQueueItem(queueIndex - 1);
-    } else if (list.length > 0 && repeatMode === 'context') {
-      playQueueItem(list.length - 1);
-    } else {
-      player.previousTrack();
-    }
-  };
-
-  const toggleShuffle = async () => {
-    const targetDevice = selectedDevice || deviceId;
-    if (!token) return;
-    sfx?.select?.();
-    try {
-      await toggleShuffleMutation.mutateAsync({ state: !isShuffle, device_id: targetDevice || undefined });
-      setIsShuffle(!isShuffle);
-    } catch (e: any) { }
-  };
-
-  const toggleRepeat = async () => {
-    const targetDevice = selectedDevice || deviceId;
-    if (!token) return;
-    sfx?.select?.();
-    const nextMode: 'off' | 'context' | 'track' =
-      repeatMode === 'off' ? 'context' : repeatMode === 'context' ? 'track' : 'off';
-
-    const prevMode = repeatMode;
-    setRepeatMode(nextMode);
-
-    try {
-      await toggleRepeatMutation.mutateAsync({ state: nextMode, device_id: targetDevice || undefined });
-    } catch (e: any) {
-      console.error('Failed to toggle repeat mode:', e);
-      setRepeatMode(prevMode);
-    }
-  };
 
   const updatePositionFromPointer = (clientX: number) => {
     if (!progressBarRef.current || duration === 0) return;
