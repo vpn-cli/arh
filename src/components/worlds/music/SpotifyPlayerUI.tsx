@@ -24,7 +24,8 @@ import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { VIBES } from "@/config/vibes";
 import { proxyFetch, getFreshToken, onLoginRequired } from "@/lib/spotifyClient";
 import { subscribeRecoveryState, recoverPlaybackDevice, markNeedsRecovery, clearNeedsRecovery } from "@/lib/spotifyRecovery";
-import { attachEstimatedWordTimings, LyricLine } from "@/lib/lyrics";
+import { LyricsView, LyricsViewHandle } from "./lyrics/LyricsView";
+import { prefetchLyrics } from "./lyrics/useLyrics";
 import { useSpotifyPlayer } from "@/providers/SpotifyPlayerProvider";
 
 const sfx: any = { select: () => { }, hover: () => { }, pop: () => { }, move: () => { }, error: () => { } };
@@ -112,362 +113,52 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const [globalSearch, setGlobalSearch] = useState("");
 
   const [showLyrics, setShowLyrics] = useState(false);
-  const [lyricsData, setLyricsData] = useState<{
-    synced: LyricLine[] | null;
-    plain: string | null;
-    instrumental?: boolean;
-    notFound?: boolean;
-    source?: string;
-  } | null>(null);
-  const [isLyricsLoading, setIsLyricsLoading] = useState(false);
-  const lyricsCache = React.useRef<Record<string, any>>({});
-  const activeLyricIndexRef = React.useRef<number>(-1);
-  const lyricsLinesRef = React.useRef<(HTMLDivElement | null)[]>([]);
-  
-  // Edit mode & manual lyrics states
-  const [editMode, setEditMode] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('edit') === 'true') return true;
-      return window.localStorage.getItem('arh_edit_mode') === 'true';
-    }
-    return false;
-  });
-  const [sessionSecret, setSessionSecret] = useState<string>('');
-  const isReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const [isAddLyricsOpen, setIsAddLyricsOpen] = useState(false);
-  const [manualLyricsInput, setManualLyricsInput] = useState('');
-  const [manualSecretInput, setManualSecretInput] = useState('');
-  const [isSavingLyrics, setIsSavingLyrics] = useState(false);
-  const [saveLyricsError, setSaveLyricsError] = useState<string | null>(null);
+  const lyricsViewRef = React.useRef<LyricsViewHandle | null>(null);
 
-  const handleSaveManualLyrics = async () => {
-    if (!currentTrack?.id) return;
-    const secretToUse = sessionSecret || manualSecretInput;
-    if (!secretToUse) {
-      setSaveLyricsError("Admin Secret is required.");
-      return;
-    }
-    if (!manualLyricsInput.trim()) {
-      setSaveLyricsError("Please paste some lyrics.");
-      return;
-    }
-
-    setIsSavingLyrics(true);
-    setSaveLyricsError(null);
-
-    try {
-      const res = await fetch('/api/lyrics', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-scrapbook-secret': secretToUse,
-        },
-        body: JSON.stringify({
-          trackId: currentTrack.id,
-          lyrics: manualLyricsInput,
-        }),
-      });
-
-      if (res.status === 401) {
-        setSaveLyricsError("Invalid Admin Secret.");
-        setIsSavingLyrics(false);
-        return;
-      }
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        setSaveLyricsError(errData.error || "Failed to save lyrics.");
-        setIsSavingLyrics(false);
-        return;
-      }
-
-      const data = await res.json();
-      setSessionSecret(secretToUse);
-
-      if (data.synced) {
-        data.synced = attachEstimatedWordTimings(data.synced);
-      }
-      lyricsCache.current[currentTrack.id] = data;
-      setLyricsData(data);
-      setIsAddLyricsOpen(false);
-      setManualLyricsInput('');
-    } catch (e: any) {
-      setSaveLyricsError(e?.message || "An error occurred.");
-    } finally {
-      setIsSavingLyrics(false);
-    }
-  };
-  
-  const [activeLyricIndex, setActiveLyricIndex] = useState(-1);
-  const lyricsContainerRef = React.useRef<HTMLDivElement | null>(null);
-  const baseLyricsYRef = React.useRef<number>(0);
-  const manualOffsetRef = React.useRef<number>(0);
-  const isManualBrowsingRef = React.useRef<boolean>(false);
-  const [isManualBrowsing, setIsManualBrowsing] = useState<boolean>(false);
-  const manualTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  const getLineCenter = (lineEl: HTMLElement, containerEl: HTMLElement): number => {
-    let offset = lineEl.offsetTop + lineEl.offsetHeight / 2;
-    let curr: HTMLElement | null = lineEl.offsetParent as HTMLElement | null;
-    while (curr && curr !== containerEl) {
-      offset += curr.offsetTop;
-      curr = curr.offsetParent as HTMLElement | null;
-    }
-    return offset;
-  };
-
-  const updateLyricsPosition = React.useCallback((targetIndex: number, instant: boolean = false) => {
-    const container = lyricsContainerRef.current;
-    if (!container) return;
-
-    const lines = lyricsLinesRef.current;
-    if (!lines || lines.length === 0) return;
-
-    const idx = targetIndex >= 0 ? targetIndex : 0;
-    const activeLine = lines[idx];
-    if (!activeLine) return;
-
-    const containerHeight = container.clientHeight;
-    const lineCenter = activeLine.offsetTop + activeLine.offsetHeight / 2;
-    const baseY = containerHeight / 2 - lineCenter;
-    baseLyricsYRef.current = baseY;
-
-    const totalY = isManualBrowsingRef.current ? baseY + manualOffsetRef.current : baseY;
-
-    if (instant) {
-      container.setAttribute('data-instant', 'true');
-      container.style.setProperty('--lyrics-y', `${totalY}px`);
-      requestAnimationFrame(() => {
-        container.removeAttribute('data-instant');
-      });
-    } else {
-      container.style.setProperty('--lyrics-y', `${totalY}px`);
-    }
+  const getPositionMs = React.useCallback(() => {
+    return Math.max(
+      0,
+      (pauseTimestampRef.current ?? Date.now()) -
+        trackStartTimeRef.current -
+        pausedDurationRef.current
+    );
   }, []);
 
-  const syncActiveLineWordDelays = React.useCallback((lineIndex: number, currentPosMs: number) => {
-    if (lineIndex < 0) return;
-    const lineEl = lyricsLinesRef.current[lineIndex];
-    if (!lineEl || !lyricsData?.synced) return;
-    const line = lyricsData.synced[lineIndex];
-    if (!line || !line.words) return;
+  const handleCloseLyrics = React.useCallback(() => {
+    setShowLyrics(false);
+  }, []);
 
-    const elapsedWithinLine = Math.max(0, currentPosMs - line.timeMs);
-    const wordEls = lineEl.querySelectorAll<HTMLElement>('.lyric-word');
+  const lyricsTrackDisplay = React.useMemo(() => ({
+    name: currentTrack?.name,
+    artists: currentTrack?.artists ? currentTrack.artists.map((a: any) => a.name).join(', ') : '',
+    art: currentTrack?.album?.images?.[0]?.url || (typeof currentTrack?.album?.images?.[0] === 'string' ? currentTrack.album.images[0] : null) || null,
+  }), [currentTrack?.id]);
 
-    wordEls.forEach((wordEl, wIdx) => {
-      const word = line.words?.[wIdx];
-      if (!word) return;
-      const durationMs = word.endMs - word.startMs;
-      const delayMs = (word.startMs - line.timeMs) - elapsedWithinLine;
 
-      wordEl.style.animationName = 'none';
-      wordEl.style.animationDuration = `${durationMs}ms`;
-      wordEl.style.animationDelay = `${delayMs}ms`;
-    });
-
-    lineEl.offsetHeight; // force reflow once for the whole line
-
-    wordEls.forEach((wordEl) => {
-      wordEl.style.animationName = 'lyric-word-wipe';
-    });
-  }, [lyricsData]);
-
-  const resumeToActive = React.useCallback(() => {
-    if (manualTimeoutRef.current) {
-      clearTimeout(manualTimeoutRef.current);
-      manualTimeoutRef.current = null;
-    }
-    if (isManualBrowsingRef.current) {
-      isManualBrowsingRef.current = false;
-      setIsManualBrowsing(false);
-    }
-    manualOffsetRef.current = 0;
-
-    updateLyricsPosition(activeLyricIndexRef.current, false);
-  }, [updateLyricsPosition]);
+  const playerRef = React.useRef(player);
+  playerRef.current = player;
+  const durationRef = React.useRef(duration);
+  durationRef.current = duration;
 
   const handleSeek = React.useCallback((targetMs: number) => {
-    if (player) {
-      player.seek(targetMs);
+    if (playerRef.current) {
+      playerRef.current.seek(targetMs);
     }
     trackStartTimeRef.current = Date.now() - targetMs - pausedDurationRef.current;
     if (positionLabelRef.current) {
       const ts = Math.floor(targetMs / 1000);
       positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
     }
-    if (duration > 0 && progressBarFillRef.current && progressBarThumbRef.current) {
-      const percent = Math.max(0, Math.min(1, targetMs / duration));
+    const currentDuration = durationRef.current;
+    if (currentDuration > 0 && progressBarFillRef.current && progressBarThumbRef.current) {
+      const percent = Math.max(0, Math.min(1, targetMs / currentDuration));
       progressBarFillRef.current.style.animationName = 'none';
       progressBarFillRef.current.style.transform = `scaleX(${percent})`;
       progressBarThumbRef.current.style.animationName = 'none';
       progressBarThumbRef.current.style.transform = `translateX(${percent * 100 - 100}%)`;
     }
-    if (lyricsData?.synced && lyricsData.synced.length > 0) {
-      const lines = lyricsData.synced;
-      let targetIndex = -1;
-      for (let i = lines.length - 1; i >= 0; i--) {
-        if (lines[i].timeMs <= targetMs) {
-          targetIndex = i;
-          break;
-        }
-      }
-      if (targetIndex !== activeLyricIndexRef.current) {
-        activeLyricIndexRef.current = targetIndex;
-        setActiveLyricIndex(targetIndex);
-        if (!isManualBrowsingRef.current) {
-          updateLyricsPosition(targetIndex, true);
-        }
-      }
-      syncActiveLineWordDelays(targetIndex, targetMs);
-    }
-  }, [player, duration, lyricsData, updateLyricsPosition, syncActiveLineWordDelays]);
-
-  // Recompute lyrics on container resize
-  useEffect(() => {
-    if (!showLyrics) return;
-    const container = lyricsContainerRef.current;
-    if (!container) return;
-
-    let isFirst = true;
-    const ro = new ResizeObserver(() => {
-      if (isFirst) {
-        isFirst = false;
-        return;
-      }
-      updateLyricsPosition(activeLyricIndexRef.current, true);
-    });
-    ro.observe(container);
-    return () => ro.disconnect();
-  }, [showLyrics, updateLyricsPosition]);
-
-  // Recompute lyrics after document.fonts.ready
-  useEffect(() => {
-    if (!showLyrics) return;
-    if (typeof document !== 'undefined' && document.fonts) {
-      if (document.fonts.status !== 'loaded') {
-        document.fonts.ready.then(() => {
-          updateLyricsPosition(activeLyricIndexRef.current, true);
-        });
-      }
-    }
-  }, [showLyrics, updateLyricsPosition]);
-
-  // Position lyrics and sync active line word delays
-  useLayoutEffect(() => {
-    if (!showLyrics) return;
-
-    if (manualTimeoutRef.current) {
-      clearTimeout(manualTimeoutRef.current);
-      manualTimeoutRef.current = null;
-    }
-    isManualBrowsingRef.current = false;
-    manualOffsetRef.current = 0;
-    setIsManualBrowsing(prev => (prev ? false : prev));
-
-    if (!lyricsData?.synced || lyricsData.synced.length === 0) return;
-
-    const currentPos = Math.max(0, Date.now() - trackStartTimeRef.current - pausedDurationRef.current);
-    const lines = lyricsData.synced;
-    let activeIndex = -1;
-
-    for (let i = lines.length - 1; i >= 0; i--) {
-      if (lines[i].timeMs <= currentPos) {
-        activeIndex = i;
-        break;
-      }
-    }
-
-    activeLyricIndexRef.current = activeIndex;
-    setActiveLyricIndex(activeIndex);
-
-    updateLyricsPosition(activeIndex, true);
-    syncActiveLineWordDelays(activeIndex, currentPos);
-  }, [showLyrics, lyricsData]);
-
-  // Sync word highlight timing after active line render commits
-  useLayoutEffect(() => {
-    if (activeLyricIndex < 0) return;
-    const now = pauseTimestampRef.current ?? Date.now();
-    const currentPos = Math.max(0, now - trackStartTimeRef.current - pausedDurationRef.current);
-    syncActiveLineWordDelays(activeLyricIndex, currentPos);
-  }, [activeLyricIndex]);
-
-  // Manual wheel and touch browsing with non-passive listeners
-  useEffect(() => {
-    if (!showLyrics) return;
-    const container = lyricsContainerRef.current;
-    if (!container) return;
-
-    const getClampedOffset = (delta: number) => {
-      const lines = lyricsLinesRef.current;
-      if (!lines || lines.length === 0) return 0;
-      const firstLine = lines[0];
-      const lastLine = lines[lines.length - 1];
-      if (!firstLine || !lastLine) return 0;
-
-      const containerHeight = container.clientHeight;
-      const firstLineCenter = getLineCenter(firstLine, container);
-      const lastLineCenter = getLineCenter(lastLine, container);
-
-      const maxY = containerHeight / 2 - firstLineCenter;
-      const minY = containerHeight / 2 - lastLineCenter;
-
-      const proposedTotalY = (baseLyricsYRef.current + manualOffsetRef.current) + delta;
-      const clampedTotalY = Math.max(minY, Math.min(maxY, proposedTotalY));
-      return clampedTotalY - baseLyricsYRef.current;
-    };
-
-    const applyDelta = (delta: number) => {
-      const newManualOffset = getClampedOffset(delta);
-      manualOffsetRef.current = newManualOffset;
-      const totalY = baseLyricsYRef.current + newManualOffset;
-      container.style.setProperty('--lyrics-y', `${totalY}px`);
-
-      if (!isManualBrowsingRef.current) {
-        isManualBrowsingRef.current = true;
-        setIsManualBrowsing(true);
-      }
-
-      if (manualTimeoutRef.current) clearTimeout(manualTimeoutRef.current);
-      manualTimeoutRef.current = setTimeout(() => {
-        resumeToActive();
-      }, 3000);
-    };
-
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault(); // Non-passive! Page behind does not scroll
-      applyDelta(-e.deltaY);
-    };
-
-    let touchStartY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length > 0) {
-        touchStartY = e.touches[0].clientY;
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 0) {
-        e.preventDefault(); // Non-passive! Page behind does not scroll
-        const currentY = e.touches[0].clientY;
-        const delta = currentY - touchStartY;
-        touchStartY = currentY;
-        applyDelta(delta);
-      }
-    };
-
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-
-    return () => {
-      container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, [showLyrics, resumeToActive]);
+    lyricsViewRef.current?.resync(targetMs);
+  }, []);
 
 
   const [isGeneratingMix, setIsGeneratingMix] = useState(false);
@@ -512,16 +203,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     }
   }, [currentTrack, recentTracks, setCurrentTrack, setDuration]);
 
-  useEffect(() => {
-    if (!showLyrics) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setShowLyrics(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showLyrics]);
+
 
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
@@ -672,47 +354,20 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       });
     });
 
-    const fetchLyrics = async (trackId: string) => {
-      if (lyricsCache.current[trackId]) return lyricsCache.current[trackId];
-      try {
-        const res = await fetch(`/api/lyrics?trackId=${encodeURIComponent(trackId)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.synced) {
-            data.synced = attachEstimatedWordTimings(data.synced);
-          }
-          lyricsCache.current[trackId] = data;
-          return data;
-        }
-      } catch (e) {
-        console.error(e);
-      }
-      return null;
-    };
+  }, [currentTrack?.id, effectiveQueue?.length, queueIndex]);
 
-    const trackIdsToFetch = new Set<string>();
-    if (currentTrack?.id) trackIdsToFetch.add(currentTrack.id);
+  // Prefetch lyrics for current and next track
+  useEffect(() => {
+    if (currentTrack?.id) {
+      prefetchLyrics(currentTrack.id);
+    }
     if (effectiveQueue && effectiveQueue.length > 0 && queueIndex < effectiveQueue.length - 1) {
       const nextTrack = effectiveQueue[queueIndex + 1]?.track;
-      if (nextTrack?.id) trackIdsToFetch.add(nextTrack.id);
-    }
-
-    trackIdsToFetch.forEach(trackId => {
-      if (trackId === currentTrack?.id && !lyricsCache.current[trackId]) {
-        setIsLyricsLoading(true);
+      if (nextTrack?.id) {
+        prefetchLyrics(nextTrack.id);
       }
-      fetchLyrics(trackId).then(data => {
-        if (currentTrack?.id === trackId) {
-          activeLyricIndexRef.current = -1;
-          setActiveLyricIndex(-1);
-          lyricsLinesRef.current = [];
-          resumeToActive();
-          setLyricsData(data);
-          setIsLyricsLoading(false);
-        }
-      });
-    });
-  }, [currentTrack?.id, effectiveQueue?.length, queueIndex]);
+    }
+  }, [currentTrack?.id, effectiveQueue, queueIndex]);
 
   const [rateLimitTimer, setRateLimitTimer] = useState<number | null>(null);
   useEffect(() => {
@@ -748,12 +403,6 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         pauseTimestampRef.current = null;
       }
     }
-    if (lyricsContainerRef.current) {
-      lyricsContainerRef.current.style.setProperty(
-        '--lyrics-play-state',
-        isPaused ? 'paused' : 'running'
-      );
-    }
   }, [isPaused]);
 
   // Update numeric time label in rAF loop
@@ -776,37 +425,12 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
           lastAriaUpdate = now;
         }
 
-        if (showLyrics && lyricsData?.synced) {
-          if (lyricsLinesRef.current.length !== lyricsData.synced.length) {
-            lyricsLinesRef.current = new Array(lyricsData.synced.length).fill(null);
-            activeLyricIndexRef.current = -1;
-          }
-
-          const lines = lyricsData.synced;
-          let activeIndex = -1;
-
-          for (let i = lines.length - 1; i >= 0; i--) {
-            if (lines[i].timeMs <= currentPos) {
-              activeIndex = i;
-              break;
-            }
-          }
-
-          if (activeIndex !== activeLyricIndexRef.current) {
-            activeLyricIndexRef.current = activeIndex;
-            setActiveLyricIndex(activeIndex);
-
-            if (!isManualBrowsingRef.current) {
-              updateLyricsPosition(activeIndex, false);
-            }
-          }
-        }
       }
       frameId = requestAnimationFrame(updateLabel);
     };
     frameId = requestAnimationFrame(updateLabel);
     return () => cancelAnimationFrame(frameId);
-  }, [isPaused, isDragging, duration, showLyrics, lyricsData]);
+  }, [isPaused, isDragging, duration]);
 
   // Recovery state subscription and login prompt listener
   useEffect(() => {
@@ -891,31 +515,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
     }
 
-    if (lyricsContainerRef.current) {
-      lyricsContainerRef.current.style.setProperty(
-        '--lyrics-play-state',
-        state.paused ? 'paused' : 'running'
-      );
-    }
-
-    if (lyricsData?.synced && lyricsData.synced.length > 0) {
-      const lines = lyricsData.synced;
-      let targetIndex = -1;
-      for (let i = lines.length - 1; i >= 0; i--) {
-        if (lines[i].timeMs <= state.position) {
-          targetIndex = i;
-          break;
-        }
-      }
-      if (targetIndex !== activeLyricIndexRef.current) {
-        activeLyricIndexRef.current = targetIndex;
-        setActiveLyricIndex(targetIndex);
-        if (!isManualBrowsingRef.current) {
-          updateLyricsPosition(targetIndex, true);
-        }
-      }
-      syncActiveLineWordDelays(targetIndex, state.position);
-    }
+    lyricsViewRef.current?.resync(state.position);
 
     if (storeState.duration !== state.duration) {
       setDuration(state.duration);
@@ -971,10 +571,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     deviceId,
     deviceIdRef,
     play,
-    setQueue,
-    lyricsData,
-    updateLyricsPosition,
-    syncActiveLineWordDelays
+    setQueue
   ]);
 
   const applyPlayerStateRef = React.useRef(applyPlayerState);
@@ -1459,107 +1056,6 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
           @keyframes progress-thumb {
             from { transform: translateX(-100%); }
             to { transform: translateX(0%); }
-          }
-          @keyframes interludeDot1 {
-            0% { transform: scale(0.6); opacity: 0.2; }
-            15% { transform: scale(1.15); opacity: 1; }
-            25% { transform: scale(1); opacity: 0.9; }
-            45% { transform: scale(1.1); opacity: 1; }
-            65% { transform: scale(1); opacity: 0.85; }
-            85% { transform: scale(1); opacity: 0.85; }
-            100% { transform: scale(0); opacity: 0; }
-          }
-          @keyframes interludeDot2 {
-            0%, 15% { transform: scale(0.6); opacity: 0.2; }
-            30% { transform: scale(1.15); opacity: 1; }
-            40% { transform: scale(1); opacity: 0.9; }
-            60% { transform: scale(1.1); opacity: 1; }
-            75% { transform: scale(1); opacity: 0.85; }
-            85% { transform: scale(1); opacity: 0.85; }
-            100% { transform: scale(0); opacity: 0; }
-          }
-          @keyframes interludeDot3 {
-            0%, 30% { transform: scale(0.6); opacity: 0.2; }
-            45% { transform: scale(1.15); opacity: 1; }
-            55% { transform: scale(1); opacity: 0.9; }
-            70% { transform: scale(1.1); opacity: 1; }
-            80% { transform: scale(1); opacity: 0.85; }
-            85% { transform: scale(1); opacity: 0.85; }
-            100% { transform: scale(0); opacity: 0; }
-          }
-          .interlude-dot-1 {
-            animation: interludeDot1 8s ease-in-out infinite;
-          }
-          .interlude-dot-2 {
-            animation: interludeDot2 8s ease-in-out infinite;
-          }
-          .interlude-dot-3 {
-            animation: interludeDot3 8s ease-in-out infinite;
-          }
-          @keyframes lyric-word-wipe {
-            0% {
-              background-position: 100% 0;
-              transform: translateY(0);
-            }
-            20% {
-              transform: translateY(-2px);
-            }
-            80% {
-              transform: translateY(-2px);
-            }
-            100% {
-              background-position: 0% 0;
-              transform: translateY(0);
-            }
-          }
-          .lyrics-container {
-            --lyrics-play-state: running;
-          }
-          .lyrics-container[data-instant="true"] * {
-            transition-duration: 0ms !important;
-            transition-delay: 0ms !important;
-          }
-          .lyrics-container[data-paused="true"] .lyric-word {
-            animation-play-state: paused !important;
-          }
-          .lyric-word {
-            display: inline-block;
-            vertical-align: baseline;
-            line-height: inherit;
-          }
-          .lyric-line-active .lyric-word {
-            --word-dim: color-mix(in srgb, var(--color-dark) 28%, transparent);
-            --word-full: var(--color-dark);
-            background-image: linear-gradient(
-              90deg,
-              var(--word-full) 0%,
-              var(--word-full) 38%,
-              var(--word-dim) 62%,
-              var(--word-dim) 100%
-            );
-            background-size: 260% 100%;
-            background-position: 100% 0;
-            background-repeat: no-repeat;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            color: transparent;
-            animation-name: lyric-word-wipe;
-            animation-timing-function: linear;
-            animation-fill-mode: both;
-            animation-play-state: var(--lyrics-play-state, running);
-            will-change: background-position, transform;
-          }
-          @media (prefers-reduced-motion: reduce) {
-            .lyric-line-active .lyric-word {
-              animation: none !important;
-              background: none !important;
-              -webkit-background-clip: unset !important;
-              background-clip: unset !important;
-              -webkit-text-fill-color: var(--color-dark) !important;
-              color: var(--color-dark) !important;
-              transform: none !important;
-            }
           }
         `}} />
       <div
@@ -2645,312 +2141,15 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
             {/* Lyrics View Overlay */}
             {showLyrics && (
-              <div
-                className="absolute top-0 bottom-0 z-40 bg-[var(--color-bg)] flex flex-col pointer-events-auto transition-all duration-300 max-lg:left-auto max-lg:right-0 max-lg:w-[380px] lg:left-64 lg:right-[400px] xl:right-[420px] 2xl:right-[440px]"
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 shrink-0 border-b-2 border-[var(--color-muted)] bg-[var(--color-light)]/50">
-                  <span className="font-pixel text-sm font-bold text-[var(--color-dark)] flex items-center gap-2">
-                    <span className="text-[var(--color-vibrant)] text-lg">❝</span> Lyrics
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        const next = !editMode;
-                        setEditMode(next);
-                        if (typeof window !== 'undefined') {
-                          window.localStorage.setItem('arh_edit_mode', next ? 'true' : 'false');
-                        }
-                      }}
-                      className={`font-pixel text-[10px] px-2.5 py-1 rounded-full border transition-all active:scale-95 ${
-                        editMode
-                          ? 'bg-[#FFD0DC] text-[#20233F] border-[#20233F] font-bold shadow-xs'
-                          : 'bg-white hover:bg-[var(--color-light)] text-[var(--color-dark)]/70 border-[var(--color-muted)]'
-                      }`}
-                      title="Toggle Edit Mode (for VPN)"
-                    >
-                      {editMode ? 'EDIT MODE: ON' : 'EDIT MODE'}
-                    </button>
-                    <button onClick={() => setShowLyrics(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-white border border-[var(--color-muted)] transition-colors shadow-xs active:scale-95" aria-label="Close Lyrics">
-                      ✕
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Content */}
-                <div 
-                  ref={lyricsContainerRef}
-                  data-paused={isPaused}
-                  className={`flex-1 relative select-none lyrics-container ${
-                    lyricsData?.synced && lyricsData.synced.length > 0
-                      ? 'overflow-hidden px-6'
-                      : 'overflow-y-auto px-4'
-                  }`}
-                  style={{
-                    position: 'relative',
-                    maskImage: lyricsData?.synced && lyricsData.synced.length > 0
-                      ? 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
-                      : 'none',
-                    WebkitMaskImage: lyricsData?.synced && lyricsData.synced.length > 0
-                      ? 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
-                      : 'none',
-                    animationPlayState: isPaused ? 'paused' : 'running',
-                    ['--lyrics-play-state' as any]: isPaused ? 'paused' : 'running',
-                  }}
-                >
-                  {isLyricsLoading ? (
-                    <div className="flex flex-col items-center justify-center gap-8 py-20 opacity-60">
-                      <div className="w-3/4 h-6 bg-[var(--color-muted)] rounded animate-pulse" />
-                      <div className="w-1/2 h-6 bg-[var(--color-muted)] rounded animate-pulse" />
-                      <div className="w-5/6 h-6 bg-[var(--color-muted)] rounded animate-pulse" />
-                    </div>
-                  ) : lyricsData?.synced && lyricsData.synced.length > 0 ? (
-                    <div className="flex flex-col gap-[3vh] sm:gap-[4vh] text-center w-full py-8">
-                      {lyricsData.synced.map((line, i) => {
-                        const prevLine = lyricsData.synced?.[i-1];
-                        const isLongGap = i > 0 && prevLine && (line.timeMs - prevLine.timeMs > 8000);
-                        const isActive = i === activeLyricIndex;
-                        const distance = activeLyricIndex === -1 ? 0 : Math.abs(i - activeLyricIndex);
-                        const isNearby = distance <= 6;
-
-                        let opacity = 0.25;
-                        let blurPx = 3;
-                        let scale = 1;
-
-                        if (isActive) {
-                          opacity = 1;
-                          blurPx = 0;
-                          scale = isReducedMotion ? 1 : 1.06;
-                        } else if (activeLyricIndex === -1) {
-                          opacity = 0.5;
-                          blurPx = 0;
-                          scale = 1;
-                        } else if (distance === 1) {
-                          opacity = 0.5;
-                          blurPx = 1;
-                          scale = 1;
-                        } else if (distance === 2) {
-                          opacity = 0.35;
-                          blurPx = 2;
-                          scale = 1;
-                        } else if (isNearby) {
-                          opacity = 0.25;
-                          blurPx = 3;
-                          scale = 1;
-                        } else {
-                          opacity = isManualBrowsing ? 0.25 : 0;
-                          blurPx = 0;
-                          scale = 1;
-                        }
-
-                        if (isManualBrowsing) {
-                          blurPx = 0;
-                        }
-
-                        let delayMs = 0;
-                        if (!isReducedMotion && !isManualBrowsing && activeLyricIndex !== -1 && isNearby) {
-                          if (i >= activeLyricIndex) {
-                            const step = Math.min(i - activeLyricIndex, 8);
-                            delayMs = step * 40;
-                          }
-                        }
-
-                        const durationMs = (isReducedMotion || isManualBrowsing) ? 0 : 600;
-
-                        return (
-                          <React.Fragment key={i}>
-                            {isLongGap && (
-                              <div 
-                                className="flex justify-center items-center gap-3 py-6 select-none"
-                                style={{
-                                  transform: 'translateY(var(--lyrics-y, 0px))',
-                                  transitionProperty: isNearby ? 'transform' : 'none',
-                                  transitionDuration: isNearby ? `${durationMs}ms` : '0ms',
-                                  transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
-                                  transitionDelay: isNearby ? `${delayMs}ms` : '0ms',
-                                }}
-                              >
-                                <div 
-                                  className={`w-2.5 h-2.5 rounded-full bg-[var(--color-dark)] ${
-                                    activeLyricIndex === i - 1 
-                                      ? 'interlude-dot-1' 
-                                      : activeLyricIndex < i - 1 ? 'opacity-25 scale-75' : 'opacity-0 scale-0'
-                                  } transition-all duration-300`} 
-                                />
-                                <div 
-                                  className={`w-2.5 h-2.5 rounded-full bg-[var(--color-dark)] ${
-                                    activeLyricIndex === i - 1 
-                                      ? 'interlude-dot-2' 
-                                      : activeLyricIndex < i - 1 ? 'opacity-25 scale-75' : 'opacity-0 scale-0'
-                                  } transition-all duration-300`} 
-                                />
-                                <div 
-                                  className={`w-2.5 h-2.5 rounded-full bg-[var(--color-dark)] ${
-                                    activeLyricIndex === i - 1 
-                                      ? 'interlude-dot-3' 
-                                      : activeLyricIndex < i - 1 ? 'opacity-25 scale-75' : 'opacity-0 scale-0'
-                                  } transition-all duration-300`} 
-                                />
-                              </div>
-                            )}
-                            <div
-                              ref={(el) => { lyricsLinesRef.current[i] = el; }}
-                              onClick={() => {
-                                handleSeek(line.timeMs);
-                                resumeToActive();
-                              }}
-                              className={`relative w-full max-w-[640px] mx-auto font-pixel font-bold text-center leading-relaxed origin-center cursor-pointer select-none hover:opacity-100 transition-opacity ${
-                                isActive ? 'lyric-line-active' : ''
-                              }`}
-                              style={{
-                                fontSize: 'clamp(1.5rem, 2.2vw, 2.25rem)',
-                                transform: `translateY(var(--lyrics-y, 0px)) ${scale !== 1 ? `scale(${scale})` : ''}`,
-                                opacity,
-                                filter: (isNearby && blurPx > 0) ? `blur(${blurPx}px)` : 'none',
-                                transitionProperty: isNearby ? 'transform, opacity, filter' : 'none',
-                                transitionDuration: isNearby ? `${durationMs}ms, ${durationMs}ms, 250ms` : '0ms',
-                                transitionTimingFunction: isNearby ? 'cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1), ease' : undefined,
-                                transitionDelay: isNearby ? `${delayMs}ms, ${delayMs}ms, 0ms` : undefined,
-                                willChange: isNearby ? 'transform, opacity' : undefined,
-                              }}
-                            >
-                              <div 
-                                className={`absolute right-[100%] mr-4 top-1/2 -translate-y-1/2 text-[var(--color-vibrant)] text-2xl transition-opacity duration-300 ${
-                                  isActive ? 'opacity-100' : 'opacity-0'
-                                }`}
-                              >
-                                ♥
-                              </div>
-                              {line.words && line.words.length > 0 ? (
-                                line.words.map((word, wIdx, arr) => {
-                                  const wordDurationMs = word.endMs - word.startMs;
-                                  const wordDelayMs = word.startMs - line.timeMs;
-
-                                  return (
-                                    <React.Fragment key={wIdx}>
-                                      <span
-                                        className={`lyric-word ${isActive ? 'lyric-word-active' : ''}`}
-                                        style={isActive && !isReducedMotion ? {
-                                          animationDuration: `${wordDurationMs}ms`,
-                                          animationDelay: `${wordDelayMs}ms`,
-                                        } : undefined}
-                                      >
-                                        {word.text}
-                                      </span>
-                                      {wIdx < arr.length - 1 ? ' ' : ''}
-                                    </React.Fragment>
-                                  );
-                                })
-                              ) : (
-                                line.text || "♪"
-                              )}
-                            </div>
-                          </React.Fragment>
-                        );
-                      })}
-                    </div>
-                  ) : lyricsData?.instrumental ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-4 select-none min-h-[300px]">
-                      <div className="w-20 h-20 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-3xl shadow-inner mb-4 text-[var(--color-vibrant)]">
-                        ♫
-                      </div>
-                      <div className="font-pixel text-[11px] font-bold text-[var(--color-vibrant)] bg-[var(--color-light)] px-3 py-1 rounded-full border border-[var(--color-muted)] mb-3 shadow-xs">
-                        INSTRUMENTAL
-                      </div>
-                      <h4 className="font-pixel text-lg sm:text-xl font-bold text-[var(--color-dark)] mb-1">
-                        This track is an instrumental
-                      </h4>
-                      <p className="font-pixel text-xs text-[var(--color-dark)]/70 max-w-xs">
-                        No lyrics needed — just enjoy the melody ✨
-                      </p>
-                      {editMode && (
-                        <button
-                          onClick={() => {
-                            setManualLyricsInput('');
-                            setSaveLyricsError(null);
-                            setIsAddLyricsOpen(true);
-                          }}
-                          className="mt-6 border-2 border-[var(--color-dark)] px-4 py-2 font-pixel text-xs font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 transition-all bg-[#FFE4A1] text-[var(--color-dark)] active:scale-95"
-                        >
-                          + ADD LYRICS (EDIT MODE)
-                        </button>
-                      )}
-                    </div>
-                  ) : lyricsData?.plain ? (
-                    <div className="font-pixel font-bold text-base sm:text-lg md:text-xl text-[var(--color-dark)] whitespace-pre-wrap leading-relaxed opacity-75 text-center py-8 max-w-[640px] mx-auto select-text">
-                      <div className="mb-6 font-pixel text-xs font-bold text-[var(--color-vibrant)] bg-[var(--color-light)] inline-block px-3 py-1 rounded-full border border-[var(--color-muted)] shadow-xs">
-                        NOT SYNCED
-                      </div>
-                      <br/>
-                      {lyricsData.plain}
-                      {editMode && (
-                        <div className="mt-8 pt-6 border-t border-[var(--color-muted)]/50">
-                          <button
-                            onClick={() => {
-                              setManualLyricsInput(lyricsData.plain || '');
-                              setSaveLyricsError(null);
-                              setIsAddLyricsOpen(true);
-                            }}
-                            className="font-pixel text-xs px-4 py-2 rounded-full border-2 border-[var(--color-dark)] bg-[#FFE4A1] text-[var(--color-dark)] font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 active:scale-95 transition-all"
-                          >
-                            + Paste Synced LRC (Edit Mode)
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center py-12 px-4 select-none min-h-[300px]">
-                      {/* Album Art */}
-                      <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-2xl overflow-hidden border-3 border-[var(--color-dark)] shadow-[4px_4px_0_var(--color-dark)] mb-4 bg-[var(--color-light)]">
-                        <img
-                          src={
-                            currentTrack?.album?.images?.[0]?.url ||
-                            (typeof currentTrack?.album?.images?.[0] === 'string' ? currentTrack.album.images[0] : '') ||
-                            '/soundscape_ref/finalui.png'
-                          }
-                          alt={currentTrack?.name || 'Album Art'}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <h4 className="font-pixel text-base sm:text-lg font-bold text-[var(--color-dark)] mb-0.5 max-w-xs truncate" title={currentTrack?.name}>
-                        {currentTrack?.name || 'Unknown Track'}
-                      </h4>
-                      <p className="font-pixel text-xs text-[var(--color-dark)]/70 mb-3 max-w-xs truncate">
-                        {currentTrack?.artists ? currentTrack.artists.map((a: any) => a.name).join(', ') : 'Unknown Artist'}
-                      </p>
-                      <div className="flex flex-col items-center gap-1 mb-5">
-                        <div className="text-2xl text-[var(--color-dark)]">ʕ•́ᴥ•̀ʔっ</div>
-                        <span className="font-pixel text-xs text-[var(--color-dark)]/70 font-bold">
-                          No lyrics found for this track
-                        </span>
-                      </div>
-                      {/* Add lyrics button visible ONLY in edit mode */}
-                      {editMode && (
-                        <button
-                          onClick={() => {
-                            setManualLyricsInput('');
-                            setSaveLyricsError(null);
-                            setIsAddLyricsOpen(true);
-                          }}
-                          className="border-3 border-[var(--color-dark)] px-5 py-2.5 font-pixel text-xs font-bold shadow-[3px_3px_0_var(--color-dark)] hover:-translate-y-0.5 hover:shadow-[3px_5px_0_var(--color-dark)] transition-all bg-[#FFE4A1] text-[var(--color-dark)] active:scale-95"
-                        >
-                          + ADD LYRICS
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-                
-                {/* Back to now pill */}
-                <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 transition-all duration-300 z-50 ${isManualBrowsing ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
-                  <button 
-                    onClick={resumeToActive} 
-                    className="bg-[var(--color-dark)] text-white font-pixel text-xs font-bold px-4 py-2 rounded-full shadow-lg hover:bg-[var(--color-vibrant)] transition-colors active:scale-95 flex items-center gap-2"
-                  >
-                    <span className="text-white/70">↓</span> Back to now
-                  </button>
-                </div>
-              </div>
+              <LyricsView
+                ref={lyricsViewRef}
+                trackId={currentTrack?.id || null}
+                trackDisplay={lyricsTrackDisplay}
+                isPaused={isPaused}
+                getPositionMs={getPositionMs}
+                onSeek={handleSeek}
+                onClose={handleCloseLyrics}
+              />
             )}
 
           </div>
@@ -3003,81 +2202,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             />
           )}
 
-          {/* Manual Lyrics Modal */}
-          {isAddLyricsOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-              <div className="w-full max-w-lg bg-[var(--color-bg)] border-4 border-[#20233F] rounded-2xl shadow-[6px_6px_0_#20233F] p-6 flex flex-col gap-4 text-[var(--color-dark)]">
-                <div className="flex items-center justify-between border-b-2 border-[var(--color-muted)] pb-3">
-                  <div>
-                    <h3 className="font-pixel text-base font-bold text-[#20233F] flex items-center gap-2">
-                      <span>✍</span> ADD LYRICS (EDIT MODE)
-                    </h3>
-                    <p className="font-pixel text-xs text-[var(--color-dark)]/70 truncate mt-0.5">
-                      {currentTrack?.name} — {currentTrack?.artists?.map((a: any) => a.name).join(', ')}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setIsAddLyricsOpen(false)}
-                    className="w-7 h-7 flex items-center justify-center rounded-full bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white font-bold"
-                  >
-                    ✕
-                  </button>
-                </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="font-pixel text-xs font-bold text-[#20233F]">
-                    Lyrics (Paste LRC with timestamps or plain text):
-                  </label>
-                  <textarea
-                    rows={10}
-                    value={manualLyricsInput}
-                    onChange={(e) => setManualLyricsInput(e.target.value)}
-                    placeholder={`[00:12.34] Line one with timestamp\n[00:15.67] Line two\n\n...or just paste plain lyrics text.`}
-                    className="w-full font-mono text-xs p-3 border-2 border-[#20233F] rounded-xl outline-none focus:bg-[#FFF0F5] resize-y"
-                  />
-                </div>
-
-                {!sessionSecret && (
-                  <div className="flex flex-col gap-1.5">
-                    <label className="font-pixel text-xs font-bold text-[#20233F]">
-                      Admin Secret:
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="Enter admin secret..."
-                      value={manualSecretInput}
-                      onChange={(e) => setManualSecretInput(e.target.value)}
-                      className="w-full font-pixel text-xs p-2.5 border-2 border-[#20233F] rounded-xl outline-none focus:bg-[#FFF0F5]"
-                    />
-                  </div>
-                )}
-
-                {saveLyricsError && (
-                  <div className="font-pixel text-xs text-red-600 bg-red-50 border border-red-200 p-2.5 rounded-lg">
-                    {saveLyricsError}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddLyricsOpen(false)}
-                    className="font-pixel text-xs px-4 py-2 rounded-xl border-2 border-[#20233F] bg-white text-[#20233F] hover:bg-gray-50 active:scale-95"
-                  >
-                    CANCEL
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSaveManualLyrics}
-                    disabled={isSavingLyrics}
-                    className="font-pixel text-xs px-5 py-2 rounded-xl border-2 border-[#20233F] bg-[#B8E6D0] text-[#20233F] font-bold shadow-[2px_2px_0_#20233F] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
-                  >
-                    {isSavingLyrics ? 'SAVING...' : '✓ SAVE LYRICS'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </>

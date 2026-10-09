@@ -1,0 +1,113 @@
+@keyframes interludeDot1 {
+  0% { transform: scale(0.6); opacity: 0.2; }
+  15% { transform: scale(1.15); opacity: 1; }
+  25% { transform: scale(1); opacity: 0.9; }
+  45% { transform: scale(1.1); opacity: 1; }
+  65% { transform: scale(1); opacity: 0.85; }
+  85% { transform: scale(1); opacity: 0.85; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+@keyframes interludeDot2 {
+  0%, 15% { transform: scale(0.6); opacity: 0.2; }
+  30% { transform: scale(1.15); opacity: 1; }
+  40% { transform: scale(1); opacity: 0.9; }
+  60% { transform: scale(1.1); opacity: 1; }
+  75% { transform: scale(1); opacity: 0.85; }
+  85% { transform: scale(1); opacity: 0.85; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+@keyframes interludeDot3 {
+  0%, 30% { transform: scale(0.6); opacity: 0.2; }
+  45% { transform: scale(1.15); opacity: 1; }
+  55% { transform: scale(1); opacity: 0.9; }
+  70% { transform: scale(1.1); opacity: 1; }
+  80% { transform: scale(1); opacity: 0.85; }
+  85% { transform: scale(1); opacity: 0.85; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+.interlude-dot-1 {
+  animation: interludeDot1 8s ease-in-out infinite;
+}
+
+.interlude-dot-2 {
+  animation: interludeDot2 8s ease-in-out infinite;
+}
+
+.interlude-dot-3 {
+  animation: interludeDot3 8s ease-in-out infinite;
+}
+
+@keyframes lyric-word-wipe {
+  0% {
+    background-position: 100% 0;
+    transform: translateY(0);
+  }
+  20% {
+    transform: translateY(-2px);
+  }
+  80% {
+    transform: translateY(-2px);
+  }
+  100% {
+    background-position: 0% 0;
+    transform: translateY(0);
+  }
+}
+
+.lyrics-container {
+  --lyrics-play-state: running;
+}
+
+.lyrics-container[data-instant="true"] * {
+  transition-duration: 0ms !important;
+  transition-delay: 0ms !important;
+}
+
+.lyrics-container[data-paused="true"] .lyric-word {
+  animation-play-state: paused !important;
+}
+
+.lyric-word {
+  display: inline-block;
+  vertical-align: baseline;
+  line-height: inherit;
+}
+
+.lyric-line-active .lyric-word {
+  --word-dim: color-mix(in srgb, var(--color-dark) 28%, transparent);
+  --word-full: var(--color-dark);
+  background-image: linear-gradient(
+    90deg,
+    var(--word-full) 0%,
+    var(--word-full) 38%,
+    var(--word-dim) 62%,
+    var(--word-dim) 100%
+  );
+  background-size: 260% 100%;
+  background-position: 100% 0;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation-name: lyric-word-wipe;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-play-state: var(--lyrics-play-state, running);
+  will-change: background-position, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lyric-line-active .lyric-word {
+    animation: none !important;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    -webkit-text-fill-color: var(--color-dark) !important;
+    color: var(--color-dark) !important;
+    transform: none !important;
+  }
+}
