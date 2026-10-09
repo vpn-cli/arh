@@ -1,0 +1,77 @@
+"use client";
+
+import React from "react";
+
+export interface PlayerHeaderProps {
+  onGoHome?: () => void;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
+  onClearSearch: () => void;
+}
+
+export const PlayerHeader = React.memo(function PlayerHeader({
+  onGoHome,
+  searchQuery,
+  onSearchChange,
+  onClearSearch,
+}: PlayerHeaderProps) {
+  return (
+    <div className="flex h-14 border-b-2 border-[var(--color-muted)] items-center px-4 justify-between shrink-0 bg-[var(--color-bg)]/95 backdrop-blur">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 mr-2">
+          <div className="w-3 h-3 rounded-full bg-[var(--color-muted)]" />
+          <div className="w-3 h-3 rounded-full bg-[#FFDAB9]" />
+          <div className="w-3 h-3 rounded-full bg-[#86EFAC]" />
+        </div>
+
+        {onGoHome && (
+          <button
+            onClick={onGoHome}
+            className="group px-3 py-1 bg-white/50 hover:bg-[var(--color-light)] border border-[var(--color-muted)] rounded-full flex items-center gap-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+            aria-label="Return to Home World"
+            title="Return to Home World"
+          >
+            <span className="text-[var(--color-dark)] text-[10px] font-pixel mt-0.5 group-hover:-translate-x-0.5 transition-transform">◀</span>
+            <span className="font-pixel text-[10px] text-[var(--color-dark)] font-bold tracking-wider uppercase group-hover:text-[var(--color-vibrant)] transition-colors">
+              Home World
+            </span>
+          </button>
+        )}
+
+        <img src="/hampter/hello_kitty_pin.png" alt="" className="w-7 h-7 object-contain hidden sm:block ml-2" />
+        <span className="font-pixel text-base font-bold text-[var(--color-dark)] hidden xl:inline-block">KAWAII_PLAYER.EXE</span>
+        <span className="font-pixel text-base text-[var(--color-vibrant)] hidden xl:inline-block">♥</span>
+      </div>
+      <div className="flex-1 max-w-md mx-4 relative">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search songs, artists, playlists..."
+          aria-label="Search songs, artists, playlists"
+          className="w-full bg-white/95 border-2 border-[var(--color-muted)] rounded-full px-10 py-2 font-pixel text-sm text-[var(--color-dark)] placeholder:text-[var(--color-dark)]/80 focus:outline-none focus:border-[var(--color-vibrant)] focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]/20 transition-colors"
+        />
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-dark)] font-bold">⌕</span>
+        {searchQuery && (
+          <button
+            onClick={onClearSearch}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel transition-colors p-1"
+            aria-label="Clear search"
+            title="Clear search"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+      <div className="flex items-center gap-4 text-[var(--color-dark)] font-bold text-lg shrink-0">
+        <div className="hidden lg:flex px-3 py-1 bg-white/50 border border-[var(--color-muted)] rounded-full items-center gap-1.5 mr-2">
+          <span className="font-pixel text-[10px] text-[var(--color-dark)] font-bold tracking-wider uppercase">Music World</span>
+          <span className="font-pixel text-[10px] text-[var(--color-vibrant)]">♪</span>
+        </div>
+        <button className="hover:scale-110 hover:text-[var(--color-vibrant)] transition-all p-1 flex items-center justify-center" aria-label="Minimize window"><span className="text-sm">_</span></button>
+        <button className="hover:scale-110 hover:text-[var(--color-vibrant)] transition-all p-1 flex items-center justify-center" aria-label="Maximize window"><span className="text-base">□</span></button>
+        <button className="hover:scale-110 hover:text-[var(--color-vibrant)] transition-all p-1 flex items-center justify-center" aria-label="Close window"><span className="text-xl leading-none">×</span></button>
+      </div>
+    </div>
+  );
+});

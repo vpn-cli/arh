@@ -22,6 +22,7 @@ import {
   LyricsNotFoundView,
 } from './LyricsStates';
 import { AddLyricsModal } from './AddLyricsModal';
+import { SyncOffsetControl } from './SyncOffsetControl';
 
 export interface LyricsTrackDisplay {
   name?: string;
@@ -47,7 +48,8 @@ export const LyricsView = React.memo(
     { trackId, trackDisplay, isPaused, getPositionMs, onSeek, onClose },
     ref
   ) {
-    const { lyricsData, setLyricsData, isLyricsLoading } = useLyrics(trackId);
+    const { lyricsData, setLyricsData, isLyricsLoading, offsetMs, setOffsetMs } =
+      useLyrics(trackId);
     const [activeLyricIndex, setActiveLyricIndex] = useState<number>(-1);
     const activeLyricIndexRef = useRef<number>(-1);
 
@@ -188,25 +190,30 @@ export const LyricsView = React.memo(
     ]);
 
     // Expose resync imperative handle for seek & player state updates
+    const resync = useCallback(
+      (targetMs?: number) => {
+        if (!lyricsData?.synced || lyricsData.synced.length === 0) return;
+        const currentPos = targetMs !== undefined ? targetMs : getPositionMs();
+        const targetIndex = findActiveLyricIndex(lyricsData.synced, currentPos);
+
+        if (targetIndex !== activeLyricIndexRef.current) {
+          activeLyricIndexRef.current = targetIndex;
+          setActiveLyricIndex(targetIndex);
+          if (!isManualBrowsingRef.current) {
+            updateLyricsPosition(targetIndex, true);
+          }
+        }
+        syncDelays(targetIndex, currentPos);
+      },
+      [lyricsData, getPositionMs, updateLyricsPosition, syncDelays, isManualBrowsingRef]
+    );
+
     useImperativeHandle(
       ref,
       () => ({
-        resync: (targetMs?: number) => {
-          if (!lyricsData?.synced || lyricsData.synced.length === 0) return;
-          const currentPos = targetMs !== undefined ? targetMs : getPositionMs();
-          const targetIndex = findActiveLyricIndex(lyricsData.synced, currentPos);
-
-          if (targetIndex !== activeLyricIndexRef.current) {
-            activeLyricIndexRef.current = targetIndex;
-            setActiveLyricIndex(targetIndex);
-            if (!isManualBrowsingRef.current) {
-              updateLyricsPosition(targetIndex, true);
-            }
-          }
-          syncDelays(targetIndex, currentPos);
-        },
+        resync,
       }),
-      [lyricsData, getPositionMs, updateLyricsPosition, syncDelays, isManualBrowsingRef]
+      [resync]
     );
 
     // Escape key handler
@@ -245,6 +252,16 @@ export const LyricsView = React.memo(
             <span className="text-[var(--color-vibrant)] text-lg">❝</span> Lyrics
           </span>
           <div className="flex items-center gap-2">
+            {editMode && lyricsData?.synced && lyricsData.synced.length > 0 && (
+              <SyncOffsetControl
+                trackId={trackId}
+                offsetMs={offsetMs}
+                onOffsetChange={setOffsetMs}
+                onResync={resync}
+                sessionSecret={sessionSecret}
+                onSessionSecretChange={setSessionSecret}
+              />
+            )}
             <button
               onClick={() => {
                 const next = !editMode;

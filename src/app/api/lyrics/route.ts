@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
           instrumental: row.instrumental,
           source: 'manual',
           notFound: false,
+          offsetMs: row.offsetMs ?? 0,
         });
       }
 
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
             instrumental: false,
             source: 'not_found',
             notFound: true,
+            offsetMs: row.offsetMs ?? 0,
           });
         }
         console.log(`[Lyrics Cache] EXPIRED negative cache for track "${trackId}" (> 7 days) -> retrying lookup`);
@@ -61,6 +63,7 @@ export async function GET(request: NextRequest) {
           instrumental: row.instrumental,
           source: 'lrclib',
           notFound: false,
+          offsetMs: row.offsetMs ?? 0,
         });
       }
     }
@@ -99,7 +102,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Execute 4-step lookup chain (a, b, c, d)
-    const { result, matchedStep, hasUpstreamError, upstreamError } = await lookupLyrics({
+    const { result, matchedStep, hasUpstreamError, upstreamError, lrclibRecordId } = await lookupLyrics({
       trackId,
       title: trackName,
       artist: artistName,
@@ -109,8 +112,8 @@ export async function GET(request: NextRequest) {
 
     // 4. Cache results in Neon
     if (result) {
-      console.log(`[Lyrics Lookup] Track "${trackName}" (${trackId}) by "${artistName}": matched step ${matchedStep}`);
-      await db
+      console.log(`[Lyrics Lookup] Track "${trackName}" (${trackId}) by "${artistName}": matched step ${matchedStep} (LRCLIB record id: ${lrclibRecordId ?? 'none'})`);
+      const [savedRow] = await db
         .insert(lyricsCache)
         .values({
           spotifyId: trackId,
@@ -130,7 +133,8 @@ export async function GET(request: NextRequest) {
             fetchedAt: new Date(),
           },
           where: sql`${lyricsCache.source} != 'manual'`,
-        });
+        })
+        .returning({ offsetMs: lyricsCache.offsetMs });
 
       return NextResponse.json({
         synced: result.syncedLyrics ? parseLrc(result.syncedLyrics) : null,
@@ -139,6 +143,7 @@ export async function GET(request: NextRequest) {
         source: 'lrclib',
         notFound: false,
         step: matchedStep,
+        offsetMs: savedRow?.offsetMs ?? 0,
       });
     }
 
@@ -157,8 +162,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Clean "no results" response: safe to negative cache for 7 days
-    console.log(`[Lyrics Lookup] Track "${trackName}" (${trackId}) by "${artistName}": matched step none (clean not found) -> caching as not_found`);
-    await db
+    console.log(`[Lyrics Lookup] Track "${trackName}" (${trackId}) by "${artistName}": matched step none (clean not found, LRCLIB record id: none) -> caching as not_found`);
+    const [savedRow] = await db
       .insert(lyricsCache)
       .values({
         spotifyId: trackId,
@@ -178,7 +183,8 @@ export async function GET(request: NextRequest) {
           fetchedAt: new Date(),
         },
         where: sql`${lyricsCache.source} != 'manual'`,
-      });
+      })
+      .returning({ offsetMs: lyricsCache.offsetMs });
 
     return NextResponse.json({
       synced: null,
@@ -187,6 +193,7 @@ export async function GET(request: NextRequest) {
       source: 'not_found',
       notFound: true,
       step: 'none',
+      offsetMs: savedRow?.offsetMs ?? 0,
     });
   } catch (error) {
     console.error('Error fetching lyrics:', error);
@@ -225,7 +232,7 @@ export async function POST(req: NextRequest) {
     const synced = isLrc ? trimmedLyrics : null;
     const plain = isLrc ? extractPlainFromLrc(trimmedLyrics) : trimmedLyrics;
 
-    await db
+    const [savedRow] = await db
       .insert(lyricsCache)
       .values({
         spotifyId: trackId,
@@ -244,7 +251,8 @@ export async function POST(req: NextRequest) {
           instrumental: false,
           fetchedAt: new Date(),
         },
-      });
+      })
+      .returning({ offsetMs: lyricsCache.offsetMs });
 
     console.log(`[Lyrics Manual] Saved manual lyrics for track ${trackId} (isLrc: ${isLrc})`);
 
@@ -255,9 +263,60 @@ export async function POST(req: NextRequest) {
       plain,
       instrumental: false,
       notFound: false,
+      offsetMs: savedRow?.offsetMs ?? 0,
     });
   } catch (error) {
     console.error('Error saving manual lyrics:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const adminSecret = process.env.SCRAPBOOK_ADMIN_SECRET;
+
+    if (!adminSecret) {
+      return NextResponse.json({ error: 'Server misconfiguration: SCRAPBOOK_ADMIN_SECRET is unset' }, { status: 500 });
+    }
+
+    const secret = req.headers.get('x-scrapbook-secret');
+    if (secret !== adminSecret) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { trackId, offsetMs } = body;
+
+    if (!trackId || typeof trackId !== 'string' || typeof offsetMs !== 'number' || isNaN(offsetMs)) {
+      return NextResponse.json({ error: 'Invalid payload: trackId string and offsetMs number are required' }, { status: 400 });
+    }
+
+    const clampedOffset = Math.max(-5000, Math.min(5000, Math.round(offsetMs)));
+
+    await db
+      .insert(lyricsCache)
+      .values({
+        spotifyId: trackId,
+        source: 'manual',
+        offsetMs: clampedOffset,
+        fetchedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: lyricsCache.spotifyId,
+        set: {
+          offsetMs: clampedOffset,
+        },
+      });
+
+    console.log(`[Lyrics Offset] Updated offset for track "${trackId}" to ${clampedOffset}ms`);
+
+    return NextResponse.json({
+      success: true,
+      trackId,
+      offsetMs: clampedOffset,
+    });
+  } catch (error) {
+    console.error('Error updating lyrics offset:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
