@@ -28,7 +28,7 @@ import { LyricsView, LyricsViewHandle } from "./lyrics/LyricsView";
 import { prefetchLyrics } from "./lyrics/useLyrics";
 import { useSpotifyPlayer } from "@/providers/SpotifyPlayerProvider";
 import { usePlaybackActions } from "./playback/usePlaybackActions";
-export { isValidContextUri } from "./playback/playbackHelpers";
+import { NowPlayingPanel, ProgressBarHandle } from "./now-playing";
 
 const sfx: any = { select: () => { }, hover: () => { }, pop: () => { }, move: () => { }, error: () => { } };
 
@@ -74,19 +74,11 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
   const player = providerPlayer || storePlayer;
 
-  const [draggedQueueIndex, setDraggedQueueIndex] = useState<number | null>(null);
-  const [dragOverQueueIndex, setDragOverQueueIndex] = useState<number | null>(null);
-
-  const [isDragging, setIsDragging] = useState(false);
-  const progressBarRef = React.useRef<HTMLDivElement>(null);
+  const progressBarRef = React.useRef<ProgressBarHandle>(null);
   const trackStartTimeRef = React.useRef(Date.now());
   const pausedDurationRef = React.useRef(0);
   const pauseTimestampRef = React.useRef<number | null>(null);
   const lastActiveTrackIdRef = React.useRef<string | null>(null);
-  
-  const positionLabelRef = React.useRef<HTMLSpanElement>(null);
-  const progressBarFillRef = React.useRef<HTMLDivElement>(null);
-  const progressBarThumbRef = React.useRef<HTMLDivElement>(null);
   const isAutoplayingRef = React.useRef(false);
   const lastActiveTrackUriRef = React.useRef<string | null>(null);
 
@@ -136,19 +128,16 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
       playerRef.current.seek(targetMs);
     }
     trackStartTimeRef.current = Date.now() - targetMs - pausedDurationRef.current;
-    if (positionLabelRef.current) {
-      const ts = Math.floor(targetMs / 1000);
-      positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
-    }
-    const currentDuration = durationRef.current;
-    if (currentDuration > 0 && progressBarFillRef.current && progressBarThumbRef.current) {
-      const percent = Math.max(0, Math.min(1, targetMs / currentDuration));
-      progressBarFillRef.current.style.animationName = 'none';
-      progressBarFillRef.current.style.transform = `scaleX(${percent})`;
-      progressBarThumbRef.current.style.animationName = 'none';
-      progressBarThumbRef.current.style.transform = `translateX(${percent * 100 - 100}%)`;
-    }
+    progressBarRef.current?.showPosition(targetMs);
     lyricsViewRef.current?.resync(targetMs);
+  }, []);
+
+  const handleDragSeek = React.useCallback((newPos: number) => {
+    trackStartTimeRef.current = Date.now() - newPos - pausedDurationRef.current;
+  }, []);
+
+  const handleToggleLyrics = React.useCallback(() => {
+    setShowLyrics((prev) => !prev);
   }, []);
 
 
@@ -164,15 +153,19 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const { removeItems, reorderItems } = usePlaylistMutations();
   const [selectedDevice, setSelectedDevice] = useState<string>("");
   const [libraryPage, setLibraryPage] = useState(0);
-  const [rightPanelTab, setRightPanelTab] = useState<'queue' | 'recent'>('queue');
   const [isQueueModalOpen, setIsQueueModalOpen] = useState(false);
   const [queueModalTab, setQueueModalTab] = useState<'queue' | 'recent'>('queue');
+
+  const handleExpandQueue = React.useCallback((tab: 'queue' | 'recent') => {
+    setQueueModalTab(tab);
+    setIsQueueModalOpen(true);
+  }, []);
 
   const { data: playlists = [], isLoading: isPlaylistsLoading, isError: isPlaylistsError, error: playlistsError } = usePlaylists({ enabled: true });
   const { data: likedData, isLoading: isLikedLoading, isError: isLikedError, error: likedError } = useLikedTracks(libraryPage, 50, { enabled: activeTab === 'library' || activeTab === 'home' });
   const { data: devices = [], refetch: fetchDevices } = useDevices();
   const { data: birthdayMixTracks = [], isLoading: isMixLoading, isError: isMixError, error: mixError, refetch: refetchMix } = useBirthdayMix({ enabled: true });
-  const { data: recentTracks = [], isLoading: isRecentLoading, isError: isRecentError, error: recentError } = useRecentlyPlayed({ enabled: !currentTrack || activeTab === 'recent' || activeTab === 'home' || rightPanelTab === 'recent' || isQueueModalOpen });
+  const { data: recentTracks = [], isLoading: isRecentLoading, isError: isRecentError, error: recentError } = useRecentlyPlayed({ enabled: !currentTrack || activeTab === 'recent' || activeTab === 'home' || isQueueModalOpen });
   const { data: playerQueueData } = usePlayerQueue({ enabled: !!token });
 
   const effectiveQueue = React.useMemo(() => {
@@ -420,32 +413,6 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     }
   }, [isPaused]);
 
-  // Update numeric time label in rAF loop
-  useEffect(() => {
-    let frameId: number;
-    let lastAriaUpdate = 0;
-    const updateLabel = () => {
-      if (!isPaused && !isDragging) {
-        const elapsed = Date.now() - trackStartTimeRef.current - pausedDurationRef.current;
-        const currentPos = Math.max(0, elapsed);
-        if (positionLabelRef.current) {
-          const ts = Math.floor(currentPos / 1000);
-          positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
-        }
-        const now = Date.now();
-        if (now - lastAriaUpdate >= 1000) {
-          if (progressBarRef.current) {
-            progressBarRef.current.setAttribute('aria-valuenow', Math.floor(currentPos).toString());
-          }
-          lastAriaUpdate = now;
-        }
-
-      }
-      frameId = requestAnimationFrame(updateLabel);
-    };
-    frameId = requestAnimationFrame(updateLabel);
-    return () => cancelAnimationFrame(frameId);
-  }, [isPaused, isDragging, duration]);
 
   // Recovery state subscription and login prompt listener
   useEffect(() => {
@@ -501,34 +468,11 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     pausedDurationRef.current = 0;
     pauseTimestampRef.current = state.paused ? Date.now() : null;
 
-    if (progressBarFillRef.current && progressBarThumbRef.current) {
-      const fill = progressBarFillRef.current;
-      const thumb = progressBarThumbRef.current;
-      fill.style.animationName = 'none';
-      thumb.style.animationName = 'none';
-      fill.style.transform = '';
-      thumb.style.transform = '';
-      fill.offsetHeight; // trigger reflow
-
-      fill.style.animationName = 'progress-fill';
-      fill.style.animationDuration = `${state.duration}ms`;
-      fill.style.animationDelay = `-${state.position}ms`;
-      fill.style.animationPlayState = state.paused ? 'paused' : 'running';
-      fill.style.animationTimingFunction = 'linear';
-      fill.style.animationFillMode = 'forwards';
-
-      thumb.style.animationName = 'progress-thumb';
-      thumb.style.animationDuration = `${state.duration}ms`;
-      thumb.style.animationDelay = `-${state.position}ms`;
-      thumb.style.animationPlayState = state.paused ? 'paused' : 'running';
-      thumb.style.animationTimingFunction = 'linear';
-      thumb.style.animationFillMode = 'forwards';
-    }
-
-    if (positionLabelRef.current) {
-      const ts = Math.floor(state.position / 1000);
-      positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
-    }
+    progressBarRef.current?.applyState({
+      positionMs: state.position,
+      durationMs: state.duration,
+      paused: state.paused,
+    });
 
     lyricsViewRef.current?.resync(state.position);
 
@@ -623,56 +567,6 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
 
 
-  const updatePositionFromPointer = (clientX: number) => {
-    if (!progressBarRef.current || duration === 0) return;
-    const bounds = progressBarRef.current.getBoundingClientRect();
-    const percent = Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width));
-    const newPos = percent * duration;
-
-    trackStartTimeRef.current = Date.now() - newPos - pausedDurationRef.current;
-
-    if (positionLabelRef.current) {
-      const ts = Math.floor(newPos / 1000);
-      positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
-    }
-    if (progressBarFillRef.current && progressBarThumbRef.current) {
-      progressBarFillRef.current.style.animationName = 'none';
-      progressBarFillRef.current.style.transform = `scaleX(${percent})`;
-
-      progressBarThumbRef.current.style.animationName = 'none';
-      progressBarThumbRef.current.style.transform = `translateX(${percent * 100 - 100}%)`;
-    }
-    return percent;
-  };
-
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!player || duration === 0) return;
-    setIsDragging(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
-    updatePositionFromPointer(e.clientX);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging || !player || duration === 0) return;
-    updatePositionFromPointer(e.clientX);
-  };
-
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging || !player || duration === 0) return;
-    setIsDragging(false);
-    e.currentTarget.releasePointerCapture(e.pointerId);
-    const percent = updatePositionFromPointer(e.clientX);
-    if (percent !== undefined) {
-      handleSeek(percent * duration);
-    }
-  };
-
-  const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
 
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   const heroArt = currentTrack?.album?.images?.[0]?.url || playlists[0]?.images?.[0]?.url || "/soundscape_ref/finalui.png";
@@ -719,14 +613,6 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
           }
           .bg-layer-1 {
             --layer-bg: ${layerPalettes[1]?.computed?.bg || 'color-mix(in srgb, ' + (layerPalettes[1]?.vibrant || '#C2185B') + ' 8%, #ffffff)'};
-          }
-          @keyframes progress-fill {
-            from { transform: scaleX(0); }
-            to { transform: scaleX(1); }
-          }
-          @keyframes progress-thumb {
-            from { transform: translateX(-100%); }
-            to { transform: translateX(0%); }
           }
         `}} />
       <div
@@ -1415,400 +1301,27 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             </div>
 
             {/* Right Sidebar */}
-            <div
-              className="w-[380px] lg:w-[400px] xl:w-[420px] 2xl:w-[440px] border-l-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-[var(--color-light)]"
-
-            >
-              <div className="flex flex-col p-5 pb-3 relative shrink-0">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[var(--color-vibrant)] text-lg">♥</span>
-                    <span className="font-pixel text-[var(--color-dark)] text-sm font-bold">Now Playing</span>
-                  </div>
-                  {currentTrack && (
-                    <button
-                      onClick={() => setShowLyrics(!showLyrics)}
-                      className={`font-pixel text-xs px-3 py-1 rounded-full flex items-center gap-1 transition-all duration-150 ease-in-out shadow-xs font-bold active:scale-95 border ${showLyrics ? 'bg-[var(--color-vibrant)] text-white border-[var(--color-vibrant)]' : 'text-[var(--color-dark)] hover:text-white bg-white hover:bg-[var(--color-vibrant)] border-[var(--color-muted)]'}`}
-                      title="Toggle Lyrics"
-                    >
-                      <span>{showLyrics ? '▼' : '❝'}</span> Lyrics
-                    </button>
-                  )}
-                </div>
-
-                {currentTrack ? (
-                  <div className="flex flex-col">
-                    {/* Art, Vinyl & Frequencies */}
-                    <div className="relative w-full aspect-square mb-3 flex items-center justify-center overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-light)] shadow-[0_8px_24px_var(--color-muted)]">
-                      {/* Audio Visualizer Frequencies */}
-                      {!isPaused && (
-                        <div className="absolute bottom-0 left-0 w-full h-1/2 flex items-end justify-center gap-1 opacity-40 px-2 z-0">
-                          {[...Array(16)].map((_, i) => (
-                            <div key={i} className="w-full bg-gradient-to-t from-[var(--color-muted)] to-[var(--color-muted)] animate-pulse rounded-t-full" style={{ height: `${20 + ((i * 17) % 80)}%`, animationDuration: `${0.2 + ((i * 13) % 50) / 100}s` }} />
-                          ))}
-                        </div>
-                      )}
-                      {/* Record */}
-                      <div className="relative w-4/5 h-4/5 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group cursor-pointer hover:scale-[1.08] z-10">
-                        <img
-                          src={currentTrack.album?.images?.[0]?.url || (typeof currentTrack.album?.images?.[0] === 'string' ? currentTrack.album.images[0] : '') || '/soundscape_ref/finalui.png'}
-                          alt="Album Cover"
-                          className={`w-full h-full object-cover rounded-full shadow-[0_8px_24px_rgba(255,105,180,0.5)] border-4 border-[#FFFFFF] origin-center ${!isPaused ? 'animate-[spin_10s_linear_infinite]' : ''}`}
-                        />
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/4 h-1/4 bg-gradient-to-br from-[var(--color-light)] to-[var(--color-muted)] rounded-full border-2 border-[#FFFFFF] shadow-inner" />
-                      </div>
-                    </div>
-
-                    {/* Track Info */}
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex flex-col overflow-hidden flex-1">
-                        <h3 className="font-pixel text-xl font-bold text-[var(--color-dark)] line-clamp-2" title={currentTrack.name}>{currentTrack.name}</h3>
-                        <p className="font-pixel text-xs text-[var(--color-dark)] font-medium truncate" title={currentTrack.artists ? currentTrack.artists.map((a: any) => a.name).join(", ") : "Unknown Artist"}>
-                          {currentTrack.artists ? currentTrack.artists.map((a: any) => a.name).join(", ") : "Unknown Artist"}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 shrink-0 ml-2">
-                        <button onClick={toggleSaveTrack} className="text-xl transition-transform hover:scale-110 active:scale-95" title={isSaved ? "Remove from Library" : "Save to Library"} aria-label={isSaved ? "Remove from Library" : "Save to Library"}>
-                          {isSaved ? <span className="text-[var(--color-vibrant)]">♥</span> : <span className="text-[var(--color-dark)] hover:text-[var(--color-vibrant)]">♡</span>}
-                        </button>
-                        <button className="text-xl text-[var(--color-dark)] hover:text-[var(--color-dark)] pb-2 font-bold" aria-label="Track options">...</button>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full flex flex-col gap-1 mt-1 group/slider">
-                      <div
-                        ref={progressBarRef}
-                        role="slider"
-                        aria-label="Playback progress"
-                        aria-valuemin={0}
-                        aria-valuemax={duration}
-                        tabIndex={0}
-                        className="w-full h-4 relative flex items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
-                        onPointerDown={handlePointerDown}
-                        onPointerMove={handlePointerMove}
-                        onPointerUp={handlePointerUp}
-                        onPointerCancel={handlePointerUp}
-                      >
-                        <div className="absolute left-0 right-0 h-full overflow-hidden rounded-full pointer-events-none scale-y-[0.6] group-hover/slider:scale-y-[0.85] transition-transform duration-300 ease-out origin-center bg-[var(--color-muted)]">
-                          <div
-                            ref={progressBarFillRef}
-                            className="absolute left-0 top-0 bottom-0 w-full bg-[var(--color-dark)] rounded-full origin-left"
-                          />
-                        </div>
-                        <div
-                          ref={progressBarThumbRef}
-                          className="absolute left-0 top-0 bottom-0 w-full pointer-events-none"
-                        >
-                          <img
-                            src="/hampter/hello_kitty_pin.png"
-                            alt="Kitty Pin"
-                            className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 max-w-none object-contain translate-x-1/2 z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex justify-between w-full mt-1">
-                        <span ref={positionLabelRef} className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
-                        <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">{formatTime(duration)}</span>
-                      </div>
-                    </div>
-
-                    {/* Controls */}
-                    <div className="flex items-center justify-between mt-3 px-2">
-                      <button
-                        onClick={toggleShuffle}
-                        className={`transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${isShuffle ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'}`}
-                        disabled={!isReady && !token}
-                        aria-label="Shuffle"
-                        title="Shuffle"
-                      >
-                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" /></svg>
-                      </button>
-                      <button
-                        onClick={prevTrack}
-                        className="text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
-                        disabled={!isReady && !token}
-                        aria-label="Previous track"
-                        title="Previous"
-                      >
-                        <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" /></svg>
-                      </button>
-                      <button
-                        onClick={togglePlay}
-                        className={`w-12 h-12 rounded-full flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 shadow-[0_4px_14px_var(--color-vibrant)] ${!isPremium ? 'bg-[#1DB954] hover:bg-[#1ed760]' : 'bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)]'}`}
-                        disabled={!isReady && !token && isPremium}
-                        aria-label={!isPremium ? "Open in Spotify" : isPaused ? "Play" : "Pause"}
-                        title={!isPremium ? "Open in Spotify" : isPaused ? "Play" : "Pause"}
-                      >
-                        {!isPremium ? <span className="font-pixel text-[10px] leading-tight text-center px-1 font-bold">OPEN IN<br />SPOTIFY</span> : isPaused ? <svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg> : <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>}
-                      </button>
-                      <button
-                        onClick={nextTrack}
-                        className="text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
-                        disabled={!isReady && !token}
-                        aria-label="Next track"
-                        title="Next"
-                      >
-                        <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg>
-                      </button>
-                      <button
-                        onClick={toggleRepeat}
-                        className={`relative transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${repeatMode !== 'off' ? 'text-[var(--color-vibrant)] drop-shadow-[0_2px_4px_var(--color-vibrant)]' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'}`}
-                        disabled={!isReady && !token}
-                        aria-label="Repeat mode"
-                        title={repeatMode === 'off' ? 'Enable Repeat' : repeatMode === 'context' ? 'Repeat: All (Click for Repeat 1)' : 'Repeat: One (Click to turn off)'}
-                      >
-                        {repeatMode === 'track' ? (
-                          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                            <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1l-2 1v1h1.5v4H13z" />
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                            <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
-                          </svg>
-                        )}
-                        {repeatMode === 'context' && (
-                          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[var(--color-vibrant)] rounded-full" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col mb-4">
-                    <div className="relative w-full aspect-square mb-4 flex items-center justify-center">
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4/5 h-4/5 bg-[#1F2937] rounded-full border-[6px] border-[#374151] flex items-center justify-center shadow-lg" style={{ right: '-10%' }}>
-                        <div className="w-1/3 h-1/3 bg-[var(--color-light)] rounded-full border-2 border-[#111827] flex items-center justify-center">
-                          <div className="w-3 h-3 bg-white rounded-full"></div>
-                        </div>
-                      </div>
-                      <div className="w-4/5 h-4/5 bg-[var(--color-light)] rounded-2xl shadow-[0_8px_24px_var(--color-muted)] relative z-10 border-2 border-[var(--color-muted)] flex items-center justify-center">
-                        <span className="text-4xl text-[var(--color-vibrant)]">♪</span>
-                      </div>
-                    </div>
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex flex-col flex-1">
-                        <h3 className="font-pixel text-xl font-bold text-[var(--color-dark)]">No track loaded</h3>
-                        <p className="font-pixel text-xs text-[var(--color-dark)] font-medium">Select a playlist to begin playback</p>
-                      </div>
-                      <div className="flex gap-2 shrink-0 ml-2">
-                        <button className="text-xl text-[var(--color-dark)]">♡</button>
-                        <button className="text-xl text-[var(--color-dark)] pb-2 font-bold">...</button>
-                      </div>
-                    </div>
-                    <div className="w-full flex flex-col gap-1 mt-2">
-                      <div className="w-full h-2.5 bg-[var(--color-muted)] rounded-full"></div>
-                      <div className="flex justify-between w-full">
-                        <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
-                        <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-4 px-2">
-                      <button className="text-[var(--color-dark)]" aria-label="Shuffle disabled"><svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" /></svg></button>
-                      <button className="text-[var(--color-dark)]" aria-label="Previous disabled"><svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" /></svg></button>
-                      <button className="w-12 h-12 bg-[var(--color-light)] rounded-full flex items-center justify-center text-white/80" aria-label="Play disabled"><svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></button>
-                      <button className="text-[var(--color-dark)]" aria-label="Next disabled"><svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg></button>
-                      <button className="text-[var(--color-dark)]" aria-label="Repeat disabled"><svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" /></svg></button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col flex-1 overflow-hidden px-4 pb-4">
-                {/* Tab Switcher & Bow */}
-                <div className="flex items-center justify-between bg-[var(--color-light)] rounded-full p-1 mb-2.5 shrink-0 border border-[var(--color-muted)]">
-                  <div className="flex flex-1 gap-1">
-                    <button
-                      onClick={() => setRightPanelTab('queue')}
-                      className={`flex-1 font-pixel text-xs py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${rightPanelTab === 'queue'
-                          ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
-                          : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
-                        }`}
-                    >
-                      <span>♥</span> Queue ({queue.length})
-                    </button>
-                    <button
-                      onClick={() => setRightPanelTab('recent')}
-                      className={`flex-1 font-pixel text-xs py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${rightPanelTab === 'recent'
-                          ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
-                          : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
-                        }`}
-                    >
-                      <span>🕒</span> Recent
-                    </button>
-                  </div>
-                  <span className="text-base px-2 select-none" title="Hello Kitty">🎀</span>
-                </div>
-
-                {/* Header with Title and Clear / Expand */}
-                <div className="flex items-center justify-between mb-1.5 shrink-0 px-1">
-                  <span className="font-pixel text-xs text-[var(--color-dark)] font-bold tracking-wide">
-                    {rightPanelTab === 'queue' ? '+ Up Next' : '🕒 Recently Played'}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {rightPanelTab === 'queue' && effectiveQueue.length > 0 && (
-                      <button
-                        onClick={() => clearQueue()}
-                        className="font-pixel text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors font-bold"
-                      >
-                        Clear
-                      </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        setQueueModalTab(rightPanelTab);
-                        setIsQueueModalOpen(true);
-                      }}
-                      className="font-pixel text-xs text-[var(--color-dark)] hover:text-white bg-white hover:bg-[var(--color-vibrant)] border border-[var(--color-muted)] px-2.5 py-0.5 rounded-full flex items-center gap-1 transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs font-bold active:scale-95 will-change-transform"
-                      title="Open large pop-up screen to tune queue & history"
-                    >
-                      <span>⤢</span> Expand
-                    </button>
-                  </div>
-                </div>
-
-                {/* Tracks List */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1">
-                  {rightPanelTab === 'queue' ? (
-                    effectiveQueue.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
-                        <div className="text-xl mb-1">🌸</div>
-                        <div className="text-[var(--color-dark)] font-pixel text-xs font-bold">QUEUE IS EMPTY</div>
-                        <p className="text-[var(--color-dark)] font-pixel text-xs mt-0.5 font-medium">Play or add tracks to build your list</p>
-                        <button
-                          onClick={() => {
-                            setQueueModalTab('recent');
-                            setIsQueueModalOpen(true);
-                          }}
-                          className="mt-2 font-pixel text-xs text-[var(--color-dark)] bg-white border border-[var(--color-muted)] px-3 py-1 rounded-full hover:bg-[var(--color-light)] transition-all font-bold shadow-xs"
-                        >
-                          Browse History ➔
-                        </button>
-                      </div>
-                    ) : (
-                      effectiveQueue.map((item: any, idx: number) => (
-                        <div
-                          key={`${item.track?.id || item.track?.uri || 'queue'}-${idx}`}
-                          draggable={queue.length > 0}
-                          onDragStart={(e) => {
-                            if (queue.length === 0) return;
-                            setDraggedQueueIndex(idx);
-                            e.dataTransfer.effectAllowed = 'move';
-                          }}
-                          onDragOver={(e) => {
-                            if (queue.length === 0) return;
-                            e.preventDefault();
-                            setDragOverQueueIndex(idx);
-                          }}
-                          onDragEnd={() => {
-                            setDraggedQueueIndex(null);
-                            setDragOverQueueIndex(null);
-                          }}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            if (queue.length > 0 && draggedQueueIndex !== null && draggedQueueIndex !== idx) {
-                              reorderQueue(draggedQueueIndex, idx);
-                            }
-                            setDraggedQueueIndex(null);
-                            setDragOverQueueIndex(null);
-                          }}
-                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[var(--color-light)] transition-colors group cursor-pointer border ${dragOverQueueIndex === idx
-                              ? draggedQueueIndex !== null && draggedQueueIndex < idx
-                                ? 'border-b-[var(--color-vibrant)] border-b-2'
-                                : 'border-t-[var(--color-vibrant)] border-t-2'
-                              : 'border-transparent'
-                            } ${draggedQueueIndex === idx ? 'opacity-50' : 'opacity-100'}`}
-                          onClick={() => playQueueItem(idx)}
-                        >
-                          <span className={`font-pixel text-xs w-4 text-center shrink-0 font-bold ${idx === queueIndex ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}>
-                            {idx + 1}
-                          </span>
-                          {item.track?.album?.images?.[0]?.url ? (
-                            <img src={(item.track.album.images[2] || item.track.album.images[0]).url} loading="lazy" alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]" />
-                          ) : (
-                            <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)] text-xs font-bold">♪</div>
-                          )}
-                          <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                            <span className={`font-pixel text-sm font-bold truncate ${idx === queueIndex ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}>
-                              {item.track?.name}
-                            </span>
-                            <span className="font-pixel text-sm text-[var(--color-dark)] font-medium truncate">
-                              {item.track?.artists?.map((a: any) => a.name).join(', ')}
-                            </span>
-                          </div>
-                          <span className="font-pixel text-xs text-[var(--color-dark)] font-bold shrink-0">
-                            {formatTime(item.track?.duration_ms || 0)}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (queue.length > 0) {
-                                removeFromQueue(idx);
-                              }
-                            }}
-                            className={`text-[var(--color-dark)] hover:text-[var(--color-dark)] px-1 py-0.5 rounded shrink-0 font-bold text-xs ${queue.length > 0 ? 'opacity-0 group-hover:opacity-100' : 'hidden'}`}
-                            aria-label="Remove from queue"
-                            title="Remove from queue"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))
-                    )
-                  ) : (
-                    /* Recently Played in right sidebar */
-                    recentTracks.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
-                        <div className="text-xl mb-1">🕒</div>
-                        <div className="text-[var(--color-dark)] font-pixel text-xs font-bold">NO RECENT TRACKS</div>
-                        <p className="text-[var(--color-dark)] font-pixel text-xs mt-0.5 font-medium">Play some tunes to see them here</p>
-                      </div>
-                    ) : (
-                      recentTracks.slice(0, 15).map((item: any, idx: number) => {
-                        const track = item.track;
-                        if (!track) return null;
-                        return (
-                          <div
-                            key={`${track.id}-${idx}`}
-                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[var(--color-light)] transition-colors group cursor-pointer"
-                            onClick={() => {
-                              if (item.context?.uri) playContextTrack(item.context.uri, track.uri);
-                              else playTrack(track.uri, undefined, track);
-                            }}
-                          >
-                            <span className="font-pixel text-xs w-4 text-center shrink-0 text-[var(--color-dark)] font-bold">
-                              {idx + 1}
-                            </span>
-                            {track.album?.images?.[0]?.url ? (
-                              <img src={(track.album.images[2] || track.album.images[0]).url} loading="lazy" alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]" />
-                            ) : (
-                              <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)] text-xs font-bold">♪</div>
-                            )}
-                            <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                              <span className="font-pixel text-sm font-bold text-[var(--color-dark)] truncate">
-                                {track.name}
-                              </span>
-                              <span className="font-pixel text-sm text-[var(--color-dark)] font-medium truncate">
-                                {track.artists?.map((a: any) => a.name).join(', ')}
-                              </span>
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAddToQueue(track, item.context?.uri);
-                              }}
-                              className="opacity-0 group-hover:opacity-100 text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white px-2.5 py-1 rounded-full font-pixel text-xs font-bold transition-all shadow-xs shrink-0"
-                              title="Add to queue"
-                            >
-                              + Queue
-                            </button>
-                          </div>
-                        );
-                      })
-                    )
-                  )}
-                </div>
-              </div>
-            </div>
+            <NowPlayingPanel
+              progressBarRef={progressBarRef}
+              showLyrics={showLyrics}
+              onToggleLyrics={handleToggleLyrics}
+              isSaved={isSaved}
+              toggleSaveTrack={toggleSaveTrack}
+              getPositionMs={getPositionMs}
+              onSeek={handleSeek}
+              onDragSeek={handleDragSeek}
+              token={token}
+              togglePlay={togglePlay}
+              prevTrack={prevTrack}
+              nextTrack={nextTrack}
+              toggleShuffle={toggleShuffle}
+              toggleRepeat={toggleRepeat}
+              onExpandQueue={handleExpandQueue}
+              playQueueItem={playQueueItem}
+              playTrack={playTrack}
+              playContextTrack={playContextTrack}
+              handleAddToQueue={handleAddToQueue}
+            />
 
             {/* Lyrics View Overlay */}
             {showLyrics && (
