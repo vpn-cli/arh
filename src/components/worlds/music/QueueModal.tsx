@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { useRecentlyPlayed, usePlayerQueue } from '@/hooks/useSpotify';
+import { formatTime } from './playback/playbackHelpers';
 
 interface QueueModalProps {
   isOpen: boolean;
@@ -53,14 +54,6 @@ export function QueueModal({
   }, [queue, playerQueueData]);
 
   if (!isOpen) return null;
-
-  const formatTime = (ms: number) => {
-    if (!ms) return '0:00';
-    const totalSeconds = Math.floor(ms / 1000);
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
 
   const formatRelativeTime = (isoString?: string) => {
     if (!isoString) return '';

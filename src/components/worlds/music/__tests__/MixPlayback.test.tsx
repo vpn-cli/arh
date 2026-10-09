@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { isValidContextUri } from '../SpotifyPlayerUI';
+import { isValidContextUri } from '../playback/playbackHelpers';
 import { MixSection } from '../MixSection';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 

@@ -8,6 +8,7 @@ import {
   resolveQueueTrack,
   findTrackInSources,
   resolveTrackForPlayback,
+  formatTime,
 } from '../playbackHelpers';
 
 describe('playbackHelpers pure functions', () => {
@@ -105,6 +106,15 @@ describe('playbackHelpers pure functions', () => {
       const trackObj = { uri: 'spotify:track:custom', name: 'Custom' };
       expect(resolveTrackForPlayback('spotify:track:custom', undefined, trackObj, current, {})).toBe(trackObj);
       expect(resolveTrackForPlayback('spotify:track:c', undefined, undefined, current, {})).toBe(current);
+    });
+
+    describe('formatTime', () => {
+      it('formats milliseconds to MM:SS', () => {
+        expect(formatTime(0)).toBe('0:00');
+        expect(formatTime(5000)).toBe('0:05');
+        expect(formatTime(65000)).toBe('1:05');
+        expect(formatTime(600000)).toBe('10:00');
+      });
     });
   });
 });
