@@ -29,10 +29,6 @@ function loadFlipAudio() {
     .catch(() => { });
 }
 
-if (typeof window !== "undefined") {
-  loadFlipAudio();
-}
-
 const decodedImagesCache = new Set<HTMLImageElement>();
 
 function playFlipSound() {
@@ -729,6 +725,11 @@ export default function ThreeDScrapbook() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedFrame, setSelectedFrame] = useState<{ spreadIdx: number, side: 'left' | 'right', itemIdx: number } | null>(null);
+
+  // Preload flip audio on component mount
+  useEffect(() => {
+    loadFlipAudio();
+  }, []);
 
   // 2.2-second cute Japanese loading screen
   useEffect(() => {

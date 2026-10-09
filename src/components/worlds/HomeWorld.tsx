@@ -72,7 +72,26 @@ const PORTALS: WorldPortal[] = [
   },
 ];
 
-export default function HomeWorld() {
+interface HomeWorldProps {
+  onPortalIntent?: (portalId: WorldPortal["id"]) => void;
+}
+
+const preloadedWorlds = new Set<string>();
+
+export function preloadWorldModule(worldId: WorldPortal["id"]) {
+  if (typeof window === "undefined" || preloadedWorlds.has(worldId)) return;
+  preloadedWorlds.add(worldId);
+
+  if (worldId === "main") {
+    return import("./main/MainWorld");
+  } else if (worldId === "music") {
+    return import("./music/MusicWorld");
+  } else if (worldId === "scrapbook") {
+    return import("./scrapbook/ScrapbookWorld");
+  }
+}
+
+export default function HomeWorld({ onPortalIntent }: HomeWorldProps = {}) {
   const { goToWorld, isTransitioning } = useGameState();
   const [hoveredPortal, setHoveredPortal] = useState<string | null>(null);
   const [entranceComplete, setEntranceComplete] = useState(false);
@@ -142,9 +161,11 @@ export default function HomeWorld() {
     return () => { anim.kill(); };
   }, []);
 
-  const handlePortalHover = (portalId: string) => {
+  const handlePortalHover = (portalId: WorldPortal["id"]) => {
     setHoveredPortal(portalId);
     sfx.hover();
+    preloadWorldModule(portalId);
+    onPortalIntent?.(portalId);
   };
 
   const handlePortalClick = (portal: WorldPortal) => {
