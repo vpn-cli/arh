@@ -1,0 +1,54 @@
+"use client";
+
+import React, { useState } from "react";
+import { usePlaylists } from "@/hooks/useSpotify";
+import { PlaylistCard } from "../PlaylistCard";
+
+export interface PlaylistsTabProps {
+  onOpenPlaylist: (id: string) => void;
+  onCreatePlaylist: () => void;
+  rateLimitTimer?: number | null;
+}
+
+export const PlaylistsTab = React.memo(function PlaylistsTab({
+  onOpenPlaylist,
+  onCreatePlaylist,
+  rateLimitTimer,
+}: PlaylistsTabProps) {
+  const [playlistSearch, setPlaylistSearch] = useState("");
+  const { data: playlists = [], isLoading: isPlaylistsLoading, isError: isPlaylistsError, error: playlistsError } = usePlaylists({ enabled: true });
+
+  return (
+    <>
+      <div className="flex gap-2 mb-2 shrink-0">
+        <input
+          type="text"
+          value={playlistSearch}
+          onChange={(e) => setPlaylistSearch(e.target.value)}
+          placeholder="Filter playlists..."
+          aria-label="Filter playlists"
+          className="flex-1 bg-white border-2 border-[var(--color-muted)] rounded-xl px-3 py-2 font-pixel text-xs text-[var(--color-dark)] placeholder:text-[var(--color-dark)]/80 focus:outline-none focus:border-[var(--color-vibrant)] focus:ring-2 focus:ring-[var(--color-vibrant)]/20"
+        />
+        <button
+          onClick={onCreatePlaylist}
+          className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white px-4 py-2 rounded-xl font-pixel text-xs font-bold hover:scale-105 active:scale-95 transition-transform shadow-xs flex items-center gap-1"
+          title="Create Playlist"
+        >
+          <span>+</span> NEW
+        </button>
+      </div>
+      {(() => {
+        if (isPlaylistsError && (playlistsError as any)?.status === 429) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-bold text-center px-4">RATE LIMITED BY SPOTIFY.<br />WAIT {rateLimitTimer || ((playlistsError as any)?.retryAfter ?? 60)} SECONDS.</div>;
+        if (isPlaylistsLoading) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-medium animate-pulse">LOADING LIBRARY...</div>;
+        if (playlists.length === 0) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-medium">NO PLAYLISTS FOUND</div>;
+
+        const filteredPlaylists = playlists.filter((p: any) => p.name.toLowerCase().includes(playlistSearch.toLowerCase()));
+        if (filteredPlaylists.length === 0) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-medium">NO MATCHES FOUND</div>;
+
+        return filteredPlaylists.map((p: any, idx: number) => (
+          <PlaylistCard key={`${p.id || 'playlist'}-${idx}`} playlist={p} onClick={() => onOpenPlaylist(p.id)} />
+        ));
+      })()}
+    </>
+  );
+});

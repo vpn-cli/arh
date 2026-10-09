@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "optimize-images": "node scripts/optimize-images.mjs"
+    "optimize-images": "node scripts/optimize-images.mjs",
+    "db:migrate": "tsx scripts/apply-migration.ts"
   },
   "dependencies": {
     "@neon/config": "^1.8.4",

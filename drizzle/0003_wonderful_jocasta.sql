@@ -1,0 +1,1 @@
+ALTER TABLE "lyrics_cache" ADD COLUMN "offset_ms" integer DEFAULT 0 NOT NULL;

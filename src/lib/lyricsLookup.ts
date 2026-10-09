@@ -289,6 +289,7 @@ export interface LookupOutcome {
   matchedStep: ChainStep;
   hasUpstreamError: boolean;
   upstreamError?: UpstreamErrorKind;
+  lrclibRecordId?: number;
 }
 
 /**
@@ -402,6 +403,7 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
         result: processCandidateLyrics(resA.data, durationSec),
         matchedStep: 'a',
         hasUpstreamError: false,
+        lrclibRecordId: resA.data.id,
       };
     } else if (resA.status === 'error') {
       encounteredError = resA.error;
@@ -419,6 +421,7 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
       result: processCandidateLyrics(resB.data, durationSec),
       matchedStep: 'b',
       hasUpstreamError: false,
+      lrclibRecordId: resB.data.id,
     };
   } else if (resB.status === 'error') {
     encounteredError = resB.error;
@@ -440,6 +443,7 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
         result: processCandidateLyrics(bestC, durationSec),
         matchedStep: 'c',
         hasUpstreamError: false,
+        lrclibRecordId: bestC.id,
       };
     }
   } else if (resC.status === 'error') {
@@ -461,6 +465,7 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
         result: processCandidateLyrics(bestD, durationSec),
         matchedStep: 'd',
         hasUpstreamError: false,
+        lrclibRecordId: bestD.id,
       };
     }
   } else if (resD.status === 'error') {

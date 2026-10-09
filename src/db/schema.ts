@@ -1,4 +1,4 @@
-import { pgTable, serial, text, jsonb, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, jsonb, boolean, timestamp, uniqueIndex, integer } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 export const scrapbookVersions = pgTable("scrapbook_versions", {
@@ -23,6 +23,7 @@ export const lyricsCache = pgTable("lyrics_cache", {
   plain: text("plain"),
   instrumental: boolean("instrumental").default(false).notNull(),
   fetchedAt: timestamp("fetched_at").defaultNow().notNull(),
+  offsetMs: integer("offset_ms").default(0).notNull(),
 });
 
 export type LyricsCacheEntry = typeof lyricsCache.$inferSelect;
