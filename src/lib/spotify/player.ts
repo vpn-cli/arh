@@ -25,24 +25,26 @@ export async function getRelevantTracks(track: any, limit: number = 10): Promise
   if (!track) return [];
   const artistName = track.artists?.[0]?.name;
   const trackId = track.id;
+  // Maximum search limit allowed in February 2026 is 10
+  const safeLimit = Math.min(Math.max(1, limit), 10);
 
   try {
     if (artistName) {
-      // Find top tracks from the same artist
+      // Find tracks from the same artist (explicitly request up to max 10)
       const query = `artist:"${artistName.replace(/"/g, '')}"`;
-      const searchData = await proxyFetch(`/search?q=${encodeURIComponent(query)}&type=track`);
+      const searchData = await proxyFetch(`/search?q=${encodeURIComponent(query)}&type=track&limit=10`);
       const items = searchData?.tracks?.items || [];
       const filtered = items.filter((t: any) => t && t.id !== trackId && t.is_playable !== false);
       if (filtered.length >= 3) {
-        return filtered.slice(0, limit);
+        return filtered.slice(0, safeLimit);
       }
     }
 
     // Fallback: search for genre or title keywords
     const fallbackQuery = track.name ? `track:"${track.name.replace(/[^a-zA-Z0-9 ]/g, ' ').trim()}"` : 'genre:pop';
-    const fallbackData = await proxyFetch(`/search?q=${encodeURIComponent(fallbackQuery)}&type=track`);
+    const fallbackData = await proxyFetch(`/search?q=${encodeURIComponent(fallbackQuery)}&type=track&limit=10`);
     const fallbackItems = (fallbackData?.tracks?.items || []).filter((t: any) => t && t.id !== trackId);
-    return fallbackItems.slice(0, limit);
+    return fallbackItems.slice(0, safeLimit);
   } catch (error: any) {
     console.warn('Warning fetching relevant tracks:', error?.error?.message || error?.message || error);
     return [];

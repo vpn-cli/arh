@@ -112,7 +112,7 @@ export function VibesSection({
         labels.push(`${decade} MUSIC`);
       }
 
-      // Popularity Vibe
+      // Popularity Vibe (degraded gracefully: popularity removed from track objects in Feb 2026)
       if (typeof track.popularity === 'number') {
         if (track.popularity >= 80) labels.push('MAINSTREAM HITS');
         else if (track.popularity < 40) labels.push('HIDDEN GEMS');

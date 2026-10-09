@@ -81,7 +81,7 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
     return acc;
   }, []);
 
-  const albums = uniqueItems.filter((item: any) => item.album_group === 'album');
+  const albums = uniqueItems.filter((item: any) => item.album_group === 'album' || item.album_type === 'album');
   const singles = uniqueItems.filter((item: any) => item.album_group === 'single' || item.album_type === 'single');
 
   return (
