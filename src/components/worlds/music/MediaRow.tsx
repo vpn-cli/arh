@@ -124,7 +124,7 @@ export const MediaRow = React.memo(function MediaRow({
         <button
           type="button"
           onClick={onClick}
-          className="flex-1 flex items-center gap-3 text-left min-w-0 outline-none focus-visible:outline-none after:absolute after:inset-0 after:content-['']"
+          className="mw-row-main flex-1 flex items-center gap-3 text-left min-w-0 outline-none focus-visible:outline-none after:absolute after:inset-0 after:content-['']"
         >
           {content}
         </button>

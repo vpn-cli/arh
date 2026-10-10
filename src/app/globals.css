@@ -1224,9 +1224,8 @@ html {
     }
   }
 
-  .mw-row:focus-visible {
+  .mw-row:has(> .mw-row-main:focus-visible) {
     background-color: var(--row-hover);
-    border-color: var(--color-muted);
     outline: 2px solid var(--color-vibrant);
     outline-offset: 2px;
   }
@@ -1252,7 +1251,6 @@ html {
     opacity: 1;
   }
 
-  .mw-row:focus-visible .mw-row-action,
   .mw-row-action:focus-visible {
     opacity: 1;
   }
