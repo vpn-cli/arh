@@ -45,18 +45,10 @@ export function useMediaSession({ togglePlay, prevTrack, nextTrack }: MediaSessi
     }
 
     try {
-      navigator.mediaSession.setActionHandler("play", () => {
-        togglePlay();
-      });
-      navigator.mediaSession.setActionHandler("pause", () => {
-        togglePlay();
-      });
-      navigator.mediaSession.setActionHandler("previoustrack", () => {
-        prevTrack();
-      });
-      navigator.mediaSession.setActionHandler("nexttrack", () => {
-        nextTrack();
-      });
+      navigator.mediaSession.setActionHandler("play", togglePlay);
+      navigator.mediaSession.setActionHandler("pause", togglePlay);
+      navigator.mediaSession.setActionHandler("previoustrack", prevTrack);
+      navigator.mediaSession.setActionHandler("nexttrack", nextTrack);
     } catch (e) {
       console.warn("Error setting media session action handler:", e);
     }

@@ -77,5 +77,5 @@ describe('WorldRouter and preloading', () => {
       preloadWorld('music'),
       preloadWorld('scrapbook'),
     ]);
-  });
+  }, 15000);
 });

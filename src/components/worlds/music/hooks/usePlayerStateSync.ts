@@ -52,9 +52,6 @@ export function usePlayerStateSync({
 
   const { play } = useSpotifyMutations();
 
-  const trackStartTimeRef = useRef(Date.now());
-  const pausedDurationRef = useRef(0);
-  const pauseTimestampRef = useRef<number | null>(null);
   const lastActiveTrackIdRef = useRef<string | null>(null);
   const isAutoplayingRef = useRef(false);
   const lastActiveTrackUriRef = useRef<string | null>(null);
@@ -72,7 +69,6 @@ export function usePlayerStateSync({
         playerRef.current.seek(targetMs);
       }
       seekSharedClock(targetMs);
-      trackStartTimeRef.current = Date.now() - targetMs - pausedDurationRef.current;
       progressBarRef.current?.showPosition(targetMs);
       lyricsViewRef.current?.resync(targetMs);
     },
@@ -81,20 +77,11 @@ export function usePlayerStateSync({
 
   const handleDragSeek = useCallback((newPos: number) => {
     seekSharedClock(newPos);
-    trackStartTimeRef.current = Date.now() - newPos - pausedDurationRef.current;
   }, []);
 
-  // Sync pause states for our accumulator
+  // Sync pause states for our shared accumulator
   useEffect(() => {
     setSharedPaused(isPaused);
-    if (isPaused) {
-      if (!pauseTimestampRef.current) pauseTimestampRef.current = Date.now();
-    } else {
-      if (pauseTimestampRef.current) {
-        pausedDurationRef.current += Date.now() - pauseTimestampRef.current;
-        pauseTimestampRef.current = null;
-      }
-    }
   }, [isPaused]);
 
   const applyPlayerState = useCallback(
@@ -132,9 +119,6 @@ export function usePlayerStateSync({
         lastActiveTrackIdRef.current = incomingTrackId;
       }
       updateSharedPlaybackState(state.position, state.paused);
-      trackStartTimeRef.current = Date.now() - state.position;
-      pausedDurationRef.current = 0;
-      pauseTimestampRef.current = state.paused ? Date.now() : null;
 
       progressBarRef.current?.applyState({
         positionMs: state.position,

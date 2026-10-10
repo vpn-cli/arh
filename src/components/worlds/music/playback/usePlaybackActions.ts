@@ -23,6 +23,12 @@ import {
   computePrevQueueIndex,
   executeTogglePlay,
 } from './playbackHelpers';
+import {
+  togglePlayGlobal,
+  nextTrackGlobal,
+  prevTrackGlobal,
+  playQueueItemGlobal,
+} from './globalPlaybackActions';
 
 export function usePlaybackActions({
   selectedDevice,
@@ -240,53 +246,20 @@ export function usePlaybackActions({
   }, [ensurePlaybackDevice]);
 
   const playQueueItem = useCallback(async (index: number) => {
-    const list = getEffectiveQueue();
-    if (index < 0 || index >= list.length) return;
-    const item = list[index];
-    useSpotifyPlayerStore.getState().setQueueIndex(index);
-    if (item.contextUri) {
-      await playContextTrackRef.current(item.contextUri, item.track.uri);
-    } else {
-      await playTrackRef.current(item.track.uri, undefined, item.track);
-    }
-  }, [getEffectiveQueue]);
+    await playQueueItemGlobal(index);
+  }, []);
 
   const togglePlay = useCallback(async () => {
-    sfx.select();
-    const currentTrack = useSpotifyPlayerStore.getState().currentTrack;
-    const targetDevice = await ensurePlaybackDevice(currentTrack?.uri);
-    if (targetDevice === null) return;
-
-    await executeTogglePlay(providerRef.current.player, currentTrack, userPausedRef, playTrackRef.current);
-  }, [ensurePlaybackDevice]);
+    await togglePlayGlobal();
+  }, []);
 
   const nextTrack = useCallback(() => {
-    const activePlayer = providerRef.current.player;
-    if (!activePlayer) return;
-    sfx.select();
-    const list = getEffectiveQueue();
-    const { repeatMode, queueIndex } = useSpotifyPlayerStore.getState();
-    const nextIdx = computeNextQueueIndex(repeatMode, list.length, queueIndex);
-    if (nextIdx !== null) {
-      playQueueItemRef.current(nextIdx);
-    } else {
-      activePlayer.nextTrack();
-    }
-  }, [getEffectiveQueue]);
+    nextTrackGlobal();
+  }, []);
 
   const prevTrack = useCallback(() => {
-    const activePlayer = providerRef.current.player;
-    if (!activePlayer) return;
-    sfx.select();
-    const list = getEffectiveQueue();
-    const { repeatMode, queueIndex } = useSpotifyPlayerStore.getState();
-    const prevIdx = computePrevQueueIndex(repeatMode, list.length, queueIndex);
-    if (prevIdx !== null) {
-      playQueueItemRef.current(prevIdx);
-    } else {
-      activePlayer.previousTrack();
-    }
-  }, [getEffectiveQueue]);
+    prevTrackGlobal();
+  }, []);
 
   const toggleShuffle = useCallback(async () => {
     if (!tokenRef.current) return;
