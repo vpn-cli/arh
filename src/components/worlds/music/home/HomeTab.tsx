@@ -1,16 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { usePlaylists, useBirthdayMix, useRecentlyPlayed } from "@/hooks/useSpotify";
 import { useLikedTracks } from "@/hooks/useLikedTracks";
-import { VIBES } from "@/config/vibes";
-import { useResolvedVibes } from "../hooks/useResolvedVibes";
 import { PlayIcon, PauseIcon, ChevronRightIcon, MusicNoteIcon } from "../icons";
 
 export interface HomeTabProps {
-  token: string | null;
+  token?: string | null;
   onNavigate: (tab: any) => void;
   onOpenPlaylist: (id: string) => void;
   playTrack: (uri: string, contextUri?: string, track?: any) => void;
@@ -19,7 +17,6 @@ export interface HomeTabProps {
 }
 
 export const HomeTab = React.memo(function HomeTab({
-  token,
   onNavigate,
   onOpenPlaylist,
   playTrack,
@@ -34,7 +31,23 @@ export const HomeTab = React.memo(function HomeTab({
   const { data: likedData } = useLikedTracks(0, 50, { enabled: true });
   const { data: recentTracks = [] } = useRecentlyPlayed({ enabled: true });
 
-  const { resolvedVibes, handleVibeClick } = useResolvedVibes(token, onOpenPlaylist);
+  // One-time cleanup: remove legacy resolved_vibe_* keys from localStorage
+  useEffect(() => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("resolved_vibe_")) {
+          keysToRemove.push(key);
+        }
+      }
+      for (const key of keysToRemove) {
+        localStorage.removeItem(key);
+      }
+    } catch {
+      // Ignore if localStorage is unavailable
+    }
+  }, []);
 
 
   const heroArt = currentTrack?.album?.images?.[0]?.url || playlists[0]?.images?.[0]?.url || "/soundscape_ref/finalui.png";
@@ -139,37 +152,6 @@ export const HomeTab = React.memo(function HomeTab({
               <div className="p-3">
                 <div className="truncate font-pixel text-base font-bold text-[var(--color-dark)] mw-card-title">{playlist.name}</div>
                 <div className="font-pixel text-xs text-[var(--color-dark)] font-medium opacity-80">{(playlist.items?.total ?? playlist.tracks?.total ?? playlist.total_tracks ?? (Array.isArray(playlist.items) ? playlist.items.length : (Array.isArray(playlist.tracks?.items) ? playlist.tracks.items.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : 0))))} songs</div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
-            <span className="text-[var(--color-vibrant)]">♥</span> Vibes
-          </h3>
-          <button onClick={() => onNavigate('vibes')} className="mw-btn font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
-            See all <ChevronRightIcon size={14} />
-          </button>
-        </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
-          {VIBES.filter(vibe => resolvedVibes[vibe.id] !== null).map((vibe) => (
-            <button
-              key={vibe.id}
-              onClick={() => handleVibeClick(vibe.id)}
-              className="group relative overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-white text-left aspect-square mw-card"
-            >
-              <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${vibe.tone} text-4xl sm:text-5xl text-white drop-shadow-sm`}>
-                {vibe.emoji}
-              </div>
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors" />
-              <div className="absolute inset-0 p-3 flex flex-col justify-end pr-12">
-                <div className="font-pixel text-sm sm:text-base font-bold text-white drop-shadow-md mw-card-title">{vibe.label}</div>
-              </div>
-              <div className="absolute bottom-2 right-2 mw-card-play pointer-events-none">
-                <PlayIcon size={18} className="text-white ml-0.5" />
               </div>
             </button>
           ))}
