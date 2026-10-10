@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import QueryProvider from "@/providers/QueryProvider";
+import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="en" className="h-full" suppressHydrationWarning>
       <body className="min-h-full antialiased">
         <QueryProvider>
+          <ServiceWorkerRegister />
           {children}
         </QueryProvider>
       </body>

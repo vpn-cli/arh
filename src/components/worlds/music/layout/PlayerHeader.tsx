@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ChevronLeftIcon, SearchIcon, CloseIcon, MusicNoteIcon } from "../icons";
+import { InstallAppButton } from "./InstallAppButton";
 
 export interface PlayerHeaderProps {
   onGoHome?: () => void;
@@ -64,7 +65,8 @@ export const PlayerHeader = React.memo(function PlayerHeader({
           </button>
         )}
       </div>
-      <div className="flex items-center gap-4 text-[var(--color-dark)] font-bold text-title shrink-0">
+      <div className="flex items-center gap-3 sm:gap-4 text-[var(--color-dark)] font-bold text-title shrink-0">
+        <InstallAppButton />
         <div className="hidden lg:flex px-3 py-1 bg-white/50 border border-[var(--color-muted)] rounded-full items-center gap-1.5 mr-2">
           <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tracking-wider uppercase">Music World</span>
           <MusicNoteIcon size={12} className="text-[var(--color-vibrant)]" />

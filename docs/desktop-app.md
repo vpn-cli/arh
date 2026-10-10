@@ -14,12 +14,12 @@ This document outlines the implementation plan and execution status for making M
 
 ## PART 2 - Installable App (PWA)
 
-- [ ] Add `src/app/manifest.ts` (Next.js metadata route): `name`, `short_name`, `start_url` `"/?world=music"`, `scope` `"/"`, `display` `"standalone"`, `theme_color` and `background_color` matching default palette.
-- [ ] Icons: generate 192x192, 512x512, and maskable 512x512 PNG from `public/hampter/hello_kitty_pin.png` with a one-off script, padded so maskable safe zone is respected. Save under `public/icons/app/`.
-- [ ] Manifest shortcuts: "Music" (`/?world=music`) and "Scrapbook" (`/?world=scrapbook`).
-- [ ] Check Chrome's current install criteria. Add a service worker ONLY if still required, and make it a pass-through with NO caching, so a new build is never hidden by a stale cache. Report which choice was made.
-- [ ] Install button: capture `beforeinstallprompt` and show a small "Install app" button in the Music World header. Hide it when already installed (`display-mode: standalone`) or after `appinstalled`.
-- [ ] Report whether the Spotify login redirect works inside the installed window, with the code path checked.
+- [x] Add `src/app/manifest.ts` (Next.js metadata route): `name`, `short_name`, `start_url` `"/?world=music"`, `scope` `"/"`, `display` `"standalone"`, `theme_color` and `background_color` matching default palette.
+- [x] Icons: generate 192x192, 512x512, and maskable 512x512 PNG from `public/hampter/hello_kitty_pin.png` with a one-off script, padded so maskable safe zone is respected. Save under `public/icons/app/`.
+- [x] Manifest shortcuts: "Music" (`/?world=music`) and "Scrapbook" (`/?world=scrapbook`).
+- [x] Check Chrome's current install criteria. Add a service worker ONLY if still required, and make it a pass-through with NO caching, so a new build is never hidden by a stale cache. Report which choice was made.
+- [x] Install button: capture `beforeinstallprompt` and show a small "Install app" button in the Music World header. Hide it when already installed (`display-mode: standalone`) or after `appinstalled`.
+- [x] Report whether the Spotify login redirect works inside the installed window, with the code path checked.
 
 ---
 
