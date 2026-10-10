@@ -43,6 +43,10 @@ next-env.d.ts
 # backups
 media-originals/
 
+# raw slideshow originals
+assets-src/slideshow/*
+!assets-src/slideshow/.gitkeep
+
 # temporary and incomplete downloads
 *.crdownload
 public/hampter/Unconfirmed*
