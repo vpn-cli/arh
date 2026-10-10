@@ -1,6 +1,8 @@
 import React from 'react';
+import { MediaRow } from './MediaRow';
+import { pickImage } from '@/lib/spotify/images';
 
-interface TrackRowProps {
+export interface TrackRowProps {
   index?: number;
   track: any;
   onPlay: (uri: string, contextUri?: string, trackObj?: any) => void;
@@ -11,47 +13,30 @@ interface TrackRowProps {
   variant?: 'default' | 'compact';
 }
 
-export const TrackRow = React.memo(function TrackRow({ index, track, onPlay, onAddToQueue, onAddToPlaylist, onRemoveFromPlaylist, onAddMemory, variant = 'default' }: TrackRowProps) {
+export const TrackRow = React.memo(function TrackRow({
+  index,
+  track,
+  onPlay,
+  onAddToQueue,
+  onAddToPlaylist,
+  onRemoveFromPlaylist,
+  onAddMemory,
+  variant = 'default',
+}: TrackRowProps) {
   const isCompact = variant === 'compact';
-  const imgSize = isCompact ? 'w-9 h-9' : 'w-11 h-11';
-  const titleSize = isCompact ? 'text-sm font-bold font-pixel' : 'text-base font-bold font-pixel';
+  const imageSize = isCompact ? 36 : 48;
+  const imageUrl = pickImage(track?.album?.images, imageSize);
+  const artistNames = track?.artists?.map((a: any) => a.name).join(', ') || 'Unknown artist';
 
-  return (
-    <div className="group w-full flex items-center gap-2 py-1 px-2 rounded-xl mw-row text-left shrink-0">
-      <button
-        onClick={() => onPlay(track.uri, undefined, track)}
-        className="flex-1 flex items-center gap-3 text-left truncate min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] rounded-lg p-1 -m-1"
-        aria-label={`Play ${track.name} by ${track.artists?.map((a: any) => a.name).join(', ') || 'Unknown artist'}`}
-      >
-        {index !== undefined && !isCompact && (
-          <span className="font-pixel text-[var(--color-dark)] font-bold text-xs w-5 shrink-0 text-center">{index + 1}</span>
-        )}
-        {track.album?.images && track.album.images[0] ? (
-          <img src={track.album.images[0].url} alt="" className={`${imgSize} rounded-lg shadow-sm object-cover shrink-0`} />
-        ) : (
-          <div className={`${imgSize} rounded-lg bg-[var(--color-muted)] text-[var(--color-dark)] font-bold text-xs flex items-center justify-center shadow-sm shrink-0`}>
-            ♪
-          </div>
-        )}
-        <div className="flex-1 overflow-hidden z-10 relative min-w-0 flex flex-col">
-          <div className="w-full relative overflow-hidden whitespace-nowrap">
-            <span className={`${titleSize} text-[var(--color-dark)] pr-2 truncate block w-full`} title={track.name}>
-              {track.name}
-            </span>
-          </div>
-          <div className="font-pixel text-sm text-[var(--color-dark)] font-medium truncate w-full mt-0.5" title={track.artists?.map((a:any)=>a.name).join(', ')}>
-            {track.artists?.map((a:any)=>a.name).join(', ')}
-          </div>
-        </div>
-      </button>
+  const hasActions = Boolean(onAddToPlaylist || onRemoveFromPlaylist || onAddToQueue || onAddMemory);
 
+  const actions = hasActions ? (
+    <>
       {onAddToPlaylist && (
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddToPlaylist(track.uri);
-          }}
-          className="mw-btn mw-row-action p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
+          type="button"
+          onClick={() => onAddToPlaylist(track.uri)}
+          className="mw-btn p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
           title="Add to Playlist"
           aria-label={`Add ${track.name} to playlist`}
         >
@@ -63,11 +48,9 @@ export const TrackRow = React.memo(function TrackRow({ index, track, onPlay, onA
 
       {onRemoveFromPlaylist && (
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemoveFromPlaylist(track.uri);
-          }}
-          className="mw-btn mw-row-action p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
+          type="button"
+          onClick={() => onRemoveFromPlaylist(track.uri)}
+          className="mw-btn p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
           title="Remove from Playlist"
           aria-label={`Remove ${track.name} from playlist`}
         >
@@ -79,11 +62,9 @@ export const TrackRow = React.memo(function TrackRow({ index, track, onPlay, onA
 
       {onAddToQueue && (
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddToQueue(track);
-          }}
-          className="mw-btn mw-row-action p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
+          type="button"
+          onClick={() => onAddToQueue(track)}
+          className="mw-btn p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
           title="Add to Queue"
           aria-label={`Add ${track.name} to queue`}
         >
@@ -92,13 +73,12 @@ export const TrackRow = React.memo(function TrackRow({ index, track, onPlay, onA
           </svg>
         </button>
       )}
+
       {onAddMemory && (
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddMemory(track);
-          }}
-          className="mw-btn mw-row-action p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
+          type="button"
+          onClick={() => onAddMemory(track)}
+          className="mw-btn p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
           title="Add Memory"
           aria-label={`Add memory for ${track.name}`}
         >
@@ -107,6 +87,23 @@ export const TrackRow = React.memo(function TrackRow({ index, track, onPlay, onA
           </svg>
         </button>
       )}
-    </div>
+    </>
+  ) : null;
+
+  return (
+    <MediaRow
+      title={track.name}
+      subtitle={artistNames}
+      imageUrl={imageUrl}
+      imageShape="rounded"
+      imageSize={imageSize}
+      rank={index !== undefined && !isCompact ? index + 1 : undefined}
+      duration={track.duration_ms}
+      onClick={() => onPlay(track.uri, undefined, track)}
+      actions={actions}
+      actionsVisibility="hover"
+    />
   );
 });
+
+TrackRow.displayName = 'TrackRow';
