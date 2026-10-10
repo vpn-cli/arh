@@ -73,4 +73,45 @@ describe('GameStateProvider', () => {
     // Changed to scrapbook after 500ms
     expect(screen.getByTestId('current-world').textContent).toBe('scrapbook');
   });
+
+  it('should initialize with world from ?world= if valid', () => {
+    window.history.replaceState({}, '', '/?world=music');
+    render(
+      <GameStateProvider>
+        <TestComponent />
+      </GameStateProvider>
+    );
+    expect(screen.getByTestId('current-world').textContent).toBe('music');
+  });
+
+  it('should ignore invalid ?world= param and default to home', () => {
+    window.history.replaceState({}, '', '/?world=invalid_world');
+    render(
+      <GameStateProvider>
+        <TestComponent />
+      </GameStateProvider>
+    );
+    expect(screen.getByTestId('current-world').textContent).toBe('home');
+  });
+
+  it('should update URL with history.replaceState when world changes', () => {
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+    render(
+      <GameStateProvider>
+        <TestComponent />
+      </GameStateProvider>
+    );
+
+    act(() => {
+      screen.getByText('Go Scrapbook').click();
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(screen.getByTestId('current-world').textContent).toBe('scrapbook');
+    expect(replaceStateSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.stringContaining('world=scrapbook')
+    );
+  });
 });

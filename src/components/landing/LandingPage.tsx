@@ -29,6 +29,9 @@ export default function LandingPage() {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const worldParam = urlParams.get("world");
+    const hasValidWorld = worldParam && ["home", "main", "music", "scrapbook"].includes(worldParam);
     const isAuthReturn = window.location.search.includes("spotify_auth=");
     const isStoryComplete = window.localStorage.getItem("story_complete") === "true";
 
@@ -37,7 +40,7 @@ export default function LandingPage() {
       setHasEntered(true);
       setIntroFinished(true);
       setStoryComplete(true);
-    } else if (isStoryComplete) {
+    } else if (hasValidWorld || isStoryComplete) {
       setHasEntered(true);
       setIntroFinished(true);
       setStoryComplete(true);
