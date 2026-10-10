@@ -7,6 +7,7 @@ import {
   formatBytes,
   getContentHash8,
   getSlideshowTotalSizeBytes,
+  parsePositionOverride,
   regenerateSlideshowConfig,
   slugify,
 } from './lib/slideshowImages';
@@ -17,6 +18,7 @@ interface ProcessedItem {
   originalSize: number;
   outputSize: number;
   cached: boolean;
+  override?: string;
 }
 
 interface SkippedItem {
@@ -124,9 +126,11 @@ async function main() {
     }
 
     const originalSize = sourceBuffer.length;
-    const hash8 = getContentHash8(sourceBuffer);
+    const overrideInfo = parsePositionOverride(entry);
+    const hash8 = getContentHash8(sourceBuffer, overrideInfo?.override);
     const baseName = path.parse(entry).name;
-    const slug = slugify(baseName);
+    const cleanBaseName = overrideInfo ? overrideInfo.cleanBaseName : baseName;
+    const slug = slugify(cleanBaseName);
     const outputFile = `m-${slug}-${hash8}.webp`;
     const outputPath = path.join(outputDir, outputFile);
 
@@ -142,6 +146,7 @@ async function main() {
           originalSize,
           outputSize: outStat.size,
           cached: true,
+          override: overrideInfo?.override,
         });
         continue;
       } catch {
@@ -150,7 +155,7 @@ async function main() {
     }
 
     try {
-      const result = await convertSlideshowImage(sourceBuffer);
+      const result = await convertSlideshowImage(sourceBuffer, overrideInfo?.position);
       if (!result.success) {
         skippedItems.push({
           file: entry,
@@ -167,6 +172,7 @@ async function main() {
         originalSize,
         outputSize: result.buffer.length,
         cached: false,
+        override: overrideInfo?.override,
       });
     } catch (err) {
       skippedItems.push({
@@ -206,10 +212,21 @@ async function main() {
     console.log('\nFiles processed (original -> output):');
     for (const item of keptItems) {
       const status = item.cached ? '[up-to-date]' : '[converted]';
+      const overrideNote = item.override ? ` [@ override: ${item.override}]` : '';
       console.log(
-        `  - ${item.file} -> ${item.outputFile} (${formatBytes(item.originalSize)} -> ${formatBytes(item.outputSize)}) ${status}`
+        `  - ${item.file} -> ${item.outputFile} (${formatBytes(item.originalSize)} -> ${formatBytes(item.outputSize)}) ${status}${overrideNote}`
       );
     }
+  }
+
+  const filesWithOverride = keptItems.filter((item) => item.override);
+  console.log(`\nFiles with @ override: ${filesWithOverride.length}`);
+  if (filesWithOverride.length > 0) {
+    for (const item of filesWithOverride) {
+      console.log(`  - ${item.file} (${item.override}) -> ${item.outputFile}`);
+    }
+  } else {
+    console.log('  (none)');
   }
 
   console.log(`\nItems kept:    ${keptItems.length}`);

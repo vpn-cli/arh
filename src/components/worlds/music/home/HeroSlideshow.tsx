@@ -7,10 +7,16 @@ import { CurrentlyPlayingHero } from "./CurrentlyPlayingHero";
 import { SlideLayer } from "./SlideLayer";
 import { PlayIcon, PauseIcon } from "../icons";
 
-// Timing constants
-export const STILL_MS = 6000;
-export const ANIMATED_MS = 10000;
+// Timing constants: each slide stays for 3 minutes (180s)
+export const STILL_MS = 180000;
+export const ANIMATED_MS = 180000;
 export const FADE_MS = 800;
+export const PRELOAD_LEAD_MS = 15000;
+
+// Module-level persistence so navigation away from and back to Home preserves slideshow progress
+let savedSlides: SlideItem[] | null = null;
+let savedCurrentIndex = 0;
+let savedRemainingMs: number | null = null;
 
 // Visual tuning constants for background slideshow & scrim
 export const BG_OPACITY = 0.55;
@@ -40,9 +46,12 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
   const [reducedMotion, setReducedMotion] = useState(false);
 
   const sectionRef = useRef<HTMLElement | null>(null);
+  const remainingMsRef = useRef<number | null>(savedRemainingMs);
+  const activeStartMarkRef = useRef<number | null>(null);
   const nextReadyRef = useRef(false);
   const timerExpiredRef = useRef(false);
-  const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const preloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const slidesRef = useRef<SlideItem[]>([]);
@@ -66,23 +75,26 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     const setupSlides = (isReduced: boolean) => {
       if (isReduced) {
         const stillSlides = slideshowSlides.filter((s) => !s.animated);
-        if (stillSlides.length > 0) {
-          const randomIndex = Math.floor(Math.random() * stillSlides.length);
-          setSlides([stillSlides[randomIndex]]);
-        } else {
-          setSlides([]);
+        setSlides(stillSlides.length > 0 ? [stillSlides[Math.floor(Math.random() * stillSlides.length)]] : []);
+      } else if (slideshowSlides.length > 0) {
+        if (savedSlides && savedSlides.length === slideshowSlides.length) {
+          setSlides(savedSlides);
+          setCurrentIndex(savedCurrentIndex);
+          setNextIndex(null);
+          setIsFading(false);
+          return;
         }
+        const shuffled = [...slideshowSlides];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        savedSlides = shuffled;
+        savedCurrentIndex = 0;
+        savedRemainingMs = null;
+        setSlides(shuffled);
       } else {
-        if (slideshowSlides.length > 0) {
-          const shuffled = [...slideshowSlides];
-          for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-          }
-          setSlides(shuffled);
-        } else {
-          setSlides([]);
-        }
+        setSlides([]);
       }
       setCurrentIndex(0);
       setNextIndex(null);
@@ -131,7 +143,8 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
   // Clear timers on unmount
   useEffect(() => {
     return () => {
-      if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+      if (preloadTimerRef.current) clearTimeout(preloadTimerRef.current);
+      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
     };
   }, []);
@@ -144,11 +157,14 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
       const finishedIndex = nextIndexRef.current;
       if (finishedIndex !== null) {
         setCurrentIndex(finishedIndex);
+        savedCurrentIndex = finishedIndex;
       }
       setNextIndex(null);
       setIsFading(false);
       nextReadyRef.current = false;
       timerExpiredRef.current = false;
+      remainingMsRef.current = null;
+      savedRemainingMs = null;
     }, FADE_MS);
   }, []);
 
@@ -167,20 +183,13 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     setNextIndex(skipped);
   }, []);
 
-  // Preload next slide only after current one has finished fading in
+  // Auto-advance & preload timer:
+  // Each slide stays for 3 minutes (180,000 ms).
+  // Preloads and decodes next slide ~15 seconds before switch.
+  // Pauses while tab is hidden or Home tab / hero is not shown, and resumes with remaining time.
   useEffect(() => {
-    if (!hasInitialized || slides.length <= 1 || isFading || nextIndex !== null || reducedMotion) {
-      return;
-    }
-    const upcoming = (currentIndex + 1) % slides.length;
-    nextReadyRef.current = false;
-    timerExpiredRef.current = false;
-    setNextIndex(upcoming);
-  }, [hasInitialized, slides.length, isFading, nextIndex, currentIndex, reducedMotion]);
-
-  // Auto-advance timer: 6s for still images, 10s for animated
-  useEffect(() => {
-    if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+    if (preloadTimerRef.current) clearTimeout(preloadTimerRef.current);
+    if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
 
     if (
       !hasInitialized ||
@@ -197,17 +206,56 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     if (!currentSlide) return;
 
     const stayDuration = currentSlide.animated ? ANIMATED_MS : STILL_MS;
+    const remaining = remainingMsRef.current ?? stayDuration;
+    remainingMsRef.current = remaining;
 
-    autoTimerRef.current = setTimeout(() => {
+    activeStartMarkRef.current = Date.now();
+
+    // 1. Preload timing: start preloading and decoding about 15s before switch
+    const preloadDelay = Math.max(0, remaining - PRELOAD_LEAD_MS);
+    if (preloadDelay === 0) {
+      if (nextIndexRef.current === null) {
+        nextReadyRef.current = false;
+        setNextIndex((currentIndex + 1) % slides.length);
+      }
+    } else {
+      preloadTimerRef.current = setTimeout(() => {
+        if (nextIndexRef.current === null) {
+          nextReadyRef.current = false;
+          setNextIndex((currentIndexRef.current + 1) % slidesRef.current.length);
+        }
+      }, preloadDelay);
+    }
+
+    // 2. Advance timing: switch after remaining time expires
+    advanceTimerRef.current = setTimeout(() => {
+      remainingMsRef.current = 0;
+      savedRemainingMs = 0;
       if (nextReadyRef.current) {
         triggerCrossfade();
       } else {
         timerExpiredRef.current = true;
       }
-    }, stayDuration);
+    }, remaining);
 
     return () => {
-      if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+      if (preloadTimerRef.current) {
+        clearTimeout(preloadTimerRef.current);
+        preloadTimerRef.current = null;
+      }
+      if (advanceTimerRef.current) {
+        clearTimeout(advanceTimerRef.current);
+        advanceTimerRef.current = null;
+      }
+      if (activeStartMarkRef.current !== null) {
+        const elapsed = Date.now() - activeStartMarkRef.current;
+        const newRemaining = Math.max(0, remaining - elapsed);
+        remainingMsRef.current = newRemaining;
+        savedRemainingMs = newRemaining;
+        activeStartMarkRef.current = null;
+      }
+      savedCurrentIndex = currentIndexRef.current;
+      savedSlides = slidesRef.current;
     };
   }, [
     hasInitialized,

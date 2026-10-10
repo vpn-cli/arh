@@ -98,7 +98,8 @@ export const SlideLayer = React.memo(function SlideLayer({
         aria-hidden="true"
         fetchPriority={isPriority ? "high" : "auto"}
         decoding="async"
-        className="h-full w-full object-cover object-center"
+        className="h-full w-full object-cover"
+        style={{ objectPosition: "65% 50%" }}
       />
     </div>
   );

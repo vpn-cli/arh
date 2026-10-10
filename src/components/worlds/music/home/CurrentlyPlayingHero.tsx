@@ -32,6 +32,7 @@ export const CurrentlyPlayingHero = React.memo(function CurrentlyPlayingHero({
         src={heroArt}
         alt=""
         className="absolute inset-0 h-full w-full object-cover opacity-75"
+        style={{ objectPosition: "65% 50%" }}
         fetchPriority="high"
         decoding="async"
       />
