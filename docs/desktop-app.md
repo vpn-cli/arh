@@ -45,6 +45,4 @@ This document outlines the implementation plan and execution status for making M
 ## Parked: needs hosting first
 
 The following features require remote production deployment, SSL on a live domain, and external service configuration before they can be activated:
-1. **Push Notifications & Web Push**: Requires VAPID key pairs and background push server endpoints hosted on a live domain.
-2. **Periodic Background Sync**: Chrome limits periodic background sync to installed PWAs on live origins with high engagement score.
-3. **Spotify Production Domain Whitelisting**: Redirect URI in Spotify Developer Dashboard requires updating to the production hosting domain (e.g. `https://yourdomain.com/api/spotify/callback`).
+1. **Spotify Production Domain Whitelisting**: Redirect URI in Spotify Developer Dashboard requires updating to the production hosting domain (e.g. `https://yourdomain.com/api/spotify/callback`).

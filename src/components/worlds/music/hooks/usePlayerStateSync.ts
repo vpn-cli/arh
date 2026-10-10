@@ -8,6 +8,12 @@ import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { useSpotifyMutations } from "@/hooks/useSpotify";
 import { ProgressBarHandle } from "../now-playing";
 import { LyricsViewHandle } from "../lyrics/LyricsView";
+import {
+  getSharedPositionMs,
+  updateSharedPlaybackState,
+  seekSharedClock,
+  setSharedPaused,
+} from "../playback/playbackClock";
 
 export interface UsePlayerStateSyncOptions {
   progressBarRef: RefObject<ProgressBarHandle | null>;
@@ -57,12 +63,7 @@ export function usePlayerStateSync({
   playerRef.current = player;
 
   const getPositionMs = useCallback(() => {
-    return Math.max(
-      0,
-      (pauseTimestampRef.current ?? Date.now()) -
-        trackStartTimeRef.current -
-        pausedDurationRef.current
-    );
+    return getSharedPositionMs();
   }, []);
 
   const handleSeek = useCallback(
@@ -70,6 +71,7 @@ export function usePlayerStateSync({
       if (playerRef.current) {
         playerRef.current.seek(targetMs);
       }
+      seekSharedClock(targetMs);
       trackStartTimeRef.current = Date.now() - targetMs - pausedDurationRef.current;
       progressBarRef.current?.showPosition(targetMs);
       lyricsViewRef.current?.resync(targetMs);
@@ -78,11 +80,13 @@ export function usePlayerStateSync({
   );
 
   const handleDragSeek = useCallback((newPos: number) => {
+    seekSharedClock(newPos);
     trackStartTimeRef.current = Date.now() - newPos - pausedDurationRef.current;
   }, []);
 
   // Sync pause states for our accumulator
   useEffect(() => {
+    setSharedPaused(isPaused);
     if (isPaused) {
       if (!pauseTimestampRef.current) pauseTimestampRef.current = Date.now();
     } else {
@@ -127,6 +131,7 @@ export function usePlayerStateSync({
       if (incomingTrackId && incomingTrackId !== lastActiveTrackIdRef.current) {
         lastActiveTrackIdRef.current = incomingTrackId;
       }
+      updateSharedPlaybackState(state.position, state.paused);
       trackStartTimeRef.current = Date.now() - state.position;
       pausedDurationRef.current = 0;
       pauseTimestampRef.current = state.paused ? Date.now() : null;

@@ -21,6 +21,10 @@ vi.mock('@/hooks/useSpotify', () => ({
   useSpotifySession: () => ({
     data: mockSessionToken ? { accessToken: mockSessionToken } : null,
   }),
+  useTrackSavedStatus: () => ({ data: false }),
+  useSpotifyMutations: () => ({
+    toggleSave: { mutateAsync: vi.fn().mockResolvedValue(undefined) },
+  }),
 }));
 
 vi.mock('@/lib/spotifyClient', () => ({

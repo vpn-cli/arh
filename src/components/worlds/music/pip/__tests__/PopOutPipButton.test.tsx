@@ -1,7 +1,8 @@
 import React from "react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { PopOutPipButton } from "../PopOutPipButton";
+import { PipProvider } from "../PipContext";
 
 describe("PopOutPipButton", () => {
   const defaultProps = {
@@ -23,7 +24,11 @@ describe("PopOutPipButton", () => {
 
   it("renders null when documentPictureInPicture is not supported in window", () => {
     delete (window as any).documentPictureInPicture;
-    const { container } = render(<PopOutPipButton {...defaultProps} />);
+    const { container } = render(
+      <PipProvider>
+        <PopOutPipButton {...defaultProps} />
+      </PipProvider>
+    );
     expect(container.firstChild).toBeNull();
   });
 
@@ -32,7 +37,11 @@ describe("PopOutPipButton", () => {
       requestWindow: vi.fn(),
     };
 
-    render(<PopOutPipButton {...defaultProps} />);
+    render(
+      <PipProvider>
+        <PopOutPipButton {...defaultProps} />
+      </PipProvider>
+    );
     expect(screen.getByRole("button", { name: /Open floating mini-player/i })).toBeDefined();
   });
 
@@ -55,7 +64,11 @@ describe("PopOutPipButton", () => {
       requestWindow: requestWindowMock,
     };
 
-    render(<PopOutPipButton {...defaultProps} />);
+    render(
+      <PipProvider>
+        <PopOutPipButton {...defaultProps} />
+      </PipProvider>
+    );
     const btn = screen.getByRole("button", { name: /Open floating mini-player/i });
 
     await act(async () => {
