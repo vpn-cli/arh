@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { usePlaylists } from "@/hooks/useSpotify";
-import { PlaylistCard } from "../PlaylistCard";
+import { MediaRow } from "../MediaRow";
+import { PlaylistCover } from "../PlaylistCover";
 
 export interface PlaylistsTabProps {
   onOpenPlaylist: (id: string) => void;
@@ -45,9 +46,39 @@ export const PlaylistsTab = React.memo(function PlaylistsTab({
         const filteredPlaylists = playlists.filter((p: any) => p.name.toLowerCase().includes(playlistSearch.toLowerCase()));
         if (filteredPlaylists.length === 0) return <div className="flex items-center justify-center h-20 text-[var(--color-dark)] font-pixel text-xs font-medium">NO MATCHES FOUND</div>;
 
-        return filteredPlaylists.map((p: any, idx: number) => (
-          <PlaylistCard key={`${p.id || 'playlist'}-${idx}`} playlist={p} onClick={() => onOpenPlaylist(p.id)} />
-        ));
+        return (
+          <div className="flex flex-col gap-1.5">
+            {filteredPlaylists.map((p: any, idx: number) => {
+              const trackCount =
+                p.items?.total ??
+                p.tracks?.total ??
+                p.total_tracks ??
+                (Array.isArray(p.items)
+                  ? p.items.length
+                  : Array.isArray(p.tracks?.items)
+                  ? p.tracks.items.length
+                  : Array.isArray(p.tracks)
+                  ? p.tracks.length
+                  : undefined);
+
+              const subtitle = `Playlist • ${p.owner?.display_name || 'Spotify'}${
+                trackCount !== undefined ? ` • ${trackCount} tracks` : ''
+              }`;
+
+              return (
+                <MediaRow
+                  key={`${p.id || 'playlist'}-${idx}`}
+                  title={p.name}
+                  subtitle={subtitle}
+                  imageSlot={<PlaylistCover images={p.images} size={56} />}
+                  imageSize={56}
+                  imageShape="rounded"
+                  onClick={() => onOpenPlaylist(p.id)}
+                />
+              );
+            })}
+          </div>
+        );
       })()}
     </>
   );
