@@ -1194,8 +1194,17 @@ html {
 
   /* Play button inside cards & tiles */
   .mw-card-play {
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    background-color: var(--color-vibrant);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     opacity: 0;
-    transform: scale(0.9);
+    transform: translateY(4px);
     transition: opacity var(--motion-base) var(--ease-out),
                 transform var(--motion-base) var(--ease-out);
   }
@@ -1203,13 +1212,14 @@ html {
   @media (hover: hover) {
     .mw-card:hover .mw-card-play {
       opacity: 1;
-      transform: scale(1);
+      transform: translateY(0);
     }
   }
 
-  .mw-card:focus-visible .mw-card-play {
+  .mw-card:focus-visible .mw-card-play,
+  .mw-card:focus .mw-card-play {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
 
   /* Title transition inside cards */

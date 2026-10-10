@@ -117,33 +117,27 @@ export const HomeTab = React.memo(function HomeTab({
                   {playlist.images.slice(0, 4).map((img: any, i: number) => (
                     <img key={i} src={img.url || img} alt="" className="w-full h-full object-cover" />
                   ))}
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
-                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center shadow-lg mw-card-play">
-                      <PlayIcon size={20} />
-                    </div>
+                  <div className="absolute bottom-2 right-2 mw-card-play pointer-events-none">
+                    <PlayIcon size={18} className="text-white ml-0.5" />
                   </div>
                 </div>
               ) : playlist.images?.[0] ? (
                 <div className="relative aspect-[4/3] w-full">
                   <img src={(playlist.images[1] || playlist.images[0]).url || playlist.images[0]} loading="lazy" alt={playlist.name} className="absolute inset-0 h-full w-full object-cover" />
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
-                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center shadow-lg mw-card-play">
-                      <PlayIcon size={20} />
-                    </div>
+                  <div className="absolute bottom-2 right-2 mw-card-play pointer-events-none">
+                    <PlayIcon size={18} className="text-white ml-0.5" />
                   </div>
                 </div>
               ) : (
                 <div className="relative aspect-[4/3] w-full bg-[var(--color-light)] flex items-center justify-center font-bold text-2xl text-[var(--color-muted)]">
                   <MusicNoteIcon size={28} className="text-[var(--color-muted)]" />
-                  <div className="absolute inset-0 bg-black/5 flex items-center justify-center pointer-events-none">
-                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center shadow-lg mw-card-play">
-                      <PlayIcon size={20} />
-                    </div>
+                  <div className="absolute bottom-2 right-2 mw-card-play pointer-events-none">
+                    <PlayIcon size={18} className="text-white ml-0.5" />
                   </div>
                 </div>
               )}
               <div className="p-3">
-                <div className="truncate font-pixel text-base font-bold text-[var(--color-dark)] group-hover:text-[var(--color-vibrant)] mw-card-title">{playlist.name}</div>
+                <div className="truncate font-pixel text-base font-bold text-[var(--color-dark)] mw-card-title">{playlist.name}</div>
                 <div className="font-pixel text-xs text-[var(--color-dark)] font-medium opacity-80">{(playlist.items?.total ?? playlist.tracks?.total ?? playlist.total_tracks ?? (Array.isArray(playlist.items) ? playlist.items.length : (Array.isArray(playlist.tracks?.items) ? playlist.tracks.items.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : 0))))} songs</div>
               </div>
             </button>
@@ -171,13 +165,11 @@ export const HomeTab = React.memo(function HomeTab({
                 {vibe.emoji}
               </div>
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors" />
-              <div className="absolute inset-0 p-3 flex flex-col justify-end">
-                <div className="font-pixel text-sm sm:text-base font-bold text-white drop-shadow-md group-hover:text-[var(--color-vibrant)] mw-card-title">{vibe.label}</div>
+              <div className="absolute inset-0 p-3 flex flex-col justify-end pr-12">
+                <div className="font-pixel text-sm sm:text-base font-bold text-white drop-shadow-md mw-card-title">{vibe.label}</div>
               </div>
-              <div className="absolute top-2 right-2 pointer-events-none">
-                <div className="w-8 h-8 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center shadow-md mw-card-play">
-                  <PlayIcon size={14} />
-                </div>
+              <div className="absolute bottom-2 right-2 mw-card-play pointer-events-none">
+                <PlayIcon size={18} className="text-white ml-0.5" />
               </div>
             </button>
           ))}
@@ -220,7 +212,7 @@ export const HomeTab = React.memo(function HomeTab({
                   </div>
                 </div>
                 <div className="flex-1 min-w-0 pr-2">
-                  <div className="truncate font-pixel text-sm font-bold text-[var(--color-dark)] group-hover:text-[var(--color-vibrant)] mw-card-title">{track.name}</div>
+                  <div className="truncate font-pixel text-sm font-bold text-[var(--color-dark)] mw-card-title">{track.name}</div>
                   <div className="truncate font-pixel text-xs text-[var(--color-dark)] font-medium opacity-80">{track.artists?.map((a: any) => a.name).join(', ')}</div>
                 </div>
               </button>

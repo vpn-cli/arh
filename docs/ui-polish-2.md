@@ -92,18 +92,18 @@ Each task has a checkbox grouped by section. One git commit per section, updatin
 
 ## Section B: Card hover play button (Continue Listening, Vibes tiles)
 
-- [ ] Update `.mw-card-play` CSS in `src/app/globals.css`:
+- [x] Update `.mw-card-play` CSS in `src/app/globals.css`:
   - 40px circle, background `var(--color-vibrant)`, soft shadow.
   - Initial/hidden state: `opacity: 0; transform: translateY(4px);`.
   - Hover and focus state: `opacity: 1; transform: translateY(0);`.
   - Transitions use `--motion-base` and `--ease-out` (no scale pop).
-- [ ] Update Continue Listening cards in `HomeTab.tsx`:
+- [x] Update Continue Listening cards in `HomeTab.tsx`:
   - Place `.mw-card-play` bottom-right of the artwork with 8px inset (`bottom-2 right-2`).
   - Render white SVG `PlayIcon` inside.
-- [ ] Update Vibes tiles in `HomeTab.tsx`:
+- [x] Update Vibes tiles in `HomeTab.tsx`:
   - Place `.mw-card-play` bottom-right of the artwork with 8px inset (`bottom-2 right-2`).
   - Render white SVG `PlayIcon` inside.
-- [ ] Remove hover colour change from card titles in `HomeTab.tsx` (remove `group-hover:text-[var(--color-vibrant)]` from Continue Listening, Vibes, and Recently Played cards).
+- [x] Remove hover colour change from card titles in `HomeTab.tsx` (remove `group-hover:text-[var(--color-vibrant)]` from Continue Listening, Vibes, and Recently Played cards).
 
 ---
 
