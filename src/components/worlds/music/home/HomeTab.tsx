@@ -86,9 +86,9 @@ export const HomeTab = React.memo(function HomeTab({
                   }
                 }
               }}
-              className="mt-4 sm:mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-5 sm:px-6 py-2 sm:py-2.5 font-pixel text-sm sm:text-base font-bold text-white shadow-md transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] group"
+              className="mt-4 sm:mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-5 sm:px-6 py-2 sm:py-2.5 font-pixel text-sm sm:text-base font-bold text-white shadow-md mw-btn group"
             >
-              <span className="group-hover:scale-110 transition-transform">{currentTrack ? (isPaused ? '▶' : '⏸') : '▶'}</span>
+              <span>{currentTrack ? (isPaused ? '▶' : '⏸') : '▶'}</span>
               {currentTrack ? (isPaused ? 'Resume' : 'Playing') : 'Play Mix'}
             </button>
           </div>
@@ -100,41 +100,41 @@ export const HomeTab = React.memo(function HomeTab({
           <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
             <span className="text-[var(--color-vibrant)]">♥</span> Continue Listening
           </h3>
-          <button onClick={() => onNavigate('playlists')} className="font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:underline">See all →</button>
+          <button onClick={() => onNavigate('playlists')} className="mw-btn font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)]">See all →</button>
         </div>
         <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
           {homePlaylists.map((playlist: any, idx: number) => (
             <button
               key={`${playlist.id || 'playlist'}-${idx}`}
               onClick={() => onOpenPlaylist(playlist.id)}
-              className="w-[160px] sm:w-[180px] shrink-0 group overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-bg)]/95 text-left shadow-sm transition hover:-translate-y-1 hover:border-[var(--color-muted)] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
+              className="w-[160px] sm:w-[180px] shrink-0 group overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-bg)]/95 text-left mw-card"
             >
               {playlist.images && playlist.images.length >= 4 ? (
                 <div className="relative aspect-[4/3] w-full overflow-hidden grid grid-cols-2 grid-rows-2 bg-[var(--color-light)]">
                   {playlist.images.slice(0, 4).map((img: any, i: number) => (
                     <img key={i} src={img.url || img} alt="" className="w-full h-full object-cover" />
                   ))}
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">▶</div>
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
+                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-xl shadow-lg mw-card-play">▶</div>
                   </div>
                 </div>
               ) : playlist.images?.[0] ? (
                 <div className="relative aspect-[4/3] w-full">
                   <img src={(playlist.images[1] || playlist.images[0]).url || playlist.images[0]} loading="lazy" alt={playlist.name} className="absolute inset-0 h-full w-full object-cover" />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">▶</div>
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
+                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-xl shadow-lg mw-card-play">▶</div>
                   </div>
                 </div>
               ) : (
                 <div className="relative aspect-[4/3] w-full bg-[var(--color-light)] flex items-center justify-center font-bold text-2xl text-[var(--color-muted)]">
                   ♪
-                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">▶</div>
+                  <div className="absolute inset-0 bg-black/5 flex items-center justify-center pointer-events-none">
+                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-xl shadow-lg mw-card-play">▶</div>
                   </div>
                 </div>
               )}
               <div className="p-3">
-                <div className="truncate font-pixel text-base font-bold text-[var(--color-dark)] group-hover:text-[var(--color-vibrant)] transition-colors">{playlist.name}</div>
+                <div className="truncate font-pixel text-base font-bold text-[var(--color-dark)] group-hover:text-[var(--color-vibrant)] mw-card-title">{playlist.name}</div>
                 <div className="font-pixel text-xs text-[var(--color-dark)] font-medium opacity-80">{(playlist.items?.total ?? playlist.tracks?.total ?? playlist.total_tracks ?? (Array.isArray(playlist.items) ? playlist.items.length : (Array.isArray(playlist.tracks?.items) ? playlist.tracks.items.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : 0))))} songs</div>
               </div>
             </button>
@@ -147,24 +147,24 @@ export const HomeTab = React.memo(function HomeTab({
           <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
             <span className="text-[var(--color-vibrant)]">♥</span> Vibes
           </h3>
-          <button onClick={() => onNavigate('vibes')} className="font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:underline">See all →</button>
+          <button onClick={() => onNavigate('vibes')} className="mw-btn font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)]">See all →</button>
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
           {VIBES.filter(vibe => resolvedVibes[vibe.id] !== null).map((vibe) => (
             <button
               key={vibe.id}
               onClick={() => handleVibeClick(vibe.id)}
-              className="group relative overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-[var(--color-vibrant)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] aspect-square"
+              className="group relative overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-white text-left aspect-square mw-card"
             >
               <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${vibe.tone} text-4xl sm:text-5xl text-white drop-shadow-sm`}>
                 {vibe.emoji}
               </div>
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors" />
               <div className="absolute inset-0 p-3 flex flex-col justify-end">
-                <div className="font-pixel text-sm sm:text-base font-bold text-white drop-shadow-md group-hover:text-[var(--color-vibrant)] transition-colors">{vibe.label}</div>
+                <div className="font-pixel text-sm sm:text-base font-bold text-white drop-shadow-md group-hover:text-[var(--color-vibrant)] mw-card-title">{vibe.label}</div>
               </div>
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
-                <div className="w-8 h-8 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-sm shadow-md">▶</div>
+              <div className="absolute top-2 right-2 pointer-events-none">
+                <div className="w-8 h-8 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-sm shadow-md mw-card-play">▶</div>
               </div>
             </button>
           ))}
@@ -176,7 +176,7 @@ export const HomeTab = React.memo(function HomeTab({
           <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
             <span className="text-[var(--color-vibrant)]">◷</span> Recently Played
           </h3>
-          <button onClick={() => onNavigate('recent')} className="font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:underline">See all →</button>
+          <button onClick={() => onNavigate('recent')} className="mw-btn font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)]">See all →</button>
         </div>
         {recentHomeTracks.length === 0 && likedHomeTracks.length === 0 ? (
           <div className="p-8 text-center rounded-2xl border-2 border-dashed border-[var(--color-muted)] bg-[var(--color-light)]/50">
@@ -188,7 +188,7 @@ export const HomeTab = React.memo(function HomeTab({
               <button
                 key={`${track.id || track.uri || 'track'}-${idx}`}
                 onClick={() => playTrack(track.uri)}
-                className="group flex items-center gap-3 overflow-hidden rounded-xl border-2 border-transparent bg-[var(--color-light)] hover:bg-white text-left transition p-2 hover:-translate-y-0.5 hover:border-[var(--color-muted)] hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
+                className="group flex items-center gap-3 overflow-hidden rounded-xl border border-transparent bg-[var(--color-light)] text-left p-2 mw-card"
               >
                 <div className="relative w-12 h-12 shrink-0 rounded-md overflow-hidden shadow-sm">
                   {track.album?.images?.[0]?.url ? (
@@ -196,12 +196,12 @@ export const HomeTab = React.memo(function HomeTab({
                   ) : (
                     <div className="absolute inset-0 bg-[var(--color-muted)]" />
                   )}
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="text-white text-lg shadow-sm">▶</span>
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
+                    <span className="text-white text-lg shadow-sm mw-card-play">▶</span>
                   </div>
                 </div>
                 <div className="flex-1 min-w-0 pr-2">
-                  <div className="truncate font-pixel text-sm font-bold text-[var(--color-dark)] group-hover:text-[var(--color-vibrant)] transition-colors">{track.name}</div>
+                  <div className="truncate font-pixel text-sm font-bold text-[var(--color-dark)] group-hover:text-[var(--color-vibrant)] mw-card-title">{track.name}</div>
                   <div className="truncate font-pixel text-xs text-[var(--color-dark)] font-medium opacity-80">{track.artists?.map((a: any) => a.name).join(', ')}</div>
                 </div>
               </button>

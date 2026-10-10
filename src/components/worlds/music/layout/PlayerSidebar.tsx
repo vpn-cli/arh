@@ -50,13 +50,13 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${
+              className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl mw-nav-item ${
                 isActive
                   ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs'
-                  : 'text-[var(--color-dark)] hover:bg-[var(--color-light)] hover:text-[var(--color-dark)] font-medium'
+                  : 'text-[var(--color-dark)] font-medium'
               }`}
             >
-              <span className="w-5 text-xl">{item.icon}</span>
+              <span className="w-5 text-xl mw-nav-icon">{item.icon}</span>
               <span className="text-base">{item.label}</span>
             </button>
           );
@@ -68,7 +68,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
           <span className="font-pixel text-sm font-bold uppercase tracking-wider text-[var(--color-dark)]">Your Playlists</span>
           <button
             onClick={onCreatePlaylist}
-            className="hover:scale-110 font-bold text-base text-[var(--color-dark)] p-1 rounded transition-transform"
+            className="mw-btn font-bold text-base text-[var(--color-dark)] p-1 rounded"
             aria-label="Create new playlist"
             title="Create new playlist"
           >
@@ -80,7 +80,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
             <div
               key={`${p.id || 'playlist'}-${idx}`}
               onClick={() => onOpenPlaylist(p.id)}
-              className="flex items-center gap-3 py-2 cursor-pointer hover:bg-[var(--color-light)] rounded-lg px-2 transition-colors group"
+              className="flex items-center gap-3 py-2 cursor-pointer mw-row rounded-lg px-2 group"
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
@@ -101,7 +101,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
                 <div className="w-8 h-8 bg-[var(--color-muted)] border border-[var(--color-muted)] rounded shadow-sm flex items-center justify-center text-[var(--color-dark)] text-xs font-bold shrink-0">♪</div>
               )}
               <div className="flex flex-col overflow-hidden">
-                <span className="text-sm font-bold text-[var(--color-dark)] truncate group-hover:text-[var(--color-dark)] transition-colors">{p.name}</span>
+                <span className="text-sm font-bold text-[var(--color-dark)] truncate">{p.name}</span>
                 <span className="text-xs text-[var(--color-dark)] font-medium">{(p.items?.total ?? p.tracks?.total ?? p.total_tracks ?? (Array.isArray(p.items) ? p.items.length : (Array.isArray(p.tracks?.items) ? p.tracks.items.length : (Array.isArray(p.tracks) ? p.tracks.length : 0))))} songs</span>
               </div>
             </div>
@@ -111,7 +111,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
       <div className="p-4 mt-auto border-t border-[var(--color-light)]">
         <button
           onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl border border-[var(--color-vibrant)] text-[var(--color-vibrant)] font-pixel text-sm font-bold hover:bg-[var(--color-vibrant)] hover:text-white transition-colors"
+          className="mw-btn w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl border border-[var(--color-vibrant)] text-[var(--color-vibrant)] font-pixel text-sm font-bold hover:bg-[var(--color-vibrant)] hover:text-white"
         >
           Logout
         </button>

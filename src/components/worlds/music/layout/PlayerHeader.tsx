@@ -27,7 +27,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
         {onGoHome && (
           <button
             onClick={onGoHome}
-            className="group px-3 py-1 bg-white/50 hover:bg-[var(--color-light)] border border-[var(--color-muted)] rounded-full flex items-center gap-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+            className="mw-btn group px-3 py-1 bg-white/50 hover:bg-[var(--color-light)] border border-[var(--color-muted)] rounded-full flex items-center gap-1.5"
             aria-label="Return to Home World"
             title="Return to Home World"
           >
@@ -55,7 +55,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
         {searchQuery && (
           <button
             onClick={onClearSearch}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel transition-colors p-1"
+            className="mw-btn absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel p-1"
             aria-label="Clear search"
             title="Clear search"
           >
@@ -68,9 +68,9 @@ export const PlayerHeader = React.memo(function PlayerHeader({
           <span className="font-pixel text-[10px] text-[var(--color-dark)] font-bold tracking-wider uppercase">Music World</span>
           <span className="font-pixel text-[10px] text-[var(--color-vibrant)]">♪</span>
         </div>
-        <button className="hover:scale-110 hover:text-[var(--color-vibrant)] transition-all p-1 flex items-center justify-center" aria-label="Minimize window"><span className="text-sm">_</span></button>
-        <button className="hover:scale-110 hover:text-[var(--color-vibrant)] transition-all p-1 flex items-center justify-center" aria-label="Maximize window"><span className="text-base">□</span></button>
-        <button className="hover:scale-110 hover:text-[var(--color-vibrant)] transition-all p-1 flex items-center justify-center" aria-label="Close window"><span className="text-xl leading-none">×</span></button>
+        <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Minimize window"><span className="text-sm">_</span></button>
+        <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Maximize window"><span className="text-base">□</span></button>
+        <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Close window"><span className="text-xl leading-none">×</span></button>
       </div>
     </div>
   );

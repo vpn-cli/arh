@@ -17,17 +17,17 @@ export const TrackRow = React.memo(function TrackRow({ index, track, onPlay, onA
   const titleSize = isCompact ? 'text-sm font-bold font-pixel' : 'text-base font-bold font-pixel';
 
   return (
-    <div className="group w-full flex items-center gap-2 py-1 px-2 rounded-xl hover:bg-[var(--color-light)] transition-all text-left border border-transparent hover:border-[var(--color-muted)] shrink-0">
+    <div className="group w-full flex items-center gap-2 py-1 px-2 rounded-xl mw-row text-left shrink-0">
       <button
         onClick={() => onPlay(track.uri, undefined, track)}
-        className="flex-1 flex items-center gap-3 active:scale-95 text-left truncate min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-lg p-1 -m-1"
+        className="flex-1 flex items-center gap-3 text-left truncate min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] rounded-lg p-1 -m-1"
         aria-label={`Play ${track.name} by ${track.artists?.map((a: any) => a.name).join(', ') || 'Unknown artist'}`}
       >
         {index !== undefined && !isCompact && (
           <span className="font-pixel text-[var(--color-dark)] font-bold text-xs w-5 shrink-0 text-center">{index + 1}</span>
         )}
         {track.album?.images && track.album.images[0] ? (
-          <img src={track.album.images[0].url} alt="" className={`${imgSize} rounded-lg shadow-sm object-cover transition-transform duration-200 group-hover:scale-105 group-hover:shadow-md shrink-0`} />
+          <img src={track.album.images[0].url} alt="" className={`${imgSize} rounded-lg shadow-sm object-cover shrink-0`} />
         ) : (
           <div className={`${imgSize} rounded-lg bg-[var(--color-muted)] text-[var(--color-dark)] font-bold text-xs flex items-center justify-center shadow-sm shrink-0`}>
             ♪
@@ -35,11 +35,11 @@ export const TrackRow = React.memo(function TrackRow({ index, track, onPlay, onA
         )}
         <div className="flex-1 overflow-hidden z-10 relative min-w-0 flex flex-col">
           <div className="w-full relative overflow-hidden whitespace-nowrap">
-            <span className={`${titleSize} text-[var(--color-dark)] transition-colors pr-2 truncate block w-full`} title={track.name}>
+            <span className={`${titleSize} text-[var(--color-dark)] pr-2 truncate block w-full`} title={track.name}>
               {track.name}
             </span>
           </div>
-          <div className="font-pixel text-sm text-[var(--color-dark)] font-medium transition-opacity truncate w-full mt-0.5" title={track.artists?.map((a:any)=>a.name).join(', ')}>
+          <div className="font-pixel text-sm text-[var(--color-dark)] font-medium truncate w-full mt-0.5" title={track.artists?.map((a:any)=>a.name).join(', ')}>
             {track.artists?.map((a:any)=>a.name).join(', ')}
           </div>
         </div>
@@ -51,7 +51,7 @@ export const TrackRow = React.memo(function TrackRow({ index, track, onPlay, onA
             e.stopPropagation();
             onAddToPlaylist(track.uri);
           }}
-          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-2 text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-opacity shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+          className="mw-btn mw-row-action p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
           title="Add to Playlist"
           aria-label={`Add ${track.name} to playlist`}
         >
@@ -67,7 +67,7 @@ export const TrackRow = React.memo(function TrackRow({ index, track, onPlay, onA
             e.stopPropagation();
             onRemoveFromPlaylist(track.uri);
           }}
-          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-2 text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-opacity shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+          className="mw-btn mw-row-action p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
           title="Remove from Playlist"
           aria-label={`Remove ${track.name} from playlist`}
         >
@@ -83,7 +83,7 @@ export const TrackRow = React.memo(function TrackRow({ index, track, onPlay, onA
             e.stopPropagation();
             onAddToQueue(track);
           }}
-          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-2 text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-opacity shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+          className="mw-btn mw-row-action p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
           title="Add to Queue"
           aria-label={`Add ${track.name} to queue`}
         >
@@ -98,7 +98,7 @@ export const TrackRow = React.memo(function TrackRow({ index, track, onPlay, onA
             e.stopPropagation();
             onAddMemory(track);
           }}
-          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-2 text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-opacity shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+          className="mw-btn mw-row-action p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
           title="Add Memory"
           aria-label={`Add memory for ${track.name}`}
         >
