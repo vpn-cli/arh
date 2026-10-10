@@ -4,7 +4,7 @@ import React from "react";
 import { logoutSpotify } from "@/lib/spotifyAuth";
 import { usePlaylists } from "@/hooks/useSpotify";
 import { MediaRow } from "../MediaRow";
-import { pickImage } from "@/lib/spotify/images";
+import { PlaylistCover } from "../PlaylistCover";
 
 export type MusicNavTab = 'home' | 'playlists' | 'mix' | 'vibes' | 'library' | 'memories' | 'frequencies';
 
@@ -99,7 +99,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
                 key={`${p.id || 'playlist'}-${idx}`}
                 title={p.name}
                 subtitle={`${songCount} songs`}
-                imageUrl={pickImage(p.images, 40)}
+                imageSlot={<PlaylistCover images={p.images} size={40} />}
                 imageSize={40}
                 imageShape="rounded"
                 onClick={() => onOpenPlaylist(p.id)}

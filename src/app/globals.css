@@ -1155,12 +1155,18 @@ html {
    ═══════════════════════════════════════════════════════ */
 
 :root {
-  --sidebar-width: 296px;
+  --sidebar-width: 256px;
   --motion-fast: 120ms;
   --motion-base: 180ms;
   --motion-slow: 240ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --row-hover: color-mix(in srgb, var(--color-dark) 7%, transparent);
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --sidebar-width: 296px;
+  }
 }
 
 @layer components {

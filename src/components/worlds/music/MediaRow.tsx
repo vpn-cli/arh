@@ -10,6 +10,8 @@ export interface MediaRowProps {
   subtitle?: React.ReactNode;
   /** URL for the media thumbnail/avatar image */
   imageUrl?: string | null;
+  /** Custom image slot element (e.g. PlaylistCover). When given, replaces the built-in image and fallback while keeping size/shape wrappers consistent */
+  imageSlot?: React.ReactNode;
   /** Shape of the image: 'circle' for artists, 'rounded' for tracks and playlists. Defaults to 'rounded' */
   imageShape?: 'rounded' | 'circle';
   /** Square size of the image in pixels. Defaults to 48px from the design spec (56px in Playlists tab) */
@@ -36,6 +38,7 @@ export const MediaRow = React.memo(function MediaRow({
   title,
   subtitle,
   imageUrl,
+  imageSlot,
   imageShape = 'rounded',
   imageSize = 48,
   rank,
@@ -68,8 +71,16 @@ export const MediaRow = React.memo(function MediaRow({
         </span>
       )}
 
-      {/* Media Image or Fallback Avatar */}
-      {showFallback ? (
+      {/* Media Image, Image Slot, or Fallback Avatar */}
+      {imageSlot ? (
+        <div
+          style={{ width: `${imageSize}px`, height: `${imageSize}px` }}
+          className={`${shapeClass} overflow-hidden shadow-2xs shrink-0 border border-[var(--color-muted)]/30 flex items-center justify-center`}
+          aria-hidden="true"
+        >
+          {imageSlot}
+        </div>
+      ) : showFallback ? (
         <div
           style={{ width: `${imageSize}px`, height: `${imageSize}px` }}
           className={`${shapeClass} bg-[var(--color-muted)]/20 border border-[var(--color-muted)]/30 text-[var(--color-dark)] font-bold flex items-center justify-center shadow-2xs shrink-0 text-base`}
