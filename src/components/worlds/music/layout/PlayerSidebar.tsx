@@ -3,6 +3,8 @@
 import React from "react";
 import { logoutSpotify } from "@/lib/spotifyAuth";
 import { usePlaylists } from "@/hooks/useSpotify";
+import { MediaRow } from "../MediaRow";
+import { pickImage } from "@/lib/spotify/images";
 
 export type MusicNavTab = 'home' | 'playlists' | 'mix' | 'vibes' | 'library' | 'memories' | 'frequencies';
 
@@ -34,7 +36,10 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
   const { data: playlists = [] } = usePlaylists({ enabled: true });
 
   return (
-    <div className="w-64 border-r-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-white/90 hidden md:flex" style={{ backgroundColor: 'color-mix(in srgb, var(--color-bg) 8%, white)' }}>
+    <div
+      className="w-[var(--sidebar-width)] border-r-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-white/90 hidden md:flex"
+      style={{ backgroundColor: 'color-mix(in srgb, var(--color-bg) 8%, white)' }}
+    >
       <div className="h-28 border-2 border-[var(--color-muted)] bg-[var(--color-light)] flex items-center gap-3 justify-center m-4 rounded-2xl shrink-0">
         <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
         <div>
@@ -75,37 +80,32 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
             +
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
-          {playlists.slice(0, 15).map((p: any, idx: number) => (
-            <div
-              key={`${p.id || 'playlist'}-${idx}`}
-              onClick={() => onOpenPlaylist(p.id)}
-              className="flex items-center gap-3 py-2 cursor-pointer mw-row rounded-lg px-2 group"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  onOpenPlaylist(p.id);
-                }
-              }}
-            >
-              {p.images && p.images.length >= 4 ? (
-                <div className="w-8 h-8 rounded overflow-hidden grid grid-cols-2 grid-rows-2 shadow-sm shrink-0 border border-[var(--color-muted)] bg-[var(--color-muted)]">
-                  {p.images.slice(0, 4).map((img: any, i: number) => (
-                    <img key={i} src={img.url || img} alt="" className="w-full h-full object-cover" />
-                  ))}
-                </div>
-              ) : p.images?.[0] ? (
-                <img src={(p.images[2] || p.images[0]).url || p.images[0]} loading="lazy" alt={p.name} className="w-8 h-8 rounded object-cover shadow-sm shrink-0 border border-[var(--color-muted)]" />
-              ) : (
-                <div className="w-8 h-8 bg-[var(--color-muted)] border border-[var(--color-muted)] rounded shadow-sm flex items-center justify-center text-[var(--color-dark)] text-xs font-bold shrink-0">♪</div>
-              )}
-              <div className="flex flex-col overflow-hidden">
-                <span className="text-sm font-bold text-[var(--color-dark)] truncate">{p.name}</span>
-                <span className="text-xs text-[var(--color-dark)] font-medium">{(p.items?.total ?? p.tracks?.total ?? p.total_tracks ?? (Array.isArray(p.items) ? p.items.length : (Array.isArray(p.tracks?.items) ? p.tracks.items.length : (Array.isArray(p.tracks) ? p.tracks.length : 0))))} songs</span>
-              </div>
-            </div>
-          ))}
+        <div className="flex-1 overflow-y-auto px-2 pb-4 custom-scrollbar flex flex-col gap-0.5">
+          {playlists.slice(0, 15).map((p: any, idx: number) => {
+            const songCount =
+              p.items?.total ??
+              p.tracks?.total ??
+              p.total_tracks ??
+              (Array.isArray(p.items)
+                ? p.items.length
+                : Array.isArray(p.tracks?.items)
+                ? p.tracks.items.length
+                : Array.isArray(p.tracks)
+                ? p.tracks.length
+                : 0);
+
+            return (
+              <MediaRow
+                key={`${p.id || 'playlist'}-${idx}`}
+                title={p.name}
+                subtitle={`${songCount} songs`}
+                imageUrl={pickImage(p.images, 40)}
+                imageSize={40}
+                imageShape="rounded"
+                onClick={() => onOpenPlaylist(p.id)}
+              />
+            );
+          })}
         </div>
       </div>
       <div className="p-4 mt-auto border-t border-[var(--color-light)]">

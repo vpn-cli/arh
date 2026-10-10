@@ -1155,6 +1155,7 @@ html {
    ═══════════════════════════════════════════════════════ */
 
 :root {
+  --sidebar-width: 296px;
   --motion-fast: 120ms;
   --motion-base: 180ms;
   --motion-slow: 240ms;

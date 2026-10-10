@@ -46,7 +46,7 @@ export interface LyricsViewHandle {
 /**
  * Breakpoint where LyricsView shifts from covering the right player panel
  * (max-lg:w-[380px] max-lg:right-0) to covering the center main content area
- * (lg:left-64 lg:right-[400px]). Matches the `lg:` Tailwind classes below.
+ * (lg:left-[var(--sidebar-width)] lg:right-[400px]). Matches the `lg:` Tailwind classes below.
  */
 export const LYRICS_OVERLAY_COVERS_CONTENT_MIN_WIDTH = 1024;
 
@@ -257,7 +257,7 @@ export const LyricsView = React.memo(
     }, []);
 
     return (
-      <div className="absolute top-0 bottom-0 z-40 bg-[var(--color-bg)] flex flex-col pointer-events-auto transition-all duration-300 max-lg:left-auto max-lg:right-0 max-lg:w-[380px] lg:left-64 lg:right-[400px] xl:right-[420px] 2xl:right-[440px]">
+      <div className="absolute top-0 bottom-0 z-40 bg-[var(--color-bg)] flex flex-col pointer-events-auto transition-all duration-300 max-lg:left-auto max-lg:right-0 max-lg:w-[380px] lg:left-[var(--sidebar-width)] lg:right-[400px] xl:right-[420px] 2xl:right-[440px]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 shrink-0 border-b-2 border-[var(--color-muted)] bg-[var(--color-light)]/50">
           <span className="font-pixel text-sm font-bold text-[var(--color-dark)] flex items-center gap-2">
