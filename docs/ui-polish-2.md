@@ -163,17 +163,17 @@ Each task has a checkbox grouped by section. One git commit per section, updatin
 
 ## Section E: Playlist detail header
 
-- [ ] Cover about 160px (`w-40 h-40 rounded-xl shadow-lg object-cover`) with shadow, on the left.
-- [ ] Header container uses the same tinted card treatment as the Vibes detail header (`bg-gradient-to-r from-[var(--color-light)] to-[var(--color-light)] p-6 rounded-2xl border-2 border-[var(--color-muted)]`).
-- [ ] SVG chevron back button (`ChevronLeftIcon`) positioned at top left.
-- [ ] Detail column beside cover:
+- [x] Cover about 160px (`w-40 h-40 rounded-xl shadow-lg object-cover`) with shadow, on the left.
+- [x] Header container uses the same tinted card treatment as the Vibes detail header (`bg-gradient-to-r from-[var(--color-light)] to-[var(--color-light)] p-6 rounded-2xl border-2 border-[var(--color-muted)]`).
+- [x] SVG chevron back button (`ChevronLeftIcon`) positioned at top left.
+- [x] Detail column beside cover:
   - Small "PLAYLIST" label (`text-xs font-bold uppercase tracking-wider text-[var(--color-dark)] opacity-70`).
   - Large title (`text-2xl sm:text-3xl font-extrabold text-[var(--color-dark)]`).
   - Single meta line with owner, track count, and total duration calculated from loaded tracks (without extra requests).
-- [ ] Action row under the meta line:
+- [x] Action row under the meta line:
   - Play as a normal-width pill button (`PlayIcon` + "Play", `bg-[var(--color-vibrant)] text-white px-6 py-2.5 rounded-full font-pixel text-sm font-bold shadow-md`).
   - Shuffle, Edit, Delete as round icon buttons.
-- [ ] Remove the full-width action bar in `PlaylistDetail.tsx` / `PlaylistActions.tsx`.
+- [x] Remove the full-width action bar in `PlaylistDetail.tsx` / `PlaylistActions.tsx`.
 
 ---
 

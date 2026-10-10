@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { usePlaylist, usePlaylistItems } from '@/hooks/usePlaylist';
 import { normalizePlaylistItem } from '@/lib/spotify/library';
 import { PlaylistHeader } from './PlaylistHeader';
-import { PlaylistActions } from './PlaylistActions';
 import { PlaylistTrackList } from './PlaylistTrackList';
 
 interface PlaylistDetailProps {
@@ -122,14 +121,13 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
             total: totalTrackCount
           }
         }} 
+        tracks={resolvedTracks}
         onBack={onBack} 
         isRestricted={isRestricted}
         onEdit={onEdit}
         onRemove={onRemove}
-      />
-      <PlaylistActions 
-        onPlay={handlePlay} 
-        onShuffle={handleShuffle} 
+        onPlay={handlePlay}
+        onShuffle={handleShuffle}
         playDisabled={!playlist?.uri}
         shuffleDisabled={resolvedTracks.length === 0}
       />

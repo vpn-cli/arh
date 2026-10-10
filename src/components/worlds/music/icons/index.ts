@@ -18,3 +18,5 @@ export { PersonIcon } from './PersonIcon';
 export { WarningIcon } from './WarningIcon';
 export { SearchIcon } from './SearchIcon';
 export { ShuffleIcon } from './ShuffleIcon';
+export { EditIcon } from './EditIcon';
+export { TrashIcon } from './TrashIcon';
