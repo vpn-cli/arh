@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState } from 'react';
+import { formatTime } from './playback/playbackHelpers';
 
 export interface MediaRowProps {
   /** Main title of the media item (e.g. track name, artist name, playlist name) */
   title: string;
-  /** Subtitle or secondary metadata (e.g. artist list, "Artist", playlist owner/track count) */
+  /** Subtitle or secondary metadata (e.g. artist list, "Artist", playlist owner / track count) */
   subtitle?: React.ReactNode;
   /** URL for the media thumbnail/avatar image */
   imageUrl?: string | null;
@@ -15,29 +16,20 @@ export interface MediaRowProps {
   imageSize?: number;
   /** Optional 1-based or 0-based rank number displayed on the left */
   rank?: number;
-  /** Optional duration display, as a preformatted string ("3:45") or milliseconds */
+  /** Optional duration display: preformatted string ("3:45") or milliseconds */
   duration?: string | number;
   /** Trailing action buttons (e.g. play, add to queue, add to playlist) */
   actions?: React.ReactNode;
+  /** Visibility mode for trailing action buttons. 'hover' hides until row hover; 'always' keeps them visible. Defaults to 'hover' */
+  actionsVisibility?: 'hover' | 'always';
   /** Primary click handler for the whole row */
   onClick?: () => void;
   /** Highlights the row as currently playing/active */
   isActive?: boolean;
   /** Custom fallback element/icon when image is missing or fails to load */
   fallbackIcon?: React.ReactNode;
-  /** Accessible label for the row action */
-  ariaLabel?: string;
   /** Additional CSS class names */
   className?: string;
-}
-
-/** Formats duration in milliseconds to m:ss string */
-function formatMs(ms: number): string {
-  if (!ms || isNaN(ms)) return '0:00';
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
 export const MediaRow = React.memo(function MediaRow({
@@ -49,10 +41,10 @@ export const MediaRow = React.memo(function MediaRow({
   rank,
   duration,
   actions,
+  actionsVisibility = 'hover',
   onClick,
   isActive = false,
   fallbackIcon,
-  ariaLabel,
   className = '',
 }: MediaRowProps) {
   const [imgError, setImgError] = useState(false);
@@ -63,28 +55,12 @@ export const MediaRow = React.memo(function MediaRow({
   const formattedDuration =
     duration !== undefined
       ? typeof duration === 'number'
-        ? formatMs(duration)
+        ? formatTime(duration)
         : duration
       : undefined;
 
-  return (
-    <div
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (onClick && e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-      className={`group w-full flex items-center gap-3 p-2 rounded-xl mw-row text-left shrink-0 select-none ${
-        onClick ? 'cursor-pointer' : ''
-      } ${
-        isActive ? 'bg-[var(--color-light)] border-[var(--color-vibrant)]' : ''
-      } ${className}`}
-      aria-label={ariaLabel || (typeof title === 'string' ? title : undefined)}
-    >
+  const content = (
+    <>
       {/* Optional Rank Number */}
       {rank !== undefined && (
         <span className="font-pixel text-xs font-bold text-[var(--color-dark)] w-5 text-center shrink-0 opacity-70">
@@ -105,7 +81,10 @@ export const MediaRow = React.memo(function MediaRow({
         <img
           src={imageUrl}
           alt=""
+          width={imageSize}
+          height={imageSize}
           loading="lazy"
+          decoding="async"
           onError={() => setImgError(true)}
           style={{ width: `${imageSize}px`, height: `${imageSize}px` }}
           className={`${shapeClass} shadow-2xs object-cover shrink-0 border border-[var(--color-muted)]/30`}
@@ -131,10 +110,33 @@ export const MediaRow = React.memo(function MediaRow({
           </div>
         )}
       </div>
+    </>
+  );
+
+  return (
+    <div
+      className={`group relative w-full flex items-center gap-3 p-2 rounded-xl mw-row text-left shrink-0 select-none ${
+        isActive ? 'bg-[var(--color-light)] border-[var(--color-vibrant)]' : ''
+      } ${className}`}
+    >
+      {/* Primary Click Target */}
+      {onClick ? (
+        <button
+          type="button"
+          onClick={onClick}
+          className="flex-1 flex items-center gap-3 text-left min-w-0 outline-none focus-visible:outline-none after:absolute after:inset-0 after:content-['']"
+        >
+          {content}
+        </button>
+      ) : (
+        <div className="flex-1 flex items-center gap-3 text-left min-w-0">
+          {content}
+        </div>
+      )}
 
       {/* Optional Duration */}
       {formattedDuration && (
-        <span className="font-pixel text-xs font-bold text-[#82297D] shrink-0">
+        <span className="relative z-10 font-pixel text-xs font-bold text-[var(--color-dark)] opacity-70 shrink-0 pointer-events-none">
           {formattedDuration}
         </span>
       )}
@@ -142,8 +144,9 @@ export const MediaRow = React.memo(function MediaRow({
       {/* Trailing Action Buttons */}
       {actions && (
         <div
-          className="flex items-center gap-1 shrink-0 mw-row-action"
-          onClick={(e) => e.stopPropagation()}
+          className={`relative z-10 flex items-center gap-1 shrink-0 ${
+            actionsVisibility === 'hover' ? 'mw-row-action' : ''
+          }`}
         >
           {actions}
         </div>
