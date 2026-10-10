@@ -146,13 +146,6 @@ export const MediaRow = React.memo(function MediaRow({
         </div>
       )}
 
-      {/* Optional Duration */}
-      {formattedDuration && (
-        <span className="relative z-10 font-pixel text-xs font-bold text-[var(--color-dark)] opacity-70 shrink-0 pointer-events-none">
-          {formattedDuration}
-        </span>
-      )}
-
       {/* Trailing Action Buttons */}
       {actions && (
         <div
@@ -162,6 +155,13 @@ export const MediaRow = React.memo(function MediaRow({
         >
           {actions}
         </div>
+      )}
+
+      {/* Duration (flush right in consistent column) */}
+      {formattedDuration && (
+        <span className="relative z-10 font-pixel text-xs font-bold text-[var(--color-dark)] opacity-70 shrink-0 w-11 text-right tabular-nums pointer-events-none">
+          {formattedDuration}
+        </span>
       )}
     </div>
   );

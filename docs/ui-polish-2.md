@@ -179,6 +179,6 @@ Each task has a checkbox grouped by section. One git commit per section, updatin
 
 ## Section F: Track row right edge
 
-- [ ] In `MediaRow.tsx`, render trailing actions before duration.
-- [ ] Duration sits flush right in a consistent column.
-- [ ] Hidden actions leave no gap at the right edge.
+- [x] In `MediaRow.tsx`, render trailing actions before duration.
+- [x] Duration sits flush right in a consistent column.
+- [x] Hidden actions leave no gap at the right edge.
