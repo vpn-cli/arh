@@ -96,7 +96,57 @@ export function clearNeedsRecovery() {
   needsRecoveryFlag = false;
 }
 
-export async function recoverPlaybackDevice(): Promise<string> {
+export const USER_RECOVERY_ERROR_MESSAGE = "Couldn't connect to Spotify. Try again.";
+export const POST_READY_RETRY_DELAYS = [400, 800, 1600];
+
+export async function transferPlaybackWithRetry(
+  deviceId: string,
+  delays: number[] = POST_READY_RETRY_DELAYS
+): Promise<Response> {
+  const maxAttempts = delays.length + 1; // 4 attempts total
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    console.log(
+      `[${new Date().toISOString()}] [Spotify Device Recovery] Transferring playback to device: ${deviceId} (attempt ${attempt + 1}/${maxAttempts})`
+    );
+
+    const transferRes = await fetch('/api/spotify/proxy/me/player', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ device_ids: [deviceId], play: false }),
+    });
+
+    if (transferRes.ok) {
+      return transferRes;
+    }
+
+    if (transferRes.status === 404) {
+      if (attempt < delays.length) {
+        const delayMs = delays[attempt];
+        console.warn(
+          `[${new Date().toISOString()}] [Spotify Device Recovery] Transfer returned 404 for device ${deviceId} (attempt ${attempt + 1}/${maxAttempts}). Retrying in ${delayMs}ms...`
+        );
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+    }
+
+    // Non-404 failure or exhausted all 404 attempts
+    const transferErr = await transferRes.text().catch(() => '');
+    console.error(
+      `[${new Date().toISOString()}] [Spotify Device Recovery] Transfer playback failed for device ${deviceId} (status ${transferRes.status}): ${transferErr}`
+    );
+    throw new Error(USER_RECOVERY_ERROR_MESSAGE);
+  }
+
+  throw new Error(USER_RECOVERY_ERROR_MESSAGE);
+}
+
+export async function recoverPlaybackDevice(reason: string = 'unspecified'): Promise<string> {
+  console.log(
+    `[${new Date().toISOString()}] [Spotify Device Recovery] recoverPlaybackDevice called. Reason: ${reason}`
+  );
+
   // Only one recovery runs at a time; concurrent callers wait for it.
   if (activeRecoveryPromise) {
     console.log(`[${new Date().toISOString()}] [Spotify Device Recovery] Reusing ongoing recovery promise.`);
@@ -131,6 +181,7 @@ export async function recoverPlaybackDevice(): Promise<string> {
           notifyDeviceId(existingDeviceId);
           await new Promise((r) => setTimeout(r, 600));
           clearNeedsRecovery();
+          notifyRecoveryError(null);
           notifyReconnecting(false);
           return existingDeviceId;
         }
@@ -141,7 +192,10 @@ export async function recoverPlaybackDevice(): Promise<string> {
         } else {
           // Requirement 3: A failed transfer is a failed recovery. Do not log a warning and continue as the current code does.
           const transferErr = await transferRes.text().catch(() => '');
-          throw new Error(`Failed to transfer playback (status ${transferRes.status}): ${transferErr}`);
+          console.error(
+            `[${new Date().toISOString()}] [Spotify Device Recovery] Direct transfer failed for device ${existingDeviceId} (status ${transferRes.status}): ${transferErr}`
+          );
+          throw new Error(USER_RECOVERY_ERROR_MESSAGE);
         }
       } else {
         needsFullReconnect = true;
@@ -210,32 +264,21 @@ export async function recoverPlaybackDevice(): Promise<string> {
         notifyDeviceId(newDeviceId);
         setNotReadyFired(false);
 
-        console.log(`[${new Date().toISOString()}] [Spotify Device Recovery] Transferring playback to new device: ${newDeviceId}`);
-        const transferRes = await fetch('/api/spotify/proxy/me/player', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ device_ids: [newDeviceId], play: false }),
-        });
-
-        if (!transferRes.ok) {
-          // Requirement 3: A failed transfer is a failed recovery. Do not log a warning and continue as the current code does.
-          const transferErr = await transferRes.text().catch(() => '');
-          throw new Error(`Failed to transfer playback to device ${newDeviceId} (status ${transferRes.status}): ${transferErr}`);
-        }
+        await transferPlaybackWithRetry(newDeviceId);
 
         // Wait a moment for Spotify to propagate transfer
         await new Promise((r) => setTimeout(r, 600));
 
         clearNeedsRecovery();
+        notifyRecoveryError(null);
         notifyReconnecting(false);
         return newDeviceId;
       }
 
       throw new Error("Playback recovery ended unexpectedly.");
     } catch (err: any) {
-      const msg = err?.message || "Failed to recover Spotify playback device.";
       console.error(`[${new Date().toISOString()}] [Spotify Device Recovery Failed]`, err);
-      notifyRecoveryError(msg);
+      notifyRecoveryError(USER_RECOVERY_ERROR_MESSAGE);
       notifyReconnecting(false);
       throw err;
     } finally {

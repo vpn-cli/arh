@@ -112,7 +112,7 @@ describe('spotifyClient (Fail-Safe API Proxy with Unified Recovery)', () => {
     expect(global.fetch).toHaveBeenCalledWith('/api/spotify/proxy/me/tracks', expect.any(Object));
   });
 
-  it('should run device recovery and retry once on 404 Device not found', async () => {
+  it('should run device recovery and retry once on non-GET 404 Device not found', async () => {
     const mockRecovery = vi.fn().mockResolvedValue('device_new_999');
     registerDeviceRecoveryHandler(mockRecovery);
 
@@ -133,13 +133,37 @@ describe('spotifyClient (Fail-Safe API Proxy with Unified Recovery)', () => {
         status: 204
       });
 
-    const result = await proxyFetch('/me/player/play?device_id=old_device');
+    const result = await proxyFetch('/me/player/play?device_id=old_device', { method: 'PUT' });
     expect(mockRecovery).toHaveBeenCalledTimes(1);
+    expect(mockRecovery).toHaveBeenCalledWith('proxyFetch 404: PUT /me/player/play?device_id=old_device');
     expect(result).toBeNull();
     expect(global.fetch).toHaveBeenLastCalledWith(
       '/api/spotify/proxy/me/player/play?device_id=device_new_999',
       expect.any(Object)
     );
+  });
+
+  it('should NOT run device recovery on GET 404 NO_ACTIVE_DEVICE and surface as no active device', async () => {
+    const mockRecovery = vi.fn().mockResolvedValue('device_new_999');
+    registerDeviceRecoveryHandler(mockRecovery);
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      json: async () => ({
+        error: {
+          status: 404,
+          message: 'Device not found',
+          reason: 'NO_ACTIVE_DEVICE'
+        }
+      })
+    });
+
+    await expect(proxyFetch('/me/player/queue')).rejects.toMatchObject({
+      status: 404,
+      isNoActiveDevice: true,
+    });
+    expect(mockRecovery).not.toHaveBeenCalled();
   });
 
   it('should deduplicate concurrent calls to getFreshToken via single-flight promise', async () => {

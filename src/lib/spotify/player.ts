@@ -1,15 +1,25 @@
 import { proxyFetch } from '@/lib/spotifyClient';
 
 export async function getRecentlyPlayed(limit: number = 50) {
-  const data = await proxyFetch(`/me/player/recently-played?limit=${limit}`);
-  return data;
+  try {
+    const data = await proxyFetch(`/me/player/recently-played?limit=${limit}`);
+    return data;
+  } catch (err: any) {
+    if (err?.isNoActiveDevice || err?.status === 404) {
+      return { items: [] };
+    }
+    throw err;
+  }
 }
 
 export async function getPlayerQueue() {
   try {
     const data = await proxyFetch('/me/player/queue');
     return data;
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.isNoActiveDevice || err?.status === 404) {
+      return { currently_playing: null, queue: [] };
+    }
     console.error('Failed to get player queue:', err);
     return null;
   }

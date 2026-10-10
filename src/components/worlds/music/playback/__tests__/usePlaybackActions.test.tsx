@@ -6,7 +6,7 @@ import { usePlaybackActions } from '../usePlaybackActions';
 const mockRecoverPlaybackDevice = vi.fn().mockResolvedValue('recovered_dev_123');
 
 vi.mock('@/lib/spotifyRecovery', () => ({
-  recoverPlaybackDevice: () => mockRecoverPlaybackDevice(),
+  recoverPlaybackDevice: (reason?: string) => mockRecoverPlaybackDevice(reason),
 }));
 
 const mockPlayMutateAsync = vi.fn().mockResolvedValue({});
@@ -141,6 +141,7 @@ describe('usePlaybackActions', () => {
     });
 
     expect(mockRecoverPlaybackDevice).toHaveBeenCalledTimes(1);
+    expect(mockRecoverPlaybackDevice).toHaveBeenCalledWith('ensurePlaybackDevice: needsRecovery');
     expect(mockPlayMutateAsync).toHaveBeenCalled();
   });
 });

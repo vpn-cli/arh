@@ -7,6 +7,8 @@ import {
   getNeedsRecovery,
   clearNeedsRecovery,
   markNotReady,
+  transferPlaybackWithRetry,
+  USER_RECOVERY_ERROR_MESSAGE,
 } from '../spotifyRecovery';
 
 describe('spotifyRecovery', () => {
@@ -156,11 +158,11 @@ describe('spotifyRecovery', () => {
       text: async () => 'Internal Server Error',
     });
 
-    await expect(recoverPlaybackDevice()).rejects.toThrow(/Failed to transfer playback/);
+    await expect(recoverPlaybackDevice()).rejects.toThrow(USER_RECOVERY_ERROR_MESSAGE);
     expect(mockPlayer.connect).not.toHaveBeenCalled();
   });
 
-  it('Step 3: failed transfer in step 2 fails recovery and throws', async () => {
+  it('Step 3: failed transfer in step 2 fails recovery and throws short user message', async () => {
     deviceIdRef.current = null;
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
@@ -175,8 +177,82 @@ describe('spotifyRecovery', () => {
       },
     });
 
-    await expect(recoverPlaybackDevice()).rejects.toThrow(/Failed to transfer playback/);
-    expect(errorReported).toMatch(/Failed to transfer playback/);
+    await expect(recoverPlaybackDevice()).rejects.toThrow(USER_RECOVERY_ERROR_MESSAGE);
+    expect(errorReported).toBe(USER_RECOVERY_ERROR_MESSAGE);
+  });
+
+  it('transferPlaybackWithRetry: retries on 404 with same deviceId up to 4 attempts and succeeds', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 404, text: async () => 'Not found' })
+      .mockResolvedValueOnce({ ok: false, status: 404, text: async () => 'Not found' })
+      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' });
+    global.fetch = fetchMock;
+
+    const res = await transferPlaybackWithRetry('device_retry_123', [10, 10, 10]);
+    expect(res.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/api/spotify/proxy/me/player',
+      expect.objectContaining({
+        body: JSON.stringify({ device_ids: ['device_retry_123'], play: false }),
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      '/api/spotify/proxy/me/player',
+      expect.objectContaining({
+        body: JSON.stringify({ device_ids: ['device_retry_123'], play: false }),
+      })
+    );
+  });
+
+  it('transferPlaybackWithRetry: fails immediately on non-404 without retrying', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      text: async () => 'Forbidden',
+    });
+    global.fetch = fetchMock;
+
+    await expect(transferPlaybackWithRetry('device_retry_123', [10, 10, 10])).rejects.toThrow(
+      USER_RECOVERY_ERROR_MESSAGE
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('transferPlaybackWithRetry: exhausts 4 attempts on 404 and throws', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => 'Not found',
+    });
+    global.fetch = fetchMock;
+
+    await expect(transferPlaybackWithRetry('device_retry_123', [5, 5, 5])).rejects.toThrow(
+      USER_RECOVERY_ERROR_MESSAGE
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('clears stale error on recovery start and on success paths', async () => {
+    let currentError: string | null = 'Initial Stale Error';
+    subscribeRecoveryState({
+      onErrorChange: (err) => {
+        currentError = err;
+      },
+    });
+
+    deviceIdRef.current = 'existing_device_123';
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => '',
+    });
+
+    const recovered = await recoverPlaybackDevice();
+    expect(recovered).toBe('existing_device_123');
+    expect(currentError).toBeNull();
   });
 
   it('guarantees concurrency locking: concurrent callers await the same recovery operation', async () => {
@@ -222,7 +298,7 @@ describe('spotifyRecovery', () => {
     await promise;
 
     expect(caughtError?.message).toMatch(/timed out.*10s/i);
-    expect(errorLogged).toMatch(/timed out.*10s/i);
+    expect(errorLogged).toBe(USER_RECOVERY_ERROR_MESSAGE);
     vi.useRealTimers();
   }, 15000);
 });

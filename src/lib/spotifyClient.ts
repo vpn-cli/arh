@@ -5,13 +5,13 @@ import { recoverPlaybackDevice } from './spotifyRecovery';
 export const spotifyQueue = new PQueue({ concurrency: 2, interval: 200, intervalCap: 2 });
 
 let loginRequiredCallback: (() => void) | null = null;
-let customRecoveryHandler: (() => Promise<string>) | null = null;
+let customRecoveryHandler: ((reason?: string) => Promise<string>) | null = null;
 
 export function onLoginRequired(cb: (() => void) | null) {
   loginRequiredCallback = cb;
 }
 
-export function registerDeviceRecoveryHandler(handler: (() => Promise<string>) | null) {
+export function registerDeviceRecoveryHandler(handler: ((reason?: string) => Promise<string>) | null) {
   customRecoveryHandler = handler;
 }
 
@@ -79,6 +79,7 @@ async function doFetch(
   // Strip leading slash if present
   const path = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   const url = `/api/spotify/proxy/${path}`;
+  const method = (options.method || 'GET').toUpperCase();
 
   const response = await fetch(url, options);
 
@@ -102,7 +103,7 @@ async function doFetch(
 
     // Requirement 1: Log status code and response body for every failed Spotify API call
     console.error(
-      `[${new Date().toISOString()}] [Spotify API Call Failed] ${options.method || 'GET'} ${url} - Status: ${response.status}`,
+      `[${new Date().toISOString()}] [Spotify API Call Failed] ${method} ${url} - Status: ${response.status}`,
       errorData || rawErrorText
     );
 
@@ -120,7 +121,7 @@ async function doFetch(
       throw { status: 401, message: 'Unauthorized (Session Expired)', details: errorData };
     }
 
-    // Requirement 4: 404 with "Device not found" or no active device - run device recovery, then retry once
+    // Requirement 4: 404 with "Device not found" or no active device - run device recovery for non-GET only, then retry once
     const errorMsg = errorData?.error?.message || errorData?.message || (typeof errorData === 'string' ? errorData : '');
     const errorReason = errorData?.error?.reason || errorData?.reason || '';
     const isDeviceNotFound =
@@ -133,12 +134,13 @@ async function doFetch(
       );
 
     if (isDeviceNotFound) {
-      if (retryAttempts.device < 1) {
+      if (method !== 'GET' && retryAttempts.device < 1) {
         retryAttempts.device++;
-        console.warn(`[${new Date().toISOString()}] [Spotify API 404 Device Not Found] Running recovery, then retrying once...`);
+        console.warn(`[${new Date().toISOString()}] [Spotify API 404 Device Not Found] Running recovery for ${method} request, then retrying once...`);
         try {
+          const reason = `proxyFetch 404: ${method} ${endpoint}`;
           const recoveryFn = customRecoveryHandler || recoverPlaybackDevice;
-          const newDeviceId = await recoveryFn();
+          const newDeviceId = await recoveryFn(reason);
           let newEndpoint = endpoint;
           if (newDeviceId) {
             if (newEndpoint.includes('device_id=')) {
@@ -154,7 +156,7 @@ async function doFetch(
           throw { status: 404, message: recoveryErr?.message || 'Device not found, recovery failed', details: errorData };
         }
       }
-      throw { status: 404, message: 'Device not found', details: errorData };
+      throw { status: 404, message: 'No active device', reason: 'NO_ACTIVE_DEVICE', isNoActiveDevice: true, details: errorData };
     }
 
     // Requirement 4: 429 - wait for Retry-After, then retry once

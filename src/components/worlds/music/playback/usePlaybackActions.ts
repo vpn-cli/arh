@@ -111,7 +111,10 @@ export function usePlaybackActions({
 
     if (currentNeedsRecoveryRef.current || (!targetDevice && isPremium)) {
       try {
-        const recoveredId = await recoverPlaybackDevice();
+        const reason = currentNeedsRecoveryRef.current
+          ? "ensurePlaybackDevice: needsRecovery"
+          : "ensurePlaybackDevice: no device";
+        const recoveredId = await recoverPlaybackDevice(reason);
         currentNeedsRecoveryRef.current = false;
         targetDevice = optionsRef.current.selectedDevice || recoveredId;
       } catch (err: any) {
