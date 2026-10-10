@@ -5,7 +5,18 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { slideshowSlides, type SlideItem } from "@/config/slideshow";
 import { CurrentlyPlayingHero } from "./CurrentlyPlayingHero";
 import { SlideLayer } from "./SlideLayer";
-import { PlayIcon, PauseIcon, ChevronLeftIcon, ChevronRightIcon } from "../icons";
+import { PlayIcon, PauseIcon } from "../icons";
+
+// Timing constants
+export const STILL_MS = 6000;
+export const ANIMATED_MS = 10000;
+export const FADE_MS = 800;
+
+// Visual tuning constants for background slideshow & scrim
+export const BG_OPACITY = 0.55;
+export const BG_BLUR = "1px";
+export const SCRIM_GRADIENT =
+  "linear-gradient(to right, color-mix(in srgb, var(--color-bg, #ffffff) 92%, transparent) 0%, color-mix(in srgb, var(--color-bg, #ffffff) 92%, transparent) 40%, transparent 75%)";
 
 export interface HeroSlideshowProps {
   currentTrack: any;
@@ -24,10 +35,11 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
   const [currentIndex, setCurrentIndex] = useState(0);
   const [nextIndex, setNextIndex] = useState<number | null>(null);
   const [isFading, setIsFading] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const [isDocHidden, setIsDocHidden] = useState(false);
+  const [isIntersecting, setIsIntersecting] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
 
+  const sectionRef = useRef<HTMLElement | null>(null);
   const nextReadyRef = useRef(false);
   const timerExpiredRef = useRef(false);
   const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,14 +57,43 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
   const isFadingRef = useRef(false);
   isFadingRef.current = isFading;
 
-  // 3 & 8. Shuffle once per mount inside effect (Fisher-Yates) and filter reduced-motion
+  // Initialize slides: shuffle on mount, or pick one random still image for reduced motion
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const motionReduced = mediaQuery.matches;
     setReducedMotion(motionReduced);
 
+    const setupSlides = (isReduced: boolean) => {
+      if (isReduced) {
+        const stillSlides = slideshowSlides.filter((s) => !s.animated);
+        if (stillSlides.length > 0) {
+          const randomIndex = Math.floor(Math.random() * stillSlides.length);
+          setSlides([stillSlides[randomIndex]]);
+        } else {
+          setSlides([]);
+        }
+      } else {
+        if (slideshowSlides.length > 0) {
+          const shuffled = [...slideshowSlides];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          setSlides(shuffled);
+        } else {
+          setSlides([]);
+        }
+      }
+      setCurrentIndex(0);
+      setNextIndex(null);
+      setIsFading(false);
+    };
+
+    setupSlides(motionReduced);
+
     const handleMotionChange = (e: MediaQueryListEvent) => {
       setReducedMotion(e.matches);
+      setupSlides(e.matches);
     };
     mediaQuery.addEventListener("change", handleMotionChange);
 
@@ -61,27 +102,29 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
-    let pool = [...slideshowSlides];
-    if (motionReduced) {
-      pool = pool.filter((s) => !s.animated);
-    }
-
-    if (pool.length > 0) {
-      const shuffled = [...pool];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      setSlides(shuffled);
-    } else {
-      setSlides([]);
-    }
-
     setHasInitialized(true);
 
     return () => {
       mediaQuery.removeEventListener("change", handleMotionChange);
       document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, []);
+
+  // IntersectionObserver to pause when the hero card is not shown in the viewport
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsIntersecting(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
     };
   }, []);
 
@@ -106,7 +149,7 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
       setIsFading(false);
       nextReadyRef.current = false;
       timerExpiredRef.current = false;
-    }, 600);
+    }, FADE_MS);
   }, []);
 
   const handleNextReady = useCallback(() => {
@@ -124,18 +167,18 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     setNextIndex(skipped);
   }, []);
 
-  // 12. Preload next slide only after current one has finished fading in
+  // Preload next slide only after current one has finished fading in
   useEffect(() => {
-    if (!hasInitialized || slides.length <= 1 || isFading || nextIndex !== null) {
+    if (!hasInitialized || slides.length <= 1 || isFading || nextIndex !== null || reducedMotion) {
       return;
     }
     const upcoming = (currentIndex + 1) % slides.length;
     nextReadyRef.current = false;
     timerExpiredRef.current = false;
     setNextIndex(upcoming);
-  }, [hasInitialized, slides.length, isFading, nextIndex, currentIndex]);
+  }, [hasInitialized, slides.length, isFading, nextIndex, currentIndex, reducedMotion]);
 
-  // Auto-advance timer
+  // Auto-advance timer: 6s for still images, 10s for animated
   useEffect(() => {
     if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
 
@@ -143,8 +186,8 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
       !hasInitialized ||
       slides.length <= 1 ||
       isFading ||
-      isHovered ||
       isDocHidden ||
+      !isIntersecting ||
       reducedMotion
     ) {
       return;
@@ -153,8 +196,7 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     const currentSlide = slides[currentIndex];
     if (!currentSlide) return;
 
-    // 6. Still images stay 6s, animated stay 10s
-    const stayDuration = currentSlide.animated ? 10000 : 6000;
+    const stayDuration = currentSlide.animated ? ANIMATED_MS : STILL_MS;
 
     autoTimerRef.current = setTimeout(() => {
       if (nextReadyRef.current) {
@@ -172,46 +214,11 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     slides,
     currentIndex,
     isFading,
-    isHovered,
     isDocHidden,
+    isIntersecting,
     reducedMotion,
     triggerCrossfade,
   ]);
-
-  const handleNext = useCallback(() => {
-    if (isFadingRef.current || slidesRef.current.length <= 1) return;
-    if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
-
-    if (nextReadyRef.current) {
-      triggerCrossfade();
-    } else {
-      timerExpiredRef.current = true;
-    }
-  }, [triggerCrossfade]);
-
-  const handlePrev = useCallback(() => {
-    if (isFadingRef.current || slidesRef.current.length <= 1) return;
-    if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
-
-    const count = slidesRef.current.length;
-    const prev = (currentIndexRef.current - 1 + count) % count;
-    nextReadyRef.current = false;
-    timerExpiredRef.current = true;
-    setNextIndex(prev);
-  }, []);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        handlePrev();
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        handleNext();
-      }
-    },
-    [handlePrev, handleNext]
-  );
 
   const handlePlayClick = () => {
     if (props.currentTrack) {
@@ -232,7 +239,7 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     }
   };
 
-  // 2. If the slideshow list is empty, render the existing hero unchanged
+  // If the slideshow list is empty, render the existing hero unchanged
   if (!hasInitialized || slides.length === 0) {
     return <CurrentlyPlayingHero {...props} />;
   }
@@ -242,93 +249,81 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
 
   return (
     <section
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      onPointerEnter={() => setIsHovered(true)}
-      onPointerLeave={() => setIsHovered(false)}
-      role="region"
-      aria-roledescription="carousel"
-      aria-label="Pinterest Board Slideshow"
-      className="group relative h-[220px] sm:h-[260px] overflow-hidden rounded-[24px] border-2 border-[var(--color-muted)] bg-[var(--color-light)] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] select-none"
+      ref={sectionRef}
+      className="relative h-[220px] sm:h-[260px] overflow-hidden rounded-[24px] border-2 border-[var(--color-muted)] bg-[var(--color-light)] shadow-sm"
     >
-      {/* 4. Only two img elements exist at a time: current and next */}
-      {currentSlide && (
-        <SlideLayer
-          key={currentSlide.src}
-          slide={currentSlide}
-          isPriority={true}
-          opacity={1}
-          isFading={false}
-        />
-      )}
+      {/* Background Slideshow Layer: softened with opacity and blur */}
+      <div
+        className="absolute inset-0 overflow-hidden pointer-events-none select-none"
+        aria-hidden="true"
+        style={{
+          opacity: BG_OPACITY,
+          filter: `blur(${BG_BLUR})`,
+          transform: "scale(1.02)",
+        }}
+      >
+        {currentSlide && (
+          <SlideLayer
+            key={currentSlide.src}
+            slide={currentSlide}
+            isPriority={true}
+            opacity={1}
+            isFading={false}
+            fadeMs={FADE_MS}
+          />
+        )}
 
-      {nextSlide && (
-        <SlideLayer
-          key={nextSlide.src}
-          slide={nextSlide}
-          isPriority={false}
-          opacity={isFading ? 1 : 0}
-          isFading={isFading}
-          onReady={handleNextReady}
-          onError={handleNextError}
-        />
-      )}
+        {nextSlide && (
+          <SlideLayer
+            key={nextSlide.src}
+            slide={nextSlide}
+            isPriority={false}
+            opacity={isFading ? 1 : 0}
+            isFading={isFading}
+            fadeMs={FADE_MS}
+            onReady={handleNextReady}
+            onError={handleNextError}
+          />
+        )}
+      </div>
 
-      {/* 9. Navigation controls shown on hover and focus */}
-      {slides.length > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={handlePrev}
-            aria-label="Previous slide"
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 min-w-[32px] min-h-[32px] rounded-full bg-[var(--color-light)]/85 hover:bg-[var(--color-light)] text-[var(--color-dark)] border border-[var(--color-muted)] shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity cursor-pointer mw-btn"
-          >
-            <ChevronLeftIcon size={18} />
-          </button>
-          <button
-            type="button"
-            onClick={handleNext}
-            aria-label="Next slide"
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 min-w-[32px] min-h-[32px] rounded-full bg-[var(--color-light)]/85 hover:bg-[var(--color-light)] text-[var(--color-dark)] border border-[var(--color-muted)] shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity cursor-pointer mw-btn"
-          >
-            <ChevronRightIcon size={18} />
-          </button>
-        </>
-      )}
+      {/* Scrim: horizontal gradient from var(--color-bg) at ~92% opacity to transparent at ~75% width */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        aria-hidden="true"
+        style={{
+          background: SCRIM_GRADIENT,
+        }}
+      />
 
-      {/* 10. Now-playing chip in bottom-left corner with high contrast backing */}
-      <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-20 max-w-[calc(100%-88px)] sm:max-w-md rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-light)]/90 backdrop-blur-md px-3.5 py-2 sm:px-4 sm:py-2.5 shadow-md flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handlePlayClick}
-          className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-full bg-[var(--color-vibrant)] text-[var(--on-vibrant)] flex items-center justify-center shrink-0 shadow-sm mw-btn cursor-pointer"
-          aria-label={
-            props.currentTrack
-              ? props.isPaused
-                ? "Resume playback"
-                : "Pause playback"
-              : "Play mix"
-          }
-        >
-          {props.currentTrack ? (
-            props.isPaused ? (
-              <PlayIcon size={14} />
-            ) : (
-              <PauseIcon size={14} />
-            )
-          ) : (
-            <PlayIcon size={14} />
-          )}
-        </button>
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-pixel text-caption sm:text-meta font-bold text-[var(--color-dark)] leading-snug">
+      {/* Foreground Hero Content: restored from CurrentlyPlayingHero */}
+      <div className="relative z-10 flex h-full items-center px-6 sm:px-8 py-6 sm:py-8">
+        <div className="max-w-lg">
+          <p className="font-pixel text-caption sm:text-body font-bold tracking-widest text-[var(--color-dark)] uppercase">
+            {props.currentTrack ? "CURRENTLY PLAYING" : "GOOD EVENING"}
+          </p>
+          <h2 className="mt-2 font-pixel text-display font-extrabold leading-tight text-[var(--color-dark)] drop-shadow-[0_2px_0_#FFFFFF]">
             {props.currentTrack ? props.currentTrack.name : "Let's listen together ♡"}
-          </div>
-          <div className="truncate font-pixel text-caption font-medium text-[var(--color-dark-muted)] leading-tight mt-0.5">
+          </h2>
+          <p className="mt-2 sm:mt-3 font-pixel text-body sm:text-title font-medium text-[var(--color-dark)] opacity-90 truncate">
             {props.currentTrack
               ? props.currentTrack.artists?.map((a: any) => a.name).join(", ")
               : "What are we listening to today?"}
-          </div>
+          </p>
+          <button
+            type="button"
+            onClick={handlePlayClick}
+            className="mt-4 sm:mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-5 sm:px-6 py-2 sm:py-2.5 font-pixel text-body font-bold text-[var(--on-vibrant)] shadow-md mw-btn group cursor-pointer"
+          >
+            <span>
+              {props.currentTrack ? (
+                props.isPaused ? <PlayIcon size={16} /> : <PauseIcon size={16} />
+              ) : (
+                <PlayIcon size={16} />
+              )}
+            </span>
+            {props.currentTrack ? (props.isPaused ? "Resume" : "Playing") : "Play Mix"}
+          </button>
         </div>
       </div>
     </section>

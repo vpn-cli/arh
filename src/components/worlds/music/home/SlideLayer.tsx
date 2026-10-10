@@ -9,6 +9,7 @@ export interface SlideLayerProps {
   isPriority: boolean;
   opacity: number;
   isFading: boolean;
+  fadeMs?: number;
   onReady?: () => void;
   onError?: () => void;
 }
@@ -18,10 +19,10 @@ export const SlideLayer = React.memo(function SlideLayer({
   isPriority,
   opacity,
   isFading,
+  fadeMs = 800,
   onReady,
   onError,
 }: SlideLayerProps) {
-  const isWide = slide.width / slide.height >= 1.6;
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
@@ -81,33 +82,23 @@ export const SlideLayer = React.memo(function SlideLayer({
 
   return (
     <div
-      className="absolute inset-0 overflow-hidden"
+      className="absolute inset-0 overflow-hidden pointer-events-none"
+      aria-hidden="true"
       style={{
         opacity,
-        transition: isFading ? "opacity 600ms var(--ease-out)" : undefined,
-        pointerEvents: opacity === 1 ? "auto" : "none",
+        transition: isFading ? `opacity ${fadeMs}ms var(--ease-out, ease-out)` : undefined,
       }}
     >
-      {!isWide && (
-        <div
-          className="absolute inset-0 bg-cover bg-center scale-110 blur-xl opacity-60 pointer-events-none"
-          style={{ backgroundImage: `url(${slide.src})` }}
-          aria-hidden="true"
-        />
-      )}
       <img
         ref={imgRef}
         src={slide.src}
         width={slide.width}
         height={slide.height}
         alt=""
+        aria-hidden="true"
         fetchPriority={isPriority ? "high" : "auto"}
         decoding="async"
-        className={
-          isWide
-            ? "h-full w-full object-cover"
-            : "relative z-10 h-full w-full object-contain"
-        }
+        className="h-full w-full object-cover object-center"
       />
     </div>
   );
