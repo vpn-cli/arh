@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
 "use client";
 
 import React from "react";
@@ -18,12 +19,21 @@ import {
 
 export type MusicNavTab = 'home' | 'playlists' | 'mix' | 'vibes' | 'library' | 'memories' | 'frequencies';
 
+export type NavIconStyle = 'stickers' | 'svg';
+
+/**
+ * Config flag to switch between sticker images and SVG icons.
+ * Set to "stickers" or "svg".
+ */
+export const NAV_ICON_STYLE: NavIconStyle = 'stickers';
+
 export interface PlayerSidebarProps {
   activeTab: string;
   onNavigate: (tab: any) => void;
   onOpenPlaylist: (id: string) => void;
   onCreatePlaylist: () => void;
   onLogout?: () => void;
+  iconStyle?: NavIconStyle;
 }
 
 const NAV_ITEMS: {
@@ -46,6 +56,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
   onOpenPlaylist,
   onCreatePlaylist,
   onLogout = logoutSpotify,
+  iconStyle = NAV_ICON_STYLE,
 }: PlayerSidebarProps) {
   const { data: playlists = [] } = usePlaylists({ enabled: true });
 
@@ -76,9 +87,19 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
                   : 'text-[var(--color-dark)] font-medium border border-transparent'
               }`}
             >
-              <span className={`w-5 flex items-center justify-center mw-nav-icon shrink-0 ${isActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}>
-                <IconComp size={22} />
-              </span>
+              {iconStyle === 'stickers' ? (
+                <img
+                  src={`/icons/nav/${item.id}.png`}
+                  width={32}
+                  height={32}
+                  alt=""
+                  className="w-8 h-8 object-contain mw-nav-icon shrink-0"
+                />
+              ) : (
+                <span className={`w-8 flex items-center justify-center mw-nav-icon shrink-0 ${isActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}>
+                  <IconComp size={22} />
+                </span>
+              )}
               <span className="text-base">{item.label}</span>
             </button>
           );
