@@ -75,7 +75,7 @@ export const QueuePanel = memo(function QueuePanel({
   }, [queue, playerQueueData]);
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden px-4 pb-4">
+    <div className="mw-queue-panel-container flex flex-col flex-1 overflow-hidden px-4 pb-4">
       {/* Tab Switcher & Bow */}
       <div className="flex items-center justify-between bg-[var(--color-light)] rounded-full p-1 mb-2.5 shrink-0 border border-[var(--color-muted)]">
         <div className="flex flex-1 gap-1">

@@ -1401,4 +1401,34 @@ html {
   }
 }
 
+/* ═══════════════════════════════════════════════════════
+   MUSIC WORLD COMPACT WINDOW (< 520px)
+   Below 520px wide: shows ONLY the player (artwork, title,
+   artist, progress, prev/play/next, like, lyrics, queue).
+   No sidebar, no content column, no horizontal scroll.
+   Restores full layout when widened with no reload.
+   ═══════════════════════════════════════════════════════ */
 
+@media (max-width: 519.98px) {
+  .mw-player-header {
+    display: none !important;
+  }
+
+  .mw-content-column {
+    display: none !important;
+  }
+
+  .mw-now-playing-panel {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
+    border-left: none !important;
+    flex: 1 1 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  .mw-queue-panel-container {
+    display: none !important;
+  }
+}

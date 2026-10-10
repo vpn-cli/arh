@@ -54,26 +54,38 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
   const isPaused = useSpotifyPlayerStore((s) => s.isPaused);
 
   return (
-    <div className="w-[380px] lg:w-[400px] xl:w-[420px] 2xl:w-[440px] border-l-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-[var(--color-light)]">
+    <div className="mw-now-playing-panel w-[380px] lg:w-[400px] xl:w-[420px] 2xl:w-[440px] border-l-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-[var(--color-light)]">
       <div className="flex flex-col p-5 pb-3 relative shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between mb-3 gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <span className="text-[var(--color-vibrant)] text-title">♥</span>
             <span className="font-pixel text-[var(--color-dark)] text-body font-bold">Now Playing</span>
           </div>
-          {currentTrack && (
+          <div className="flex items-center gap-2 shrink-0">
+            {currentTrack && (
+              <button
+                onClick={onToggleLyrics}
+                className={`font-pixel text-meta min-h-[32px] min-w-[32px] px-3.5 py-1 rounded-full flex items-center justify-center gap-1 transition-all duration-150 ease-in-out shadow-xs font-bold active:scale-95 border ${
+                  showLyrics
+                    ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] border-[var(--color-vibrant)]'
+                    : 'text-[var(--color-dark)] hover:text-[var(--on-vibrant)] bg-white hover:bg-[var(--color-vibrant)] border-[var(--color-muted)]'
+                }`}
+                title="Toggle Lyrics"
+                aria-label="Toggle Lyrics"
+              >
+                {showLyrics ? <ChevronDownIcon size={12} /> : <span>❝</span>} Lyrics
+              </button>
+            )}
             <button
-              onClick={onToggleLyrics}
-              className={`font-pixel text-meta min-h-[30px] px-3.5 py-1 rounded-full flex items-center gap-1 transition-all duration-150 ease-in-out shadow-xs font-bold active:scale-95 border ${
-                showLyrics
-                  ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] border-[var(--color-vibrant)]'
-                  : 'text-[var(--color-dark)] hover:text-[var(--on-vibrant)] bg-white hover:bg-[var(--color-vibrant)] border-[var(--color-muted)]'
-              }`}
-              title="Toggle Lyrics"
+              onClick={() => onExpandQueue('queue')}
+              className="font-pixel text-meta min-h-[32px] min-w-[32px] px-3.5 py-1 rounded-full flex items-center justify-center gap-1.5 transition-all duration-150 ease-in-out shadow-xs font-bold active:scale-95 border border-[var(--color-muted)] bg-white hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-[var(--on-vibrant)]"
+              title="Open Queue"
+              aria-label="Open Queue"
             >
-              {showLyrics ? <ChevronDownIcon size={12} /> : <span>❝</span>} Lyrics
+              <MusicNoteIcon size={12} />
+              <span>Queue</span>
             </button>
-          )}
+          </div>
         </div>
 
         {currentTrack ? (
@@ -139,7 +151,7 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
               <div className="flex gap-2 shrink-0 ml-2">
                 <button
                   onClick={toggleSaveTrack}
-                  className="text-title transition-transform hover:scale-110 active:scale-95"
+                  className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-title transition-transform hover:scale-110 active:scale-95"
                   title={isSaved ? 'Remove from Library' : 'Save to Library'}
                   aria-label={isSaved ? 'Remove from Library' : 'Save to Library'}
                 >
@@ -150,7 +162,7 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
                   )}
                 </button>
                 <button
-                  className="text-title text-[var(--color-dark)] hover:text-[var(--color-dark)] pb-2 font-bold"
+                  className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-title text-[var(--color-dark)] hover:text-[var(--color-dark)] pb-1 font-bold"
                   aria-label="Track options"
                 >
                   ...
@@ -199,8 +211,8 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
                 </p>
               </div>
               <div className="flex gap-2 shrink-0 ml-2">
-                <button className="text-title text-[var(--color-dark)]">♡</button>
-                <button className="text-title text-[var(--color-dark)] pb-2 font-bold">...</button>
+                <button className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-title text-[var(--color-dark)]">♡</button>
+                <button className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-title text-[var(--color-dark)] pb-1 font-bold">...</button>
               </div>
             </div>
             <div className="w-full flex flex-col gap-1 mt-2">
@@ -211,30 +223,30 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
               </div>
             </div>
             <div className="flex items-center justify-between mt-4 px-2">
-              <button className="text-[var(--color-dark)]" aria-label="Shuffle disabled">
+              <button className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-[var(--color-dark)]" aria-label="Shuffle disabled">
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                   <path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" />
                 </svg>
               </button>
-              <button className="text-[var(--color-dark)]" aria-label="Previous disabled">
+              <button className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-[var(--color-dark)]" aria-label="Previous disabled">
                 <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
                   <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
                 </svg>
               </button>
               <button
-                className="w-12 h-12 bg-[var(--color-light)] rounded-full flex items-center justify-center text-white/80"
+                className="w-12 h-12 min-w-[48px] min-h-[48px] bg-[var(--color-light)] rounded-full flex items-center justify-center text-white/80"
                 aria-label="Play disabled"
               >
                 <svg className="w-6 h-6 fill-current ml-1" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </button>
-              <button className="text-[var(--color-dark)]" aria-label="Next disabled">
+              <button className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-[var(--color-dark)]" aria-label="Next disabled">
                 <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
                   <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
                 </svg>
               </button>
-              <button className="text-[var(--color-dark)]" aria-label="Repeat disabled">
+              <button className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-[var(--color-dark)]" aria-label="Repeat disabled">
                 <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
                   <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
                 </svg>

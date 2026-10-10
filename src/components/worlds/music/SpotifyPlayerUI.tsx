@@ -190,7 +190,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
           />
 
           {/* Main Content Area */}
-          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col gap-6 relative bg-[var(--color-light)]">
+          <div className="mw-content-column flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col gap-6 relative bg-[var(--color-light)]">
             <div
               key={`${activeTab}-${selectedPlaylistId || ''}-${selectedAlbumId || ''}-${selectedArtistId || ''}`}
               className="mw-view-enter flex flex-col gap-6 flex-1 min-h-0"

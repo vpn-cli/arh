@@ -259,13 +259,13 @@ export const ProgressBar = memo(
           aria-valuemin={0}
           aria-valuemax={duration || durationRef.current || 0}
           tabIndex={0}
-          className="w-full h-4 relative flex items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
+          className="w-full h-8 min-h-[32px] relative flex items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
-          <div className="absolute left-0 right-0 h-full overflow-hidden rounded-full pointer-events-none scale-y-[0.6] group-hover/slider:scale-y-[0.85] transition-transform duration-300 ease-out origin-center bg-[var(--color-muted)]">
+          <div className="absolute left-0 right-0 h-4 overflow-hidden rounded-full pointer-events-none scale-y-[0.6] group-hover/slider:scale-y-[0.85] transition-transform duration-300 ease-out origin-center bg-[var(--color-muted)]">
             <div
               ref={progressBarFillRef}
               className="progress-fill absolute left-0 top-0 bottom-0 w-full bg-[var(--color-dark)] rounded-full origin-left"

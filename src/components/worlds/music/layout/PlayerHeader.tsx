@@ -18,7 +18,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
   onClearSearch,
 }: PlayerHeaderProps) {
   return (
-    <div className="flex h-14 border-b-2 border-[var(--color-muted)] items-center px-4 justify-between shrink-0 bg-[var(--color-bg)]/95 backdrop-blur">
+    <div className="mw-player-header flex h-14 border-b-2 border-[var(--color-muted)] items-center px-4 justify-between shrink-0 bg-[var(--color-bg)]/95 backdrop-blur">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5 mr-2">
           <div className="w-3 h-3 rounded-full bg-[var(--color-muted)]" />

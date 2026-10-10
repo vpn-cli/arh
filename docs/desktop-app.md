@@ -25,9 +25,9 @@ This document outlines the implementation plan and execution status for making M
 
 ## PART 3 - Compact Window
 
-- [ ] Report how Music World lays out today below 768px and below 520px.
-- [ ] Below 520px wide, the window shows only the player: artwork, title, artist, progress bar, previous / play-pause / next, like, lyrics, and queue buttons. No sidebar, no content column, no horizontal scroll. All controls at least 32px.
-- [ ] Widening the window restores the full layout with no reload.
+- [x] Report how Music World lays out today below 768px and below 520px.
+- [x] Below 520px wide, the window shows only the player: artwork, title, artist, progress bar, previous / play-pause / next, like, lyrics, and queue buttons. No sidebar, no content column, no horizontal scroll. All controls at least 32px.
+- [x] Widening the window restores the full layout with no reload.
 
 ---
 
