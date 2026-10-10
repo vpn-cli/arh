@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useTopTracks, useTopArtists } from '@/hooks/useSpotify';
 import { TrackList } from './TrackList';
-import { ArtistCard } from './ArtistCard';
+import { MediaRow } from './MediaRow';
+import { pickImage } from '@/lib/spotify/images';
 
 interface VibesSectionProps {
   onPlayTrack: (uri: string) => void;
@@ -211,14 +212,31 @@ export function VibesSection({
           {selectedVibe.artists.length > 0 && (
             <section>
               <h3 className="font-pixel text-xs font-bold text-[var(--color-dark)] tracking-wider uppercase mb-3 px-1">Vibe Artists</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {selectedVibe.artists.map((artist) => (
-                  <ArtistCard 
+                  <MediaRow 
                     key={artist.id} 
-                    artist={artist} 
-                    onClick={onClickArtist} 
-                    onAddMemory={(artist) => onAddMemory(artist, 'artist')}
-                    variant="compact"
+                    title={artist.name}
+                    subtitle="Artist"
+                    imageUrl={pickImage(artist.images, 48)}
+                    imageShape="circle"
+                    imageSize={48}
+                    onClick={() => onClickArtist(artist.id)} 
+                    actions={
+                      onAddMemory ? (
+                        <button
+                          type="button"
+                          onClick={() => onAddMemory(artist, 'artist')}
+                          className="mw-btn p-2 text-[var(--color-dark)] shrink-0 rounded-full hover:bg-[var(--color-light)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
+                          title="Add Memory"
+                          aria-label={`Add memory for artist ${artist.name}`}
+                        >
+                          <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                            <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z" />
+                          </svg>
+                        </button>
+                      ) : undefined
+                    }
                   />
                 ))}
               </div>
