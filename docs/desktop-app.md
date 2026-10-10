@@ -42,6 +42,14 @@ This document outlines the implementation plan and execution status for making M
 
 ---
 
+## PART 5 - Widget View (Replaces Document Picture-in-Picture)
+
+### Part 1: Remove Document Picture-in-Picture
+- [x] Remove "Pop out" button, PipHost, PipContext, PopOutPipButton and tests while retaining MediaSessionHost and useMediaSession.
+- [x] Remove MiniPlayer in favor of WidgetPlayer.
+
+---
+
 ## Parked: needs hosting first
 
 The following features require remote production deployment, SSL on a live domain, and external service configuration before they can be activated:

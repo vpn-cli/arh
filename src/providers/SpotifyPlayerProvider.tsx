@@ -20,8 +20,6 @@ import {
   clearNeedsRecovery,
 } from "@/lib/spotifyRecovery";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
-import { PipProvider } from "@/components/worlds/music/pip/PipContext";
-import { PipHost } from "@/components/worlds/music/pip/PipHost";
 import { MediaSessionHost } from "@/components/worlds/music/pip/MediaSessionHost";
 import { updateSharedPlaybackState } from "@/components/worlds/music/playback/playbackClock";
 
@@ -374,11 +372,8 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
 
   return (
     <SpotifyPlayerContext.Provider value={value}>
-      <PipProvider>
-        <PipHost />
-        <MediaSessionHost />
-        {children}
-      </PipProvider>
+      <MediaSessionHost />
+      {children}
     </SpotifyPlayerContext.Provider>
   );
 }

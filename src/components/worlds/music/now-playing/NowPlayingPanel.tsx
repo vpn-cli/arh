@@ -6,7 +6,6 @@ import { ProgressBar, ProgressBarHandle } from './ProgressBar';
 import { PlaybackControls } from './PlaybackControls';
 import { QueuePanel } from './QueuePanel';
 import { ChevronDownIcon, MusicNoteIcon } from '../icons';
-import { PopOutPipButton } from '../pip/PopOutPipButton';
 
 export interface NowPlayingPanelProps {
   progressBarRef?: React.Ref<ProgressBarHandle>;
@@ -63,7 +62,6 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
             <span className="font-pixel text-[var(--color-dark)] text-body font-bold">Now Playing</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <PopOutPipButton />
             {currentTrack && (
               <button
                 onClick={onToggleLyrics}
