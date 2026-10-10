@@ -185,7 +185,7 @@ export function VibesSection({
         <div className="flex items-center justify-between mb-4 shrink-0">
           <button 
             onClick={() => setSelectedVibeId(null)}
-            className="text-meta text-[var(--color-dark)] hover:text-[var(--color-dark)] cursor-pointer font-pixel font-bold tracking-wide flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-lg px-2 py-1"
+            className="text-meta text-[var(--color-dark)] hover:text-[var(--color-dark)] cursor-pointer font-pixel font-bold tracking-wide flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-lg min-h-[24px] px-2 py-1"
           >
             <ChevronLeftIcon size={14} /> Back to Vibes
           </button>

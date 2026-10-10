@@ -125,7 +125,7 @@ export function MemoriesSection({
             <WarningIcon size={14} className="shrink-0 text-[var(--color-vibrant)]" />
             {error}
           </span>
-          <button onClick={clearError} className="text-[var(--color-dark)] hover:opacity-75 p-1 flex items-center justify-center" aria-label="Clear error">
+          <button onClick={clearError} className="text-[var(--color-dark)] hover:opacity-75 w-6 h-6 min-w-[24px] min-h-[24px] rounded flex items-center justify-center" aria-label="Clear error">
             <CloseIcon size={12} />
           </button>
         </div>
@@ -160,8 +160,8 @@ export function MemoriesSection({
                     )}
                   </div>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => onEditMemory(entity || null, memory.entityType, memory.id)} className="text-meta font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel px-2 py-0.5 rounded hover:bg-white/80 transition-colors">EDIT</button>
-                    <button onClick={() => deleteMemory(memory.id)} className="text-meta font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel px-2 py-0.5 rounded hover:bg-white/80 transition-colors">DELETE</button>
+                    <button onClick={() => onEditMemory(entity || null, memory.entityType, memory.id)} className="text-meta font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel min-h-[24px] px-2 py-0.5 rounded hover:bg-white/80 transition-colors inline-flex items-center justify-center">EDIT</button>
+                    <button onClick={() => deleteMemory(memory.id)} className="text-meta font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel min-h-[24px] px-2 py-0.5 rounded hover:bg-white/80 transition-colors inline-flex items-center justify-center">DELETE</button>
                   </div>
                 </div>
                 <p className="font-pixel text-caption sm:text-body text-[var(--color-dark)] leading-relaxed whitespace-pre-wrap mt-2 font-medium">

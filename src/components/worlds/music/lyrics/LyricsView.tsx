@@ -283,7 +283,7 @@ export const LyricsView = React.memo(
                   window.localStorage.setItem('arh_edit_mode', next ? 'true' : 'false');
                 }
               }}
-              className={`font-pixel text-caption px-2.5 py-1 rounded-full border transition-all active:scale-95 ${
+              className={`font-pixel text-meta min-h-[26px] px-2.5 py-1 rounded-full border transition-all active:scale-95 ${
                 editMode
                   ? 'bg-[var(--color-light)] text-[var(--color-dark)] border-[var(--color-dark)] font-bold shadow-xs'
                   : 'bg-white hover:bg-[var(--color-light)] text-[var(--color-text-muted)] border-[var(--color-muted)]'

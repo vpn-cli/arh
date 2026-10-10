@@ -63,7 +63,7 @@ export function PlaylistHeader({
       <div className="mb-3 shrink-0">
         <button
           onClick={onBack}
-          className="text-meta text-[var(--color-dark)] hover:text-[var(--color-dark)] cursor-pointer font-pixel font-bold tracking-wide flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-lg px-2 py-1"
+          className="text-meta text-[var(--color-dark)] hover:text-[var(--color-dark)] cursor-pointer font-pixel font-bold tracking-wide flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-lg min-h-[24px] px-2 py-1"
           aria-label="Back to playlists"
         >
           <ChevronLeftIcon size={14} /> Back to Playlists

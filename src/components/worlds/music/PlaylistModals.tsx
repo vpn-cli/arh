@@ -27,7 +27,7 @@ export function AddToPlaylistModal({ trackUri, onClose }: AddToPlaylistModalProp
       <div className="bg-[var(--color-light)] border-2 border-[var(--color-muted)] rounded-2xl w-full max-w-sm flex flex-col shadow-xl">
         <div className="p-4 border-b border-[var(--color-muted)]/30 flex justify-between items-center bg-white/50 rounded-t-2xl">
           <h2 className="font-pixel text-body font-bold text-[var(--color-dark)]">ADD TO PLAYLIST</h2>
-          <button onClick={onClose} className="text-[var(--color-dark)] hover:text-[var(--color-dark)] text-title font-bold p-1" aria-label="Close modal">&times;</button>
+          <button onClick={onClose} className="text-[var(--color-dark)] hover:text-[var(--color-dark)] text-title font-bold w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded" aria-label="Close modal">&times;</button>
         </div>
         <div className="p-2 max-h-60 overflow-y-auto custom-scrollbar">
           <button
@@ -118,7 +118,7 @@ export function CreatePlaylistModal({ onClose, trackUriToAdd, onComplete, playli
       <div className="bg-[var(--color-light)] border-2 border-[var(--color-muted)] rounded-2xl w-full max-w-sm flex flex-col shadow-xl">
         <div className="p-4 border-b border-[var(--color-muted)]/30 flex justify-between items-center bg-white/50 rounded-t-2xl">
           <h2 className="font-pixel text-body font-bold text-[var(--color-dark)]">{playlistToEdit ? 'EDIT PLAYLIST' : 'CREATE PLAYLIST'}</h2>
-          <button onClick={onClose} className="text-[var(--color-dark)] hover:text-[var(--color-dark)] text-title font-bold p-1" disabled={isPending} aria-label="Close modal">&times;</button>
+          <button onClick={onClose} className="text-[var(--color-dark)] hover:text-[var(--color-dark)] text-title font-bold w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded" disabled={isPending} aria-label="Close modal">&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="p-4 flex flex-col gap-4">
           <div>
@@ -142,15 +142,17 @@ export function CreatePlaylistModal({ onClose, trackUriToAdd, onComplete, playli
             />
           </div>
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="isPublic"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              disabled={isPending}
-              className="accent-[var(--color-vibrant)] w-4 h-4 rounded cursor-pointer"
-            />
-            <label htmlFor="isPublic" className="font-pixel text-meta font-bold text-[var(--color-dark)] cursor-pointer">Public Playlist</label>
+            <label htmlFor="isPublic" className="flex items-center gap-2 cursor-pointer min-h-[24px] select-none">
+              <input
+                type="checkbox"
+                id="isPublic"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                disabled={isPending}
+                className="accent-[var(--color-vibrant)] w-6 h-6 min-w-[24px] min-h-[24px] rounded cursor-pointer"
+              />
+              <span className="font-pixel text-meta font-bold text-[var(--color-dark)]">Public Playlist</span>
+            </label>
           </div>
           <div className="flex gap-2 mt-2">
             <button type="button" onClick={onClose} className="flex-1 bg-white border border-[var(--color-muted)] text-[var(--color-dark)] hover:text-[var(--color-dark)] rounded-xl py-2.5 font-pixel text-meta font-bold transition-colors" disabled={isPending}>
@@ -192,7 +194,7 @@ export function RemovePlaylistModal({ playlist, onClose, onComplete }: RemovePla
       <div className="bg-[var(--color-light)] border-2 border-[var(--color-muted)] rounded-2xl w-full max-w-sm flex flex-col shadow-xl">
         <div className="p-4 border-b border-[var(--color-muted)]/30 flex justify-between items-center bg-white/50 rounded-t-2xl">
           <h2 className="font-pixel text-body font-bold text-[var(--color-dark)]">REMOVE PLAYLIST?</h2>
-          <button onClick={onClose} className="text-[var(--color-dark)] hover:text-[var(--color-dark)] text-title font-bold p-1" disabled={isPending} aria-label="Close modal">&times;</button>
+          <button onClick={onClose} className="text-[var(--color-dark)] hover:text-[var(--color-dark)] text-title font-bold w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded" disabled={isPending} aria-label="Close modal">&times;</button>
         </div>
         <div className="p-6 flex flex-col items-center text-center gap-4">
           <p className="font-pixel text-body text-[var(--color-dark)] leading-relaxed">

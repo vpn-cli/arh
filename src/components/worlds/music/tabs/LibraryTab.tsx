@@ -33,7 +33,7 @@ export const LibraryTab = React.memo(function LibraryTab({
           <button
             onClick={() => setLibraryPage(p => Math.max(0, p - 1))}
             disabled={libraryPage === 0}
-            className="text-meta font-bold text-[var(--color-dark)] disabled:opacity-40 hover:text-[var(--color-dark)] cursor-pointer p-1 flex items-center justify-center"
+            className="text-meta font-bold text-[var(--color-dark)] disabled:opacity-40 hover:text-[var(--color-dark)] cursor-pointer w-6 h-6 min-w-[24px] min-h-[24px] rounded flex items-center justify-center"
             aria-label="Previous page"
           >
             <ChevronLeftIcon size={14} />
@@ -42,7 +42,7 @@ export const LibraryTab = React.memo(function LibraryTab({
           <button
             onClick={() => setLibraryPage(p => p + 1)}
             disabled={!likedData?.next}
-            className="text-meta font-bold text-[var(--color-dark)] disabled:opacity-40 hover:text-[var(--color-dark)] cursor-pointer p-1 flex items-center justify-center"
+            className="text-meta font-bold text-[var(--color-dark)] disabled:opacity-40 hover:text-[var(--color-dark)] cursor-pointer w-6 h-6 min-w-[24px] min-h-[24px] rounded flex items-center justify-center"
             aria-label="Next page"
           >
             <ChevronRightIcon size={14} />

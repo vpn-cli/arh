@@ -137,6 +137,7 @@ export const MediaRow = React.memo(function MediaRow({
           type="button"
           onClick={onClick}
           className="mw-row-main flex-1 flex items-center gap-3 text-left min-w-0 outline-none focus-visible:outline-none after:absolute after:inset-0 after:content-['']"
+          aria-label={`Play ${title}${typeof subtitle === 'string' ? ` by ${subtitle}` : ''}`}
         >
           {content}
         </button>

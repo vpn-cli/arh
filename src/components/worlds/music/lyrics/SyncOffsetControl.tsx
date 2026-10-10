@@ -92,18 +92,18 @@ export function SyncOffsetControl({
 
   return (
     <>
-      <div className="flex items-center gap-1 bg-white/90 border border-[var(--color-dark)]/40 rounded-full px-2 py-0.5 shadow-xs">
+      <div className="flex items-center gap-1 bg-white/90 border border-[var(--color-dark)]/40 rounded-full px-2 py-1 min-h-[32px] shadow-xs">
         <button
           type="button"
           onClick={handleDecrease}
           disabled={offsetMs <= -5000}
-          className="font-pixel text-caption font-bold px-1.5 py-0.5 rounded hover:bg-[var(--color-light)] text-[var(--color-dark)] transition-colors active:scale-95 disabled:opacity-40"
+          className="font-pixel text-meta font-bold h-6 min-h-[24px] px-2 flex items-center justify-center rounded hover:bg-[var(--color-light)] text-[var(--color-dark)] transition-colors active:scale-95 disabled:opacity-40"
           title="Minus 100ms"
         >
           -100ms
         </button>
         <span
-          className="font-mono text-caption font-bold text-[var(--color-dark)] min-w-[52px] text-center select-none"
+          className="font-mono text-meta font-bold text-[var(--color-dark)] min-w-[56px] text-center select-none"
           title="Current lyric offset"
         >
           {offsetMs > 0 ? `+${offsetMs}ms` : `${offsetMs}ms`}
@@ -112,7 +112,7 @@ export function SyncOffsetControl({
           type="button"
           onClick={handleIncrease}
           disabled={offsetMs >= 5000}
-          className="font-pixel text-caption font-bold px-1.5 py-0.5 rounded hover:bg-[var(--color-light)] text-[var(--color-dark)] transition-colors active:scale-95 disabled:opacity-40"
+          className="font-pixel text-meta font-bold h-6 min-h-[24px] px-2 flex items-center justify-center rounded hover:bg-[var(--color-light)] text-[var(--color-dark)] transition-colors active:scale-95 disabled:opacity-40"
           title="Plus 100ms"
         >
           +100ms
@@ -121,7 +121,7 @@ export function SyncOffsetControl({
           type="button"
           onClick={handleSaveClick}
           disabled={isSaving}
-          className="font-pixel text-caption font-bold px-2 py-0.5 ml-1 rounded-full border border-[var(--color-dark)] bg-[var(--color-light)] text-[var(--color-dark)] hover:bg-[var(--color-muted)]/40 transition-all active:scale-95 disabled:opacity-50"
+          className="font-pixel text-meta font-bold h-6 min-h-[24px] px-3 ml-1 rounded-full border border-[var(--color-dark)] bg-[var(--color-light)] text-[var(--color-dark)] hover:bg-[var(--color-muted)]/40 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center"
           title="Save sync offset to database"
         >
           {isSaving ? '...' : saveSuccess ? '✓' : 'Save'}
@@ -177,7 +177,7 @@ export function SyncOffsetControl({
                   setIsSecretModalOpen(false);
                   setSecretError(null);
                 }}
-                className="font-pixel text-meta px-3 py-1.5 rounded-xl border-2 border-[var(--color-dark)] bg-white text-[var(--color-dark)] hover:bg-gray-50 active:scale-95"
+                className="font-pixel text-meta min-h-[32px] px-3 py-1.5 rounded-xl border-2 border-[var(--color-dark)] bg-white text-[var(--color-dark)] hover:bg-gray-50 active:scale-95 inline-flex items-center justify-center"
               >
                 CANCEL
               </button>
@@ -185,7 +185,7 @@ export function SyncOffsetControl({
                 type="button"
                 onClick={() => saveOffsetWithSecret(secretInput)}
                 disabled={isSaving || !secretInput}
-                className="font-pixel text-meta px-4 py-1.5 rounded-xl border-2 border-[var(--color-dark)] bg-[var(--color-light)] text-[var(--color-dark)] font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
+                className="font-pixel text-meta min-h-[32px] px-4 py-1.5 rounded-xl border-2 border-[var(--color-dark)] bg-[var(--color-light)] text-[var(--color-dark)] font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 inline-flex items-center justify-center"
               >
                 {isSaving ? 'SAVING...' : '✓ SAVE'}
               </button>

@@ -216,6 +216,6 @@ Define 6 sizes in the Tailwind theme `@theme` in `src/app/globals.css`, in rem, 
 - Fix all elements flagged in Section A.3 audit.
 
 ### Section D Checklist
-- [ ] Enforce primary controls in `PlaybackControls.tsx` to at least 32x32px.
-- [ ] Enforce minimum 24x24px target size for all header buttons, overlay dismissals, modal close buttons, reorder buttons, pagination controls, and offset controls.
-- [ ] Fix checkbox hit target in `PlaylistModals.tsx` to at least 24x24px.
+- [x] Enforce primary controls in `PlaybackControls.tsx` to at least 32x32px.
+- [x] Enforce minimum 24x24px target size for all header buttons, overlay dismissals, modal close buttons, reorder buttons, pagination controls, and offset controls.
+- [x] Fix checkbox hit target in `PlaylistModals.tsx` to at least 24x24px.

@@ -48,7 +48,7 @@ export const PlaylistCover = React.memo(function PlaylistCover({
                 key={idx}
                 className="w-full h-full bg-[var(--color-muted)]/30 flex items-center justify-center text-[var(--color-dark)] font-bold text-caption"
               >
-                {fallbackIcon}
+                {fallbackIcon ?? <MusicNoteIcon size={Math.round(halfSize * 0.45)} />}
               </div>
             );
           }
@@ -63,7 +63,7 @@ export const PlaylistCover = React.memo(function PlaylistCover({
                 key={idx}
                 className="w-full h-full bg-[var(--color-muted)]/30 flex items-center justify-center text-[var(--color-dark)] font-bold text-caption"
               >
-                {fallbackIcon}
+                {fallbackIcon ?? <MusicNoteIcon size={Math.round(halfSize * 0.45)} />}
               </div>
             );
           }

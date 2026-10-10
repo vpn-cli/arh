@@ -28,7 +28,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
         {onGoHome && (
           <button
             onClick={onGoHome}
-            className="mw-btn group px-3 py-1 bg-white/50 hover:bg-[var(--color-light)] border border-[var(--color-muted)] rounded-full flex items-center gap-1.5"
+            className="mw-btn group px-3 py-1 min-h-[28px] bg-white/50 hover:bg-[var(--color-light)] border border-[var(--color-muted)] rounded-full flex items-center gap-1.5"
             aria-label="Return to Home World"
             title="Return to Home World"
           >
@@ -56,7 +56,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
         {searchQuery && (
           <button
             onClick={onClearSearch}
-            className="mw-btn absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-dark)] hover:text-[var(--color-dark)] p-1 flex items-center justify-center"
+            className="mw-btn absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-dark)] hover:text-[var(--color-dark)] w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded-full"
             aria-label="Clear search"
             title="Clear search"
           >
@@ -69,9 +69,9 @@ export const PlayerHeader = React.memo(function PlayerHeader({
           <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tracking-wider uppercase">Music World</span>
           <MusicNoteIcon size={12} className="text-[var(--color-vibrant)]" />
         </div>
-        <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Minimize window"><span className="text-body">_</span></button>
-        <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Maximize window"><span className="text-body">□</span></button>
-        <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Close window">
+        <button className="mw-btn hover:text-[var(--color-vibrant)] w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded" aria-label="Minimize window"><span className="text-body leading-none">_</span></button>
+        <button className="mw-btn hover:text-[var(--color-vibrant)] w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded" aria-label="Maximize window"><span className="text-body leading-none">□</span></button>
+        <button className="mw-btn hover:text-[var(--color-vibrant)] w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded" aria-label="Close window">
           <CloseIcon size={16} />
         </button>
       </div>

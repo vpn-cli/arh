@@ -75,7 +75,7 @@ export function MemoryEditorModal({ isOpen, onClose, entity, entityType, memoryI
       <div className="bg-white rounded-3xl border-4 border-[var(--color-muted)] shadow-[0_10px_40px_rgba(255,105,180,0.4)] p-6 flex flex-col gap-4 w-full max-w-sm">
         <div className="flex justify-between items-center border-b-2 border-[var(--color-light)] pb-2">
           <h3 className="font-pixel text-body font-bold text-[var(--color-dark)]">{displayTitle}</h3>
-          <button onClick={onClose} className="text-[var(--color-dark)] hover:text-[var(--color-dark)] p-1 transition-colors flex items-center justify-center" aria-label="Close modal">
+          <button onClick={onClose} className="text-[var(--color-dark)] hover:text-[var(--color-dark)] w-6 h-6 min-w-[24px] min-h-[24px] rounded transition-colors flex items-center justify-center" aria-label="Close modal">
             <CloseIcon size={16} />
           </button>
         </div>
@@ -86,7 +86,7 @@ export function MemoryEditorModal({ isOpen, onClose, entity, entityType, memoryI
               <WarningIcon size={14} className="shrink-0 text-[var(--color-vibrant)]" />
               {error}
             </span>
-            <button onClick={clearError} className="text-[var(--color-dark)] hover:opacity-75 p-1 flex items-center justify-center" aria-label="Clear error">
+            <button onClick={clearError} className="text-[var(--color-dark)] hover:opacity-75 w-6 h-6 min-w-[24px] min-h-[24px] rounded flex items-center justify-center" aria-label="Clear error">
               <CloseIcon size={12} />
             </button>
           </div>

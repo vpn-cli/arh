@@ -6,10 +6,10 @@ import { PlaylistCover } from '../PlaylistCover';
 describe('PlaylistCover component', () => {
   it('renders fallback icon when images is undefined or empty', () => {
     const { container, rerender } = render(<PlaylistCover images={undefined} size={40} />);
-    expect(container.textContent).toContain('♪');
+    expect(container.querySelector('svg')).toBeTruthy();
 
     rerender(<PlaylistCover images={[]} size={40} />);
-    expect(container.textContent).toContain('♪');
+    expect(container.querySelector('svg')).toBeTruthy();
   });
 
   it('renders single image via pickImage when 1 to 3 images are provided', () => {
@@ -68,7 +68,7 @@ describe('PlaylistCover component', () => {
     const imgs = container.querySelectorAll('img');
     fireEvent.error(imgs[1]);
 
-    expect(container.textContent).toContain('♪');
+    expect(container.querySelector('svg')).toBeTruthy();
     expect(container.querySelectorAll('img')).toHaveLength(3);
   });
 });

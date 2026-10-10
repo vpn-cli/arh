@@ -81,7 +81,7 @@ export const QueuePanel = memo(function QueuePanel({
         <div className="flex flex-1 gap-1">
           <button
             onClick={() => setRightPanelTab('queue')}
-            className={`flex-1 font-pixel text-caption py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
+            className={`flex-1 font-pixel text-meta min-h-[28px] py-1 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
               rightPanelTab === 'queue'
                 ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs'
                 : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
@@ -91,7 +91,7 @@ export const QueuePanel = memo(function QueuePanel({
           </button>
           <button
             onClick={() => setRightPanelTab('recent')}
-            className={`flex-1 font-pixel text-caption py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
+            className={`flex-1 font-pixel text-meta min-h-[28px] py-1 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
               rightPanelTab === 'recent'
                 ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs'
                 : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
@@ -114,14 +114,14 @@ export const QueuePanel = memo(function QueuePanel({
           {rightPanelTab === 'queue' && effectiveQueue.length > 0 && (
             <button
               onClick={() => clearQueue()}
-              className="font-pixel text-caption text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors font-bold"
+              className="font-pixel text-meta min-h-[24px] px-2 py-0.5 rounded flex items-center justify-center text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors font-bold"
             >
               Clear
             </button>
           )}
           <button
             onClick={() => onExpand(rightPanelTab)}
-            className="font-pixel text-caption text-[var(--color-dark)] hover:text-[var(--on-vibrant)] bg-white hover:bg-[var(--color-vibrant)] border border-[var(--color-muted)] px-2.5 py-0.5 rounded-full flex items-center gap-1 transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs font-bold active:scale-95 will-change-transform"
+            className="font-pixel text-meta min-h-[26px] text-[var(--color-dark)] hover:text-[var(--on-vibrant)] bg-white hover:bg-[var(--color-vibrant)] border border-[var(--color-muted)] px-2.5 py-1 rounded-full flex items-center gap-1 transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs font-bold active:scale-95 will-change-transform"
             title="Open large pop-up screen to tune queue & history"
           >
             <span>⤢</span> Expand
@@ -141,7 +141,7 @@ export const QueuePanel = memo(function QueuePanel({
               </p>
               <button
                 onClick={() => onExpand('recent')}
-                className="mt-2 font-pixel text-caption text-[var(--color-dark)] bg-white border border-[var(--color-muted)] px-3 py-1 rounded-full hover:bg-[var(--color-light)] transition-all font-bold shadow-xs inline-flex items-center gap-1"
+                className="mt-2 font-pixel text-meta min-h-[28px] text-[var(--color-dark)] bg-white border border-[var(--color-muted)] px-3 py-1 rounded-full hover:bg-[var(--color-light)] transition-all font-bold shadow-xs inline-flex items-center gap-1"
               >
                 Browse History <ChevronRightIcon size={12} />
               </button>
@@ -223,7 +223,7 @@ export const QueuePanel = memo(function QueuePanel({
                       removeFromQueue(idx);
                     }
                   }}
-                  className={`mw-btn mw-row-action text-[var(--color-dark)] hover:text-[var(--color-dark)] p-1 rounded shrink-0 flex items-center justify-center ${
+                  className={`mw-btn mw-row-action text-[var(--color-dark)] hover:text-[var(--color-dark)] w-6 h-6 min-w-[24px] min-h-[24px] rounded shrink-0 flex items-center justify-center ${
                     queue.length > 0 ? '' : 'hidden'
                   }`}
                   aria-label="Remove from queue"
@@ -283,7 +283,7 @@ export const QueuePanel = memo(function QueuePanel({
                     e.stopPropagation();
                     handleAddToQueue(track, item.context?.uri);
                   }}
-                  className="mw-btn mw-row-action text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] px-2.5 py-1 rounded-full font-pixel text-meta font-bold shadow-xs shrink-0 flex items-center gap-1"
+                  className="mw-btn mw-row-action text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] min-h-[26px] px-2.5 py-1 rounded-full font-pixel text-meta font-bold shadow-xs shrink-0 flex items-center gap-1"
                   title="Add to queue"
                 >
                   <PlusIcon size={11} /> Queue

@@ -30,7 +30,7 @@ export const PlaybackControls = memo(function PlaybackControls({
     <div className="flex items-center justify-between mt-3 px-2">
       <button
         onClick={toggleShuffle}
-        className={`transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${
+        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${
           isShuffle ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
         }`}
         disabled={!isReady && !token}
@@ -43,7 +43,7 @@ export const PlaybackControls = memo(function PlaybackControls({
       </button>
       <button
         onClick={prevTrack}
-        className="text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
+        className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
         disabled={!isReady && !token}
         aria-label="Previous track"
         title="Previous"
@@ -77,7 +77,7 @@ export const PlaybackControls = memo(function PlaybackControls({
       </button>
       <button
         onClick={nextTrack}
-        className="text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
+        className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:scale-110 active:scale-95 transition-transform disabled:opacity-50"
         disabled={!isReady && !token}
         aria-label="Next track"
         title="Next"
@@ -88,7 +88,7 @@ export const PlaybackControls = memo(function PlaybackControls({
       </button>
       <button
         onClick={toggleRepeat}
-        className={`relative transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${
+        className={`w-8 h-8 rounded-full flex items-center justify-center relative transition-all hover:scale-110 active:scale-95 disabled:opacity-50 ${
           repeatMode !== 'off'
             ? 'text-[var(--color-vibrant)] drop-shadow-[0_2px_4px_var(--color-vibrant)]'
             : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'

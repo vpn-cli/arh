@@ -44,7 +44,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
               <span>{recoveryError}</span>
               <button
                 onClick={onDismissRecoveryError}
-                className="ml-2 hover:opacity-75 font-bold p-0.5 flex items-center justify-center text-white"
+                className="ml-2 hover:opacity-75 font-bold w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center text-white rounded-full"
                 aria-label="Dismiss error notice"
               >
                 <CloseIcon size={12} />

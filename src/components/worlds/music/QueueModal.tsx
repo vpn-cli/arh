@@ -172,7 +172,7 @@ export function QueueModal({
           <div className="flex items-center bg-[var(--color-light)] p-1 rounded-full border border-[var(--color-light)]">
             <button
               onClick={() => setActiveTab('queue')}
-              className={`font-pixel text-caption px-3.5 py-1 rounded-full transition-all flex items-center gap-1.5 font-bold ${
+              className={`font-pixel text-meta min-h-[28px] px-3.5 py-1 rounded-full transition-all flex items-center gap-1.5 font-bold ${
                 activeTab === 'queue'
                   ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs'
                   : 'text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:bg-[var(--color-muted)]/40'
@@ -182,7 +182,7 @@ export function QueueModal({
             </button>
             <button
               onClick={() => setActiveTab('recent')}
-              className={`font-pixel text-caption px-3.5 py-1 rounded-full transition-all flex items-center gap-1.5 font-bold ${
+              className={`font-pixel text-meta min-h-[28px] px-3.5 py-1 rounded-full transition-all flex items-center gap-1.5 font-bold ${
                 activeTab === 'recent'
                   ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs'
                   : 'text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:bg-[var(--color-muted)]/40'
@@ -206,9 +206,10 @@ export function QueueModal({
               {searchFilter && (
                 <button
                   onClick={() => setSearchFilter('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:opacity-100 flex items-center justify-center p-0.5"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:opacity-100 w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded-full"
+                  aria-label="Clear filter"
                 >
-                  <CloseIcon size={10} />
+                  <CloseIcon size={12} />
                 </button>
               )}
             </div>
@@ -217,14 +218,14 @@ export function QueueModal({
               <>
                 <button
                   onClick={handleShuffleQueue}
-                  className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-light)] text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel text-caption px-3 py-1 rounded-full transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out flex items-center gap-1.5 font-bold shadow-2xs active:scale-95"
+                  className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-light)] text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel text-meta min-h-[28px] px-3 py-1 rounded-full transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out flex items-center gap-1.5 font-bold shadow-2xs active:scale-95"
                   title="Randomize upcoming tracks in queue"
                 >
                   <ShuffleIcon size={12} /> Shuffle Queue
                 </button>
                 <button
                   onClick={() => clearQueue()}
-                  className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-light)] text-[var(--color-dark)] hover:text-[var(--color-vibrant)] font-pixel text-caption px-3 py-1 rounded-full transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out font-bold shadow-2xs active:scale-95"
+                  className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-light)] text-[var(--color-dark)] hover:text-[var(--color-vibrant)] font-pixel text-meta min-h-[28px] px-3 py-1 rounded-full transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out font-bold shadow-2xs active:scale-95"
                   title="Remove all tracks from queue"
                 >
                   Clear All
@@ -402,7 +403,7 @@ export function QueueModal({
                           <button
                             onClick={() => handleMoveUp(originalIndex)}
                             disabled={originalIndex === 0}
-                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-meta p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
+                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-meta w-6 h-6 min-w-[24px] min-h-[24px] leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
                             title="Move Up"
                             aria-label={`Move ${item.track?.name} up`}
                           >
@@ -411,7 +412,7 @@ export function QueueModal({
                           <button
                             onClick={() => handleMoveDown(originalIndex)}
                             disabled={originalIndex === queue.length - 1}
-                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-meta p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
+                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-meta w-6 h-6 min-w-[24px] min-h-[24px] leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
                             title="Move Down"
                             aria-label={`Move ${item.track?.name} down`}
                           >
@@ -541,7 +542,7 @@ export function QueueModal({
                         </button>
                         <button
                           onClick={() => addToQueue(track, item.context?.uri)}
-                          className="mw-btn px-3 py-1 rounded-full bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-meta font-bold shadow-2xs flex items-center gap-1"
+                          className="mw-btn min-h-[26px] px-3 py-1 rounded-full bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-meta font-bold shadow-2xs flex items-center gap-1"
                           title="Add to Up Next Queue"
                         >
                           <PlusIcon size={11} /> Queue
