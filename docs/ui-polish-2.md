@@ -153,11 +153,11 @@ Each task has a checkbox grouped by section. One git commit per section, updatin
 
 ## Section D: Recently Played on Home
 
-- [ ] Style cards with same surface and border as Continue Listening cards: `rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-bg)]/95`.
-- [ ] 56px artwork (`w-14 h-14 rounded-xl shrink-0 overflow-hidden`), title 15px (`text-[15px] font-bold`), artist 13px (`text-[13px] font-medium`), even padding, equal heights.
-- [ ] Responsive grid: 3 columns from 1280px (`xl:grid-cols-3`), 2 columns from 768px (`md:grid-cols-2`), 1 column below (`grid-cols-1`).
-- [ ] Hover states: border darkens (`hover:border-[var(--color-dark)]/40`) and small shadow appears (`hover:shadow-md`), NO lift.
-- [ ] Centered play icon (SVG `PlayIcon`) on the artwork over a dark scrim (`bg-black/40` on hover/focus).
+- [x] Style cards with same surface and border as Continue Listening cards: `rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-bg)]/95`.
+- [x] 56px artwork (`w-14 h-14 rounded-xl shrink-0 overflow-hidden`), title 15px (`text-[15px] font-bold`), artist 13px (`text-[13px] font-medium`), even padding, equal heights.
+- [x] Responsive grid: 3 columns from 1280px (`xl:grid-cols-3`), 2 columns from 768px (`md:grid-cols-2`), 1 column below (`grid-cols-1`).
+- [x] Hover states: border darkens (`hover:border-[var(--color-dark)]/40`) and small shadow appears (`hover:shadow-md`), NO lift.
+- [x] Centered play icon (SVG `PlayIcon`) on the artwork over a dark scrim (`bg-black/40` on hover/focus).
 
 ---
 

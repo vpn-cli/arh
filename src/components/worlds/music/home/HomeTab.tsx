@@ -190,30 +190,37 @@ export const HomeTab = React.memo(function HomeTab({
             <p className="font-pixel text-sm text-[var(--color-dark)] font-bold opacity-70">Nothing here yet! Start playing some tunes ~</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {(recentHomeTracks.length ? recentHomeTracks : likedHomeTracks).map((track: any, idx: number) => (
               <button
                 key={`${track.id || track.uri || 'track'}-${idx}`}
                 onClick={() => playTrack(track.uri)}
-                className="group flex items-center gap-3 overflow-hidden rounded-xl border border-transparent bg-[var(--color-light)] text-left p-2 mw-card"
+                className="group flex items-center gap-3.5 overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-bg)]/95 text-left p-3 shadow-2xs hover:border-[var(--color-dark)]/40 hover:shadow-md transition-[border-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] h-full"
               >
-                <div className="relative w-12 h-12 shrink-0 rounded-md overflow-hidden shadow-sm">
+                <div className="relative w-14 h-14 shrink-0 rounded-xl overflow-hidden shadow-xs bg-[var(--color-light)]">
                   {track.album?.images?.[0]?.url ? (
-                    <img src={(track.album.images[1] || track.album.images[0]).url} loading="lazy" alt={track.name} className="absolute inset-0 w-full h-full object-cover" />
+                    <img
+                      src={(track.album.images[1] || track.album.images[0]).url}
+                      loading="lazy"
+                      alt={track.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="absolute inset-0 bg-[var(--color-muted)] flex items-center justify-center">
-                      <MusicNoteIcon size={16} className="text-[var(--color-dark)] opacity-60" />
+                      <MusicNoteIcon size={20} className="text-[var(--color-dark)] opacity-60" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
-                    <span className="text-white shadow-sm mw-card-play">
-                      <PlayIcon size={16} />
-                    </span>
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                    <PlayIcon size={20} className="text-white drop-shadow-sm ml-0.5" />
                   </div>
                 </div>
-                <div className="flex-1 min-w-0 pr-2">
-                  <div className="truncate font-pixel text-sm font-bold text-[var(--color-dark)] mw-card-title">{track.name}</div>
-                  <div className="truncate font-pixel text-xs text-[var(--color-dark)] font-medium opacity-80">{track.artists?.map((a: any) => a.name).join(', ')}</div>
+                <div className="flex-1 min-w-0 pr-1">
+                  <div className="truncate font-pixel text-[15px] font-bold text-[var(--color-dark)] leading-snug">
+                    {track.name}
+                  </div>
+                  <div className="truncate font-pixel text-[13px] text-[var(--color-dark)] font-medium opacity-80 mt-0.5">
+                    {track.artists?.map((a: any) => a.name).join(', ')}
+                  </div>
                 </div>
               </button>
             ))}
