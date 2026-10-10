@@ -203,7 +203,7 @@ export function VibesSection({
               }
             }}
             disabled={selectedVibe.tracks.length === 0}
-            className="mt-4 bg-[var(--color-vibrant)] text-white px-6 py-2.5 rounded-full font-pixel text-body font-bold hover:bg-[var(--color-vibrant)] active:scale-95 transition-all shadow-[0_4px_14px_var(--color-vibrant)] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+            className="mt-4 bg-[var(--color-vibrant)] text-[var(--on-vibrant)] px-6 py-2.5 rounded-full font-pixel text-body font-bold hover:bg-[var(--color-vibrant)] active:scale-95 transition-all shadow-[0_4px_14px_var(--color-vibrant)] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
           >
             Play Vibe
           </button>
@@ -274,7 +274,7 @@ export function VibesSection({
             onClick={() => setTimeRange(range.id as TimeRange)}
             className={`flex-1 font-pixel text-caption py-2 rounded-lg transition-colors font-bold ${
               timeRange === range.id 
-                ? 'bg-[var(--color-vibrant)] text-white shadow-xs' 
+                ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs' 
                 : 'text-[var(--color-dark)] hover:bg-[var(--color-light)]'
             }`}
           >

@@ -103,7 +103,7 @@ export function MixSection({
                 }
               }}
               disabled={isMixLoading || filteredMix.length === 0}
-              className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white px-5 py-2 rounded-xl font-pixel text-caption font-bold transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-md hover:scale-105 active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
+              className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-[var(--on-vibrant)] px-5 py-2 rounded-xl font-pixel text-caption font-bold transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-md hover:scale-105 active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
             >
               <PlayIcon size={14} /> Play Entire Mix ({filteredMix.length})
             </button>
@@ -117,7 +117,7 @@ export function MixSection({
             value={mixSearch}
             onChange={(e) => setMixSearch(e.target.value)}
             placeholder="Search tracks or artists in your mix..."
-            className="w-full bg-white border border-[var(--color-light)] rounded-xl px-3 py-1.5 font-pixel text-meta text-[var(--color-dark)] placeholder:text-[var(--color-dark)]/70 focus:outline-none focus:border-[var(--color-vibrant)]"
+            className="w-full bg-white border border-[var(--color-light)] rounded-xl px-3 py-1.5 font-pixel text-meta text-[var(--color-dark)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-vibrant)]"
           />
         </div>
 
@@ -176,7 +176,7 @@ export function MixSection({
               <button
                 onClick={() => setTimeRange('short_term')}
                 className={`font-pixel text-caption px-2.5 py-0.5 rounded-md transition-all font-bold ${
-                  timeRange === 'short_term' ? 'bg-[var(--color-vibrant)] text-white shadow-2xs' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
+                  timeRange === 'short_term' ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-2xs' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
                 }`}
               >
                 4 Weeks
@@ -184,7 +184,7 @@ export function MixSection({
               <button
                 onClick={() => setTimeRange('medium_term')}
                 className={`font-pixel text-caption px-2.5 py-0.5 rounded-md transition-all font-bold ${
-                  timeRange === 'medium_term' ? 'bg-[var(--color-vibrant)] text-white shadow-2xs' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
+                  timeRange === 'medium_term' ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-2xs' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
                 }`}
               >
                 6 Months
@@ -192,7 +192,7 @@ export function MixSection({
               <button
                 onClick={() => setTimeRange('long_term')}
                 className={`font-pixel text-caption px-2.5 py-0.5 rounded-md transition-all font-bold ${
-                  timeRange === 'long_term' ? 'bg-[var(--color-vibrant)] text-white shadow-2xs' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
+                  timeRange === 'long_term' ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-2xs' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
                 }`}
               >
                 All Time
@@ -202,7 +202,7 @@ export function MixSection({
           <button 
             onClick={() => topTracks && onPlayTracks(topTracks.map((t: any) => t.uri), topTracks)}
             disabled={!topTracks || topTracks.length === 0}
-            className="font-pixel text-caption font-bold bg-[var(--color-vibrant)] text-white px-3 py-1.5 rounded-lg hover:bg-[var(--color-vibrant)] transition-colors shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+            className="font-pixel text-caption font-bold bg-[var(--color-vibrant)] text-[var(--on-vibrant)] px-3 py-1.5 rounded-lg hover:bg-[var(--color-vibrant)] transition-colors shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
           >
             Play All
           </button>

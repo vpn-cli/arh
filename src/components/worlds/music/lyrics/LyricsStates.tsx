@@ -2,7 +2,7 @@ import React from 'react';
 
 export function LyricsLoadingView() {
   return (
-    <div className="flex flex-col items-center justify-center gap-8 py-20 opacity-60">
+    <div className="flex flex-col items-center justify-center gap-8 py-20 text-[var(--color-text-muted)]">
       <div className="w-3/4 h-6 bg-[var(--color-muted)] rounded animate-pulse" />
       <div className="w-1/2 h-6 bg-[var(--color-muted)] rounded animate-pulse" />
       <div className="w-5/6 h-6 bg-[var(--color-muted)] rounded animate-pulse" />
@@ -28,7 +28,7 @@ export function LyricsInstrumentalView({
       <h4 className="font-pixel text-title sm:text-title font-bold text-[var(--color-dark)] mb-1">
         This track is an instrumental
       </h4>
-      <p className="font-pixel text-caption text-[var(--color-dark)]/70 max-w-xs">
+      <p className="font-pixel text-caption text-[var(--color-text-muted)] max-w-xs">
         No lyrics needed — just enjoy the melody ✨
       </p>
       {editMode && (
@@ -101,12 +101,12 @@ export function LyricsNotFoundView({
       >
         {trackName || 'Unknown Track'}
       </h4>
-      <p className="font-pixel text-caption text-[var(--color-dark)]/70 mb-3 max-w-xs truncate">
+      <p className="font-pixel text-caption text-[var(--color-text-muted)] mb-3 max-w-xs truncate">
         {artistName || 'Unknown Artist'}
       </p>
       <div className="flex flex-col items-center gap-1 mb-5">
         <div className="text-heading text-[var(--color-dark)]">ʕ•́ᴥ•̀ʔっ</div>
-        <span className="font-pixel text-caption text-[var(--color-dark)]/70 font-bold">
+        <span className="font-pixel text-caption text-[var(--color-text-muted)] font-bold">
           No lyrics found for this track
         </span>
       </div>

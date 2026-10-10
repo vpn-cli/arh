@@ -128,7 +128,7 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
                 />
               </div>
             ) : (featuredTracksData && (!featuredTracksData.tracks?.items || featuredTracksData.tracks.items.length === 0)) ? (
-              <div className="flex flex-col items-center justify-center font-pixel text-caption text-center px-4 gap-2 h-20 text-[var(--color-muted)]/70">
+              <div className="flex flex-col items-center justify-center font-pixel text-caption text-center px-4 gap-2 h-20 text-[var(--color-text-muted)]">
                 NO FEATURED TRACKS FOUND
               </div>
             ) : isLoadingFeaturedTracks ? (
@@ -160,7 +160,7 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
             )}
 
             {albums.length === 0 && singles.length === 0 && (
-              <div className="flex flex-col items-center justify-center font-pixel text-caption text-center px-4 gap-2 h-20 text-[var(--color-muted)]/70">
+              <div className="flex flex-col items-center justify-center font-pixel text-caption text-center px-4 gap-2 h-20 text-[var(--color-text-muted)]">
                 NO RELEASES FOUND
               </div>
             )}

@@ -106,13 +106,13 @@ export function AddLyricsModal({
             <h3 className="font-pixel text-body font-bold text-[var(--color-dark)] flex items-center gap-2">
               <span>✍</span> ADD LYRICS (EDIT MODE)
             </h3>
-            <p className="font-pixel text-caption text-[var(--color-dark)]/70 truncate mt-0.5">
+            <p className="font-pixel text-caption text-[var(--color-text-muted)] truncate mt-0.5">
               {trackName} — {artistName}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-full bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white"
+            className="w-7 h-7 flex items-center justify-center rounded-full bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)]"
             aria-label="Close modal"
           >
             <CloseIcon size={14} />

@@ -147,7 +147,7 @@ export function QueueModal({
             <div>
               <h2 className="font-pixel text-title text-[var(--color-dark)] font-bold tracking-wide flex items-center gap-2">
                 Playback Queue & History Tuner
-                <span className="text-caption bg-[var(--color-vibrant)] text-white px-2.5 py-0.5 rounded-full font-normal transition-colors duration-500">
+                <span className="text-caption bg-[var(--color-vibrant)] text-[var(--on-vibrant)] px-2.5 py-0.5 rounded-full font-normal transition-colors duration-500">
                   {activeTab === 'queue' ? `${effectiveQueue.length} Tracks` : `${recentTracks.length} Recent`}
                 </span>
               </h2>
@@ -159,7 +159,7 @@ export function QueueModal({
 
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] transition-all flex items-center justify-center font-bold active:scale-95 shadow-xs border border-[var(--color-muted)]"
+            className="w-9 h-9 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] text-[var(--color-dark)] transition-all flex items-center justify-center font-bold active:scale-95 shadow-xs border border-[var(--color-muted)]"
             title="Close"
           >
             <CloseIcon size={16} />
@@ -174,7 +174,7 @@ export function QueueModal({
               onClick={() => setActiveTab('queue')}
               className={`font-pixel text-caption px-3.5 py-1 rounded-full transition-all flex items-center gap-1.5 font-bold ${
                 activeTab === 'queue'
-                  ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
+                  ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs'
                   : 'text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:bg-[var(--color-muted)]/40'
               }`}
             >
@@ -184,7 +184,7 @@ export function QueueModal({
               onClick={() => setActiveTab('recent')}
               className={`font-pixel text-caption px-3.5 py-1 rounded-full transition-all flex items-center gap-1.5 font-bold ${
                 activeTab === 'recent'
-                  ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
+                  ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs'
                   : 'text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:bg-[var(--color-muted)]/40'
               }`}
             >
@@ -202,11 +202,11 @@ export function QueueModal({
                 placeholder="Search tracks or artists..."
                 className="bg-white border border-[var(--color-muted)] focus:border-[var(--color-vibrant)] rounded-full px-3 py-1 pl-7 text-meta text-[var(--color-dark)] placeholder-[var(--color-dark)] opacity-80 outline-none font-pixel w-52 transition-all shadow-2xs"
               />
-              <SearchIcon size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-dark)] opacity-70 pointer-events-none" />
+              <SearchIcon size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
               {searchFilter && (
                 <button
                   onClick={() => setSearchFilter('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-dark)] opacity-70 hover:opacity-100 flex items-center justify-center p-0.5"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:opacity-100 flex items-center justify-center p-0.5"
                 >
                   <CloseIcon size={10} />
                 </button>
@@ -349,7 +349,7 @@ export function QueueModal({
                         } ${draggedIdx === originalIndex ? 'opacity-40' : 'opacity-100'}`}
                       >
                         {/* Drag Handle & Reorder Controls */}
-                        <div className="flex items-center gap-1 shrink-0 text-[var(--color-dark)] opacity-70">
+                        <div className="flex items-center gap-1 shrink-0 text-[var(--color-text-muted)]">
                           <span
                             className="cursor-grab active:cursor-grabbing hover:opacity-100 p-0.5 font-bold text-body select-none transition-opacity"
                             title="Drag to reorder"
@@ -393,7 +393,7 @@ export function QueueModal({
                         </div>
 
                         {/* Duration */}
-                        <span className="font-pixel text-caption text-[var(--color-dark)] opacity-70 font-bold shrink-0">
+                        <span className="font-pixel text-caption text-[var(--color-text-muted)] font-bold shrink-0">
                           {formatTime(item.track?.duration_ms)}
                         </span>
 
@@ -430,7 +430,7 @@ export function QueueModal({
                                 onPlayTrack(item.track.uri);
                               }
                             }}
-                            className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-meta shadow-2xs"
+                            className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] text-[var(--color-dark)] flex items-center justify-center text-meta shadow-2xs"
                             title="Play this track"
                           >
                             <PlayIcon size={13} />
@@ -438,7 +438,7 @@ export function QueueModal({
                           {onAddToPlaylist && item.track?.uri && (
                             <button
                               onClick={() => onAddToPlaylist(item.track.uri)}
-                              className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-body font-bold shadow-2xs"
+                              className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] text-[var(--color-dark)] flex items-center justify-center text-body font-bold shadow-2xs"
                               title="Add to Playlist"
                             >
                               <PlusIcon size={14} />
@@ -527,14 +527,14 @@ export function QueueModal({
                         </div>
                       </div>
 
-                      <span className="font-pixel text-caption text-[var(--color-dark)] opacity-70 font-bold shrink-0">
+                      <span className="font-pixel text-caption text-[var(--color-text-muted)] font-bold shrink-0">
                         {formatTime(track.duration_ms)}
                       </span>
 
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           onClick={() => onPlayTrack(track.uri, item.context?.uri)}
-                          className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-meta shadow-2xs"
+                          className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] text-[var(--color-dark)] flex items-center justify-center text-meta shadow-2xs"
                           title="Play Track"
                         >
                           <PlayIcon size={13} />
@@ -549,7 +549,7 @@ export function QueueModal({
                         {onAddToPlaylist && (
                           <button
                             onClick={() => onAddToPlaylist(track.uri)}
-                            className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-body font-bold shadow-2xs"
+                            className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] text-[var(--color-dark)] flex items-center justify-center text-body font-bold shadow-2xs"
                             title="Add to Playlist"
                           >
                             <PlusIcon size={14} />

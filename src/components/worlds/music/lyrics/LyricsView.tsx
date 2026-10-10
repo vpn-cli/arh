@@ -286,7 +286,7 @@ export const LyricsView = React.memo(
               className={`font-pixel text-caption px-2.5 py-1 rounded-full border transition-all active:scale-95 ${
                 editMode
                   ? 'bg-[var(--color-light)] text-[var(--color-dark)] border-[var(--color-dark)] font-bold shadow-xs'
-                  : 'bg-white hover:bg-[var(--color-light)] text-[var(--color-dark)]/70 border-[var(--color-muted)]'
+                  : 'bg-white hover:bg-[var(--color-light)] text-[var(--color-text-muted)] border-[var(--color-muted)]'
               }`}
               title="Toggle Edit Mode (for VPN)"
             >
@@ -294,7 +294,7 @@ export const LyricsView = React.memo(
             </button>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-white border border-[var(--color-muted)] transition-colors shadow-xs active:scale-95"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-[var(--on-vibrant)] border border-[var(--color-muted)] transition-colors shadow-xs active:scale-95"
               aria-label="Close Lyrics"
             >
               <CloseIcon size={14} />
@@ -368,9 +368,9 @@ export const LyricsView = React.memo(
         >
           <button
             onClick={resumeToActive}
-            className="bg-[var(--color-dark)] text-white font-pixel text-caption font-bold px-4 py-2 rounded-full shadow-lg hover:bg-[var(--color-vibrant)] transition-colors active:scale-95 flex items-center gap-1.5"
+            className="bg-[var(--color-dark)] text-[var(--on-vibrant)] font-pixel text-caption font-bold px-4 py-2 rounded-full shadow-lg hover:bg-[var(--color-vibrant)] transition-colors active:scale-95 flex items-center gap-1.5"
           >
-            <ChevronDownIcon size={14} className="text-white/70" /> Back to now
+            <ChevronDownIcon size={14} className="text-[var(--on-vibrant)]" /> Back to now
           </button>
         </div>
 

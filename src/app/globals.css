@@ -26,6 +26,8 @@
   --color-dark: #20233F;
   --color-border: #20233F;
   --color-dark-muted: #4B4E6A;
+  --color-text-muted: #595B75;
+  --on-vibrant: #FFFFFF;
 
   /* Typography — Cute Kawaii & WCAG 2.1 Compliant */
   --font-pixel: 'Fredoka', 'Quicksand', system-ui, sans-serif;

@@ -151,7 +151,7 @@ export function MemoryEditorModal({ isOpen, onClose, entity, entityType, memoryI
           <button
             onClick={handleSave}
             disabled={!note.trim()}
-            className="flex-1 bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white py-2.5 rounded-xl font-pixel text-caption font-bold hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs"
+            className="flex-1 bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-[var(--on-vibrant)] py-2.5 rounded-xl font-pixel text-caption font-bold hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs"
           >
             SAVE
           </button>

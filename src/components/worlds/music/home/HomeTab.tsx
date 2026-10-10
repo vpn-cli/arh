@@ -100,7 +100,7 @@ export const HomeTab = React.memo(function HomeTab({
                   }
                 }
               }}
-              className="mt-4 sm:mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-5 sm:px-6 py-2 sm:py-2.5 font-pixel text-body sm:text-body font-bold text-white shadow-md mw-btn group"
+              className="mt-4 sm:mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-5 sm:px-6 py-2 sm:py-2.5 font-pixel text-body sm:text-body font-bold text-[var(--on-vibrant)] shadow-md mw-btn group"
             >
               <span>{currentTrack ? (isPaused ? <PlayIcon size={16} /> : <PauseIcon size={16} />) : <PlayIcon size={16} />}</span>
               {currentTrack ? (isPaused ? 'Resume' : 'Playing') : 'Play Mix'}
@@ -169,7 +169,7 @@ export const HomeTab = React.memo(function HomeTab({
         </div>
         {recentHomeTracks.length === 0 && likedHomeTracks.length === 0 ? (
           <div className="p-8 text-center rounded-2xl border-2 border-dashed border-[var(--color-muted)] bg-[var(--color-light)]/50">
-            <p className="font-pixel text-body text-[var(--color-dark)] font-bold opacity-70">Nothing here yet! Start playing some tunes ~</p>
+            <p className="font-pixel text-body text-[var(--color-dark)] font-bold text-[var(--color-text-muted)]">Nothing here yet! Start playing some tunes ~</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -189,7 +189,7 @@ export const HomeTab = React.memo(function HomeTab({
                     />
                   ) : (
                     <div className="absolute inset-0 bg-[var(--color-muted)] flex items-center justify-center">
-                      <MusicNoteIcon size={20} className="text-[var(--color-dark)] opacity-60" />
+                      <MusicNoteIcon size={20} className="text-[var(--color-text-muted)]" />
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">

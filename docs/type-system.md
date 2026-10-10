@@ -200,11 +200,11 @@ Define 6 sizes in the Tailwind theme `@theme` in `src/app/globals.css`, in rem, 
 - Replace opacity-dimmed text with `text-[var(--color-text-muted)]` (inactive lyric lines remain exempt).
 
 ### Section C Checklist
-- [ ] Implement WCAG contrast-ratio helper and unit tests.
-- [ ] Update palette generator to compute and guarantee `--color-dark`, `--on-vibrant`, and `--color-text-muted` at $\ge 4.5:1$.
-- [ ] Add palette unit tests asserting contrast ratios across 8 distinct cover colours.
-- [ ] Replace white text on vibrant backgrounds with `text-[var(--on-vibrant)]`.
-- [ ] Replace opacity-dimmed text with `text-[var(--color-text-muted)]`.
+- [x] Implement WCAG contrast-ratio helper and unit tests.
+- [x] Update palette generator to compute and guarantee `--color-dark`, `--on-vibrant`, and `--color-text-muted` at $\ge 4.5:1$.
+- [x] Add palette unit tests asserting contrast ratios across 8 distinct cover colours.
+- [x] Replace white text on vibrant backgrounds with `text-[var(--on-vibrant)]`.
+- [x] Replace opacity-dimmed text with `text-[var(--color-text-muted)]`.
 
 ---
 

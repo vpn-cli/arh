@@ -33,7 +33,7 @@ export const PlaylistsTab = React.memo(function PlaylistsTab({
         />
         <button
           onClick={onCreatePlaylist}
-          className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white px-4 py-2 rounded-xl font-pixel text-caption font-bold hover:scale-105 active:scale-95 transition-transform shadow-xs flex items-center gap-1.5"
+          className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-[var(--on-vibrant)] px-4 py-2 rounded-xl font-pixel text-caption font-bold hover:scale-105 active:scale-95 transition-transform shadow-xs flex items-center gap-1.5"
           title="Create Playlist"
         >
           <PlusIcon size={14} /> NEW

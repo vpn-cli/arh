@@ -28,6 +28,8 @@ export const PaletteBackground = React.memo(function PaletteBackground({
     const computedLight = palette?.computed?.light || `color-mix(in srgb, ${base} 15%, #ffffff)`;
     const computedMuted = palette?.computed?.muted || `color-mix(in srgb, ${base} 35%, #ffffff)`;
     const computedDark = palette?.computed?.dark || `color-mix(in srgb, ${base} 40%, #000000)`;
+    const computedOnVibrant = palette?.computed?.onVibrant || "#ffffff";
+    const computedTextMuted = palette?.computed?.textMuted || "color-mix(in srgb, var(--color-dark) 65%, var(--color-bg))";
 
     root.style.setProperty("--base-color", base);
     root.style.setProperty("--color-bg", computedBg);
@@ -35,6 +37,8 @@ export const PaletteBackground = React.memo(function PaletteBackground({
     root.style.setProperty("--color-muted", computedMuted);
     root.style.setProperty("--color-vibrant", base);
     root.style.setProperty("--color-dark", computedDark);
+    root.style.setProperty("--on-vibrant", computedOnVibrant);
+    root.style.setProperty("--color-text-muted", computedTextMuted);
   }, [palette]);
 
   useEffect(() => {
@@ -99,8 +103,10 @@ export const PaletteBackground = React.memo(function PaletteBackground({
             --color-bg: ${palette?.computed?.bg || "color-mix(in srgb, var(--base-color) 8%, #ffffff)"};
             --color-light: ${palette?.computed?.light || "color-mix(in srgb, var(--base-color) 15%, #ffffff)"};
             --color-muted: ${palette?.computed?.muted || "color-mix(in srgb, var(--base-color) 35%, #ffffff)"};
-            --color-vibrant: var(--base-color);
+            --color-vibrant: ${palette?.computed?.vibrant || "var(--base-color)"};
             --color-dark: ${palette?.computed?.dark || "color-mix(in srgb, var(--base-color) 40%, #000000)"};
+            --on-vibrant: ${palette?.computed?.onVibrant || "#ffffff"};
+            --color-text-muted: ${palette?.computed?.textMuted || "color-mix(in srgb, var(--color-dark) 65%, var(--color-bg))"};
           }
           .bg-layer-0 {
             --layer-bg: ${layerPalettes[0]?.computed?.bg || "color-mix(in srgb, " + (layerPalettes[0]?.vibrant || "#C2185B") + " 8%, #ffffff)"};

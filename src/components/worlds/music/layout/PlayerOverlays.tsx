@@ -82,7 +82,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
             </p>
             <button
               onClick={onConnect}
-              className="w-full mt-2 bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white font-pixel text-title font-bold py-3 px-6 rounded-full shadow-[0_8px_22px_var(--color-vibrant)] hover:scale-105 active:scale-95 transition-all"
+              className="w-full mt-2 bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-[var(--on-vibrant)] font-pixel text-title font-bold py-3 px-6 rounded-full shadow-[0_8px_22px_var(--color-vibrant)] hover:scale-105 active:scale-95 transition-all"
             >
               Connect Spotify
             </button>

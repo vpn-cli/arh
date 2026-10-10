@@ -83,7 +83,7 @@ export const QueuePanel = memo(function QueuePanel({
             onClick={() => setRightPanelTab('queue')}
             className={`flex-1 font-pixel text-caption py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
               rightPanelTab === 'queue'
-                ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
+                ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs'
                 : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
             }`}
           >
@@ -93,7 +93,7 @@ export const QueuePanel = memo(function QueuePanel({
             onClick={() => setRightPanelTab('recent')}
             className={`flex-1 font-pixel text-caption py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
               rightPanelTab === 'recent'
-                ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
+                ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs'
                 : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
             }`}
           >
@@ -121,7 +121,7 @@ export const QueuePanel = memo(function QueuePanel({
           )}
           <button
             onClick={() => onExpand(rightPanelTab)}
-            className="font-pixel text-caption text-[var(--color-dark)] hover:text-white bg-white hover:bg-[var(--color-vibrant)] border border-[var(--color-muted)] px-2.5 py-0.5 rounded-full flex items-center gap-1 transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs font-bold active:scale-95 will-change-transform"
+            className="font-pixel text-caption text-[var(--color-dark)] hover:text-[var(--on-vibrant)] bg-white hover:bg-[var(--color-vibrant)] border border-[var(--color-muted)] px-2.5 py-0.5 rounded-full flex items-center gap-1 transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs font-bold active:scale-95 will-change-transform"
             title="Open large pop-up screen to tune queue & history"
           >
             <span>⤢</span> Expand
@@ -283,7 +283,7 @@ export const QueuePanel = memo(function QueuePanel({
                     e.stopPropagation();
                     handleAddToQueue(track, item.context?.uri);
                   }}
-                  className="mw-btn mw-row-action text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white px-2.5 py-1 rounded-full font-pixel text-meta font-bold shadow-xs shrink-0 flex items-center gap-1"
+                  className="mw-btn mw-row-action text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] px-2.5 py-1 rounded-full font-pixel text-meta font-bold shadow-xs shrink-0 flex items-center gap-1"
                   title="Add to queue"
                 >
                   <PlusIcon size={11} /> Queue

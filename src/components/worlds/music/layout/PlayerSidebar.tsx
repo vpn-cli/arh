@@ -161,7 +161,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
       <div className="p-4 mt-auto border-t border-[var(--color-light)]">
         <button
           onClick={onLogout}
-          className="mw-btn w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl border border-[var(--color-vibrant)] text-[var(--color-vibrant)] font-pixel text-body font-bold hover:bg-[var(--color-vibrant)] hover:text-white"
+          className="mw-btn w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl border border-[var(--color-vibrant)] text-[var(--color-vibrant)] font-pixel text-body font-bold hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)]"
         >
           Logout
         </button>

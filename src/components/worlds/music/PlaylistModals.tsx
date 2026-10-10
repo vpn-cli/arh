@@ -156,7 +156,7 @@ export function CreatePlaylistModal({ onClose, trackUriToAdd, onComplete, playli
             <button type="button" onClick={onClose} className="flex-1 bg-white border border-[var(--color-muted)] text-[var(--color-dark)] hover:text-[var(--color-dark)] rounded-xl py-2.5 font-pixel text-meta font-bold transition-colors" disabled={isPending}>
               Cancel
             </button>
-            <button type="submit" className="flex-1 bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white rounded-xl py-2.5 font-pixel text-meta font-bold transition-colors disabled:opacity-50 shadow-xs" disabled={isPending || !name.trim()}>
+            <button type="submit" className="flex-1 bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-[var(--on-vibrant)] rounded-xl py-2.5 font-pixel text-meta font-bold transition-colors disabled:opacity-50 shadow-xs" disabled={isPending || !name.trim()}>
               {isPending ? 'Saving...' : 'Save'}
             </button>
           </div>

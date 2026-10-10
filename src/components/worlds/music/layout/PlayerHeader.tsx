@@ -52,7 +52,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
           aria-label="Search songs, artists, playlists"
           className="w-full bg-white/95 border-2 border-[var(--color-muted)] rounded-full px-10 py-2 font-pixel text-body text-[var(--color-dark)] placeholder:text-[var(--color-dark)]/80 focus:outline-none focus:border-[var(--color-vibrant)] focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]/20 transition-colors"
         />
-        <SearchIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-dark)] opacity-70" />
+        <SearchIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
         {searchQuery && (
           <button
             onClick={onClearSearch}

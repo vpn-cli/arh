@@ -110,7 +110,7 @@ export function AlbumDetail({ albumId, onBack, onPlayAlbum, onPlayTrack, onAddTo
       ) : isItemsError ? (
         <div className="flex-1 flex flex-col items-center justify-center font-pixel text-caption text-center px-4 gap-2">
           <span className="text-[var(--color-dark)] opacity-80">TRACKS UNAVAILABLE</span>
-          <span className="text-[var(--color-muted)]/70 leading-relaxed uppercase">UNABLE TO LOAD ALBUM TRACKS.</span>
+          <span className="text-[var(--color-text-muted)] leading-relaxed uppercase">UNABLE TO LOAD ALBUM TRACKS.</span>
         </div>
       ) : (
         <AlbumTrackList 

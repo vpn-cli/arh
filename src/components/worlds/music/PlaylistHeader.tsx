@@ -87,7 +87,7 @@ export function PlaylistHeader({
 
         {/* Beside it: small PLAYLIST label, large title, one meta line, action row */}
         <div className="flex-1 min-w-0 flex flex-col justify-center text-center sm:text-left w-full">
-          <span className="font-pixel text-caption font-bold tracking-wider text-[var(--color-dark)] opacity-70 uppercase mb-1">
+          <span className="font-pixel text-caption font-bold tracking-wider text-[var(--color-text-muted)] uppercase mb-1">
             PLAYLIST
           </span>
           <h1
@@ -114,7 +114,7 @@ export function PlaylistHeader({
 
           {playlist.description && (
             <p
-              className="font-pixel text-caption text-[var(--color-dark)]/70 mt-2 line-clamp-2 leading-relaxed"
+              className="font-pixel text-caption text-[var(--color-text-muted)] mt-2 line-clamp-2 leading-relaxed"
               dangerouslySetInnerHTML={{ __html: playlist.description }}
             />
           )}
@@ -125,7 +125,7 @@ export function PlaylistHeader({
               <button
                 onClick={onPlay}
                 disabled={playDisabled}
-                className="bg-[var(--color-vibrant)] text-white px-6 py-2.5 rounded-full font-pixel text-body font-bold shadow-md hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+                className="bg-[var(--color-vibrant)] text-[var(--on-vibrant)] px-6 py-2.5 rounded-full font-pixel text-body font-bold shadow-md hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
               >
                 <PlayIcon size={14} className="fill-current ml-0.5" /> Play
               </button>

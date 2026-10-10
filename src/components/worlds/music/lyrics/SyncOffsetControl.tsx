@@ -141,14 +141,14 @@ export function SyncOffsetControl({
                   setIsSecretModalOpen(false);
                   setSecretError(null);
                 }}
-                className="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white"
+                className="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)]"
                 aria-label="Close modal"
               >
                 <CloseIcon size={12} />
               </button>
             </div>
 
-            <p className="font-pixel text-meta text-[var(--color-dark)]/70">
+            <p className="font-pixel text-meta text-[var(--color-text-muted)]">
               Enter admin secret to save offset ({offsetMs > 0 ? `+${offsetMs}ms` : `${offsetMs}ms`}).
             </p>
 

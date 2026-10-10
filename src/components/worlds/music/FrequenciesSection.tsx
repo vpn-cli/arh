@@ -130,7 +130,7 @@ export function FrequenciesSection({
             onClick={() => setTimeRange(range.id as TimeRange)}
             className={`w-full font-pixel text-caption py-2 rounded-lg transition-all font-bold text-center ${
               timeRange === range.id 
-                ? 'bg-[var(--color-vibrant)] text-white shadow-xs' 
+                ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs' 
                 : 'text-[var(--color-dark)] hover:bg-white/50 active:scale-95'
             }`}
           >
@@ -157,10 +157,10 @@ export function FrequenciesSection({
                 <span className="font-pixel text-display font-extrabold text-[var(--color-dark)]">
                   {metrics.uniqueArtists}
                 </span>
-                <span className="font-pixel text-caption font-bold text-[var(--color-dark)] opacity-75 mt-1">
+                <span className="font-pixel text-caption font-bold text-[var(--color-text-muted)] mt-1">
                   Unique Artists
                 </span>
-                <span className="font-pixel text-caption text-[var(--color-dark)] opacity-60 mt-0.5">
+                <span className="font-pixel text-caption text-[var(--color-text-muted)] mt-0.5">
                   in top {metrics.totalTracks} tracks
                 </span>
               </div>
@@ -169,10 +169,10 @@ export function FrequenciesSection({
                 <span className="font-pixel text-display font-extrabold text-[var(--color-dark)]">
                   {metrics.multiArtistTrackCount}
                 </span>
-                <span className="font-pixel text-caption font-bold text-[var(--color-dark)] opacity-75 mt-1">
+                <span className="font-pixel text-caption font-bold text-[var(--color-text-muted)] mt-1">
                   Collab Tracks
                 </span>
-                <span className="font-pixel text-caption text-[var(--color-dark)] opacity-60 mt-0.5">
+                <span className="font-pixel text-caption text-[var(--color-text-muted)] mt-0.5">
                   multiple artists
                 </span>
               </div>
@@ -181,11 +181,11 @@ export function FrequenciesSection({
                 <span className="font-pixel text-display font-extrabold text-[var(--color-dark)]">
                   {metrics.mostTracksArtist.count > 0 ? metrics.mostTracksArtist.count : 0}
                 </span>
-                <span className="font-pixel text-caption font-bold text-[var(--color-dark)] opacity-75 mt-1">
+                <span className="font-pixel text-caption font-bold text-[var(--color-text-muted)] mt-1">
                   Most tracks in your top 20
                 </span>
                 <span
-                  className="font-pixel text-caption text-[var(--color-dark)] opacity-60 mt-0.5 truncate max-w-full"
+                  className="font-pixel text-caption text-[var(--color-text-muted)] mt-0.5 truncate max-w-full"
                   title={metrics.mostTracksArtist.tooltip}
                 >
                   {metrics.mostTracksArtist.name}
@@ -252,7 +252,7 @@ export function FrequenciesSection({
           <button 
             onClick={() => topTracks && onPlayTracks(topTracks.map((t: any) => t.uri))}
             disabled={!topTracks || topTracks.length === 0}
-            className="font-pixel text-caption font-bold bg-[var(--color-vibrant)] text-white px-3.5 py-2 rounded-xl hover:bg-[var(--color-vibrant)] active:scale-95 transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+            className="font-pixel text-caption font-bold bg-[var(--color-vibrant)] text-[var(--on-vibrant)] px-3.5 py-2 rounded-xl hover:bg-[var(--color-vibrant)] active:scale-95 transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
           >
             Play All
           </button>

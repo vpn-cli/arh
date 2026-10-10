@@ -54,7 +54,7 @@ export const PlaybackControls = memo(function PlaybackControls({
       </button>
       <button
         onClick={togglePlay}
-        className={`w-12 h-12 rounded-full flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 shadow-[0_4px_14px_var(--color-vibrant)] ${
+        className={`w-12 h-12 rounded-full flex items-center justify-center text-[var(--on-vibrant)] hover:scale-110 active:scale-95 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 shadow-[0_4px_14px_var(--color-vibrant)] ${
           !isPremium ? 'bg-[#1DB954] hover:bg-[#1ed760]' : 'bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)]'
         }`}
         disabled={!isReady && !token && isPremium}
