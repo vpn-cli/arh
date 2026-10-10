@@ -5,7 +5,8 @@ import React, { useEffect, useMemo } from "react";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { usePlaylists, useBirthdayMix, useRecentlyPlayed } from "@/hooks/useSpotify";
 import { useLikedTracks } from "@/hooks/useLikedTracks";
-import { PlayIcon, PauseIcon, ChevronRightIcon, MusicNoteIcon } from "../icons";
+import { PlayIcon, ChevronRightIcon, MusicNoteIcon } from "../icons";
+import { HeroSlideshow } from "./HeroSlideshow";
 
 export interface HomeTabProps {
   token?: string | null;
@@ -73,41 +74,16 @@ export const HomeTab = React.memo(function HomeTab({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="relative min-h-[220px] sm:min-h-[260px] overflow-hidden rounded-[24px] border-2 border-[var(--color-muted)] bg-[var(--color-light)] shadow-sm">
-        <img src={heroArt} alt="" className="absolute inset-0 h-full w-full object-cover opacity-75" fetchPriority="high" decoding="async" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-light)]/95 via-[var(--color-light)]/85 to-[var(--color-light)]/40" />
-        <div className="relative z-10 flex min-h-[220px] sm:min-h-[260px] items-center px-6 sm:px-8 py-6 sm:py-8">
-          <div className="max-w-lg">
-            <p className="font-pixel text-caption sm:text-body font-bold tracking-widest text-[var(--color-dark)] uppercase">
-              {currentTrack ? 'CURRENTLY PLAYING' : 'GOOD EVENING'}
-            </p>
-            <h2 className="mt-2 font-pixel text-display sm:text-display md:text-display font-extrabold leading-tight text-[var(--color-dark)] drop-shadow-[0_2px_0_#FFFFFF]">
-              {currentTrack ? currentTrack.name : "Let's listen together ♡"}
-            </h2>
-            <p className="mt-2 sm:mt-3 font-pixel text-body sm:text-body md:text-title font-medium text-[var(--color-dark)] opacity-90">
-              {currentTrack ? currentTrack.artists?.map((a: any) => a.name).join(', ') : "What are we listening to today?"}
-            </p>
-            <button
-              onClick={() => {
-                if (currentTrack) {
-                  if (isPaused) togglePlay();
-                } else {
-                  const tracksToPlay = birthdayMixTracks.length > 0 ? birthdayMixTracks : (likedData?.tracks || []);
-                  if (tracksToPlay.length > 0) {
-                    playTracks(tracksToPlay.map((t: any) => t.uri), tracksToPlay);
-                  } else {
-                    onNavigate('mix');
-                  }
-                }
-              }}
-              className="mt-4 sm:mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-5 sm:px-6 py-2 sm:py-2.5 font-pixel text-body sm:text-body font-bold text-[var(--on-vibrant)] shadow-md mw-btn group"
-            >
-              <span>{currentTrack ? (isPaused ? <PlayIcon size={16} /> : <PauseIcon size={16} />) : <PlayIcon size={16} />}</span>
-              {currentTrack ? (isPaused ? 'Resume' : 'Playing') : 'Play Mix'}
-            </button>
-          </div>
-        </div>
-      </section>
+      <HeroSlideshow
+        currentTrack={currentTrack}
+        isPaused={isPaused}
+        heroArt={heroArt}
+        birthdayMixTracks={birthdayMixTracks}
+        likedTracks={likedData?.tracks || []}
+        onNavigate={onNavigate}
+        playTracks={playTracks}
+        togglePlay={togglePlay}
+      />
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
