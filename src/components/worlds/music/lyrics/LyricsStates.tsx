@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { hasRangeTimestamps, attachEstimatedWordTimings } from '@/lib/lyrics';
+import { LyricsData, setCachedLyrics } from './useLyrics';
 
 export function LyricsLoadingView() {
   return (
@@ -46,12 +48,74 @@ export function LyricsInstrumentalView({
 export function LyricsPlainView({
   plain,
   editMode,
+  trackId,
+  durationMs,
+  sessionSecret,
+  onSessionSecretChange,
   onAddLyrics,
+  onSaveSuccess,
 }: {
   plain: string;
   editMode: boolean;
+  trackId?: string | null;
+  durationMs?: number;
+  sessionSecret?: string;
+  onSessionSecretChange?: (secret: string) => void;
   onAddLyrics: () => void;
+  onSaveSuccess?: (data: LyricsData) => void;
 }) {
+  const [isConverting, setIsConverting] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
+
+  const canConvert = hasRangeTimestamps(plain);
+
+  const handleConvertTimestamps = async () => {
+    if (!trackId) return;
+    let secret = sessionSecret;
+    if (!secret) {
+      const input = window.prompt('Enter Admin Secret to convert timestamps:');
+      if (!input) return;
+      secret = input;
+      onSessionSecretChange?.(input);
+    }
+
+    setIsConverting(true);
+    setConvertError(null);
+
+    try {
+      const res = await fetch('/api/lyrics', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-scrapbook-secret': secret,
+        },
+        body: JSON.stringify({
+          trackId,
+          lyrics: plain,
+          durationMs,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setConvertError(err.error || 'Failed to convert timestamps');
+        setIsConverting(false);
+        return;
+      }
+
+      const data: LyricsData = await res.json();
+      if (data.synced) {
+        data.synced = attachEstimatedWordTimings(data.synced);
+      }
+      setCachedLyrics(trackId, data);
+      onSaveSuccess?.(data);
+    } catch (e: unknown) {
+      setConvertError(e instanceof Error ? e.message : 'Error converting timestamps');
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
   return (
     <div className="font-pixel font-bold text-body sm:text-title md:text-title text-[var(--color-dark)] whitespace-pre-wrap leading-relaxed opacity-75 text-center py-8 max-w-[640px] mx-auto select-text">
       <div className="mb-6 font-pixel text-caption font-bold text-[var(--color-vibrant)] bg-[var(--color-light)] inline-block px-3 py-1 rounded-full border border-[var(--color-muted)] shadow-xs">
@@ -60,13 +124,27 @@ export function LyricsPlainView({
       <br />
       {plain}
       {editMode && (
-        <div className="mt-8 pt-6 border-t border-[var(--color-muted)]/50">
+        <div className="mt-8 pt-6 border-t border-[var(--color-muted)]/50 flex flex-wrap items-center justify-center gap-3">
+          {canConvert && (
+            <button
+              onClick={handleConvertTimestamps}
+              disabled={isConverting}
+              className="font-pixel text-caption px-4 py-2 rounded-full border-2 border-[var(--color-dark)] bg-[var(--color-vibrant)] text-[var(--on-vibrant)] font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50"
+            >
+              {isConverting ? 'CONVERTING...' : '⚡ Convert timestamps'}
+            </button>
+          )}
           <button
             onClick={onAddLyrics}
             className="font-pixel text-caption px-4 py-2 rounded-full border-2 border-[var(--color-dark)] bg-[var(--color-light)] text-[var(--color-dark)] font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 active:scale-95 transition-all"
           >
             + Paste Synced LRC (Edit Mode)
           </button>
+          {convertError && (
+            <div className="w-full text-caption text-red-600 font-bold mt-2">
+              {convertError}
+            </div>
+          )}
         </div>
       )}
     </div>

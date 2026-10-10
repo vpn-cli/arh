@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { parseLrc, LyricLine } from '@/lib/lyrics';
-import { lookupLyrics, extractPlainFromLrc } from '@/lib/lyricsLookup';
+import { parseLrc, detectLyrics, stripTimestamps } from '@/lib/lyrics';
+import { lookupLyrics } from '@/lib/lyricsLookup';
 import { db, lyricsCache } from '@/db';
 import { eq, sql } from 'drizzle-orm';
 import { cookies } from 'next/headers';
@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { trackId, lyrics } = body;
+    const { trackId, lyrics, durationMs, forcePlain } = body;
 
     if (!trackId || typeof lyrics !== 'string') {
       return NextResponse.json({ error: 'Invalid payload: trackId and lyrics string are required' }, { status: 400 });
@@ -227,10 +227,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Lyrics cannot be empty' }, { status: 400 });
     }
 
-    // Check if input has LRC timestamps e.g. [01:23.45]
-    const isLrc = /\[\d{2}:\d{2}(?:\.\d{2,3})?\]/.test(trimmedLyrics);
-    const synced = isLrc ? trimmedLyrics : null;
-    const plain = isLrc ? extractPlainFromLrc(trimmedLyrics) : trimmedLyrics;
+    let synced: string | null = null;
+    let plain: string = trimmedLyrics;
+    let warning: string | undefined = undefined;
+
+    if (forcePlain) {
+      plain = stripTimestamps(trimmedLyrics);
+      synced = null;
+    } else {
+      const effectiveDurationMs = typeof durationMs === 'number' && !isNaN(durationMs) ? durationMs : undefined;
+      const detection = detectLyrics(trimmedLyrics, effectiveDurationMs);
+
+      if (detection.type === 'plain') {
+        synced = null;
+        plain = detection.plainText;
+      } else if (detection.isValid) {
+        synced = detection.lrcText;
+        plain = detection.plainText;
+      } else {
+        // Validation failed: save as plain text with timestamps stripped, and report warning
+        synced = null;
+        plain = detection.plainText || stripTimestamps(trimmedLyrics);
+        warning = detection.validationError || 'Timestamps failed validation and were saved as plain text';
+      }
+    }
 
     const [savedRow] = await db
       .insert(lyricsCache)
@@ -254,7 +274,7 @@ export async function POST(req: NextRequest) {
       })
       .returning({ offsetMs: lyricsCache.offsetMs });
 
-    console.log(`[Lyrics Manual] Saved manual lyrics for track ${trackId} (isLrc: ${isLrc})`);
+    console.log(`[Lyrics Manual] Saved manual lyrics for track ${trackId} (synced: ${Boolean(synced)}, warning: ${warning || 'none'})`);
 
     return NextResponse.json({
       success: true,
@@ -264,6 +284,7 @@ export async function POST(req: NextRequest) {
       instrumental: false,
       notFound: false,
       offsetMs: savedRow?.offsetMs ?? 0,
+      ...(warning ? { warning } : {}),
     });
   } catch (error) {
     console.error('Error saving manual lyrics:', error);

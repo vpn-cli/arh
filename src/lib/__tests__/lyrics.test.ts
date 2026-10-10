@@ -7,6 +7,10 @@ import {
   attachEstimatedWordTimings,
   LYRICS_TIMING_CONFIG,
   LyricLine,
+  parseRangeBlocks,
+  validateLyricsTimestamps,
+  detectLyrics,
+  stripTimestamps,
 } from '../lyrics';
 
 describe('lyrics word timing estimation', () => {
@@ -107,3 +111,151 @@ describe('lyrics word timing estimation', () => {
     expect(result[0].words![0].endMs).toBe(1400);
   });
 });
+
+describe('range block parser and validation', () => {
+  it('parses two-line blocks and spreads lines evenly across the time range', () => {
+    const input = `• 0:19 – 0:35 | first line
+second line`;
+
+    const parsed = parseRangeBlocks(input);
+    expect(parsed.lines).toHaveLength(2);
+
+    // Line 1 starts at 0:19 (19000ms)
+    expect(parsed.lines[0].timeMs).toBe(19000);
+    expect(parsed.lines[0].text).toBe('first line');
+
+    // Line 2 starts at 0:27 (19000 + (35000 - 19000) / 2 = 27000ms)
+    expect(parsed.lines[1].timeMs).toBe(27000);
+    expect(parsed.lines[1].text).toBe('second line');
+
+    // LRC output matches standard format
+    expect(parsed.lrcText).toBe('[00:19.00] first line\n[00:27.00] second line');
+
+    // Clean plain text has all timestamps and bullets removed
+    expect(parsed.plainText).toBe('first line\nsecond line');
+  });
+
+  it('converts label-only blocks into a single instrumental marker line at block start', () => {
+    const input = `• 0:00 – 0:19 | Intro
+• 0:19 – 0:35 | first line
+• 0:35 – 0:50 | [Instrumental]
+• 0:50 – 1:05 | Outro`;
+
+    const parsed = parseRangeBlocks(input);
+    expect(parsed.lines).toHaveLength(4);
+
+    // Block 1 (Intro) -> single marker at 0:00
+    expect(parsed.lines[0].timeMs).toBe(0);
+    expect(parsed.lines[0].text).toBe('♪');
+
+    // Block 2 (lyric) -> first line at 0:19
+    expect(parsed.lines[1].timeMs).toBe(19000);
+    expect(parsed.lines[1].text).toBe('first line');
+
+    // Block 3 ([Instrumental]) -> single marker at 0:35
+    expect(parsed.lines[2].timeMs).toBe(35000);
+    expect(parsed.lines[2].text).toBe('♪');
+
+    // Block 4 (Outro) -> single marker at 0:50
+    expect(parsed.lines[3].timeMs).toBe(50000);
+    expect(parsed.lines[3].text).toBe('♪');
+
+    expect(parsed.plainText).toBe('♪\nfirst line\n♪\n♪');
+  });
+
+  it('supports mixed dash styles (hyphen, en dash, em dash) and optional bullets/hours', () => {
+    const input = `0:10 - 0:20 | hyphen block
+• 0:20 – 0:30 | en-dash block
+1:01:00 — 1:01:30 | em-dash with hours`;
+
+    const parsed = parseRangeBlocks(input);
+    expect(parsed.lines).toHaveLength(3);
+
+    // Hyphen block
+    expect(parsed.lines[0].timeMs).toBe(10000);
+    expect(parsed.lines[0].text).toBe('hyphen block');
+
+    // En-dash block
+    expect(parsed.lines[1].timeMs).toBe(20000);
+    expect(parsed.lines[1].text).toBe('en-dash block');
+
+    // Em-dash block with hours: 1 hr + 1 min = 3660s = 3660000ms
+    expect(parsed.lines[2].timeMs).toBe(3660000);
+    expect(parsed.lines[2].text).toBe('em-dash with hours');
+  });
+
+  it('fails validation when timestamps are not ascending', () => {
+    // End time before start time
+    const invalidBlock = `• 0:35 – 0:19 | inverted line`;
+    const parsed1 = parseRangeBlocks(invalidBlock);
+    const val1 = validateLyricsTimestamps(parsed1.lines, undefined, parsed1.rawBlocks);
+    expect(val1.valid).toBe(false);
+    expect(val1.reason).toContain('greater than start');
+
+    // Out-of-order blocks
+    const outOfOrder = `• 0:40 – 0:50 | later line
+• 0:20 – 0:30 | earlier line`;
+    const parsed2 = parseRangeBlocks(outOfOrder);
+    const val2 = validateLyricsTimestamps(parsed2.lines, undefined, parsed2.rawBlocks);
+    expect(val2.valid).toBe(false);
+    expect(val2.reason).toContain('Timestamps must be ascending');
+
+    // detectLyrics marks as invalid and falls back to plain preview
+    const detection = detectLyrics(outOfOrder);
+    expect(detection.isValid).toBe(false);
+    expect(detection.previewText).toContain('Timestamps must be ascending');
+    expect(detection.lrcText).toBeNull();
+  });
+
+  it('fails validation when timestamp exceeds track duration (allowing 5s over)', () => {
+    const trackDurationMs = 180000; // 3:00 = 180s
+    // Max allowed is 185s (3:05)
+
+    // Case 1: timestamp is 3:04 (184s) -> within 5s over buffer -> VALID
+    const withinBuffer = `• 3:00 – 3:04 | outro line`;
+    const parsedOk = parseRangeBlocks(withinBuffer);
+    const valOk = validateLyricsTimestamps(parsedOk.lines, trackDurationMs, parsedOk.rawBlocks);
+    expect(valOk.valid).toBe(true);
+
+    // Case 2: timestamp is 3:10 (190s) -> exceeds 185s -> INVALID
+    const exceedsBuffer = `• 3:00 – 3:10 | too late line`;
+    const parsedBad = parseRangeBlocks(exceedsBuffer);
+    const valBad = validateLyricsTimestamps(parsedBad.lines, trackDurationMs, parsedBad.rawBlocks);
+    expect(valBad.valid).toBe(false);
+    expect(valBad.reason).toContain('exceeds track duration');
+
+    const detection = detectLyrics(exceedsBuffer, trackDurationMs);
+    expect(detection.isValid).toBe(false);
+    expect(detection.previewText).toContain('exceeds track duration');
+    expect(detection.lrcText).toBeNull();
+  });
+
+  it('detectLyrics generates human-readable one-line previews', () => {
+    const rangeInput = `• 0:19 – 0:35 | first line
+• 0:35 – 3:56 | second line`;
+    const rangeDetection = detectLyrics(rangeInput);
+    expect(rangeDetection.isValid).toBe(true);
+    expect(rangeDetection.type).toBe('synced_range');
+    expect(rangeDetection.lineCount).toBe(2);
+    expect(rangeDetection.previewText).toBe('Synced, 2 lines, 0:19 to 3:56');
+
+    const plainInput = `Just plain lyrics
+Without any timestamps`;
+    const plainDetection = detectLyrics(plainInput);
+    expect(plainDetection.type).toBe('plain');
+    expect(plainDetection.isValid).toBe(true);
+    expect(plainDetection.previewText).toBe('Plain text');
+  });
+
+  it('stripTimestamps removes all bullets and timestamps cleanly', () => {
+    const rangeInput = `• 0:19 – 0:35 | line one
+• 0:35 – 0:50 | [Guitar Solo]
+• line three`;
+    expect(stripTimestamps(rangeInput)).toBe('line one\n♪\nline three');
+
+    const lrcInput = `[00:19.00] line one
+[00:35.00] line two`;
+    expect(stripTimestamps(lrcInput)).toBe('line one\nline two');
+  });
+});
+

@@ -1,26 +1,10 @@
-import React, {
-  useState,
-  useRef,
-  useCallback,
-  useLayoutEffect,
-  useEffect,
-  useImperativeHandle,
-  forwardRef,
-} from 'react';
+import React, { useState, useRef, useCallback, useLayoutEffect, useEffect, useImperativeHandle, forwardRef } from 'react';
 import './lyrics.css';
+import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { useLyrics } from './useLyrics';
-import {
-  useLyricsScroll,
-  findActiveLyricIndex,
-  syncActiveLineWordDelays,
-} from './useLyricsScroll';
+import { useLyricsScroll, findActiveLyricIndex, syncActiveLineWordDelays } from './useLyricsScroll';
 import { LyricLines } from './LyricLines';
-import {
-  LyricsLoadingView,
-  LyricsInstrumentalView,
-  LyricsPlainView,
-  LyricsNotFoundView,
-} from './LyricsStates';
+import { LyricsLoadingView, LyricsInstrumentalView, LyricsPlainView, LyricsNotFoundView } from './LyricsStates';
 import { AddLyricsModal } from './AddLyricsModal';
 import { SyncOffsetControl } from './SyncOffsetControl';
 import { CloseIcon, ChevronDownIcon } from '../icons';
@@ -63,6 +47,7 @@ export const LyricsView = React.memo(
   ) {
     const { lyricsData, setLyricsData, isLyricsLoading, offsetMs, setOffsetMs } =
       useLyrics(trackId);
+    const playerDuration = useSpotifyPlayerStore((s) => s.duration);
     const [activeLyricIndex, setActiveLyricIndex] = useState<number>(-1);
     const activeLyricIndexRef = useRef<number>(-1);
 
@@ -322,8 +307,8 @@ export const LyricsView = React.memo(
                 ? 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
                 : 'none',
             animationPlayState: isPaused ? 'paused' : 'running',
-            ['--lyrics-play-state' as any]: isPaused ? 'paused' : 'running',
-          }}
+            ['--lyrics-play-state' as string]: isPaused ? 'paused' : 'running',
+          } as React.CSSProperties}
         >
           {isLyricsLoading ? (
             <LyricsLoadingView />
@@ -345,7 +330,12 @@ export const LyricsView = React.memo(
             <LyricsPlainView
               plain={lyricsData.plain}
               editMode={editMode}
+              trackId={trackId}
+              durationMs={playerDuration}
+              sessionSecret={sessionSecret}
+              onSessionSecretChange={setSessionSecret}
               onAddLyrics={() => openAddLyrics(lyricsData.plain || '')}
+              onSaveSuccess={(newData) => setLyricsData(newData)}
             />
           ) : (
             <LyricsNotFoundView
@@ -381,6 +371,7 @@ export const LyricsView = React.memo(
           trackId={trackId}
           trackName={trackDisplay.name}
           artistName={trackDisplay.artists}
+          durationMs={playerDuration}
           initialLyrics={initialLyricsInput}
           sessionSecret={sessionSecret}
           onSessionSecretChange={setSessionSecret}
