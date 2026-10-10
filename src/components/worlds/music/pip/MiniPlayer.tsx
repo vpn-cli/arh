@@ -4,6 +4,8 @@ import React, { useRef, useEffect, useCallback } from "react";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { formatTime } from "../playback/playbackHelpers";
 
+import { usePip } from "./PipContext";
+
 export interface MiniPlayerProps {
   getPositionMs: () => number;
   onSeek: (positionMs: number) => void;
@@ -14,23 +16,27 @@ export interface MiniPlayerProps {
   isSaved: boolean;
   toggleSaveTrack: () => Promise<void>;
   token: string | null;
+  pipWindow?: Window | null;
 }
 
 export function MiniPlayer({
   getPositionMs,
   onSeek,
+  onDragSeek,
   togglePlay,
   prevTrack,
   nextTrack,
   isSaved,
   toggleSaveTrack,
   token,
+  pipWindow: pipWindowProp,
 }: MiniPlayerProps) {
   const currentTrack = useSpotifyPlayerStore((s) => s.currentTrack);
   const isPaused = useSpotifyPlayerStore((s) => s.isPaused);
   const duration = useSpotifyPlayerStore((s) => s.duration);
   const isReady = useSpotifyPlayerStore((s) => s.isReady);
   const isPremium = useSpotifyPlayerStore((s) => s.isPremium);
+  const pipContext = usePip();
 
   const fillRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
@@ -38,49 +44,129 @@ export function MiniPlayer({
   const durationRef = useRef(duration > 0 ? duration : 0);
   const isPausedRef = useRef(isPaused);
 
+  const renderProgress = useCallback(() => {
+    const pos = getPositionMs();
+    const dur = durationRef.current;
+    const progress = dur > 0 ? Math.min(1, Math.max(0, pos / dur)) : 0;
+
+    if (fillRef.current) {
+      fillRef.current.style.transform = `scaleX(${progress})`;
+    }
+    if (thumbRef.current) {
+      thumbRef.current.style.transform = `translateX(${progress * 100}%)`;
+    }
+    if (timeLabelRef.current) {
+      timeLabelRef.current.textContent = formatTime(pos);
+    }
+  }, [getPositionMs]);
+
   useEffect(() => {
     durationRef.current = duration > 0 ? duration : 0;
-  }, [duration]);
+    renderProgress();
+  }, [duration, renderProgress]);
 
   useEffect(() => {
     isPausedRef.current = isPaused;
-  }, [isPaused]);
+    renderProgress();
+  }, [isPaused, renderProgress]);
 
-  // Clock sync via requestAnimationFrame - playback position never enters React state
   useEffect(() => {
-    let animId: number;
-    const updateProgress = () => {
-      if (!isPausedRef.current) {
-        const pos = getPositionMs();
-        const dur = durationRef.current;
-        const progress = dur > 0 ? Math.min(1, Math.max(0, pos / dur)) : 0;
+    renderProgress();
+  }, [currentTrack?.id, renderProgress]);
 
-        if (fillRef.current) {
-          fillRef.current.style.transform = `scaleX(${progress})`;
-        }
-        if (thumbRef.current) {
-          thumbRef.current.style.transform = `translateX(${progress * 100}%)`;
-        }
-        if (timeLabelRef.current) {
-          timeLabelRef.current.textContent = formatTime(pos);
-        }
+  // Drive progress from the pop-out's own window: pipWindow.requestAnimationFrame while visible,
+  // with a pipWindow.setInterval fallback of 500ms. Reads position from shared clock each tick.
+  useEffect(() => {
+    const targetWin =
+      pipWindowProp ??
+      pipContext?.pipWindow ??
+      (fillRef.current?.ownerDocument?.defaultView as Window | null) ??
+      (typeof window !== "undefined" ? window : null);
+
+    if (!targetWin) return;
+
+    let animId: number | null = null;
+    let fallbackIntervalId: ReturnType<typeof setInterval> | null = null;
+
+    const stopRaf = () => {
+      if (animId !== null && typeof targetWin.cancelAnimationFrame === "function") {
+        targetWin.cancelAnimationFrame(animId);
+        animId = null;
       }
-      animId = requestAnimationFrame(updateProgress);
     };
 
-    animId = requestAnimationFrame(updateProgress);
-    return () => cancelAnimationFrame(animId);
-  }, [getPositionMs]);
+    const stopInterval = () => {
+      if (fallbackIntervalId !== null && typeof targetWin.clearInterval === "function") {
+        targetWin.clearInterval(fallbackIntervalId);
+        fallbackIntervalId = null;
+      }
+    };
+
+    const tick = () => {
+      if (!isPausedRef.current) {
+        renderProgress();
+      }
+    };
+
+    const startRaf = () => {
+      stopRaf();
+      const loop = () => {
+        tick();
+        if (typeof targetWin.requestAnimationFrame === "function") {
+          animId = targetWin.requestAnimationFrame(loop);
+        }
+      };
+      if (typeof targetWin.requestAnimationFrame === "function") {
+        animId = targetWin.requestAnimationFrame(loop);
+      }
+    };
+
+    const startInterval = () => {
+      stopInterval();
+      if (typeof targetWin.setInterval === "function") {
+        fallbackIntervalId = targetWin.setInterval(tick, 500);
+      }
+    };
+
+    const syncScheduling = () => {
+      const isVisible = !targetWin.document?.hidden;
+      if (isVisible && typeof targetWin.requestAnimationFrame === "function") {
+        startRaf();
+      } else {
+        stopRaf();
+      }
+    };
+
+    startInterval();
+    syncScheduling();
+
+    const handleVisibilityChange = () => {
+      syncScheduling();
+      renderProgress();
+    };
+
+    targetWin.document?.addEventListener?.("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      stopRaf();
+      stopInterval();
+      targetWin.document?.removeEventListener?.("visibilitychange", handleVisibilityChange);
+    };
+  }, [pipWindowProp, pipContext?.pipWindow, renderProgress]);
 
   const handleBarClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();
       if (rect.width <= 0) return;
       const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      const targetMs = ratio * durationRef.current;
+      const targetMs = Math.round(ratio * durationRef.current);
+      if (onDragSeek) {
+        onDragSeek(targetMs);
+      }
       onSeek(targetMs);
+      renderProgress();
     },
-    [onSeek]
+    [onSeek, onDragSeek, renderProgress]
   );
 
   const artUrl =

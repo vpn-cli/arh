@@ -53,6 +53,7 @@ export function PipHost() {
         isSaved={isSaved}
         toggleSaveTrack={handleToggleSaveTrack}
         token={token}
+        pipWindow={pipWindow}
       />
     </Suspense>,
     pipWindow.document.body
