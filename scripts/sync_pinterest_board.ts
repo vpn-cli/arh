@@ -5,11 +5,20 @@ import sharp from 'sharp';
 
 /**
  * Sync script for Pinterest board slideshow.
- * Run manually with: npx tsx scripts/sync_pinterest_board.ts
+ * Run manually with:
+ *   - npx tsx scripts/sync_pinterest_board.ts
+ *   - npx tsx scripts/sync_pinterest_board.ts --list-boards
  * Never runs at build time or in the browser.
  */
 
 const MAX_ITEMS = 30;
+
+interface PinterestBoard {
+  id: string;
+  name: string;
+  privacy?: string;
+  pin_count?: number;
+}
 
 interface PinterestPinVariant {
   url: string;
@@ -37,6 +46,21 @@ interface SkippedItem {
   reason: string;
 }
 
+function handleErrorResponse(status: number, bodyText: string, token?: string): void {
+  let message = bodyText;
+  try {
+    const parsed = JSON.parse(bodyText);
+    message = parsed.message || parsed.error || JSON.stringify(parsed);
+  } catch {
+    // Keep raw response text
+  }
+  if (token) {
+    message = message.replaceAll(token, '[REDACTED_TOKEN]');
+  }
+  console.error(`Pinterest API error (HTTP ${status}): ${message}`);
+  process.exitCode = 1;
+}
+
 async function main() {
   const rootDir = process.cwd();
   const envPath = path.resolve(rootDir, '.env.local');
@@ -61,10 +85,74 @@ async function main() {
 
   const token = process.env.PINTEREST_ACCESS_TOKEN;
   const boardId = process.env.PINTEREST_BOARD_ID;
+  const isListBoardsMode = process.argv.includes('--list-boards');
 
-  if (!token || !boardId) {
-    console.error('Error: PINTEREST_ACCESS_TOKEN and PINTEREST_BOARD_ID must be set in .env.local');
-    console.error('Please configure both in .env.local before running this sync script.');
+  // Helper mode: list boards
+  if (isListBoardsMode) {
+    if (!token) {
+      console.error('Error: PINTEREST_ACCESS_TOKEN must be set in .env.local to list boards.');
+      process.exit(1);
+    }
+
+    console.log('Fetching boards from Pinterest API v5...');
+    let bookmark: string | null = null;
+    const allBoards: PinterestBoard[] = [];
+
+    do {
+      const url = new URL('https://api.pinterest.com/v5/boards');
+      url.searchParams.set('page_size', '100');
+      if (bookmark) {
+        url.searchParams.set('bookmark', bookmark);
+      }
+
+      const res = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        const errBody = await res.text();
+        handleErrorResponse(res.status, errBody, token);
+        return;
+      }
+
+      const data = (await res.json()) as { items?: PinterestBoard[]; bookmark?: string | null };
+      const items = data.items || [];
+      allBoards.push(...items);
+      bookmark = data.bookmark || null;
+    } while (bookmark);
+
+    if (allBoards.length === 0) {
+      console.log('No boards found for this Pinterest account.');
+    } else {
+      console.log(`\nFound ${allBoards.length} board${allBoards.length === 1 ? '' : 's'}:\n`);
+      console.table(
+        allBoards.map((b) => ({
+          id: b.id,
+          name: b.name,
+          privacy: b.privacy ?? 'UNKNOWN',
+          pin_count: b.pin_count ?? 0,
+        }))
+      );
+    }
+
+    process.exit(0);
+  }
+
+  // Normal run: validate credentials
+  if (!token) {
+    console.error('Error: PINTEREST_ACCESS_TOKEN must be set in .env.local.');
+    console.error('Please configure PINTEREST_ACCESS_TOKEN in .env.local before running this sync script.');
+    process.exit(1);
+  }
+
+  if (!boardId) {
+    console.error('Error: PINTEREST_BOARD_ID is missing in .env.local.');
+    console.error(
+      'Run `npx tsx scripts/sync_pinterest_board.ts --list-boards` to see your available boards and their IDs, then set PINTEREST_BOARD_ID in .env.local.'
+    );
     process.exit(1);
   }
 
@@ -73,7 +161,7 @@ async function main() {
 
   console.log('Fetching pins from Pinterest API v5...');
 
-  // 2. Fetch all pins on the board following pagination
+  // Fetch all pins on the board following pagination
   let bookmark: string | null = null;
   const allPins: PinterestPin[] = [];
 
@@ -93,8 +181,8 @@ async function main() {
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.error(`Failed to fetch pins from Pinterest API (HTTP ${res.status}): ${errBody}`);
-      process.exit(1);
+      handleErrorResponse(res.status, errBody, token);
+      return;
     }
 
     const data = (await res.json()) as { items?: PinterestPin[]; bookmark?: string | null };
@@ -109,7 +197,7 @@ async function main() {
   const skippedItems: SkippedItem[] = [];
   const allBoardPinIds = new Set(allPins.map((p) => p.id));
 
-  // 3 & 4. Process pins up to MAX_ITEMS
+  // Process pins up to MAX_ITEMS
   for (const pin of allPins) {
     // Skip video pins
     if (pin.media?.media_type === 'video') {
@@ -146,7 +234,7 @@ async function main() {
 
     const targetFile = path.join(slideshowDir, `${pin.id}.webp`);
 
-    // 7. Idempotent: skip downloading if already present
+    // Idempotent: skip downloading if already present
     if (fs.existsSync(targetFile)) {
       try {
         const existingMeta = await sharp(targetFile).metadata();
@@ -224,7 +312,7 @@ async function main() {
     }
   }
 
-  // 7. Delete files for pins no longer on the board
+  // Delete files for pins no longer on the board
   const deletedFiles: string[] = [];
   const existingFiles = fs.readdirSync(slideshowDir);
   for (const file of existingFiles) {
@@ -237,7 +325,7 @@ async function main() {
     }
   }
 
-  // 6. Generate src/config/slideshow.ts
+  // Generate src/config/slideshow.ts
   const configDir = path.resolve(rootDir, 'src/config');
   fs.mkdirSync(configDir, { recursive: true });
   const configPath = path.join(configDir, 'slideshow.ts');
@@ -257,7 +345,7 @@ export const slideshowSlides: SlideItem[] = ${JSON.stringify(keptItems, null, 2)
 
   fs.writeFileSync(configPath, configContent, 'utf-8');
 
-  // 8. Print summary
+  // Print summary
   let totalSizeBytes = 0;
   for (const item of keptItems) {
     const localPath = path.join(rootDir, 'public', item.src);
