@@ -53,7 +53,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
               className={`flex items-center gap-3 w-full px-4 py-2 text-left font-pixel rounded-xl mw-nav-item ${
                 isActive
                   ? 'bg-[var(--color-light)] text-[var(--color-dark)] font-bold border border-[var(--color-muted)] shadow-xs'
-                  : 'text-[var(--color-dark)] font-medium'
+                  : 'text-[var(--color-dark)] font-medium border border-transparent'
               }`}
             >
               <span className="w-5 text-xl mw-nav-icon">{item.icon}</span>

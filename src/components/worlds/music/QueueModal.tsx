@@ -325,10 +325,10 @@ export function QueueModal({
                           setDraggedIdx(null);
                           setDragOverIdx(null);
                         }}
-                        className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-2xl transition-all border ${
+                        className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-2xl mw-row ${
                           isCurrentlyActive
                             ? 'bg-[var(--color-light)] border-[var(--color-vibrant)] shadow-xs'
-                            : 'bg-white hover:bg-[var(--color-bg)] border-[var(--color-muted)] hover:shadow-2xs'
+                            : 'bg-white border-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:shadow-2xs'
                         } ${
                           dragOverIdx === originalIndex
                             ? draggedIdx !== null && draggedIdx < originalIndex
@@ -387,11 +387,11 @@ export function QueueModal({
                         </span>
 
                         {/* Reorder Up/Down arrows */}
-                        <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex flex-col mw-row-action">
                           <button
                             onClick={() => handleMoveUp(originalIndex)}
                             disabled={originalIndex === 0}
-                            className="text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-xs p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded"
+                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-xs p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded"
                             title="Move Up"
                             aria-label={`Move ${item.track?.name} up`}
                           >
@@ -400,7 +400,7 @@ export function QueueModal({
                           <button
                             onClick={() => handleMoveDown(originalIndex)}
                             disabled={originalIndex === queue.length - 1}
-                            className="text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-xs p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded"
+                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-xs p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded"
                             title="Move Down"
                             aria-label={`Move ${item.track?.name} down`}
                           >
@@ -419,7 +419,7 @@ export function QueueModal({
                                 onPlayTrack(item.track.uri);
                               }
                             }}
-                            className="w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-xs transition-all active:scale-95 shadow-2xs"
+                            className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-xs shadow-2xs"
                             title="Play this track"
                           >
                             ▶
@@ -427,7 +427,7 @@ export function QueueModal({
                           {onAddToPlaylist && item.track?.uri && (
                             <button
                               onClick={() => onAddToPlaylist(item.track.uri)}
-                              className="w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-sm font-bold transition-all active:scale-95 shadow-2xs"
+                              className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-sm font-bold shadow-2xs"
                               title="Add to Playlist"
                             >
                               +
@@ -438,7 +438,7 @@ export function QueueModal({
                               ensureQueueInitialized();
                               removeFromQueue(originalIndex);
                             }}
-                            className="w-8 h-8 rounded-full hover:bg-rose-100 text-[var(--color-dark)] hover:text-rose-600 flex items-center justify-center text-xs transition-all active:scale-95"
+                            className="mw-btn w-8 h-8 rounded-full hover:bg-rose-100 text-[var(--color-dark)] hover:text-rose-600 flex items-center justify-center text-xs"
                             title="Remove from Queue"
                           >
                             ✕
@@ -482,7 +482,7 @@ export function QueueModal({
                   return (
                     <div
                       key={`${track.id}-${item.played_at || idx}`}
-                      className="group flex items-center gap-3 px-3.5 py-2.5 rounded-2xl bg-white hover:bg-[var(--color-bg)] border border-[var(--color-muted)] transition-all shadow-2xs"
+                      className="group flex items-center gap-3 px-3.5 py-2.5 rounded-2xl mw-row bg-white border border-[var(--color-muted)] hover:bg-[var(--color-bg)] shadow-2xs"
                     >
                       <span className="font-pixel text-xs font-bold text-[var(--color-dark)] w-5 text-center shrink-0">
                         {idx + 1}
@@ -523,14 +523,14 @@ export function QueueModal({
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           onClick={() => onPlayTrack(track.uri, item.context?.uri)}
-                          className="w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-xs transition-all active:scale-95 shadow-2xs"
+                          className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-xs shadow-2xs"
                           title="Play Track"
                         >
                           ▶
                         </button>
                         <button
                           onClick={() => addToQueue(track, item.context?.uri)}
-                          className="px-3 py-1 rounded-full bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-xs font-bold transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out active:scale-95 shadow-2xs flex items-center gap-1"
+                          className="mw-btn px-3 py-1 rounded-full bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-xs font-bold shadow-2xs flex items-center gap-1"
                           title="Add to Up Next Queue"
                         >
                           <span>+</span> Queue
@@ -538,7 +538,7 @@ export function QueueModal({
                         {onAddToPlaylist && (
                           <button
                             onClick={() => onAddToPlaylist(track.uri)}
-                            className="w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-sm font-bold transition-all active:scale-95 shadow-2xs"
+                            className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-sm font-bold shadow-2xs"
                             title="Add to Playlist"
                           >
                             +

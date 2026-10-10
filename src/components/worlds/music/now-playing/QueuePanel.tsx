@@ -172,12 +172,12 @@ export const QueuePanel = memo(function QueuePanel({
                   setDraggedQueueIndex(null);
                   setDragOverQueueIndex(null);
                 }}
-                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[var(--color-light)] transition-colors group cursor-pointer border ${
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl mw-row group cursor-pointer ${
                   dragOverQueueIndex === idx
                     ? draggedQueueIndex !== null && draggedQueueIndex < idx
                       ? 'border-b-[var(--color-vibrant)] border-b-2'
                       : 'border-t-[var(--color-vibrant)] border-t-2'
-                    : 'border-transparent'
+                    : ''
                 } ${draggedQueueIndex === idx ? 'opacity-50' : 'opacity-100'}`}
                 onClick={() => playQueueItem(idx)}
               >
@@ -222,8 +222,8 @@ export const QueuePanel = memo(function QueuePanel({
                       removeFromQueue(idx);
                     }
                   }}
-                  className={`text-[var(--color-dark)] hover:text-[var(--color-dark)] px-1 py-0.5 rounded shrink-0 font-bold text-xs ${
-                    queue.length > 0 ? 'opacity-0 group-hover:opacity-100' : 'hidden'
+                  className={`mw-btn mw-row-action text-[var(--color-dark)] hover:text-[var(--color-dark)] px-1 py-0.5 rounded shrink-0 font-bold text-xs ${
+                    queue.length > 0 ? '' : 'hidden'
                   }`}
                   aria-label="Remove from queue"
                   title="Remove from queue"
@@ -248,7 +248,7 @@ export const QueuePanel = memo(function QueuePanel({
             return (
               <div
                 key={`${track.id}-${idx}`}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[var(--color-light)] transition-colors group cursor-pointer"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl mw-row group cursor-pointer"
                 onClick={() => {
                   if (item.context?.uri) playContextTrack(item.context.uri, track.uri || '');
                   else playTrack(track.uri || '', undefined, track);
@@ -282,7 +282,7 @@ export const QueuePanel = memo(function QueuePanel({
                     e.stopPropagation();
                     handleAddToQueue(track, item.context?.uri);
                   }}
-                  className="opacity-0 group-hover:opacity-100 text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white px-2.5 py-1 rounded-full font-pixel text-xs font-bold transition-all shadow-xs shrink-0"
+                  className="mw-btn mw-row-action text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white px-2.5 py-1 rounded-full font-pixel text-xs font-bold shadow-xs shrink-0"
                   title="Add to queue"
                 >
                   + Queue
