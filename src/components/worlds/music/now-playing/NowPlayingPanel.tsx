@@ -6,6 +6,8 @@ import { ProgressBar, ProgressBarHandle } from './ProgressBar';
 import { PlaybackControls } from './PlaybackControls';
 import { QueuePanel } from './QueuePanel';
 import { ChevronDownIcon, MusicNoteIcon } from '../icons';
+import { PopOutPipButton } from '../pip/PopOutPipButton';
+import { useMediaSession } from '../playback/useMediaSession';
 
 export interface NowPlayingPanelProps {
   progressBarRef?: React.Ref<ProgressBarHandle>;
@@ -53,6 +55,8 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
   const currentTrack = useSpotifyPlayerStore((s) => s.currentTrack);
   const isPaused = useSpotifyPlayerStore((s) => s.isPaused);
 
+  useMediaSession({ togglePlay, prevTrack, nextTrack });
+
   return (
     <div className="mw-now-playing-panel w-[380px] lg:w-[400px] xl:w-[420px] 2xl:w-[440px] border-l-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-[var(--color-light)]">
       <div className="flex flex-col p-5 pb-3 relative shrink-0">
@@ -62,6 +66,17 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
             <span className="font-pixel text-[var(--color-dark)] text-body font-bold">Now Playing</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <PopOutPipButton
+              getPositionMs={getPositionMs}
+              onSeek={onSeek}
+              onDragSeek={onDragSeek}
+              togglePlay={togglePlay}
+              prevTrack={prevTrack}
+              nextTrack={nextTrack}
+              isSaved={isSaved}
+              toggleSaveTrack={toggleSaveTrack}
+              token={token}
+            />
             {currentTrack && (
               <button
                 onClick={onToggleLyrics}

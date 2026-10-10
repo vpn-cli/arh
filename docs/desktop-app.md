@@ -33,12 +33,12 @@ This document outlines the implementation plan and execution status for making M
 
 ## PART 4 - Floating Mini-Player (Document Picture-in-Picture)
 
-- [ ] Feature-detect `"documentPictureInPicture"` in `window`. If missing, render no button.
-- [ ] Add a "Pop out" button in the Now Playing panel. On click, call `documentPictureInPicture.requestWindow({ width: 340, height: 420 })`.
-- [ ] Render a `MiniPlayer` component into that window with `createPortal`: artwork, title, artist, progress, previous / play-pause / next, like. It reads the same store and clock (`getPositionMs`) as the main player and calls the same playback actions. No second SDK player and no duplicate timers.
-- [ ] Copy the app's stylesheets into the pop-out document and copy the palette CSS variables; update them when the palette changes.
-- [ ] When the pop-out closes, clean up listeners. Opening it again works.
-- [ ] Report: does the Spotify SDK already set `navigator.mediaSession` (track info and media keys)? If not, set metadata and play, pause, previous, and next handlers. If it does, change nothing.
+- [x] Feature-detect `"documentPictureInPicture"` in `window`. If missing, render no button.
+- [x] Add a "Pop out" button in the Now Playing panel. On click, call `documentPictureInPicture.requestWindow({ width: 340, height: 420 })`.
+- [x] Render a `MiniPlayer` component into that window with `createPortal`: artwork, title, artist, progress, previous / play-pause / next, like. It reads the same store and clock (`getPositionMs`) as the main player and calls the same playback actions. No second SDK player and no duplicate timers.
+- [x] Copy the app's stylesheets into the pop-out document and copy the palette CSS variables; update them when the palette changes.
+- [x] When the pop-out closes, clean up listeners. Opening it again works.
+- [x] Report: does the Spotify SDK already set `navigator.mediaSession` (track info and media keys)? If not, set metadata and play, pause, previous, and next handlers. If it does, change nothing.
 
 ---
 
