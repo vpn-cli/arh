@@ -74,10 +74,10 @@ export default function PrivacyPage() {
           <p className="font-pixel text-body text-[var(--color-dark-muted,#4B4E6A)] leading-relaxed">
             For questions about this policy or your data, you can reach out to{" "}
             <a
-              href="mailto:CONTACT_EMAIL"
+              href="mailto:vipinkaushik20771041@gmail.com"
               className="text-[var(--color-pink,#FF8FB3)] hover:underline font-semibold"
             >
-              CONTACT_EMAIL
+              vipinkaushik20771041@gmail.com
             </a>
             .
           </p>
