@@ -54,16 +54,41 @@ export function FrequenciesSection({
       }
     });
 
-    let mostFrequentArtist = { name: '', count: 0 };
+    let maxArtistTrackCount = 0;
     artistCounts.forEach((data) => {
-      if (data.count > mostFrequentArtist.count) {
-        mostFrequentArtist = data;
+      if (data.count > maxArtistTrackCount) {
+        maxArtistTrackCount = data.count;
       }
     });
 
+    const tiedArtists: string[] = [];
+    if (maxArtistTrackCount > 0) {
+      artistCounts.forEach((data) => {
+        if (data.count === maxArtistTrackCount) {
+          tiedArtists.push(data.name);
+        }
+      });
+    }
+
+    let mostTracksArtistName = 'None';
+    if (tiedArtists.length === 1) {
+      mostTracksArtistName = tiedArtists[0];
+    } else if (tiedArtists.length > 1) {
+      mostTracksArtistName = `${tiedArtists.slice(0, 2).join(', ')} tied`;
+    }
+
+    const mostTracksTooltip =
+      tiedArtists.length > 1
+        ? `${tiedArtists.join(', ')} (${maxArtistTrackCount} tracks each)`
+        : tiedArtists[0] || 'None';
+
     return {
       uniqueArtists,
-      mostFrequentArtist,
+      mostTracksArtist: {
+        name: mostTracksArtistName,
+        count: maxArtistTrackCount,
+        tooltip: mostTracksTooltip
+      },
       multiArtistTrackCount,
       totalTracks: topTracks.length
     };
@@ -98,7 +123,7 @@ export function FrequenciesSection({
         {[
           { id: 'short_term', label: 'Short Term (~4 wks)' },
           { id: 'medium_term', label: 'Medium Term (~6 mos)' },
-          { id: 'long_term', label: 'Long Term (all time)' }
+          { id: 'long_term', label: 'Long Term (~1 year)' }
         ].map((range) => (
           <button
             key={range.id}
@@ -154,13 +179,16 @@ export function FrequenciesSection({
 
               <div className="bg-white/90 border border-[var(--color-muted)]/40 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-2xs">
                 <span className="font-pixel text-3xl font-extrabold text-[var(--color-dark)]">
-                  {metrics.mostFrequentArtist.count > 0 ? metrics.mostFrequentArtist.count : 0}
+                  {metrics.mostTracksArtist.count > 0 ? metrics.mostTracksArtist.count : 0}
                 </span>
                 <span className="font-pixel text-xs font-bold text-[var(--color-dark)] opacity-75 mt-1">
-                  Top Artist Tracks
+                  Most tracks in your top 20
                 </span>
-                <span className="font-pixel text-[11px] text-[var(--color-dark)] opacity-60 mt-0.5 truncate max-w-full" title={metrics.mostFrequentArtist.name}>
-                  {metrics.mostFrequentArtist.name || 'None'}
+                <span
+                  className="font-pixel text-[11px] text-[var(--color-dark)] opacity-60 mt-0.5 truncate max-w-full"
+                  title={metrics.mostTracksArtist.tooltip}
+                >
+                  {metrics.mostTracksArtist.name}
                 </span>
               </div>
             </div>
