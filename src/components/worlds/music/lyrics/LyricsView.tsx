@@ -43,6 +43,18 @@ export interface LyricsViewHandle {
   resync: (targetMs?: number) => void;
 }
 
+/**
+ * Breakpoint where LyricsView shifts from covering the right player panel
+ * (max-lg:w-[380px] max-lg:right-0) to covering the center main content area
+ * (lg:left-64 lg:right-[400px]). Matches the `lg:` Tailwind classes below.
+ */
+export const LYRICS_OVERLAY_COVERS_CONTENT_MIN_WIDTH = 1024;
+
+export const doesLyricsOverlayCoverContent = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth >= LYRICS_OVERLAY_COVERS_CONTENT_MIN_WIDTH;
+};
+
 export const LyricsView = React.memo(
   forwardRef<LyricsViewHandle, LyricsViewProps>(function LyricsView(
     { trackId, trackDisplay, isPaused, getPositionMs, onSeek, onClose },

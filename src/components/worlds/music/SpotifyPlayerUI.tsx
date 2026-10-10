@@ -24,7 +24,7 @@ import { MemoryEditorModal } from "./MemoryEditorModal";
 import { QueueModal } from "./QueueModal";
 import { usePlaylistMutations } from "@/hooks/usePlaylistMutations";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
-import { LyricsView, LyricsViewHandle } from "./lyrics/LyricsView";
+import { LyricsView, LyricsViewHandle, doesLyricsOverlayCoverContent } from "./lyrics/LyricsView";
 import { prefetchLyrics } from "./lyrics/useLyrics";
 import { usePlaybackActions } from "./playback/usePlaybackActions";
 import { NowPlayingPanel, ProgressBarHandle } from "./now-playing";
@@ -39,8 +39,7 @@ import { PaletteBackground } from "./palette/PaletteBackground";
 import { useRecoveryStatus } from "./hooks/useRecoveryStatus";
 import { useRateLimitTimer } from "./hooks/useRateLimitTimer";
 import { usePlayerStateSync } from "./hooks/usePlayerStateSync";
-
-type TabType = 'home' | 'library' | 'recent' | 'mix' | 'playlists' | 'search' | 'album' | 'artist' | 'queue' | 'frequencies' | 'vibes' | 'memories';
+import { useMusicNavigation, TabType } from "./hooks/useMusicNavigation";
 
 export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void }) {
   const { data: sessionData, isError: sessionError } = useSpotifySession();
@@ -65,16 +64,19 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const progressBarRef = useRef<ProgressBarHandle>(null);
   const lyricsViewRef = useRef<LyricsViewHandle | null>(null);
 
-  // Navigation State
-  const [activeTab, setActiveTab] = useState<TabType>('home');
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
-  const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
-  const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
-  const [globalSearch, setGlobalSearch] = useState("");
-
   const [showLyrics, setShowLyrics] = useState(false);
   const handleCloseLyrics = useCallback(() => setShowLyrics(false), []);
   const handleToggleLyrics = useCallback(() => setShowLyrics((prev) => !prev), []);
+
+  const handleNavigation = useCallback(() => {
+    if (doesLyricsOverlayCoverContent()) setShowLyrics(false);
+  }, []);
+
+  const {
+    activeTab, selectedPlaylistId, selectedAlbumId, selectedArtistId, globalSearch,
+    navigate, openPlaylist, openAlbum, openArtist, handleSearchChange, handleClearSearch,
+    handleBackFromPlaylist, handleBackFromAlbum, handleBackFromArtist, setSelectedPlaylistId,
+  } = useMusicNavigation({ onNavigate: handleNavigation });
 
   const lyricsTrackDisplay = useMemo(() => ({
     name: currentTrack?.name,
@@ -101,13 +103,6 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     setIsQueueModalOpen(true);
   }, []);
 
-  // Stable Navigation Callbacks
-  const navigate = useCallback((tab: TabType) => setActiveTab(tab), []);
-  const openPlaylist = useCallback((id: string) => { setSelectedPlaylistId(id); setActiveTab('playlists'); }, []);
-  const openAlbum = useCallback((id: string) => { setSelectedAlbumId(id); setActiveTab('album'); }, []);
-  const openArtist = useCallback((id: string) => { setSelectedArtistId(id); setActiveTab('artist'); }, []);
-  const handleSearchChange = useCallback((value: string) => { setGlobalSearch(value); setActiveTab('search'); }, []);
-  const handleClearSearch = useCallback(() => setGlobalSearch(''), []);
   const handleCreatePlaylist = useCallback(() => setIsCreatingPlaylist(true), []);
   const handleAddMemory = useCallback((entity: any, type: 'track' | 'artist' | 'playlist') => {
     setMemoryEditorEntity(entity);
@@ -206,7 +201,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             {activeTab === 'playlists' && (
               selectedPlaylistId ? (
                 <PlaylistDetail
-                  playlistId={selectedPlaylistId} onBack={() => setSelectedPlaylistId(null)}
+                  playlistId={selectedPlaylistId} onBack={handleBackFromPlaylist}
                   onEdit={() => { const p = playlists.find((pl: any) => pl.id === selectedPlaylistId); if (p) setEditingPlaylist(p); }}
                   onRemove={() => { const p = playlists.find((pl: any) => pl.id === selectedPlaylistId); if (p) setRemovingPlaylist(p); }}
                   onPlayPlaylist={(uri, tracks) => playPlaylist(uri, tracks)}
@@ -283,7 +278,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
             {activeTab === 'album' && selectedAlbumId && (
               <AlbumDetail
-                albumId={selectedAlbumId} onBack={() => { navigate('search'); setSelectedAlbumId(null); }}
+                albumId={selectedAlbumId} onBack={handleBackFromAlbum}
                 onPlayAlbum={playPlaylist} onPlayTrack={(uri, contextUri) => playTrack(uri, contextUri)}
                 onAddToQueue={handleAddToQueue} onAddToPlaylist={handleAddToPlaylist} onAddMemory={handleAddMemory}
                 onShufflePlay={async (uri) => { if (!isShuffle) await toggleShuffle(); playPlaylist(uri); }}
@@ -292,7 +287,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
             {activeTab === 'artist' && selectedArtistId && (
               <ArtistDetail
-                artistId={selectedArtistId} onBack={() => { navigate('search'); setSelectedArtistId(null); }}
+                artistId={selectedArtistId} onBack={handleBackFromArtist}
                 onClickAlbum={openAlbum} onPlayTrack={(uri, contextUri) => playTrack(uri, contextUri)}
                 onAddToQueue={handleAddToQueue} onAddToPlaylist={handleAddToPlaylist}
                 onAddMemory={(entity, type) => { setMemoryEditorEntity(entity); setMemoryEditorType(type); setMemoryEditorMemoryId(null); }}
