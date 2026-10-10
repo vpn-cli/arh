@@ -1,108 +1,56 @@
-# Vibes Section + UI Polish Plan
+# Vibes Section + UI Polish
 
-Status: planning
-Last updated: 2026-10-08
+Status: implemented
+Last updated: 2026-10-10
 
-## 0. Do this first — it decides Phase 1
+## Overview & Current State
 
-Run against our actual client ID:
-GET /v1/recommendations?seed_genres=pop&limit=1
-GET /v1/audio-features/{any_track_id}
+The Music World UI polish has been completed across Phases A–F:
 
-Spotify deprecated both endpoints for apps created after 2024-11-27. A 200
-means we have access and the dynamic path is open. A 403 means we take the
-static path below. Do not plan around either until this is answered.
+1. **Motion & Row Styling (Phase B1 & B2)**:
+   - Music World CSS rules layered inside `@layer components` in `src/app/globals.css`.
+   - Focus rings standardized to `outline: 2px solid var(--color-vibrant); outline-offset: 2px`.
+   - `MediaRow` unified component (`src/components/worlds/music/MediaRow.tsx`):
+     - Non-interactive outer container with `after:absolute after:inset-0` stretched button overlay for row clickability without nested button HTML errors.
+     - Supports `imageSlot`, `imageUrl`, `imageSize` (48px default, 56px in Playlists tab), `imageShape` (`rounded` vs `circle`), `rank`, `duration`, and `actions`.
+     - Zero hardcoded hex colors; strictly uses theme tokens (`var(--color-dark)`, `var(--color-vibrant)`, `var(--color-light)`).
+   - `PlaylistCover` (`src/components/worlds/music/PlaylistCover.tsx`):
+     - Renders 2×2 grid collage for 4+ images with `pickImage` at half size for each quadrant.
+     - Renders single image via `pickImage` for 1–3 images.
+     - Fallback icon `♪` when images are missing.
+   - `TrackRow` wraps `MediaRow` preserving caller props.
 
-**Result: ________** (fill in before starting)
+2. **Sidebar & Navigation (Phase C1 & C2)**:
+   - Responsive sidebar width: `--sidebar-width: 256px` base, expanding to `296px` at `@media (min-width: 1280px)`.
+   - Sidebar playlist list uses `MediaRow` with `PlaylistCover` (size 40) and `pickImage`.
+   - 7 custom inline SVG kawaii navigation icons (`src/components/worlds/music/icons/`):
+     - Home (house with heart window), Playlists (cassette), Mix (sparkles), Vibes (moon & stars), Library (vinyl record), Memories (polaroid), Frequencies (sound wave).
+     - Standardized with 22px default, `strokeWidth: 2`, `currentColor`, rounded stroke caps/joins.
+     - Dev preview available at `/diagnose/icons`.
 
----
+3. **Playlists Tab (Phase D)**:
+   - Playlists list rendered via `MediaRow` with `imageSize={56}`, `PlaylistCover`, and compact 6px (`gap-1.5`) spacing.
 
-## Phase 1 — Vibes routing + data source
+4. **Vibes Detail Page (Phase E)**:
+   - Vibe Artists rendered using `MediaRow` at 48px circle, matching track row sizing.
+   - Matching "Vibe Artists" and "Vibe Tracks" section headings.
+   - Balanced 2-column responsive grid (`grid-cols-1 md:grid-cols-2 gap-2`).
 
-### Bug to fix first
-Clicking an individual vibe card routes to the Vibes section index instead of
-that vibe's playlist. The click handler receives the section route rather than
-the item id. Fix the handler and check whether the same one is reused elsewhere
-with the same defect.
-
-### Data source — pick based on the curl above
-
-**Path A (default, assume this one): static map.**
-Hardcode one Spotify playlist ID per vibe in a single config file:
-
-```ts
-// src/config/vibes.ts
-export const VIBES = [
-  { id: 'gym',   label: 'Gym',   playlistId: '...', emoji: '💪' },
-  { id: 'sleep', label: 'Sleep', playlistId: '...', emoji: '🌙' },
-  // ...
-] as const;
-```
-
-Zero API risk, never breaks on deprecation, and for a personal project we
-already know which playlists we mean. Fill the IDs by hand.
-
-**Path B (only if `/recommendations` returned 200): seeded generation.**
-Map each vibe to seed genres plus target energy/valence, call
-`/recommendations`, cache the result per vibe for the session. Keep the static
-map as fallback for when the call fails.
-
-**Path C (if we want it personal later, no API risk):**
-Pull the user's saved tracks, fetch artist genres, cluster genres into vibes.
-More work. Defer unless Path A feels too static after using it.
-
-### Fallback for both paths
-If a vibe's playlist ID is missing or the fetch fails, fall back to
-`GET /v1/search?q={vibe} playlist&type=playlist` and take the first result.
-Never render an empty vibe card.
+5. **Frequencies Page (Phase F)**:
+   - Time range selector converted into a 3-pill equal segmented control.
+   - Listening Profile converted into three stat tiles on a palette-tinted surface.
+   - Top Artists rendered via `MediaRow` with 1-based ranks in 2 columns.
+   - "Play All" button aligned with the Top Tracks heading matching the Home section heading style.
 
 ---
 
-## Phase 2 — Section hierarchy
+## Parked
 
-The three card rows (Continue Listening, Vibes, Recently Played) currently
-render identical cards, so the page reads as three repeats with no signal of
-what matters.
+The following items are deferred / parked for future iterations:
 
-**Do not build new card components.** Add a `size` variant to the existing one:
-
-| Section | Variant | Shape | Art |
-|---|---|---|---|
-| Continue Listening | `large` | current size | 2×2 collage (4+ tracks) |
-| Vibes | `small` | square, smaller | single image + label overlay |
-| Recently Played | `compact` | smaller, denser | single image |
-
-Vibes being square and single-image is what stops it reading as "more
-playlists" — different shape carries the different meaning without a new
-design system.
-
----
-
-## Phase 3 — Polish (cheap, high perceived value)
-
-1. **Card hover state.** Play button fades in on hover. Single most
-   "finished product" detail available and costs almost nothing.
-2. **Hero banner.** "Let's listen together" takes a lot of vertical space for
-   one button. Either reduce its height, or make it contextual — show the last
-   played playlist with a resume action.
-3. **Empty states.** Recently Played and Queue with no items should say
-   something in the kawaii voice, not render blank.
-
----
-
-## Constraints (apply to all phases)
-
-- No redesign. Same palette, same spacing, same component library.
-- Palette variables stay on `document.documentElement`; secondary surfaces
-  keep the `color-mix` tint approach already implemented.
-- Album art keeps the size-variant rules: 64px for list rows, 300px for cards,
-  never the 640px original.
-- New images below the fold must be lazy-loaded.
-- No new dependencies.
-
-## Out of scope
-
-- Audio-reactive visuals (impossible — Spotify SDK audio is DRM-protected,
-  see `docs/player-stack.md`)
-- Any change to the progress bar implementation
-- Any change to the palette crossfade implementation
+1. **Vibes Artist Count Discrepancy**:
+   - The header card reports 15 Top Artists, but only 7 are drawn in the category.
+2. **Missing Artist Images**:
+   - Several vibe artists return blank avatar icons from the API / clustering pipeline.
+3. **Compact TrackRow Variant in Search**:
+   - Search results currently use the default track row rather than a compact variant.
