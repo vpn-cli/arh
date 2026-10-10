@@ -5,11 +5,18 @@ import { useGameState } from "@/lib/gameState";
 import { sfx } from "@/lib/audio";
 import gsap from "gsap";
 import SpotifyPlayerUI from "./SpotifyPlayerUI";
+import { useMusicView } from "./hooks/useMusicView";
+import { WidgetPlayer } from "./widget/WidgetPlayer";
 
 export default function MusicWorld() {
+  const { isWidgetView } = useMusicView();
   const { goHome } = useGameState();
   const containerRef = useRef<HTMLDivElement>(null);
   const [notes, setNotes] = useState<any[]>([]);
+
+  if (isWidgetView) {
+    return <WidgetPlayer />;
+  }
 
   useEffect(() => {
     if (containerRef.current) {

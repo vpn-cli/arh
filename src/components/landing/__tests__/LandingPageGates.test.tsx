@@ -150,4 +150,46 @@ describe("LandingPage Gates", () => {
 
     vi.useRealTimers();
   });
+
+  it("handles ?world=music&view=widget gate rule: runs story first if not complete, then enters music world", async () => {
+    vi.useFakeTimers();
+    window.localStorage.removeItem("story_complete");
+    delete (window as any).location;
+    window.location = {
+      ...originalLocation,
+      search: "?world=music&view=widget",
+      pathname: "/",
+      href: "http://localhost:3000/?world=music&view=widget",
+    } as any;
+
+    render(
+      <GameStateProvider>
+        <LandingPage />
+      </GameStateProvider>
+    );
+
+    // Initial gate must be shown
+    expect(screen.getByTestId("click-to-enter")).toBeDefined();
+    expect(screen.queryByTestId("world-router")).toBeNull();
+
+    // Complete the flow
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /click to enter/i }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /complete loading/i }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /finish story flow/i }));
+    });
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+
+    expect(window.localStorage.getItem("story_complete")).toBe("true");
+    expect(screen.getByTestId("world-router")).toBeDefined();
+    expect(screen.getByText("World: music")).toBeDefined();
+
+    vi.useRealTimers();
+  });
 });

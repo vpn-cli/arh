@@ -33,3 +33,12 @@ export function setSharedPaused(paused: boolean): void {
     }
   }
 }
+
+export const playbackClock = {
+  getPositionMs: getSharedPositionMs,
+  sync: updateSharedPlaybackState,
+  seek: seekSharedClock,
+  pause: () => setSharedPaused(true),
+  resume: () => setSharedPaused(false),
+};
+

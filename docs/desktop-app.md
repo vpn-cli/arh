@@ -48,6 +48,17 @@ This document outlines the implementation plan and execution status for making M
 - [x] Remove "Pop out" button, PipHost, PipContext, PopOutPipButton and tests while retaining MediaSessionHost and useMediaSession.
 - [x] Remove MiniPlayer in favor of WidgetPlayer.
 
+### Part 2: Widget View
+- [x] A new view selected by URL `/?world=music&view=widget` rendering only a `WidgetPlayer` card filling the window (no sidebar, header, content column, or queue).
+- [x] `WidgetPlayer` horizontal card layout: album artwork on left (rounded square, full card height minus padding); track title (`text-title`, one line ellipsis) and artist (`text-meta`, one line ellipsis) on right top; previous, play/pause, next (>=36px targets) and like button on right middle; slim seekable progress bar with elapsed and total time (`text-caption`) on right bottom; small expand button on top-right. Card uses album palette variables, large rounded corners, responsive from 360x170 to 520x240.
+- [x] Single store (`useSpotifyPlayerStore`), clock (`getSharedPositionMs`), and unified playback actions (`globalPlaybackActions`) with dual loop (RAF + 250ms interval fallback) keeping progress updates running when small or partly covered.
+- [x] Standalone window behavior: `window.resizeTo(440, 210)` on initial load; expand button switches to full Music World without `view` param and resizes to 1280x820; matching "Widget" button in header (standalone mode only) switches back and resizes down without page reload or playback interruption.
+- [x] Window Controls Overlay title bar: `display_override: ["window-controls-overlay", "standalone"]` in manifest; `titlebar-area` CSS environment variables for title bar drawing; card background marked `app-region: drag`; buttons and progress bar marked `app-region: no-drag`.
+- [x] Manifest configuration: `start_url: "/?world=music&view=widget"` with shortcuts "Widget" (`/?world=music&view=widget`), "Full player" (`/?world=music`), and "Scrapbook" (`/?world=scrapbook`).
+- [x] Signed-out state: displays "Open the full app to sign in" with button expanding to full view.
+- [x] Landing-gate rule: gates skipped only when `story_complete === "true"`, running story first if not completed.
+- [x] Normal browser tab preview: `/?world=music&view=widget` centers the same card on page for preview.
+
 ---
 
 ## Parked: needs hosting first

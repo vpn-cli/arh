@@ -3,6 +3,7 @@
 import React from "react";
 import { ChevronLeftIcon, SearchIcon, CloseIcon, MusicNoteIcon } from "../icons";
 import { InstallAppButton } from "./InstallAppButton";
+import { useMusicView } from "../hooks/useMusicView";
 
 export interface PlayerHeaderProps {
   onGoHome?: () => void;
@@ -17,6 +18,21 @@ export const PlayerHeader = React.memo(function PlayerHeader({
   onSearchChange,
   onClearSearch,
 }: PlayerHeaderProps) {
+  const { switchToWidget } = useMusicView();
+  const [isStandalone, setIsStandalone] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const query = window.matchMedia("(display-mode: standalone), (display-mode: window-controls-overlay)");
+    const check = () => {
+      setIsStandalone(
+        query.matches || (window.navigator as unknown as { standalone?: boolean }).standalone === true
+      );
+    };
+    check();
+    query.addEventListener("change", check);
+    return () => query.removeEventListener("change", check);
+  }, []);
   return (
     <div className="mw-player-header flex h-14 border-b-2 border-[var(--color-muted)] items-center px-4 justify-between shrink-0 bg-[var(--color-bg)]/95 backdrop-blur">
       <div className="flex items-center gap-3">
@@ -66,6 +82,17 @@ export const PlayerHeader = React.memo(function PlayerHeader({
         )}
       </div>
       <div className="flex items-center gap-3 sm:gap-4 text-[var(--color-dark)] font-bold text-title shrink-0">
+        {isStandalone && (
+          <button
+            onClick={switchToWidget}
+            className="mw-btn px-2.5 py-1 min-h-[28px] bg-white/50 hover:bg-[var(--color-light)] border border-[var(--color-muted)] rounded-full flex items-center gap-1.5 font-pixel text-caption text-[var(--color-dark)] font-bold tracking-wider uppercase group cursor-pointer"
+            title="Switch to compact widget view"
+            aria-label="Switch to compact widget view"
+          >
+            <span className="text-[var(--color-vibrant)] text-meta">♥</span>
+            <span className="group-hover:text-[var(--color-vibrant)] transition-colors">Widget</span>
+          </button>
+        )}
         <InstallAppButton />
         <div className="hidden lg:flex px-3 py-1 bg-white/50 border border-[var(--color-muted)] rounded-full items-center gap-1.5 mr-2">
           <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tracking-wider uppercase">Music World</span>
