@@ -58,13 +58,13 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
       <div className="flex flex-col p-5 pb-3 relative shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-[var(--color-vibrant)] text-lg">♥</span>
-            <span className="font-pixel text-[var(--color-dark)] text-sm font-bold">Now Playing</span>
+            <span className="text-[var(--color-vibrant)] text-title">♥</span>
+            <span className="font-pixel text-[var(--color-dark)] text-body font-bold">Now Playing</span>
           </div>
           {currentTrack && (
             <button
               onClick={onToggleLyrics}
-              className={`font-pixel text-xs px-3 py-1 rounded-full flex items-center gap-1 transition-all duration-150 ease-in-out shadow-xs font-bold active:scale-95 border ${
+              className={`font-pixel text-caption px-3 py-1 rounded-full flex items-center gap-1 transition-all duration-150 ease-in-out shadow-xs font-bold active:scale-95 border ${
                 showLyrics
                   ? 'bg-[var(--color-vibrant)] text-white border-[var(--color-vibrant)]'
                   : 'text-[var(--color-dark)] hover:text-white bg-white hover:bg-[var(--color-vibrant)] border-[var(--color-muted)]'
@@ -118,13 +118,13 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
             <div className="flex items-start justify-between mb-2">
               <div className="flex flex-col overflow-hidden flex-1">
                 <h3
-                  className="font-pixel text-xl font-bold text-[var(--color-dark)] line-clamp-2"
+                  className="font-pixel text-title font-bold text-[var(--color-dark)] line-clamp-2"
                   title={currentTrack.name}
                 >
                   {currentTrack.name}
                 </h3>
                 <p
-                  className="font-pixel text-xs text-[var(--color-dark)] font-medium truncate"
+                  className="font-pixel text-caption text-[var(--color-dark)] font-medium truncate"
                   title={
                     currentTrack.artists
                       ? currentTrack.artists.map((a: { name: string }) => a.name).join(', ')
@@ -139,7 +139,7 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
               <div className="flex gap-2 shrink-0 ml-2">
                 <button
                   onClick={toggleSaveTrack}
-                  className="text-xl transition-transform hover:scale-110 active:scale-95"
+                  className="text-title transition-transform hover:scale-110 active:scale-95"
                   title={isSaved ? 'Remove from Library' : 'Save to Library'}
                   aria-label={isSaved ? 'Remove from Library' : 'Save to Library'}
                 >
@@ -150,7 +150,7 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
                   )}
                 </button>
                 <button
-                  className="text-xl text-[var(--color-dark)] hover:text-[var(--color-dark)] pb-2 font-bold"
+                  className="text-title text-[var(--color-dark)] hover:text-[var(--color-dark)] pb-2 font-bold"
                   aria-label="Track options"
                 >
                   ...
@@ -193,21 +193,21 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
             </div>
             <div className="flex items-start justify-between mb-2">
               <div className="flex flex-col flex-1">
-                <h3 className="font-pixel text-xl font-bold text-[var(--color-dark)]">No track loaded</h3>
-                <p className="font-pixel text-xs text-[var(--color-dark)] font-medium">
+                <h3 className="font-pixel text-title font-bold text-[var(--color-dark)]">No track loaded</h3>
+                <p className="font-pixel text-caption text-[var(--color-dark)] font-medium">
                   Select a playlist to begin playback
                 </p>
               </div>
               <div className="flex gap-2 shrink-0 ml-2">
-                <button className="text-xl text-[var(--color-dark)]">♡</button>
-                <button className="text-xl text-[var(--color-dark)] pb-2 font-bold">...</button>
+                <button className="text-title text-[var(--color-dark)]">♡</button>
+                <button className="text-title text-[var(--color-dark)] pb-2 font-bold">...</button>
               </div>
             </div>
             <div className="w-full flex flex-col gap-1 mt-2">
               <div className="w-full h-2.5 bg-[var(--color-muted)] rounded-full"></div>
               <div className="flex justify-between w-full">
-                <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
-                <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">0:00</span>
+                <span className="font-pixel text-caption text-[var(--color-dark)] font-bold">0:00</span>
+                <span className="font-pixel text-caption text-[var(--color-dark)] font-bold">0:00</span>
               </div>
             </div>
             <div className="flex items-center justify-between mt-4 px-2">

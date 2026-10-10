@@ -10,7 +10,7 @@ interface ArtistCardProps {
 export function ArtistCard({ artist, onClick, onAddMemory, variant = 'default' }: ArtistCardProps) {
   const isCompact = variant === 'compact';
   const imgSize = isCompact ? 'w-9 h-9' : 'w-11 h-11';
-  const titleSize = isCompact ? 'text-xs font-bold font-pixel' : 'text-sm font-bold font-pixel';
+  const titleSize = isCompact ? 'text-caption font-bold font-pixel' : 'text-body font-bold font-pixel';
 
   return (
     <div
@@ -24,7 +24,7 @@ export function ArtistCard({ artist, onClick, onAddMemory, variant = 'default' }
         {artist.images && artist.images[0] ? (
           <img src={artist.images[0].url} alt="" className={`${imgSize} rounded-full shadow-sm object-cover shrink-0 border border-[var(--color-muted)]`} />
         ) : (
-          <div className={`${imgSize} rounded-full bg-[var(--color-muted)] text-[var(--color-dark)] font-bold text-xs flex items-center justify-center shadow-sm shrink-0 border border-[var(--color-muted)]`}>
+          <div className={`${imgSize} rounded-full bg-[var(--color-muted)] text-[var(--color-dark)] font-bold text-caption flex items-center justify-center shadow-sm shrink-0 border border-[var(--color-muted)]`}>
             👤
           </div>
         )}
@@ -34,7 +34,7 @@ export function ArtistCard({ artist, onClick, onAddMemory, variant = 'default' }
               {artist.name}
             </span>
           </div>
-          <div className="font-pixel text-xs text-[var(--color-dark)] font-medium mt-0.5">Artist</div>
+          <div className="font-pixel text-caption text-[var(--color-dark)] font-medium mt-0.5">Artist</div>
         </div>
       </button>
       {onAddMemory && (

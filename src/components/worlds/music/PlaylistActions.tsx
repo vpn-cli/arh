@@ -19,7 +19,7 @@ export function PlaylistActions({ onPlay, onShuffle, disabled, playDisabled, shu
         disabled={isPlayDisabled}
         className={`flex-1 shrink-0 bg-gradient-to-r from-[var(--color-vibrant)] to-[var(--color-vibrant)] text-white py-3 rounded-xl shadow-[0_4px_14px_var(--color-vibrant)] transition-all flex flex-col items-center justify-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] ${isPlayDisabled ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
       >
-        <span className="font-pixel text-sm font-bold tracking-widest">
+        <span className="font-pixel text-body font-bold tracking-widest">
           ✨ PLAY ✨
         </span>
       </button>

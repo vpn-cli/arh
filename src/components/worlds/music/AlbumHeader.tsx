@@ -29,11 +29,11 @@ export function AlbumHeader({ album, onBack }: AlbumHeaderProps) {
         </div>
       )}
       <div className="flex-1 overflow-hidden flex flex-col justify-center">
-        <h2 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] truncate" title={album.name}>{album.name}</h2>
-        <div className="font-pixel text-xs sm:text-sm text-[var(--color-dark)] font-medium mt-1 truncate" title={artistName}>
+        <h2 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] truncate" title={album.name}>{album.name}</h2>
+        <div className="font-pixel text-caption sm:text-body text-[var(--color-dark)] font-medium mt-1 truncate" title={artistName}>
           {artistName}
         </div>
-        <div className="font-pixel text-xs text-[var(--color-dark)] mt-2 font-bold tracking-wide">
+        <div className="font-pixel text-caption text-[var(--color-dark)] mt-2 font-bold tracking-wide">
           {album.album_type && `${album.album_type} • `}
           {releaseYear && `${releaseYear} • `}
           {album.total_tracks || 0} tracks

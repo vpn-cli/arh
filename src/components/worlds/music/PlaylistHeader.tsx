@@ -63,7 +63,7 @@ export function PlaylistHeader({
       <div className="mb-3 shrink-0">
         <button
           onClick={onBack}
-          className="text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] cursor-pointer font-pixel font-bold tracking-wide flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-lg px-2 py-1"
+          className="text-meta text-[var(--color-dark)] hover:text-[var(--color-dark)] cursor-pointer font-pixel font-bold tracking-wide flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-lg px-2 py-1"
           aria-label="Back to playlists"
         >
           <ChevronLeftIcon size={14} /> Back to Playlists
@@ -87,18 +87,18 @@ export function PlaylistHeader({
 
         {/* Beside it: small PLAYLIST label, large title, one meta line, action row */}
         <div className="flex-1 min-w-0 flex flex-col justify-center text-center sm:text-left w-full">
-          <span className="font-pixel text-[11px] font-bold tracking-wider text-[var(--color-dark)] opacity-70 uppercase mb-1">
+          <span className="font-pixel text-caption font-bold tracking-wider text-[var(--color-dark)] opacity-70 uppercase mb-1">
             PLAYLIST
           </span>
           <h1
-            className="font-pixel text-2xl sm:text-3xl font-extrabold text-[var(--color-dark)] truncate mb-1.5"
+            className="font-pixel text-heading sm:text-display font-extrabold text-[var(--color-dark)] truncate mb-1.5"
             title={playlist.name}
           >
             {playlist.name}
           </h1>
 
           {/* Meta line: owner, track count, total duration */}
-          <div className="font-pixel text-xs text-[var(--color-dark)] font-medium opacity-80 flex items-center justify-center sm:justify-start gap-1.5 flex-wrap">
+          <div className="font-pixel text-caption text-[var(--color-dark)] font-medium opacity-80 flex items-center justify-center sm:justify-start gap-1.5 flex-wrap">
             <span>{ownerName}</span>
             <span>•</span>
             <span>
@@ -114,7 +114,7 @@ export function PlaylistHeader({
 
           {playlist.description && (
             <p
-              className="font-pixel text-xs text-[var(--color-dark)]/70 mt-2 line-clamp-2 leading-relaxed"
+              className="font-pixel text-caption text-[var(--color-dark)]/70 mt-2 line-clamp-2 leading-relaxed"
               dangerouslySetInnerHTML={{ __html: playlist.description }}
             />
           )}
@@ -125,7 +125,7 @@ export function PlaylistHeader({
               <button
                 onClick={onPlay}
                 disabled={playDisabled}
-                className="bg-[var(--color-vibrant)] text-white px-6 py-2.5 rounded-full font-pixel text-sm font-bold shadow-md hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+                className="bg-[var(--color-vibrant)] text-white px-6 py-2.5 rounded-full font-pixel text-body font-bold shadow-md hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
               >
                 <PlayIcon size={14} className="fill-current ml-0.5" /> Play
               </button>

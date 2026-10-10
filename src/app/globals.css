@@ -34,6 +34,20 @@
   --font-retro: 'Press Start 2P', monospace;
   --font-terminal: 'VT323', monospace;
   --font-handwriting: 'Caveat', cursive;
+
+  /* Type Tokens — Music World */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.125rem;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.375rem;
+  --text-title: 1.125rem;
+  --text-title--line-height: 1.5rem;
+  --text-heading: 1.5rem;
+  --text-heading--line-height: 1.875rem;
+  --text-display: 2.25rem;
+  --text-display--line-height: 2.5rem;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1294,16 +1308,17 @@ html {
   .mw-nav-icon {
     display: inline-block;
     transition: transform var(--motion-base) var(--ease-out);
+    transform: scale(var(--icon-scale, 1));
   }
 
   @media (hover: hover) {
     .mw-nav-item:hover .mw-nav-icon {
-      transform: scale(1.08);
+      transform: scale(calc(var(--icon-scale, 1) * 1.08)) !important;
     }
   }
 
   .mw-nav-item:focus-visible .mw-nav-icon {
-    transform: scale(1.08);
+    transform: scale(calc(var(--icon-scale, 1) * 1.08)) !important;
   }
 
   /* 4. Buttons */
@@ -1365,14 +1380,17 @@ html {
     .mw-card-play,
     .mw-card:hover .mw-card-play,
     .mw-card:focus-visible .mw-card-play,
-    .mw-nav-icon,
-    .mw-nav-item:hover .mw-nav-icon,
-    .mw-nav-item:focus-visible .mw-nav-icon,
     .mw-btn,
     .mw-btn:hover,
     .mw-btn:active,
     .mw-btn:focus-visible {
       transform: none !important;
+    }
+
+    .mw-nav-icon,
+    .mw-nav-item:hover .mw-nav-icon,
+    .mw-nav-item:focus-visible .mw-nav-icon {
+      transform: scale(var(--icon-scale, 1)) !important;
     }
 
     .mw-view-enter {

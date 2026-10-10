@@ -136,7 +136,7 @@ export function LyricLines({
               }}
             >
               <div
-                className={`absolute right-[100%] mr-4 top-1/2 -translate-y-1/2 text-[var(--color-vibrant)] text-2xl transition-opacity duration-300 ${
+                className={`absolute right-[100%] mr-4 top-1/2 -translate-y-1/2 text-[var(--color-vibrant)] text-title transition-opacity duration-300 ${
                   isActive ? 'opacity-100' : 'opacity-0'
                 }`}
               >

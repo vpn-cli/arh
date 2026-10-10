@@ -78,13 +78,13 @@ export const HomeTab = React.memo(function HomeTab({
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-light)]/95 via-[var(--color-light)]/85 to-[var(--color-light)]/40" />
         <div className="relative z-10 flex min-h-[220px] sm:min-h-[260px] items-center px-6 sm:px-8 py-6 sm:py-8">
           <div className="max-w-lg">
-            <p className="font-pixel text-xs sm:text-sm font-bold tracking-widest text-[var(--color-dark)] uppercase">
+            <p className="font-pixel text-caption sm:text-body font-bold tracking-widest text-[var(--color-dark)] uppercase">
               {currentTrack ? 'CURRENTLY PLAYING' : 'GOOD EVENING'}
             </p>
-            <h2 className="mt-2 font-pixel text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight text-[var(--color-dark)] drop-shadow-[0_2px_0_#FFFFFF]">
+            <h2 className="mt-2 font-pixel text-display sm:text-display md:text-display font-extrabold leading-tight text-[var(--color-dark)] drop-shadow-[0_2px_0_#FFFFFF]">
               {currentTrack ? currentTrack.name : "Let's listen together ♡"}
             </h2>
-            <p className="mt-2 sm:mt-3 font-pixel text-sm sm:text-base md:text-lg font-medium text-[var(--color-dark)] opacity-90">
+            <p className="mt-2 sm:mt-3 font-pixel text-body sm:text-body md:text-title font-medium text-[var(--color-dark)] opacity-90">
               {currentTrack ? currentTrack.artists?.map((a: any) => a.name).join(', ') : "What are we listening to today?"}
             </p>
             <button
@@ -100,7 +100,7 @@ export const HomeTab = React.memo(function HomeTab({
                   }
                 }
               }}
-              className="mt-4 sm:mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-5 sm:px-6 py-2 sm:py-2.5 font-pixel text-sm sm:text-base font-bold text-white shadow-md mw-btn group"
+              className="mt-4 sm:mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-5 sm:px-6 py-2 sm:py-2.5 font-pixel text-body sm:text-body font-bold text-white shadow-md mw-btn group"
             >
               <span>{currentTrack ? (isPaused ? <PlayIcon size={16} /> : <PauseIcon size={16} />) : <PlayIcon size={16} />}</span>
               {currentTrack ? (isPaused ? 'Resume' : 'Playing') : 'Play Mix'}
@@ -111,10 +111,10 @@ export const HomeTab = React.memo(function HomeTab({
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
+          <h3 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] flex items-center gap-2">
             <span className="text-[var(--color-vibrant)]">♥</span> Continue Listening
           </h3>
-          <button onClick={() => onNavigate('playlists')} className="mw-btn font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
+          <button onClick={() => onNavigate('playlists')} className="mw-btn font-pixel text-meta sm:text-body font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
             See all <ChevronRightIcon size={14} />
           </button>
         </div>
@@ -142,7 +142,7 @@ export const HomeTab = React.memo(function HomeTab({
                   </div>
                 </div>
               ) : (
-                <div className="relative aspect-[4/3] w-full bg-[var(--color-light)] flex items-center justify-center font-bold text-2xl text-[var(--color-muted)]">
+                <div className="relative aspect-[4/3] w-full bg-[var(--color-light)] flex items-center justify-center font-bold text-heading text-[var(--color-muted)]">
                   <MusicNoteIcon size={28} className="text-[var(--color-muted)]" />
                   <div className="absolute bottom-2 right-2 mw-card-play pointer-events-none">
                     <PlayIcon size={18} className="text-white ml-0.5" />
@@ -150,8 +150,8 @@ export const HomeTab = React.memo(function HomeTab({
                 </div>
               )}
               <div className="p-3">
-                <div className="truncate font-pixel text-base font-bold text-[var(--color-dark)] mw-card-title">{playlist.name}</div>
-                <div className="font-pixel text-xs text-[var(--color-dark)] font-medium opacity-80">{(playlist.items?.total ?? playlist.tracks?.total ?? playlist.total_tracks ?? (Array.isArray(playlist.items) ? playlist.items.length : (Array.isArray(playlist.tracks?.items) ? playlist.tracks.items.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : 0))))} songs</div>
+                <div className="truncate font-pixel text-body font-bold text-[var(--color-dark)] mw-card-title">{playlist.name}</div>
+                <div className="font-pixel text-caption text-[var(--color-dark)] font-medium opacity-80">{(playlist.items?.total ?? playlist.tracks?.total ?? playlist.total_tracks ?? (Array.isArray(playlist.items) ? playlist.items.length : (Array.isArray(playlist.tracks?.items) ? playlist.tracks.items.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : 0))))} songs</div>
               </div>
             </button>
           ))}
@@ -160,16 +160,16 @@ export const HomeTab = React.memo(function HomeTab({
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
+          <h3 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] flex items-center gap-2">
             <span className="text-[var(--color-vibrant)]">◷</span> Recently Played
           </h3>
-          <button onClick={() => onNavigate('recent')} className="mw-btn font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
+          <button onClick={() => onNavigate('recent')} className="mw-btn font-pixel text-meta sm:text-body font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
             See all <ChevronRightIcon size={14} />
           </button>
         </div>
         {recentHomeTracks.length === 0 && likedHomeTracks.length === 0 ? (
           <div className="p-8 text-center rounded-2xl border-2 border-dashed border-[var(--color-muted)] bg-[var(--color-light)]/50">
-            <p className="font-pixel text-sm text-[var(--color-dark)] font-bold opacity-70">Nothing here yet! Start playing some tunes ~</p>
+            <p className="font-pixel text-body text-[var(--color-dark)] font-bold opacity-70">Nothing here yet! Start playing some tunes ~</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -197,10 +197,10 @@ export const HomeTab = React.memo(function HomeTab({
                   </div>
                 </div>
                 <div className="flex-1 min-w-0 pr-1">
-                  <div className="truncate font-pixel text-[15px] font-bold text-[var(--color-dark)] leading-snug">
+                  <div className="truncate font-pixel text-body font-bold text-[var(--color-dark)] leading-snug">
                     {track.name}
                   </div>
-                  <div className="truncate font-pixel text-[13px] text-[var(--color-dark)] font-medium opacity-80 mt-0.5">
+                  <div className="truncate font-pixel text-meta text-[var(--color-dark)] font-medium opacity-80 mt-0.5">
                     {track.artists?.map((a: any) => a.name).join(', ')}
                   </div>
                 </div>

@@ -9,7 +9,7 @@ interface AlbumCardProps {
 export function AlbumCard({ album, onClick, variant = 'default' }: AlbumCardProps) {
   const isCompact = variant === 'compact';
   const imgSize = isCompact ? 'w-9 h-9' : 'w-11 h-11';
-  const titleSize = isCompact ? 'text-xs font-bold font-pixel' : 'text-sm font-bold font-pixel';
+  const titleSize = isCompact ? 'text-caption font-bold font-pixel' : 'text-body font-bold font-pixel';
 
   return (
     <div
@@ -23,7 +23,7 @@ export function AlbumCard({ album, onClick, variant = 'default' }: AlbumCardProp
         {album.images && album.images[0] ? (
           <img src={album.images[0].url} alt="" className={`${imgSize} rounded-lg shadow-sm object-cover transition-transform duration-200 group-hover:scale-105 group-hover:shadow-md shrink-0`} />
         ) : (
-          <div className={`${imgSize} rounded-lg bg-[var(--color-muted)] text-[var(--color-dark)] font-bold text-xs flex items-center justify-center shadow-sm shrink-0`}>
+          <div className={`${imgSize} rounded-lg bg-[var(--color-muted)] text-[var(--color-dark)] font-bold text-caption flex items-center justify-center shadow-sm shrink-0`}>
             ♪
           </div>
         )}
@@ -33,7 +33,7 @@ export function AlbumCard({ album, onClick, variant = 'default' }: AlbumCardProp
               {album.name}
             </span>
           </div>
-          <div className="font-pixel text-xs text-[var(--color-dark)] font-medium mt-0.5 truncate" title={album.artists?.map((a:any)=>a.name).join(', ')}>
+          <div className="font-pixel text-caption text-[var(--color-dark)] font-medium mt-0.5 truncate" title={album.artists?.map((a:any)=>a.name).join(', ')}>
             Album • {album.artists?.map((a:any)=>a.name).join(', ')}
           </div>
         </div>

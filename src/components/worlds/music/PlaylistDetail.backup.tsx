@@ -39,10 +39,10 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
   if (isPlaylistError && (playlistError as any)?.status === 429) {
     return (
       <div className="flex flex-col h-full items-center justify-center">
-        <div className="text-[var(--color-dark)] opacity-80 font-pixel text-xs text-center px-4">
+        <div className="text-[var(--color-dark)] opacity-80 font-pixel text-caption text-center px-4">
           RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((playlistError as any)?.retryAfter ?? 60)} SECONDS.
         </div>
-        <button onClick={onBack} className="mt-4 font-pixel text-[var(--color-muted)] text-[10px]">GO BACK</button>
+        <button onClick={onBack} className="mt-4 font-pixel text-[var(--color-muted)] text-meta">GO BACK</button>
       </div>
     );
   }
@@ -50,7 +50,7 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
   if (isLoadingPlaylist) {
     return (
       <div className="flex flex-col h-full items-center justify-center">
-        <div className="text-[var(--color-muted)] font-pixel text-xs animate-pulse">LOADING PLAYLIST...</div>
+        <div className="text-[var(--color-muted)] font-pixel text-caption animate-pulse">LOADING PLAYLIST...</div>
       </div>
     );
   }
@@ -58,8 +58,8 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
   if (!playlist) {
     return (
       <div className="flex flex-col h-full items-center justify-center">
-        <div className="text-[var(--color-muted)] font-pixel text-xs">PLAYLIST NOT FOUND</div>
-        <button onClick={onBack} className="mt-4 font-pixel text-[var(--color-muted)] text-[10px]">GO BACK</button>
+        <div className="text-[var(--color-muted)] font-pixel text-caption">PLAYLIST NOT FOUND</div>
+        <button onClick={onBack} className="mt-4 font-pixel text-[var(--color-muted)] text-meta">GO BACK</button>
       </div>
     );
   }
@@ -85,11 +85,11 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
         disabled={isLoadingItems || !itemsData?.items?.length} 
       />
       {isItemsError && (itemsError as any)?.status === 429 ? (
-        <div className="flex-1 flex items-center justify-center text-[var(--color-dark)] opacity-80 font-pixel text-xs text-center px-4">
+        <div className="flex-1 flex items-center justify-center text-[var(--color-dark)] opacity-80 font-pixel text-caption text-center px-4">
           RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((itemsError as any)?.retryAfter ?? 60)} SECONDS.
         </div>
       ) : isItemsError && (itemsError as any)?.status === 403 ? (
-        <div className="flex-1 flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2">
+        <div className="flex-1 flex flex-col items-center justify-center font-pixel text-caption text-center px-4 gap-2">
           <span className="text-[var(--color-dark)] opacity-80">TRACKS UNAVAILABLE</span>
           <span className="text-[var(--color-muted)]/70 leading-relaxed uppercase">You don't have access to this playlist's items.</span>
         </div>

@@ -26,13 +26,13 @@ export function ArtistHeader({ artist, onBack }: ArtistHeaderProps) {
         </div>
       )}
       <div className="flex-1 overflow-hidden flex flex-col justify-center">
-        <h2 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] truncate" title={artist.name}>{artist.name}</h2>
+        <h2 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] truncate" title={artist.name}>{artist.name}</h2>
         {artist.followers?.total ? (
-          <div className="font-pixel text-xs sm:text-sm text-[var(--color-dark)] font-medium mt-1 truncate">
+          <div className="font-pixel text-caption sm:text-body text-[var(--color-dark)] font-medium mt-1 truncate">
             {artist.followers.total.toLocaleString()} followers
           </div>
         ) : null}
-        <div className="font-pixel text-xs text-[var(--color-dark)] mt-2 font-bold tracking-wide">
+        <div className="font-pixel text-caption text-[var(--color-dark)] mt-2 font-bold tracking-wide">
           {artist.genres?.slice(0, 3).join(', ')}
         </div>
       </div>

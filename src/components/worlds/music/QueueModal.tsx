@@ -141,17 +141,17 @@ export function QueueModal({
         {/* Header */}
         <div className="px-6 py-4 border-b-2 border-[var(--color-muted)] flex items-center justify-between bg-white/70 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[var(--color-light)] border border-[var(--color-muted)] flex items-center justify-center text-xl shadow-xs transition-colors duration-500">
+            <div className="w-10 h-10 rounded-2xl bg-[var(--color-light)] border border-[var(--color-muted)] flex items-center justify-center text-title shadow-xs transition-colors duration-500">
               🎀
             </div>
             <div>
-              <h2 className="font-pixel text-xl text-[var(--color-dark)] font-bold tracking-wide flex items-center gap-2">
+              <h2 className="font-pixel text-title text-[var(--color-dark)] font-bold tracking-wide flex items-center gap-2">
                 Playback Queue & History Tuner
-                <span className="text-xs bg-[var(--color-vibrant)] text-white px-2.5 py-0.5 rounded-full font-normal transition-colors duration-500">
+                <span className="text-caption bg-[var(--color-vibrant)] text-white px-2.5 py-0.5 rounded-full font-normal transition-colors duration-500">
                   {activeTab === 'queue' ? `${effectiveQueue.length} Tracks` : `${recentTracks.length} Recent`}
                 </span>
               </h2>
-              <p className="font-pixel text-xs text-[var(--color-dark)]">
+              <p className="font-pixel text-caption text-[var(--color-dark)]">
                 Tune your queue order, drag to arrange, or replay songs from recent sessions
               </p>
             </div>
@@ -172,23 +172,23 @@ export function QueueModal({
           <div className="flex items-center bg-[var(--color-light)] p-1 rounded-full border border-[var(--color-light)]">
             <button
               onClick={() => setActiveTab('queue')}
-              className={`font-pixel text-xs px-3.5 py-1 rounded-full transition-all flex items-center gap-1.5 font-bold ${
+              className={`font-pixel text-caption px-3.5 py-1 rounded-full transition-all flex items-center gap-1.5 font-bold ${
                 activeTab === 'queue'
                   ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
                   : 'text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:bg-[var(--color-muted)]/40'
               }`}
             >
-              <span className="text-[11px]">♥</span> Up Next ({effectiveQueue.length})
+              <span className="text-meta">♥</span> Up Next ({effectiveQueue.length})
             </button>
             <button
               onClick={() => setActiveTab('recent')}
-              className={`font-pixel text-xs px-3.5 py-1 rounded-full transition-all flex items-center gap-1.5 font-bold ${
+              className={`font-pixel text-caption px-3.5 py-1 rounded-full transition-all flex items-center gap-1.5 font-bold ${
                 activeTab === 'recent'
                   ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
                   : 'text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:bg-[var(--color-muted)]/40'
               }`}
             >
-              <span className="text-[11px]">🕒</span> Recently Played ({recentTracks.length})
+              <span className="text-caption">🕒</span> Recently Played ({recentTracks.length})
             </button>
           </div>
 
@@ -200,7 +200,7 @@ export function QueueModal({
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 placeholder="Search tracks or artists..."
-                className="bg-white border border-[var(--color-muted)] focus:border-[var(--color-vibrant)] rounded-full px-3 py-1 pl-7 text-[11px] text-[var(--color-dark)] placeholder-[var(--color-dark)] opacity-80 outline-none font-pixel w-52 transition-all shadow-2xs"
+                className="bg-white border border-[var(--color-muted)] focus:border-[var(--color-vibrant)] rounded-full px-3 py-1 pl-7 text-meta text-[var(--color-dark)] placeholder-[var(--color-dark)] opacity-80 outline-none font-pixel w-52 transition-all shadow-2xs"
               />
               <SearchIcon size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-dark)] opacity-70 pointer-events-none" />
               {searchFilter && (
@@ -217,14 +217,14 @@ export function QueueModal({
               <>
                 <button
                   onClick={handleShuffleQueue}
-                  className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-light)] text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel text-xs px-3 py-1 rounded-full transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out flex items-center gap-1.5 font-bold shadow-2xs active:scale-95"
+                  className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-light)] text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel text-caption px-3 py-1 rounded-full transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out flex items-center gap-1.5 font-bold shadow-2xs active:scale-95"
                   title="Randomize upcoming tracks in queue"
                 >
                   <ShuffleIcon size={12} /> Shuffle Queue
                 </button>
                 <button
                   onClick={() => clearQueue()}
-                  className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-light)] text-[var(--color-dark)] hover:text-[var(--color-vibrant)] font-pixel text-xs px-3 py-1 rounded-full transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out font-bold shadow-2xs active:scale-95"
+                  className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-light)] text-[var(--color-dark)] hover:text-[var(--color-vibrant)] font-pixel text-caption px-3 py-1 rounded-full transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out font-bold shadow-2xs active:scale-95"
                   title="Remove all tracks from queue"
                 >
                   Clear All
@@ -255,7 +255,7 @@ export function QueueModal({
                     )}
                     <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-pixel text-xs font-bold uppercase tracking-wider text-[var(--color-dark)] bg-white border border-[var(--color-light)] px-2.5 py-0.5 rounded-full shadow-2xs">
+                        <span className="font-pixel text-caption font-bold uppercase tracking-wider text-[var(--color-dark)] bg-white border border-[var(--color-light)] px-2.5 py-0.5 rounded-full shadow-2xs">
                           Now Playing
                         </span>
                         <span className="flex gap-0.5 items-end h-3">
@@ -264,15 +264,15 @@ export function QueueModal({
                           <span className="w-1 h-3.5 bg-[var(--color-dark)] rounded-full animate-pulse delay-150" />
                         </span>
                       </div>
-                      <span className="font-pixel text-base font-bold text-[var(--color-dark)] truncate tracking-wide">
+                      <span className="font-pixel text-body font-bold text-[var(--color-dark)] truncate tracking-wide">
                         {currentTrack.name}
                       </span>
-                      <span className="font-pixel text-xs text-[var(--color-dark)] truncate font-medium">
+                      <span className="font-pixel text-caption text-[var(--color-dark)] truncate font-medium">
                         {currentTrack.artists?.map((a: any) => a.name).join(', ')}
                       </span>
                     </div>
                   </div>
-                  <span className="font-pixel text-sm text-[var(--color-dark)] font-bold pr-3 shrink-0">
+                  <span className="font-pixel text-body text-[var(--color-dark)] font-bold pr-3 shrink-0">
                     {formatTime(currentTrack.duration_ms)}
                   </span>
                 </div>
@@ -281,31 +281,31 @@ export function QueueModal({
               {/* Up Next List */}
               {isPlayerQueueLoading && effectiveQueue.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-12 h-12 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-xl mb-2 animate-bounce">
+                  <div className="w-12 h-12 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-title mb-2 animate-bounce">
                     🎵
                   </div>
-                  <h3 className="font-pixel text-sm font-bold text-[var(--color-dark)]">Loading Upcoming Tracks...</h3>
-                  <p className="font-pixel text-xs text-[var(--color-dark)] max-w-sm mt-1">Fetching live queue from Spotify</p>
+                  <h3 className="font-pixel text-body font-bold text-[var(--color-dark)]">Loading Upcoming Tracks...</h3>
+                  <p className="font-pixel text-meta text-[var(--color-dark)] max-w-sm mt-1">Fetching live queue from Spotify</p>
                 </div>
               ) : effectiveQueue.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-16 h-16 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-2xl mb-2 shadow-inner">
+                  <div className="w-16 h-16 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-heading mb-2 shadow-inner">
                     🌸
                   </div>
-                  <h3 className="font-pixel text-base font-bold text-[var(--color-dark)]">Queue is Empty</h3>
-                  <p className="font-pixel text-xs text-[var(--color-dark)] max-w-sm mt-1">
+                  <h3 className="font-pixel text-body font-bold text-[var(--color-dark)]">Queue is Empty</h3>
+                  <p className="font-pixel text-caption text-[var(--color-dark)] max-w-sm mt-1">
                     Play a playlist, album, mix, or click the options menu on any track to add it to your queue!
                   </p>
                 </div>
               ) : filteredQueue.length === 0 ? (
-                <div className="py-12 text-center font-pixel text-sm text-[var(--color-dark)]">
+                <div className="py-12 text-center font-pixel text-body text-[var(--color-dark)]">
                   No songs match &quot;{searchFilter}&quot;
                 </div>
               ) : (
                 <div className="space-y-1">
-                  <div className="text-xs font-pixel font-bold text-[var(--color-dark)] tracking-wider uppercase px-2 flex justify-between items-center mb-1.5">
+                  <div className="text-caption font-pixel font-bold text-[var(--color-dark)] tracking-wider uppercase px-2 flex justify-between items-center mb-1.5">
                     <span>Up Next ({filteredQueue.length} tracks)</span>
-                    <span className="text-xs text-[var(--color-dark)] font-medium lowercase">Drag items or use arrows to reorder</span>
+                    <span className="text-caption text-[var(--color-dark)] font-medium lowercase">Drag items or use arrows to reorder</span>
                   </div>
 
                   {filteredQueue.map((item: any, idx: number) => {
@@ -351,13 +351,13 @@ export function QueueModal({
                         {/* Drag Handle & Reorder Controls */}
                         <div className="flex items-center gap-1 shrink-0 text-[var(--color-dark)] opacity-70">
                           <span
-                            className="cursor-grab active:cursor-grabbing hover:opacity-100 p-0.5 font-bold text-sm select-none transition-opacity"
+                            className="cursor-grab active:cursor-grabbing hover:opacity-100 p-0.5 font-bold text-body select-none transition-opacity"
                             title="Drag to reorder"
                           >
                             ⋮⋮
                           </span>
                           <span
-                            className={`font-pixel text-xs font-bold w-5 text-center ${
+                            className={`font-pixel text-caption font-bold w-5 text-center ${
                               isCurrentlyActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'
                             }`}
                           >
@@ -373,7 +373,7 @@ export function QueueModal({
                             className="w-11 h-11 rounded-xl object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]"
                           />
                         ) : (
-                          <div className="w-11 h-11 rounded-xl bg-[var(--color-muted)] shrink-0 flex items-center justify-center text-[var(--color-vibrant)] text-sm transition-colors duration-500">
+                          <div className="w-11 h-11 rounded-xl bg-[var(--color-muted)] shrink-0 flex items-center justify-center text-[var(--color-vibrant)] text-body transition-colors duration-500">
                             <MusicNoteIcon size={18} />
                           </div>
                         )}
@@ -381,19 +381,19 @@ export function QueueModal({
                         {/* Title & Artist */}
                         <div className="flex flex-col flex-1 min-w-0">
                           <span
-                            className={`font-pixel text-sm font-bold truncate ${
+                            className={`font-pixel text-body font-bold truncate ${
                               isCurrentlyActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'
                             }`}
                           >
                             {item.track?.name || 'Unknown Track'}
                           </span>
-                          <span className="font-pixel text-xs text-[var(--color-dark)] truncate mt-0.5">
+                          <span className="font-pixel text-caption text-[var(--color-dark)] truncate mt-0.5">
                             {item.track?.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist'}
                           </span>
                         </div>
 
                         {/* Duration */}
-                        <span className="font-pixel text-xs text-[var(--color-dark)] opacity-70 font-bold shrink-0">
+                        <span className="font-pixel text-caption text-[var(--color-dark)] opacity-70 font-bold shrink-0">
                           {formatTime(item.track?.duration_ms)}
                         </span>
 
@@ -402,7 +402,7 @@ export function QueueModal({
                           <button
                             onClick={() => handleMoveUp(originalIndex)}
                             disabled={originalIndex === 0}
-                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-xs p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
+                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-meta p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
                             title="Move Up"
                             aria-label={`Move ${item.track?.name} up`}
                           >
@@ -411,7 +411,7 @@ export function QueueModal({
                           <button
                             onClick={() => handleMoveDown(originalIndex)}
                             disabled={originalIndex === queue.length - 1}
-                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-xs p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
+                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-meta p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
                             title="Move Down"
                             aria-label={`Move ${item.track?.name} down`}
                           >
@@ -430,7 +430,7 @@ export function QueueModal({
                                 onPlayTrack(item.track.uri);
                               }
                             }}
-                            className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-xs shadow-2xs"
+                            className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-meta shadow-2xs"
                             title="Play this track"
                           >
                             <PlayIcon size={13} />
@@ -438,7 +438,7 @@ export function QueueModal({
                           {onAddToPlaylist && item.track?.uri && (
                             <button
                               onClick={() => onAddToPlaylist(item.track.uri)}
-                              className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-sm font-bold shadow-2xs"
+                              className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-body font-bold shadow-2xs"
                               title="Add to Playlist"
                             >
                               <PlusIcon size={14} />
@@ -449,7 +449,7 @@ export function QueueModal({
                               ensureQueueInitialized();
                               removeFromQueue(originalIndex);
                             }}
-                            className="mw-btn w-8 h-8 rounded-full hover:bg-rose-100 text-[var(--color-dark)] hover:text-rose-600 flex items-center justify-center text-xs"
+                            className="mw-btn w-8 h-8 rounded-full hover:bg-rose-100 text-[var(--color-dark)] hover:text-rose-600 flex items-center justify-center text-meta"
                             title="Remove from Queue"
                           >
                             <CloseIcon size={13} />
@@ -464,24 +464,24 @@ export function QueueModal({
           ) : (
             /* Recently Played View */
             <div className="space-y-1">
-              <div className="text-xs font-pixel font-bold text-[var(--color-dark)] tracking-wider uppercase px-2 flex justify-between items-center mb-1.5">
+              <div className="text-caption font-pixel font-bold text-[var(--color-dark)] tracking-wider uppercase px-2 flex justify-between items-center mb-1.5">
                 <span>Recent Sessions ({filteredRecent.length} tracks)</span>
-                <span className="text-xs text-[var(--color-dark)] font-medium lowercase">History from your Spotify listening</span>
+                <span className="text-caption text-[var(--color-dark)] font-medium lowercase">History from your Spotify listening</span>
               </div>
 
               {isRecentLoading ? (
-                <div className="py-20 text-center font-pixel text-sm text-[var(--color-dark)] animate-pulse">
+                <div className="py-20 text-center font-pixel text-body text-[var(--color-dark)] animate-pulse">
                   Loading recently played songs...
                 </div>
               ) : filteredRecent.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-16 h-16 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-2xl mb-2 shadow-inner">
+                  <div className="w-16 h-16 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-heading mb-2 shadow-inner">
                     🕰️
                   </div>
-                  <h3 className="font-pixel text-base font-bold text-[var(--color-dark)]">
+                  <h3 className="font-pixel text-body font-bold text-[var(--color-dark)]">
                     {searchFilter ? 'No Matches Found' : 'No History Yet'}
                   </h3>
-                  <p className="font-pixel text-xs text-[var(--color-dark)] max-w-sm mt-1">
+                  <p className="font-pixel text-caption text-[var(--color-dark)] max-w-sm mt-1">
                     {searchFilter ? `No history matches "${searchFilter}"` : "Once you start listening, your recent tracks will appear here so you can easily replay them ~"}
                   </p>
                 </div>
@@ -495,7 +495,7 @@ export function QueueModal({
                       key={`${track.id}-${item.played_at || idx}`}
                       className="group flex items-center gap-3 px-3.5 py-2.5 rounded-2xl mw-row bg-white border border-[var(--color-muted)] hover:bg-[var(--color-bg)] shadow-2xs"
                     >
-                      <span className="font-pixel text-xs font-bold text-[var(--color-dark)] w-5 text-center shrink-0">
+                      <span className="font-pixel text-caption font-bold text-[var(--color-dark)] w-5 text-center shrink-0">
                         {idx + 1}
                       </span>
 
@@ -506,42 +506,42 @@ export function QueueModal({
                           className="w-11 h-11 rounded-xl object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]"
                         />
                       ) : (
-                        <div className="w-11 h-11 rounded-xl bg-[var(--color-muted)] shrink-0 flex items-center justify-center text-[var(--color-dark)] text-sm font-bold">
+                        <div className="w-11 h-11 rounded-xl bg-[var(--color-muted)] shrink-0 flex items-center justify-center text-[var(--color-dark)] text-body font-bold">
                           <MusicNoteIcon size={18} />
                         </div>
                       )}
 
                       <div className="flex flex-col flex-1 min-w-0">
-                        <span className="font-pixel text-sm font-bold text-[var(--color-dark)] truncate">
+                        <span className="font-pixel text-body font-bold text-[var(--color-dark)] truncate">
                           {track.name}
                         </span>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="font-pixel text-xs text-[var(--color-dark)] truncate">
+                          <span className="font-pixel text-caption text-[var(--color-dark)] truncate">
                             {track.artists?.map((a: any) => a.name).join(', ')}
                           </span>
                           {item.played_at && (
-                            <span className="font-pixel text-xs text-[var(--color-dark)] bg-[var(--color-light)] px-2 py-0.5 rounded-full shrink-0 font-medium">
+                            <span className="font-pixel text-caption text-[var(--color-dark)] bg-[var(--color-light)] px-2 py-0.5 rounded-full shrink-0 font-medium">
                               {formatRelativeTime(item.played_at)}
                             </span>
                           )}
                         </div>
                       </div>
 
-                      <span className="font-pixel text-xs text-[var(--color-dark)] opacity-70 font-bold shrink-0">
+                      <span className="font-pixel text-caption text-[var(--color-dark)] opacity-70 font-bold shrink-0">
                         {formatTime(track.duration_ms)}
                       </span>
 
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           onClick={() => onPlayTrack(track.uri, item.context?.uri)}
-                          className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-xs shadow-2xs"
+                          className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-meta shadow-2xs"
                           title="Play Track"
                         >
                           <PlayIcon size={13} />
                         </button>
                         <button
                           onClick={() => addToQueue(track, item.context?.uri)}
-                          className="mw-btn px-3 py-1 rounded-full bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-xs font-bold shadow-2xs flex items-center gap-1"
+                          className="mw-btn px-3 py-1 rounded-full bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-meta font-bold shadow-2xs flex items-center gap-1"
                           title="Add to Up Next Queue"
                         >
                           <PlusIcon size={11} /> Queue
@@ -549,7 +549,7 @@ export function QueueModal({
                         {onAddToPlaylist && (
                           <button
                             onClick={() => onAddToPlaylist(track.uri)}
-                            className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-sm font-bold shadow-2xs"
+                            className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-body font-bold shadow-2xs"
                             title="Add to Playlist"
                           >
                             <PlusIcon size={14} />
@@ -565,7 +565,7 @@ export function QueueModal({
         </div>
 
         {/* Footer info bar */}
-        <div className="px-6 py-3 border-t border-[var(--color-muted)] bg-white/70 flex items-center justify-between font-pixel text-xs text-[var(--color-dark)] shrink-0">
+        <div className="px-6 py-3 border-t border-[var(--color-muted)] bg-white/70 flex items-center justify-between font-pixel text-caption text-[var(--color-dark)] shrink-0">
           <div className="flex items-center gap-2">
             <span>✨ Kawaii Hint:</span>
             <span className="text-[var(--color-dark)]">
@@ -576,7 +576,7 @@ export function QueueModal({
           </div>
           <button
             onClick={onClose}
-            className="font-pixel text-xs font-bold text-[var(--color-vibrant)] hover:underline transition-colors inline-flex items-center gap-1"
+            className="font-pixel text-caption font-bold text-[var(--color-vibrant)] hover:underline transition-colors inline-flex items-center gap-1"
           >
             Back to Player <ChevronRightIcon size={12} />
           </button>

@@ -283,10 +283,10 @@ export const ProgressBar = memo(
           </div>
         </div>
         <div className="flex justify-between w-full mt-1">
-          <span ref={positionLabelRef} className="font-pixel text-xs text-[var(--color-dark)] font-bold">
+          <span ref={positionLabelRef} className="font-pixel text-caption text-[var(--color-dark)] font-bold">
             0:00
           </span>
-          <span className="font-pixel text-xs text-[var(--color-dark)] font-bold">
+          <span className="font-pixel text-caption text-[var(--color-dark)] font-bold">
             {formatTime(duration || durationRef.current || 0)}
           </span>
         </div>

@@ -16,4 +16,6 @@ PERFORMANCE RULES
   on elements that are off screen.
 - Never claim a performance result that was not measured on a production
   build.
+- No arbitrary text-[Npx] sizes in Music World. Use defined type tokens
+  (caption, meta, body, title, heading, display).
 <!-- END:nextjs-agent-rules -->

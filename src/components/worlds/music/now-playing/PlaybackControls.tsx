@@ -62,7 +62,7 @@ export const PlaybackControls = memo(function PlaybackControls({
         title={!isPremium ? 'Open in Spotify' : isPaused ? 'Play' : 'Pause'}
       >
         {!isPremium ? (
-          <span className="font-pixel text-[10px] leading-tight text-center px-1 font-bold">
+          <span className="font-pixel text-caption leading-tight text-center px-1 font-bold">
             OPEN IN<br />SPOTIFY
           </span>
         ) : isPaused ? (

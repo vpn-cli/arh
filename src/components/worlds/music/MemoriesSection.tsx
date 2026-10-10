@@ -97,9 +97,9 @@ export function MemoriesSection({
   if (memories.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full opacity-80 min-h-[200px]">
-        <div className="text-4xl mb-4">📓</div>
-        <div className="text-[var(--color-dark)] font-pixel text-xs font-bold text-center">NO MEMORIES YET</div>
-        <div className="text-[var(--color-dark)] font-pixel text-xs mt-2 text-center max-w-[240px] font-medium">
+        <div className="text-display mb-4">📓</div>
+        <div className="text-[var(--color-dark)] font-pixel text-caption font-bold text-center">NO MEMORIES YET</div>
+        <div className="text-[var(--color-dark)] font-pixel text-caption mt-2 text-center max-w-[240px] font-medium">
           Save a song, artist, or playlist here when it means something special to you.
         </div>
       </div>
@@ -115,12 +115,12 @@ export function MemoriesSection({
   return (
     <div className="flex flex-col h-full overflow-y-auto min-h-0 pb-10">
       <div className="flex items-center justify-between mb-4 shrink-0">
-        <span className="font-pixel text-xs font-bold uppercase tracking-wider text-[var(--color-dark)]">MY MEMORIES</span>
-        <span className="text-xs text-[var(--color-dark)] font-pixel font-bold">{memories.length} SAVED</span>
+        <span className="font-pixel text-caption font-bold uppercase tracking-wider text-[var(--color-dark)]">MY MEMORIES</span>
+        <span className="text-caption text-[var(--color-dark)] font-pixel font-bold">{memories.length} SAVED</span>
       </div>
 
       {error && (
-        <div className="bg-[var(--color-light)] border border-[var(--color-vibrant)] text-[var(--color-vibrant)] p-2.5 rounded-xl font-pixel text-xs flex items-center justify-between font-bold mb-3 shrink-0 shadow-2xs">
+        <div className="bg-[var(--color-light)] border border-[var(--color-vibrant)] text-[var(--color-vibrant)] p-2.5 rounded-xl font-pixel text-caption flex items-center justify-between font-bold mb-3 shrink-0 shadow-2xs">
           <span className="flex items-center gap-1.5">
             <WarningIcon size={14} className="shrink-0 text-[var(--color-vibrant)]" />
             {error}
@@ -132,7 +132,7 @@ export function MemoriesSection({
       )}
 
       {isLoading && (
-        <div className="text-center font-pixel text-xs text-[var(--color-dark)] font-medium animate-pulse my-4">
+        <div className="text-center font-pixel text-caption text-[var(--color-dark)] font-medium animate-pulse my-4">
           RECALLING MEMORIES...
         </div>
       )}
@@ -149,25 +149,25 @@ export function MemoriesSection({
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex gap-2 items-center flex-wrap">
                     {memory.category && (
-                      <span className="bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-xs px-2.5 py-0.5 rounded-full font-bold uppercase">
+                      <span className="bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-caption px-2.5 py-0.5 rounded-full font-bold uppercase">
                         {memory.category}
                       </span>
                     )}
                     {memory.dateLabel && (
-                      <span className="text-[var(--color-dark)] font-pixel text-xs font-semibold uppercase">
+                      <span className="text-[var(--color-dark)] font-pixel text-caption font-semibold uppercase">
                         {memory.dateLabel}
                       </span>
                     )}
                   </div>
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => onEditMemory(entity || null, memory.entityType, memory.id)} className="text-xs font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel px-2 py-0.5 rounded hover:bg-white/80 transition-colors">EDIT</button>
-                    <button onClick={() => deleteMemory(memory.id)} className="text-xs font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel px-2 py-0.5 rounded hover:bg-white/80 transition-colors">DELETE</button>
+                    <button onClick={() => onEditMemory(entity || null, memory.entityType, memory.id)} className="text-meta font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel px-2 py-0.5 rounded hover:bg-white/80 transition-colors">EDIT</button>
+                    <button onClick={() => deleteMemory(memory.id)} className="text-meta font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel px-2 py-0.5 rounded hover:bg-white/80 transition-colors">DELETE</button>
                   </div>
                 </div>
-                <p className="font-pixel text-xs sm:text-sm text-[var(--color-dark)] leading-relaxed whitespace-pre-wrap mt-2 font-medium">
+                <p className="font-pixel text-caption sm:text-body text-[var(--color-dark)] leading-relaxed whitespace-pre-wrap mt-2 font-medium">
                   "{memory.note}"
                 </p>
-                <div className="text-[var(--color-dark)] font-pixel text-xs mt-2 text-right font-medium">
+                <div className="text-[var(--color-dark)] font-pixel text-caption mt-2 text-right font-medium">
                   {new Date(memory.createdAt).toLocaleDateString()}
                 </div>
               </div>
@@ -175,7 +175,7 @@ export function MemoriesSection({
               {/* Entity Section */}
               <div className="p-1">
                 {isFailed ? (
-                  <div className="p-2 text-center text-[var(--color-dark)] font-pixel text-xs font-medium">
+                  <div className="p-2 text-center text-[var(--color-dark)] font-pixel text-caption font-medium">
                     SPOTIFY ENTITY UNAVAILABLE
                   </div>
                 ) : entity ? (

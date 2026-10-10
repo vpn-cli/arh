@@ -261,8 +261,8 @@ export const LyricsView = React.memo(
       <div className="absolute top-0 bottom-0 z-40 bg-[var(--color-bg)] flex flex-col pointer-events-auto transition-all duration-300 max-lg:left-auto max-lg:right-0 max-lg:w-[380px] lg:left-[var(--sidebar-width)] lg:right-[400px] xl:right-[420px] 2xl:right-[440px]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 shrink-0 border-b-2 border-[var(--color-muted)] bg-[var(--color-light)]/50">
-          <span className="font-pixel text-sm font-bold text-[var(--color-dark)] flex items-center gap-2">
-            <span className="text-[var(--color-vibrant)] text-lg">❝</span> Lyrics
+          <span className="font-pixel text-body font-bold text-[var(--color-dark)] flex items-center gap-2">
+            <span className="text-[var(--color-vibrant)] text-title">❝</span> Lyrics
           </span>
           <div className="flex items-center gap-2">
             {editMode && lyricsData?.synced && lyricsData.synced.length > 0 && (
@@ -283,7 +283,7 @@ export const LyricsView = React.memo(
                   window.localStorage.setItem('arh_edit_mode', next ? 'true' : 'false');
                 }
               }}
-              className={`font-pixel text-[10px] px-2.5 py-1 rounded-full border transition-all active:scale-95 ${
+              className={`font-pixel text-caption px-2.5 py-1 rounded-full border transition-all active:scale-95 ${
                 editMode
                   ? 'bg-[var(--color-light)] text-[var(--color-dark)] border-[var(--color-dark)] font-bold shadow-xs'
                   : 'bg-white hover:bg-[var(--color-light)] text-[var(--color-dark)]/70 border-[var(--color-muted)]'
@@ -368,7 +368,7 @@ export const LyricsView = React.memo(
         >
           <button
             onClick={resumeToActive}
-            className="bg-[var(--color-dark)] text-white font-pixel text-xs font-bold px-4 py-2 rounded-full shadow-lg hover:bg-[var(--color-vibrant)] transition-colors active:scale-95 flex items-center gap-1.5"
+            className="bg-[var(--color-dark)] text-white font-pixel text-caption font-bold px-4 py-2 rounded-full shadow-lg hover:bg-[var(--color-vibrant)] transition-colors active:scale-95 flex items-center gap-1.5"
           >
             <ChevronDownIcon size={14} className="text-white/70" /> Back to now
           </button>

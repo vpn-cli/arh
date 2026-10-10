@@ -40,9 +40,10 @@ const NAV_ITEMS: {
   id: MusicNavTab;
   icon: React.ComponentType<{ size?: number; className?: string }>;
   label: string;
+  scale?: number;
 }[] = [
   { id: 'home', icon: HomeIcon, label: 'Home' },
-  { id: 'playlists', icon: PlaylistsIcon, label: 'Playlists' },
+  { id: 'playlists', icon: PlaylistsIcon, label: 'Playlists', scale: 1.2 },
   { id: 'mix', icon: MixIcon, label: 'Mix' },
   { id: 'vibes', icon: VibesIcon, label: 'Vibes' },
   { id: 'library', icon: LibraryIcon, label: 'Library' },
@@ -68,8 +69,8 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
       <div className="h-28 border-2 border-[var(--color-muted)] bg-[var(--color-light)] flex items-center gap-3 justify-center m-4 rounded-2xl shrink-0">
         <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
         <div>
-          <div className="font-pixel text-lg font-bold text-[var(--color-dark)]">KAWAII</div>
-          <div className="font-pixel text-xs text-[var(--color-dark)] font-medium">vibes • memories</div>
+          <div className="font-pixel text-title font-bold text-[var(--color-dark)]">KAWAII</div>
+          <div className="font-pixel text-caption text-[var(--color-dark)] font-medium">vibes • memories</div>
         </div>
       </div>
 
@@ -77,6 +78,13 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
         {NAV_ITEMS.map((item) => {
           const isActive = activeTab === item.id;
           const IconComp = item.icon;
+          const iconScaleStyle = item.scale
+            ? ({
+                '--icon-scale': item.scale,
+                transform: `scale(${item.scale})`,
+              } as React.CSSProperties)
+            : undefined;
+
           return (
             <button
               key={item.id}
@@ -93,14 +101,18 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
                   width={32}
                   height={32}
                   alt=""
+                  style={iconScaleStyle}
                   className="w-8 h-8 object-contain mw-nav-icon shrink-0"
                 />
               ) : (
-                <span className={`w-8 flex items-center justify-center mw-nav-icon shrink-0 ${isActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}>
+                <span
+                  style={iconScaleStyle}
+                  className={`w-8 flex items-center justify-center mw-nav-icon shrink-0 ${isActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}
+                >
                   <IconComp size={22} />
                 </span>
               )}
-              <span className="text-base">{item.label}</span>
+              <span className="text-body">{item.label}</span>
             </button>
           );
         })}
@@ -108,7 +120,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
 
       <div className="flex flex-col flex-1 overflow-hidden mt-2">
         <div className="px-4 py-2 flex justify-between items-center text-[var(--color-dark)] shrink-0 border-t border-[var(--color-light)]">
-          <span className="font-pixel text-sm font-bold uppercase tracking-wider text-[var(--color-dark)]">Your Playlists</span>
+          <span className="font-pixel text-body font-bold uppercase tracking-wider text-[var(--color-dark)]">Your Playlists</span>
           <button
             onClick={onCreatePlaylist}
             className="mw-btn font-bold text-[var(--color-dark)] p-1 rounded flex items-center justify-center hover:text-[var(--color-vibrant)]"
@@ -149,7 +161,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
       <div className="p-4 mt-auto border-t border-[var(--color-light)]">
         <button
           onClick={onLogout}
-          className="mw-btn w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl border border-[var(--color-vibrant)] text-[var(--color-vibrant)] font-pixel text-sm font-bold hover:bg-[var(--color-vibrant)] hover:text-white"
+          className="mw-btn w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl border border-[var(--color-vibrant)] text-[var(--color-vibrant)] font-pixel text-body font-bold hover:bg-[var(--color-vibrant)] hover:text-white"
         >
           Logout
         </button>

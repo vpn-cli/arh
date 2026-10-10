@@ -97,20 +97,20 @@ export function FrequenciesSection({
   const renderError = (error: any, label: string) => {
     if (error?.status === 429) {
       return (
-        <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-xs font-medium text-center px-4 mb-4 border border-[var(--color-dark)]/30 rounded-xl bg-[var(--color-dark)]/5">
+        <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-caption font-medium text-center px-4 mb-4 border border-[var(--color-dark)]/30 rounded-xl bg-[var(--color-dark)]/5">
           {label} RATE LIMITED.<br/>WAIT {rateLimitTimer || (error?.retryAfter ?? 60)} SECONDS.
         </div>
       );
     }
     return (
-      <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-xs font-medium text-center px-4 mb-4 border border-[var(--color-dark)]/30 rounded-xl bg-[var(--color-dark)]/5">
+      <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-caption font-medium text-center px-4 mb-4 border border-[var(--color-dark)]/30 rounded-xl bg-[var(--color-dark)]/5">
         Failed to load {label}
       </div>
     );
   };
 
   const renderLoading = (label: string) => (
-    <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-xs font-medium mb-4 animate-pulse">
+    <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-caption font-medium mb-4 animate-pulse">
       Loading {label}...
     </div>
   );
@@ -128,7 +128,7 @@ export function FrequenciesSection({
           <button
             key={range.id}
             onClick={() => setTimeRange(range.id as TimeRange)}
-            className={`w-full font-pixel text-xs py-2 rounded-lg transition-all font-bold text-center ${
+            className={`w-full font-pixel text-caption py-2 rounded-lg transition-all font-bold text-center ${
               timeRange === range.id 
                 ? 'bg-[var(--color-vibrant)] text-white shadow-xs' 
                 : 'text-[var(--color-dark)] hover:bg-white/50 active:scale-95'
@@ -142,7 +142,7 @@ export function FrequenciesSection({
       {/* Listening Patterns / Summary (3 stat tiles on palette-tinted surface) */}
       <section>
         <div className="flex items-center justify-between mb-3 px-1">
-          <h2 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
+          <h2 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] flex items-center gap-2">
             <span className="text-[var(--color-vibrant)]">✦</span> Listening Profile
           </h2>
         </div>
@@ -154,38 +154,38 @@ export function FrequenciesSection({
           <div className="bg-[var(--color-light)]/70 border-2 border-[var(--color-muted)] rounded-2xl p-4 shadow-xs">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-white/90 border border-[var(--color-muted)]/40 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-2xs">
-                <span className="font-pixel text-3xl font-extrabold text-[var(--color-dark)]">
+                <span className="font-pixel text-display font-extrabold text-[var(--color-dark)]">
                   {metrics.uniqueArtists}
                 </span>
-                <span className="font-pixel text-xs font-bold text-[var(--color-dark)] opacity-75 mt-1">
+                <span className="font-pixel text-caption font-bold text-[var(--color-dark)] opacity-75 mt-1">
                   Unique Artists
                 </span>
-                <span className="font-pixel text-[11px] text-[var(--color-dark)] opacity-60 mt-0.5">
+                <span className="font-pixel text-caption text-[var(--color-dark)] opacity-60 mt-0.5">
                   in top {metrics.totalTracks} tracks
                 </span>
               </div>
 
               <div className="bg-white/90 border border-[var(--color-muted)]/40 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-2xs">
-                <span className="font-pixel text-3xl font-extrabold text-[var(--color-dark)]">
+                <span className="font-pixel text-display font-extrabold text-[var(--color-dark)]">
                   {metrics.multiArtistTrackCount}
                 </span>
-                <span className="font-pixel text-xs font-bold text-[var(--color-dark)] opacity-75 mt-1">
+                <span className="font-pixel text-caption font-bold text-[var(--color-dark)] opacity-75 mt-1">
                   Collab Tracks
                 </span>
-                <span className="font-pixel text-[11px] text-[var(--color-dark)] opacity-60 mt-0.5">
+                <span className="font-pixel text-caption text-[var(--color-dark)] opacity-60 mt-0.5">
                   multiple artists
                 </span>
               </div>
 
               <div className="bg-white/90 border border-[var(--color-muted)]/40 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-2xs">
-                <span className="font-pixel text-3xl font-extrabold text-[var(--color-dark)]">
+                <span className="font-pixel text-display font-extrabold text-[var(--color-dark)]">
                   {metrics.mostTracksArtist.count > 0 ? metrics.mostTracksArtist.count : 0}
                 </span>
-                <span className="font-pixel text-xs font-bold text-[var(--color-dark)] opacity-75 mt-1">
+                <span className="font-pixel text-caption font-bold text-[var(--color-dark)] opacity-75 mt-1">
                   Most tracks in your top 20
                 </span>
                 <span
-                  className="font-pixel text-[11px] text-[var(--color-dark)] opacity-60 mt-0.5 truncate max-w-full"
+                  className="font-pixel text-caption text-[var(--color-dark)] opacity-60 mt-0.5 truncate max-w-full"
                   title={metrics.mostTracksArtist.tooltip}
                 >
                   {metrics.mostTracksArtist.name}
@@ -194,14 +194,14 @@ export function FrequenciesSection({
             </div>
           </div>
         ) : (
-          <div className="text-[var(--color-dark)] font-pixel text-xs font-medium px-1">Not enough data to compute profile.</div>
+          <div className="text-[var(--color-dark)] font-pixel text-caption font-medium px-1">Not enough data to compute profile.</div>
         )}
       </section>
 
       {/* Top Artists (MediaRow with ranks in 2 columns) */}
       <section>
         <div className="flex items-center justify-between mb-3 px-1">
-          <h2 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
+          <h2 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] flex items-center gap-2">
             <span className="text-[var(--color-vibrant)]">♥</span> Top Artists
           </h2>
         </div>
@@ -238,7 +238,7 @@ export function FrequenciesSection({
              ))}
            </div>
          ) : (
-           <div className="text-[var(--color-dark)] font-pixel text-xs font-medium px-1">No top artists found.</div>
+           <div className="text-[var(--color-dark)] font-pixel text-caption font-medium px-1">No top artists found.</div>
          )
         }
       </section>
@@ -246,13 +246,13 @@ export function FrequenciesSection({
       {/* Top Tracks (Play All aligned with heading, MediaRow with ranks via TrackList) */}
       <section>
         <div className="flex justify-between items-center mb-3 px-1">
-          <h2 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
+          <h2 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] flex items-center gap-2">
             <span className="text-[var(--color-vibrant)]">♪</span> Top Tracks
           </h2>
           <button 
             onClick={() => topTracks && onPlayTracks(topTracks.map((t: any) => t.uri))}
             disabled={!topTracks || topTracks.length === 0}
-            className="font-pixel text-xs font-bold bg-[var(--color-vibrant)] text-white px-3.5 py-2 rounded-xl hover:bg-[var(--color-vibrant)] active:scale-95 transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+            className="font-pixel text-caption font-bold bg-[var(--color-vibrant)] text-white px-3.5 py-2 rounded-xl hover:bg-[var(--color-vibrant)] active:scale-95 transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
           >
             Play All
           </button>
@@ -268,7 +268,7 @@ export function FrequenciesSection({
              onAddMemory={(track) => onAddMemory(track, 'track')}
            />
          ) : (
-           <div className="text-[var(--color-dark)] font-pixel text-xs font-medium px-1">No top tracks found.</div>
+           <div className="text-[var(--color-dark)] font-pixel text-caption font-medium px-1">No top tracks found.</div>
          )
         }
       </section>

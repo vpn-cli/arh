@@ -19,11 +19,11 @@ export const TrackList = React.memo(function TrackList({ tracks, onPlayTrack, on
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-20 text-[var(--color-muted)] font-pixel text-xs animate-pulse">LOADING...</div>;
+    return <div className="flex items-center justify-center h-20 text-[var(--color-muted)] font-pixel text-caption animate-pulse">LOADING...</div>;
   }
   
   if (tracks.length === 0) {
-    return <div className="flex items-center justify-center h-20 text-[var(--color-muted)] font-pixel text-xs">{emptyMessage}</div>;
+    return <div className="flex items-center justify-center h-20 text-[var(--color-muted)] font-pixel text-caption">{emptyMessage}</div>;
   }
 
   return (

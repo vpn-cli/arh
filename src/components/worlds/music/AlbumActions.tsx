@@ -16,7 +16,7 @@ export function AlbumActions({ onPlay, onShuffle, onToggleSave, isSaved, disable
         disabled={disabled}
         className={`flex-1 shrink-0 bg-gradient-to-r from-[var(--color-vibrant)] to-[var(--color-muted)] text-white py-3 rounded-xl shadow-[0_4px_12px_rgba(255,105,180,0.4)] transition-all flex flex-col items-center justify-center gap-1 ${disabled ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
       >
-        <span className="font-pixel text-sm font-bold tracking-widest">
+        <span className="font-pixel text-body font-bold tracking-widest">
           ✨ PLAY ✨
         </span>
       </button>
@@ -28,7 +28,7 @@ export function AlbumActions({ onPlay, onShuffle, onToggleSave, isSaved, disable
           className={`px-4 py-3 bg-[var(--color-light)] border-2 border-[var(--color-muted)] rounded-xl transition-all flex items-center justify-center ${disabled ? 'opacity-70 cursor-not-allowed' : 'active:scale-95 hover:scale-[1.02] hover:bg-[var(--color-light)]'}`}
           title={isSaved ? "Remove from Library" : "Save to Library"}
         >
-          <span className={`text-xl ${isSaved ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-muted)]'}`}>
+          <span className={`text-title ${isSaved ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-muted)]'}`}>
             {isSaved ? '♥' : '♡'}
           </span>
         </button>

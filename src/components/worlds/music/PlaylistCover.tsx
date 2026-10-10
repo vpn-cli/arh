@@ -46,7 +46,7 @@ export const PlaylistCover = React.memo(function PlaylistCover({
             return (
               <div
                 key={idx}
-                className="w-full h-full bg-[var(--color-muted)]/30 flex items-center justify-center text-[var(--color-dark)] font-bold text-[10px]"
+                className="w-full h-full bg-[var(--color-muted)]/30 flex items-center justify-center text-[var(--color-dark)] font-bold text-caption"
               >
                 {fallbackIcon}
               </div>
@@ -61,7 +61,7 @@ export const PlaylistCover = React.memo(function PlaylistCover({
             return (
               <div
                 key={idx}
-                className="w-full h-full bg-[var(--color-muted)]/30 flex items-center justify-center text-[var(--color-dark)] font-bold text-[10px]"
+                className="w-full h-full bg-[var(--color-muted)]/30 flex items-center justify-center text-[var(--color-dark)] font-bold text-caption"
               >
                 {fallbackIcon}
               </div>
@@ -108,7 +108,7 @@ export const PlaylistCover = React.memo(function PlaylistCover({
   return (
     <div
       style={{ width: `${size}px`, height: `${size}px` }}
-      className={`w-full h-full bg-[var(--color-muted)]/20 text-[var(--color-dark)] font-bold flex items-center justify-center text-sm ${className}`}
+      className={`w-full h-full bg-[var(--color-muted)]/20 text-[var(--color-dark)] font-bold flex items-center justify-center text-body ${className}`}
     >
       {fallbackIcon ?? <MusicNoteIcon size={Math.round(size * 0.45)} />}
     </div>

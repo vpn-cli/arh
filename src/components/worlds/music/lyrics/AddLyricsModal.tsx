@@ -103,10 +103,10 @@ export function AddLyricsModal({
       <div className="w-full max-w-lg bg-[var(--color-bg)] border-4 border-[var(--color-dark)] rounded-2xl shadow-[6px_6px_0_var(--color-dark)] p-6 flex flex-col gap-4 text-[var(--color-dark)]">
         <div className="flex items-center justify-between border-b-2 border-[var(--color-muted)] pb-3">
           <div>
-            <h3 className="font-pixel text-base font-bold text-[var(--color-dark)] flex items-center gap-2">
+            <h3 className="font-pixel text-body font-bold text-[var(--color-dark)] flex items-center gap-2">
               <span>✍</span> ADD LYRICS (EDIT MODE)
             </h3>
-            <p className="font-pixel text-xs text-[var(--color-dark)]/70 truncate mt-0.5">
+            <p className="font-pixel text-caption text-[var(--color-dark)]/70 truncate mt-0.5">
               {trackName} — {artistName}
             </p>
           </div>
@@ -120,7 +120,7 @@ export function AddLyricsModal({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="font-pixel text-xs font-bold text-[var(--color-dark)]">
+          <label className="font-pixel text-caption font-bold text-[var(--color-dark)]">
             Lyrics (Paste LRC with timestamps or plain text):
           </label>
           <textarea
@@ -128,13 +128,13 @@ export function AddLyricsModal({
             value={manualLyricsInput}
             onChange={(e) => setManualLyricsInput(e.target.value)}
             placeholder={`[00:12.34] Line one with timestamp\n[00:15.67] Line two\n\n...or just paste plain lyrics text.`}
-            className="w-full font-mono text-xs p-3 border-2 border-[var(--color-dark)] rounded-xl outline-none focus:bg-[var(--color-light)] resize-y"
+            className="w-full font-mono text-caption p-3 border-2 border-[var(--color-dark)] rounded-xl outline-none focus:bg-[var(--color-light)] resize-y"
           />
         </div>
 
         {!sessionSecret && (
           <div className="flex flex-col gap-1.5">
-            <label className="font-pixel text-xs font-bold text-[var(--color-dark)]">
+            <label className="font-pixel text-caption font-bold text-[var(--color-dark)]">
               Admin Secret:
             </label>
             <input
@@ -142,13 +142,13 @@ export function AddLyricsModal({
               placeholder="Enter admin secret..."
               value={manualSecretInput}
               onChange={(e) => setManualSecretInput(e.target.value)}
-              className="w-full font-pixel text-xs p-2.5 border-2 border-[var(--color-dark)] rounded-xl outline-none focus:bg-[var(--color-light)]"
+              className="w-full font-pixel text-caption p-2.5 border-2 border-[var(--color-dark)] rounded-xl outline-none focus:bg-[var(--color-light)]"
             />
           </div>
         )}
 
         {saveLyricsError && (
-          <div className="font-pixel text-xs text-red-600 bg-red-50 border border-red-200 p-2.5 rounded-lg">
+          <div className="font-pixel text-caption text-red-600 bg-red-50 border border-red-200 p-2.5 rounded-lg">
             {saveLyricsError}
           </div>
         )}
@@ -157,7 +157,7 @@ export function AddLyricsModal({
           <button
             type="button"
             onClick={onClose}
-            className="font-pixel text-xs px-4 py-2 rounded-xl border-2 border-[var(--color-dark)] bg-white text-[var(--color-dark)] hover:bg-gray-50 active:scale-95"
+            className="font-pixel text-caption px-4 py-2 rounded-xl border-2 border-[var(--color-dark)] bg-white text-[var(--color-dark)] hover:bg-gray-50 active:scale-95"
           >
             CANCEL
           </button>
@@ -165,7 +165,7 @@ export function AddLyricsModal({
             type="button"
             onClick={handleSaveManualLyrics}
             disabled={isSavingLyrics}
-            className="font-pixel text-xs px-5 py-2 rounded-xl border-2 border-[var(--color-dark)] bg-[var(--color-light)] text-[var(--color-dark)] font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
+            className="font-pixel text-caption px-5 py-2 rounded-xl border-2 border-[var(--color-dark)] bg-[var(--color-light)] text-[var(--color-dark)] font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
           >
             {isSavingLyrics ? 'SAVING...' : '✓ SAVE LYRICS'}
           </button>

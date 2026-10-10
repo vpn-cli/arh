@@ -33,15 +33,15 @@ export const PlayerHeader = React.memo(function PlayerHeader({
             title="Return to Home World"
           >
             <ChevronLeftIcon size={12} className="text-[var(--color-dark)] group-hover:-translate-x-0.5 transition-transform" />
-            <span className="font-pixel text-[10px] text-[var(--color-dark)] font-bold tracking-wider uppercase group-hover:text-[var(--color-vibrant)] transition-colors">
+            <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tracking-wider uppercase group-hover:text-[var(--color-vibrant)] transition-colors">
               Home World
             </span>
           </button>
         )}
 
         <img src="/hampter/hello_kitty_pin.png" alt="" className="w-7 h-7 object-contain hidden sm:block ml-2" />
-        <span className="font-pixel text-base font-bold text-[var(--color-dark)] hidden xl:inline-block">KAWAII_PLAYER.EXE</span>
-        <span className="font-pixel text-base text-[var(--color-vibrant)] hidden xl:inline-block">♥</span>
+        <span className="font-pixel text-body font-bold text-[var(--color-dark)] hidden xl:inline-block">KAWAII_PLAYER.EXE</span>
+        <span className="font-pixel text-body text-[var(--color-vibrant)] hidden xl:inline-block">♥</span>
       </div>
       <div className="flex-1 max-w-md mx-4 relative">
         <input
@@ -50,7 +50,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search songs, artists, playlists..."
           aria-label="Search songs, artists, playlists"
-          className="w-full bg-white/95 border-2 border-[var(--color-muted)] rounded-full px-10 py-2 font-pixel text-sm text-[var(--color-dark)] placeholder:text-[var(--color-dark)]/80 focus:outline-none focus:border-[var(--color-vibrant)] focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]/20 transition-colors"
+          className="w-full bg-white/95 border-2 border-[var(--color-muted)] rounded-full px-10 py-2 font-pixel text-body text-[var(--color-dark)] placeholder:text-[var(--color-dark)]/80 focus:outline-none focus:border-[var(--color-vibrant)] focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]/20 transition-colors"
         />
         <SearchIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-dark)] opacity-70" />
         {searchQuery && (
@@ -64,13 +64,13 @@ export const PlayerHeader = React.memo(function PlayerHeader({
           </button>
         )}
       </div>
-      <div className="flex items-center gap-4 text-[var(--color-dark)] font-bold text-lg shrink-0">
+      <div className="flex items-center gap-4 text-[var(--color-dark)] font-bold text-title shrink-0">
         <div className="hidden lg:flex px-3 py-1 bg-white/50 border border-[var(--color-muted)] rounded-full items-center gap-1.5 mr-2">
-          <span className="font-pixel text-[10px] text-[var(--color-dark)] font-bold tracking-wider uppercase">Music World</span>
+          <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tracking-wider uppercase">Music World</span>
           <MusicNoteIcon size={12} className="text-[var(--color-vibrant)]" />
         </div>
-        <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Minimize window"><span className="text-sm">_</span></button>
-        <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Maximize window"><span className="text-base">□</span></button>
+        <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Minimize window"><span className="text-body">_</span></button>
+        <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Maximize window"><span className="text-body">□</span></button>
         <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Close window">
           <CloseIcon size={16} />
         </button>

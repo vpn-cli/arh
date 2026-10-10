@@ -161,20 +161,20 @@ export function VibesSection({
   const renderError = (error: any, label: string) => {
     if (error?.status === 429) {
       return (
-        <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-xs font-medium text-center px-4 mb-4 border border-[var(--color-dark)]/30 rounded-xl bg-[var(--color-dark)]/5">
+        <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-caption font-medium text-center px-4 mb-4 border border-[var(--color-dark)]/30 rounded-xl bg-[var(--color-dark)]/5">
           {label} RATE LIMITED.<br/>WAIT {rateLimitTimer || (error?.retryAfter ?? 60)} SECONDS.
         </div>
       );
     }
     return (
-      <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-xs font-medium text-center px-4 mb-4 border border-[var(--color-dark)]/30 rounded-xl bg-[var(--color-dark)]/5">
+      <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-caption font-medium text-center px-4 mb-4 border border-[var(--color-dark)]/30 rounded-xl bg-[var(--color-dark)]/5">
         Failed to load {label}
       </div>
     );
   };
 
   const renderLoading = (label: string) => (
-    <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-xs font-medium mb-4 animate-pulse">
+    <div className="flex items-center justify-center h-16 text-[var(--color-dark)] font-pixel text-caption font-medium mb-4 animate-pulse">
       Loading {label}...
     </div>
   );
@@ -185,15 +185,15 @@ export function VibesSection({
         <div className="flex items-center justify-between mb-4 shrink-0">
           <button 
             onClick={() => setSelectedVibeId(null)}
-            className="text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] cursor-pointer font-pixel font-bold tracking-wide flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-lg px-2 py-1"
+            className="text-meta text-[var(--color-dark)] hover:text-[var(--color-dark)] cursor-pointer font-pixel font-bold tracking-wide flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-lg px-2 py-1"
           >
             <ChevronLeftIcon size={14} /> Back to Vibes
           </button>
         </div>
         
         <div className="flex flex-col items-center justify-center mb-6 shrink-0 bg-gradient-to-r from-[var(--color-light)] to-[var(--color-light)] p-6 rounded-2xl border-2 border-[var(--color-muted)]">
-          <h2 className="font-pixel text-2xl font-bold text-[var(--color-dark)] mb-1 text-center">{selectedVibe.label}</h2>
-          <p className="font-pixel text-xs text-[var(--color-dark)] font-medium">
+          <h2 className="font-pixel text-heading font-bold text-[var(--color-dark)] mb-1 text-center">{selectedVibe.label}</h2>
+          <p className="font-pixel text-caption text-[var(--color-dark)] font-medium">
             {selectedVibe.artists.length} Top Artists • {selectedVibe.tracks.length} Top Tracks
           </p>
           <button 
@@ -203,7 +203,7 @@ export function VibesSection({
               }
             }}
             disabled={selectedVibe.tracks.length === 0}
-            className="mt-4 bg-[var(--color-vibrant)] text-white px-6 py-2.5 rounded-full font-pixel text-sm font-bold hover:bg-[var(--color-vibrant)] active:scale-95 transition-all shadow-[0_4px_14px_var(--color-vibrant)] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+            className="mt-4 bg-[var(--color-vibrant)] text-white px-6 py-2.5 rounded-full font-pixel text-body font-bold hover:bg-[var(--color-vibrant)] active:scale-95 transition-all shadow-[0_4px_14px_var(--color-vibrant)] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
           >
             Play Vibe
           </button>
@@ -212,7 +212,7 @@ export function VibesSection({
         <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-2 flex flex-col gap-6">
           {selectedVibe.artists.length > 0 && (
             <section>
-              <h3 className="font-pixel text-xs font-bold text-[var(--color-dark)] tracking-wider uppercase mb-3 px-1">Vibe Artists</h3>
+              <h3 className="font-pixel text-caption font-bold text-[var(--color-dark)] tracking-wider uppercase mb-3 px-1">Vibe Artists</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {selectedVibe.artists.map((artist) => (
                   <MediaRow 
@@ -246,7 +246,7 @@ export function VibesSection({
 
           {selectedVibe.tracks.length > 0 && (
             <section>
-              <h3 className="font-pixel text-xs font-bold text-[var(--color-dark)] tracking-wider uppercase mb-3 px-1">Vibe Tracks</h3>
+              <h3 className="font-pixel text-caption font-bold text-[var(--color-dark)] tracking-wider uppercase mb-3 px-1">Vibe Tracks</h3>
               <TrackList 
                 tracks={selectedVibe.tracks} 
                 onPlayTrack={onPlayTrack} 
@@ -272,7 +272,7 @@ export function VibesSection({
           <button
             key={range.id}
             onClick={() => setTimeRange(range.id as TimeRange)}
-            className={`flex-1 font-pixel text-xs py-2 rounded-lg transition-colors font-bold ${
+            className={`flex-1 font-pixel text-caption py-2 rounded-lg transition-colors font-bold ${
               timeRange === range.id 
                 ? 'bg-[var(--color-vibrant)] text-white shadow-xs' 
                 : 'text-[var(--color-dark)] hover:bg-[var(--color-light)]'
@@ -284,8 +284,8 @@ export function VibesSection({
       </div>
 
       <section>
-        <h2 className="font-pixel text-xs font-bold text-[var(--color-dark)] tracking-wider uppercase mb-1 px-1">Your Top Vibes</h2>
-        <p className="font-pixel text-xs text-[var(--color-dark)] font-medium mb-4 px-1 leading-relaxed">
+        <h2 className="font-pixel text-caption font-bold text-[var(--color-dark)] tracking-wider uppercase mb-1 px-1">Your Top Vibes</h2>
+        <p className="font-pixel text-caption text-[var(--color-dark)] font-medium mb-4 px-1 leading-relaxed">
           Based on your top artists&apos; genres in the selected time range.
         </p>
 
@@ -300,12 +300,12 @@ export function VibesSection({
                  onClick={() => setSelectedVibeId(vibe.id)}
                  className="flex flex-col items-start p-4 bg-[var(--color-bg)] border-2 border-[var(--color-light)] hover:border-[var(--color-muted)] hover:shadow-sm rounded-xl transition-all text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
                >
-                 <span className="font-pixel text-sm font-bold text-[var(--color-dark)] mb-1 group-hover:text-[var(--color-dark)] transition-colors">{vibe.label}</span>
-                 <span className="font-pixel text-xs text-[var(--color-dark)] font-medium">
+                 <span className="font-pixel text-body font-bold text-[var(--color-dark)] mb-1 group-hover:text-[var(--color-dark)] transition-colors">{vibe.label}</span>
+                 <span className="font-pixel text-caption text-[var(--color-dark)] font-medium">
                    {vibe.artists.length} artists
                  </span>
                  {vibe.tracks.length > 0 && (
-                   <span className="font-pixel text-xs text-[var(--color-dark)] font-medium">
+                   <span className="font-pixel text-caption text-[var(--color-dark)] font-medium">
                      {vibe.tracks.length} tracks
                    </span>
                  )}
@@ -313,7 +313,7 @@ export function VibesSection({
              ))}
            </div>
          ) : (
-           <div className="text-[var(--color-dark)] font-pixel text-xs font-medium px-1">No vibes found. Listen to more music! ♡</div>
+           <div className="text-[var(--color-dark)] font-pixel text-caption font-medium px-1">No vibes found. Listen to more music! ♡</div>
          )
         }
       </section>

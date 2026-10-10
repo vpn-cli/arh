@@ -180,10 +180,10 @@ Define 6 sizes in the Tailwind theme `@theme` in `src/app/globals.css`, in rem, 
 - Add performance/design rule to `AGENTS.md`: "No arbitrary text-[Npx] sizes in Music World."
 
 ### Section B Checklist
-- [ ] Define the 6 tokens and line-heights in `@theme` in `src/app/globals.css`.
-- [ ] Migrate all font sizes across Music World files to the 6 type tokens (`text-caption`, `text-meta`, `text-body`, `text-title`, `text-heading`, `text-display`).
-- [ ] Migrate all controls (tabs, button labels, search inputs, offset controls) to `text-meta` or larger.
-- [ ] Add "no arbitrary text-[Npx] sizes in Music World" rule to `AGENTS.md`.
+- [x] Define the 6 tokens and line-heights in `@theme` in `src/app/globals.css`.
+- [x] Migrate all font sizes across Music World files to the 6 type tokens (`text-caption`, `text-meta`, `text-body`, `text-title`, `text-heading`, `text-display`).
+- [x] Migrate all controls (tabs, button labels, search inputs, offset controls) to `text-meta` or larger.
+- [x] Add "no arbitrary text-[Npx] sizes in Music World" rule to `AGENTS.md`.
 
 ---
 

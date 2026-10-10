@@ -81,7 +81,7 @@ export const QueuePanel = memo(function QueuePanel({
         <div className="flex flex-1 gap-1">
           <button
             onClick={() => setRightPanelTab('queue')}
-            className={`flex-1 font-pixel text-xs py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
+            className={`flex-1 font-pixel text-caption py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
               rightPanelTab === 'queue'
                 ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
                 : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
@@ -91,7 +91,7 @@ export const QueuePanel = memo(function QueuePanel({
           </button>
           <button
             onClick={() => setRightPanelTab('recent')}
-            className={`flex-1 font-pixel text-xs py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
+            className={`flex-1 font-pixel text-caption py-1.5 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
               rightPanelTab === 'recent'
                 ? 'bg-[var(--color-vibrant)] text-white shadow-xs'
                 : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
@@ -100,28 +100,28 @@ export const QueuePanel = memo(function QueuePanel({
             <span>🕒</span> Recent
           </button>
         </div>
-        <span className="text-base px-2 select-none" title="Hello Kitty">
+        <span className="text-body px-2 select-none" title="Hello Kitty">
           🎀
         </span>
       </div>
 
       {/* Header with Title and Clear / Expand */}
       <div className="flex items-center justify-between mb-1.5 shrink-0 px-1">
-        <span className="font-pixel text-xs text-[var(--color-dark)] font-bold tracking-wide">
+        <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tracking-wide">
           {rightPanelTab === 'queue' ? '+ Up Next' : '🕒 Recently Played'}
         </span>
         <div className="flex items-center gap-2">
           {rightPanelTab === 'queue' && effectiveQueue.length > 0 && (
             <button
               onClick={() => clearQueue()}
-              className="font-pixel text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors font-bold"
+              className="font-pixel text-caption text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors font-bold"
             >
               Clear
             </button>
           )}
           <button
             onClick={() => onExpand(rightPanelTab)}
-            className="font-pixel text-xs text-[var(--color-dark)] hover:text-white bg-white hover:bg-[var(--color-vibrant)] border border-[var(--color-muted)] px-2.5 py-0.5 rounded-full flex items-center gap-1 transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs font-bold active:scale-95 will-change-transform"
+            className="font-pixel text-caption text-[var(--color-dark)] hover:text-white bg-white hover:bg-[var(--color-vibrant)] border border-[var(--color-muted)] px-2.5 py-0.5 rounded-full flex items-center gap-1 transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs font-bold active:scale-95 will-change-transform"
             title="Open large pop-up screen to tune queue & history"
           >
             <span>⤢</span> Expand
@@ -134,14 +134,14 @@ export const QueuePanel = memo(function QueuePanel({
         {rightPanelTab === 'queue' ? (
           effectiveQueue.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
-              <div className="text-xl mb-1">🌸</div>
-              <div className="text-[var(--color-dark)] font-pixel text-xs font-bold">QUEUE IS EMPTY</div>
-              <p className="text-[var(--color-dark)] font-pixel text-xs mt-0.5 font-medium">
+              <div className="text-title mb-1">🌸</div>
+              <div className="text-[var(--color-dark)] font-pixel text-meta font-bold">QUEUE IS EMPTY</div>
+              <p className="text-[var(--color-dark)] font-pixel text-caption mt-0.5 font-medium">
                 Play or add tracks to build your list
               </p>
               <button
                 onClick={() => onExpand('recent')}
-                className="mt-2 font-pixel text-xs text-[var(--color-dark)] bg-white border border-[var(--color-muted)] px-3 py-1 rounded-full hover:bg-[var(--color-light)] transition-all font-bold shadow-xs inline-flex items-center gap-1"
+                className="mt-2 font-pixel text-caption text-[var(--color-dark)] bg-white border border-[var(--color-muted)] px-3 py-1 rounded-full hover:bg-[var(--color-light)] transition-all font-bold shadow-xs inline-flex items-center gap-1"
               >
                 Browse History <ChevronRightIcon size={12} />
               </button>
@@ -183,7 +183,7 @@ export const QueuePanel = memo(function QueuePanel({
                 onClick={() => playQueueItem(idx)}
               >
                 <span
-                  className={`font-pixel text-xs w-4 text-center shrink-0 font-bold ${
+                  className={`font-pixel text-caption w-4 text-center shrink-0 font-bold ${
                     idx === queueIndex ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'
                   }`}
                 >
@@ -203,17 +203,17 @@ export const QueuePanel = memo(function QueuePanel({
                 )}
                 <div className="flex flex-col overflow-hidden flex-1 min-w-0">
                   <span
-                    className={`font-pixel text-sm font-bold truncate ${
+                    className={`font-pixel text-body font-bold truncate ${
                       idx === queueIndex ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'
                     }`}
                   >
                     {item.track?.name}
                   </span>
-                  <span className="font-pixel text-sm text-[var(--color-dark)] font-medium truncate">
+                  <span className="font-pixel text-body text-[var(--color-dark)] font-medium truncate">
                     {item.track?.artists?.map((a: { name: string }) => a.name).join(', ')}
                   </span>
                 </div>
-                <span className="font-pixel text-xs text-[var(--color-dark)] font-bold shrink-0">
+                <span className="font-pixel text-caption text-[var(--color-dark)] font-bold shrink-0">
                   {formatTime(item.track?.duration_ms || 0)}
                 </span>
                 <button
@@ -236,9 +236,9 @@ export const QueuePanel = memo(function QueuePanel({
           )
         ) : recentTracks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
-            <div className="text-xl mb-1">🕒</div>
-            <div className="text-[var(--color-dark)] font-pixel text-xs font-bold">NO RECENT TRACKS</div>
-            <p className="text-[var(--color-dark)] font-pixel text-xs mt-0.5 font-medium">
+            <div className="text-title mb-1">🕒</div>
+            <div className="text-[var(--color-dark)] font-pixel text-caption font-bold">NO RECENT TRACKS</div>
+            <p className="text-[var(--color-dark)] font-pixel text-caption mt-0.5 font-medium">
               Play some tunes to see them here
             </p>
           </div>
@@ -255,7 +255,7 @@ export const QueuePanel = memo(function QueuePanel({
                   else playTrack(track.uri || '', undefined, track);
                 }}
               >
-                <span className="font-pixel text-xs w-4 text-center shrink-0 text-[var(--color-dark)] font-bold">
+                <span className="font-pixel text-caption w-4 text-center shrink-0 text-[var(--color-dark)] font-bold">
                   {idx + 1}
                 </span>
                 {track.album?.images?.[0]?.url ? (
@@ -271,10 +271,10 @@ export const QueuePanel = memo(function QueuePanel({
                   </div>
                 )}
                 <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                  <span className="font-pixel text-sm font-bold text-[var(--color-dark)] truncate">
+                  <span className="font-pixel text-body font-bold text-[var(--color-dark)] truncate">
                     {track.name}
                   </span>
-                  <span className="font-pixel text-sm text-[var(--color-dark)] font-medium truncate">
+                  <span className="font-pixel text-body text-[var(--color-dark)] font-medium truncate">
                     {track.artists?.map((a: { name: string }) => a.name).join(', ')}
                   </span>
                 </div>
@@ -283,7 +283,7 @@ export const QueuePanel = memo(function QueuePanel({
                     e.stopPropagation();
                     handleAddToQueue(track, item.context?.uri);
                   }}
-                  className="mw-btn mw-row-action text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white px-2.5 py-1 rounded-full font-pixel text-xs font-bold shadow-xs shrink-0 flex items-center gap-1"
+                  className="mw-btn mw-row-action text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white px-2.5 py-1 rounded-full font-pixel text-meta font-bold shadow-xs shrink-0 flex items-center gap-1"
                   title="Add to queue"
                 >
                   <PlusIcon size={11} /> Queue

@@ -11,7 +11,7 @@ interface PlaylistCardProps {
 export function PlaylistCard({ playlist, onClick, onAddMemory, variant = 'default' }: PlaylistCardProps) {
   const isCompact = variant === 'compact';
   const imgSize = isCompact ? 'w-9 h-9' : 'w-11 h-11';
-  const titleSize = isCompact ? 'text-xs font-bold font-pixel' : 'text-sm font-bold font-pixel';
+  const titleSize = isCompact ? 'text-caption font-bold font-pixel' : 'text-body font-bold font-pixel';
 
   return (
     <div
@@ -44,7 +44,7 @@ export function PlaylistCard({ playlist, onClick, onAddMemory, variant = 'defaul
           {(() => {
             const trackCount = playlist.items?.total ?? playlist.tracks?.total ?? playlist.total_tracks ?? (Array.isArray(playlist.items) ? playlist.items.length : (Array.isArray(playlist.tracks?.items) ? playlist.tracks.items.length : (Array.isArray(playlist.tracks) ? playlist.tracks.length : undefined)));
             return (
-              <div className="font-pixel text-xs text-[var(--color-dark)] font-medium mt-0.5 truncate">
+              <div className="font-pixel text-caption text-[var(--color-dark)] font-medium mt-0.5 truncate">
                 Playlist • {playlist.owner?.display_name || 'Spotify'}{trackCount !== undefined ? ` • ${trackCount} tracks` : ''}
               </div>
             );
