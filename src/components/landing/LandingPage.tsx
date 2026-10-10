@@ -10,6 +10,7 @@ import AuthLoadingOverlay from "../ui/AuthLoadingOverlay";
 import StoryFlow from "./StoryFlow";
 import WorldRouter from "../worlds/WorldRouter";
 import { SpotifyPlayerProvider } from "@/providers/SpotifyPlayerProvider";
+import { useGameState, isValidWorld } from "@/lib/gameState";
 
 /* ═══════════════════════════════════════════════════════
    LANDING PAGE — Master orchestrator
@@ -21,6 +22,8 @@ import { SpotifyPlayerProvider } from "@/providers/SpotifyPlayerProvider";
    ═══════════════════════════════════════════════════════ */
 
 export default function LandingPage() {
+  const { goToWorld } = useGameState();
+
   // Phase gates — each unlocks the next screen
   const [hasEntered, setHasEntered] = useState(false);
   const [introFinished, setIntroFinished] = useState(false);
@@ -29,9 +32,6 @@ export default function LandingPage() {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const worldParam = urlParams.get("world");
-    const hasValidWorld = worldParam && ["home", "main", "music", "scrapbook"].includes(worldParam);
     const isAuthReturn = window.location.search.includes("spotify_auth=");
     const isStoryComplete = window.localStorage.getItem("story_complete") === "true";
 
@@ -40,7 +40,7 @@ export default function LandingPage() {
       setHasEntered(true);
       setIntroFinished(true);
       setStoryComplete(true);
-    } else if (hasValidWorld || isStoryComplete) {
+    } else if (isStoryComplete) {
       setHasEntered(true);
       setIntroFinished(true);
       setStoryComplete(true);
@@ -51,6 +51,13 @@ export default function LandingPage() {
   const completeStory = () => {
     setStoryComplete(true);
     window.localStorage.setItem("story_complete", "true");
+    const urlParams = new URLSearchParams(window.location.search);
+    const worldParam = urlParams.get("world");
+    if (isValidWorld(worldParam)) {
+      goToWorld(worldParam);
+    } else {
+      goToWorld("home");
+    }
   };
 
   if (!isReady) {
