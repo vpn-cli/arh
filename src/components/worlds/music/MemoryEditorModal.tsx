@@ -13,6 +13,8 @@ export function MemoryEditorModal({ isOpen, onClose, entity, entityType, memoryI
   const addMemory = useMemoriesStore(state => state.addMemory);
   const updateMemory = useMemoriesStore(state => state.updateMemory);
   const memories = useMemoriesStore(state => state.memories);
+  const error = useMemoriesStore(state => state.error);
+  const clearError = useMemoriesStore(state => state.clearError);
   
   const [note, setNote] = useState('');
   const [category, setCategory] = useState('');
@@ -74,6 +76,13 @@ export function MemoryEditorModal({ isOpen, onClose, entity, entityType, memoryI
           <h3 className="font-pixel text-base font-bold text-[var(--color-dark)]">{displayTitle}</h3>
           <button onClick={onClose} className="text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel text-base p-1 transition-colors" aria-label="Close modal">✕</button>
         </div>
+
+        {error && (
+          <div className="bg-[var(--color-light)] border border-[var(--color-vibrant)] text-[var(--color-vibrant)] p-2.5 rounded-xl font-pixel text-xs flex items-center justify-between font-bold shadow-2xs">
+            <span>⚠️ {error}</span>
+            <button onClick={clearError} className="text-[var(--color-dark)] hover:opacity-75 font-bold ml-2">✕</button>
+          </div>
+        )}
 
         <div className="flex items-center gap-3 bg-[#FFF0F7] border border-[var(--color-light)] p-2.5 rounded-xl">
           {imageSrc ? (

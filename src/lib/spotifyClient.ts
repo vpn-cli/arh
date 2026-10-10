@@ -17,7 +17,7 @@ export function registerDeviceRecoveryHandler(handler: ((reason?: string) => Pro
 
 let inFlightTokenPromise: Promise<string | null> | null = null;
 
-async function fetchSessionToken(): Promise<string | null> {
+async function fetchSessionToken(silent = false): Promise<string | null> {
   try {
     const res = await fetch('/api/spotify/session', {
       credentials: 'include',
@@ -26,7 +26,7 @@ async function fetchSessionToken(): Promise<string | null> {
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
       console.error(`[${new Date().toISOString()}] [Spotify Session Token Fetch Failed] Status: ${res.status}`, errBody);
-      if (res.status === 401) {
+      if (res.status === 401 && !silent) {
         loginRequiredCallback?.();
       }
       return null;
@@ -34,7 +34,9 @@ async function fetchSessionToken(): Promise<string | null> {
     const data = await res.json();
     if (!data.accessToken) {
       console.error(`[${new Date().toISOString()}] [Spotify Session Token Missing] Response:`, data);
-      loginRequiredCallback?.();
+      if (!silent) {
+        loginRequiredCallback?.();
+      }
       return null;
     }
     return data.accessToken;
@@ -44,7 +46,8 @@ async function fetchSessionToken(): Promise<string | null> {
   }
 }
 
-export async function getFreshToken(): Promise<string | null> {
+export async function getFreshToken(options?: { silent?: boolean }): Promise<string | null> {
+  const silent = options?.silent ?? false;
   if (inFlightTokenPromise) {
     return inFlightTokenPromise;
   }
@@ -53,10 +56,10 @@ export async function getFreshToken(): Promise<string | null> {
     try {
       if (typeof navigator !== 'undefined' && navigator.locks && typeof navigator.locks.request === 'function') {
         return await navigator.locks.request('spotify-token-refresh', async () => {
-          return await fetchSessionToken();
+          return await fetchSessionToken(silent);
         });
       }
-      return await fetchSessionToken();
+      return await fetchSessionToken(silent);
     } finally {
       inFlightTokenPromise = null;
     }

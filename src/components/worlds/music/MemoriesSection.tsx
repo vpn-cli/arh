@@ -27,6 +27,8 @@ export function MemoriesSection({
 }: MemoriesSectionProps) {
   const memories = useMemoriesStore((state) => state.memories);
   const deleteMemory = useMemoriesStore((state) => state.deleteMemory);
+  const error = useMemoriesStore((state) => state.error);
+  const clearError = useMemoriesStore((state) => state.clearError);
 
   // Group IDs by entity type
   const { trackIds, artistIds, playlistIds } = useMemo(() => {
@@ -115,6 +117,13 @@ export function MemoriesSection({
         <span className="font-pixel text-xs font-bold uppercase tracking-wider text-[var(--color-dark)]">MY MEMORIES</span>
         <span className="text-xs text-[var(--color-dark)] font-pixel font-bold">{memories.length} SAVED</span>
       </div>
+
+      {error && (
+        <div className="bg-[var(--color-light)] border border-[var(--color-vibrant)] text-[var(--color-vibrant)] p-2.5 rounded-xl font-pixel text-xs flex items-center justify-between font-bold mb-3 shrink-0 shadow-2xs">
+          <span>⚠️ {error}</span>
+          <button onClick={clearError} className="text-[var(--color-dark)] hover:opacity-75 font-bold ml-2">✕</button>
+        </div>
+      )}
 
       {isLoading && (
         <div className="text-center font-pixel text-xs text-[var(--color-dark)] font-medium animate-pulse my-4">
