@@ -13,16 +13,16 @@ export const ANIMATED_MS = 180000;
 export const FADE_MS = 800;
 export const PRELOAD_LEAD_MS = 15000;
 export const SAFETY_TIMEOUT_MS = 10000;
+export const SLIDESHOW_DEBUG = false;
+let debugOverride: boolean | null = null;
+export function _setSlideshowDebugForTesting(val: boolean | null) { debugOverride = val; }
+const isDebug = () => debugOverride ?? SLIDESHOW_DEBUG;
 
 // Module-level persistence across tab switches
-let savedSlides: SlideItem[] | null = null;
-let savedCurrentIndex = 0;
-let savedRemainingMs: number | null = null;
+let savedSlides: SlideItem[] | null = null, savedCurrentIndex = 0, savedRemainingMs: number | null = null;
 
 export function _resetSlideshowStateForTesting() {
-  savedSlides = null;
-  savedCurrentIndex = 0;
-  savedRemainingMs = null;
+  savedSlides = null; savedCurrentIndex = 0; savedRemainingMs = null; debugOverride = null;
 }
 
 export const BG_OPACITY = 0.55;
@@ -65,12 +65,12 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
   const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const slidesRef = useRef<SlideItem[]>([]);
-  slidesRef.current = slides;
   const currentIndexRef = useRef(0);
-  currentIndexRef.current = currentIndex;
   const nextIndexRef = useRef<number | null>(null);
-  nextIndexRef.current = nextIndex;
   const isFadingRef = useRef(false);
+  slidesRef.current = slides;
+  currentIndexRef.current = currentIndex;
+  nextIndexRef.current = nextIndex;
   isFadingRef.current = isFading;
 
   const clearTimers = () => {
@@ -148,6 +148,7 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
   }, []);
 
   const skipToFollowingSlide = useCallback(() => {
+    if (isDebug()) console.debug("[HeroSlideshow] safety skip");
     const count = slidesRef.current.length;
     if (count <= 1) return;
     const currentNext = nextIndexRef.current ?? ((currentIndexRef.current + 1) % count);
@@ -166,6 +167,7 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
       clearTimeout(safetyTimerRef.current);
       safetyTimerRef.current = null;
     }
+    if (isDebug()) console.debug("[HeroSlideshow] crossfade start");
     setIsFading(true);
 
     fadeTimerRef.current = setTimeout(() => {
@@ -180,10 +182,12 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
       timerExpiredRef.current = false;
       remainingMsRef.current = null;
       savedRemainingMs = null;
+      if (isDebug()) console.debug("[HeroSlideshow] crossfade end");
     }, FADE_MS);
   }, []);
 
   const handleNextReady = useCallback(() => {
+    if (isDebug()) console.debug("[HeroSlideshow] next image ready");
     nextReadyRef.current = true;
     if (safetyTimerRef.current) {
       clearTimeout(safetyTimerRef.current);
@@ -209,9 +213,20 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
   // Auto-advance & preload timer: pauses when hidden/offscreen, resumes with remaining time
   useEffect(() => {
     clearTimers();
-    if (!hasInitialized || slides.length <= 1 || isFading || isDocHidden || !isIntersecting || reducedMotion) {
+    const earlyReason = !hasInitialized ? "not initialised"
+      : slides.length <= 1 ? "one slide"
+      : isFading ? "fading"
+      : isDocHidden ? "tab hidden"
+      : !isIntersecting ? "not intersecting"
+      : reducedMotion ? "reduced motion"
+      : null;
+
+    if (earlyReason) {
+      if (isDebug()) console.debug(`[HeroSlideshow] effect start: ${earlyReason}`);
       return;
     }
+
+    if (isDebug()) console.debug("[HeroSlideshow] effect start");
 
     const currentSlide = slides[currentIndex];
     if (!currentSlide) return;
@@ -232,6 +247,7 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
       } else {
         timerExpiredRef.current = true;
         if (nextIndexRef.current === null) {
+          if (isDebug()) console.debug("[HeroSlideshow] preload started");
           nextReadyRef.current = false;
           setNextIndex((currentIndex + 1) % slides.length);
         }
@@ -249,12 +265,14 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     // 1. Preload timing: start preloading and decoding before switch
     if (preloadDelay === 0) {
       if (nextIndexRef.current === null) {
+        if (isDebug()) console.debug("[HeroSlideshow] preload started");
         nextReadyRef.current = false;
         setNextIndex((currentIndex + 1) % slides.length);
       }
     } else {
       preloadTimerRef.current = setTimeout(() => {
         if (nextIndexRef.current === null) {
+          if (isDebug()) console.debug("[HeroSlideshow] preload started");
           nextReadyRef.current = false;
           setNextIndex((currentIndexRef.current + 1) % slidesRef.current.length);
         }
@@ -262,6 +280,7 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     }
 
     // 2. Advance timing: switch after remaining time expires
+    if (isDebug()) console.debug(`[HeroSlideshow] advance scheduled (${remaining}ms)`);
     advanceTimerRef.current = setTimeout(() => {
       remainingMsRef.current = 0;
       savedRemainingMs = 0;

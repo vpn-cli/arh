@@ -8,7 +8,9 @@ import {
   FADE_MS,
   PRELOAD_LEAD_MS,
   SAFETY_TIMEOUT_MS,
+  SLIDESHOW_DEBUG,
   _resetSlideshowStateForTesting,
+  _setSlideshowDebugForTesting,
 } from '../HeroSlideshow';
 import { SlideLayer } from '../SlideLayer';
 
@@ -275,3 +277,91 @@ describe('HeroSlideshow fake timer tests', () => {
     expect(finalSrc).not.toBe(initialSrc);
   });
 });
+
+describe('HeroSlideshow diagnostics (SLIDESHOW_DEBUG)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    _resetSlideshowStateForTesting();
+    Object.defineProperty(HTMLImageElement.prototype, 'complete', {
+      configurable: true,
+      get: () => true,
+    });
+    Object.defineProperty(HTMLImageElement.prototype, 'naturalWidth', {
+      configurable: true,
+      get: () => 1600,
+    });
+    HTMLImageElement.prototype.decode = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    _setSlideshowDebugForTesting(null);
+  });
+
+  it('defaults SLIDESHOW_DEBUG to false and emits no debug logs by default', async () => {
+    expect(SLIDESHOW_DEBUG).toBe(false);
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    render(<HeroSlideshow {...mockProps} stillMs={5000} />);
+    await act(async () => {
+      vi.advanceTimersByTime(6000);
+      await Promise.resolve();
+    });
+    expect(debugSpy).not.toHaveBeenCalled();
+    debugSpy.mockRestore();
+  });
+
+  it('logs diagnostics when SLIDESHOW_DEBUG is true', async () => {
+    _setSlideshowDebugForTesting(true);
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+
+    render(<HeroSlideshow {...mockProps} stillMs={5000} preloadLeadMs={2500} />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const calls = debugSpy.mock.calls.map((c) => c[0]);
+    expect(calls).toContain('[HeroSlideshow] effect start');
+    expect(calls.some((c) => typeof c === 'string' && c.includes('advance scheduled'))).toBe(true);
+
+    // Preload triggers at 2500ms
+    await act(async () => {
+      vi.advanceTimersByTime(2500);
+      await Promise.resolve();
+    });
+    expect(debugSpy.mock.calls.some((c) => c[0] === '[HeroSlideshow] preload started')).toBe(true);
+    expect(debugSpy.mock.calls.some((c) => c[0] === '[HeroSlideshow] next image ready')).toBe(true);
+
+    // Advance triggers at 5000ms
+    await act(async () => {
+      vi.advanceTimersByTime(2500);
+      await Promise.resolve();
+    });
+    expect(debugSpy.mock.calls.some((c) => c[0] === '[HeroSlideshow] crossfade start')).toBe(true);
+
+    // Crossfade ends
+    await act(async () => {
+      vi.advanceTimersByTime(FADE_MS);
+      await Promise.resolve();
+    });
+    expect(debugSpy.mock.calls.some((c) => c[0] === '[HeroSlideshow] crossfade end')).toBe(true);
+
+    debugSpy.mockRestore();
+  });
+
+  it('logs early return reasons', async () => {
+    _setSlideshowDebugForTesting(true);
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+
+    render(<HeroSlideshow {...mockProps} stillMs={5000} />);
+    await act(async () => {
+      Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+      await Promise.resolve();
+    });
+
+    expect(debugSpy.mock.calls.some((c) => c[0] === '[HeroSlideshow] effect start: tab hidden')).toBe(true);
+    debugSpy.mockRestore();
+  });
+});
+
