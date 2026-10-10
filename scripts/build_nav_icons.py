@@ -72,25 +72,63 @@ def flood_fill_sheet(img_rgba, tolerance=100):
 
     return img
 
+def label_connected_regions(filled_sheet):
+    width, height = filled_sheet.size
+    data = filled_sheet.load()
+    visited = set()
+    regions = []
+
+    for y in range(height):
+        for x in range(width):
+            if (x, y) not in visited and data[x, y][3] > 0:
+                region_pts = []
+                queue = deque([(x, y)])
+                visited.add((x, y))
+                while queue:
+                    cx, cy = queue.popleft()
+                    region_pts.append((cx, cy))
+                    for dx, dy in ((0, 1), (1, 0), (0, -1), (-1, 0)):
+                        nx, ny = cx + dx, cy + dy
+                        if 0 <= nx < width and 0 <= ny < height:
+                            if (nx, ny) not in visited and data[nx, ny][3] > 0:
+                                visited.add((nx, ny))
+                                queue.append((nx, ny))
+                regions.append(region_pts)
+
+    return regions
+
 def process_icons(filled_sheet, tolerance=100):
     width, height = filled_sheet.size
     col_width = width / 3.0
     row_height = height / 4.0
+    data = filled_sheet.load()
+
+    # 1. Label connected regions of opaque pixels across the WHOLE sheet
+    regions = label_connected_regions(filled_sheet)
+
+    # 2. Assign each region to the grid cell that contains its centre point
+    cell_regions = {(r, c): [] for r in range(1, 5) for c in range(1, 4)}
+    for reg in regions:
+        min_rx = min(p[0] for p in reg)
+        max_rx = max(p[0] for p in reg)
+        min_ry = min(p[1] for p in reg)
+        max_ry = max(p[1] for p in reg)
+
+        center_x = (min_rx + max_rx) / 2.0
+        center_y = (min_ry + max_ry) / 2.0
+
+        cell_col = min(3, max(1, int(center_x // col_width) + 1))
+        cell_row = min(4, max(1, int(center_y // row_height) + 1))
+
+        cell_regions[(cell_row, cell_col)].append(reg)
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     results = []
 
+    # 3. For each of the 7 icons, crop to the combined bounding box of assigned regions
     for name, row, col, desc in NAV_ITEMS:
-        x1 = int(round((col - 1) * col_width))
-        x2 = int(round(col * col_width))
-        y1 = int(round((row - 1) * row_height))
-        y2 = int(round(row * row_height))
-
-        cell = filled_sheet.crop((x1, y1, x2, y2))
-        cw, ch = cell.size
-        bbox = cell.getbbox()
-
-        if bbox is None:
+        regs = cell_regions.get((row, col), [])
+        if not regs:
             results.append({
                 "name": name,
                 "desc": desc,
@@ -98,7 +136,6 @@ def process_icons(filled_sheet, tolerance=100):
                 "col": col,
                 "bbox": None,
                 "bbox_size": (0, 0),
-                "cell_size": (cw, ch),
                 "opaque_pct": 0.0,
                 "touches_edge": False,
                 "touch_details": "empty",
@@ -106,30 +143,30 @@ def process_icons(filled_sheet, tolerance=100):
             })
             continue
 
-        bx1, by1, bx2, by2 = bbox
-        bw = bx2 - bx1
-        bh = by2 - by1
+        all_pts = [p for reg in regs for p in reg]
+        min_x = min(p[0] for p in all_pts)
+        max_x = max(p[0] for p in all_pts) + 1
+        min_y = min(p[1] for p in all_pts)
+        max_y = max(p[1] for p in all_pts) + 1
 
-        touches = []
-        if bx1 == 0:
-            touches.append("left")
-        if by1 == 0:
-            touches.append("top")
-        if bx2 == cw:
-            touches.append("right")
-        if by2 == ch:
-            touches.append("bottom")
+        bw = max_x - min_x
+        bh = max_y - min_y
 
-        touches_edge = len(touches) > 0
-        touch_str = ", ".join(touches) if touches else "no"
+        # Crop to combined bounding box, keeping only pixels belonging to assigned regions
+        cropped = Image.new("RGBA", (bw, bh), (0, 0, 0, 0))
+        crop_data = cropped.load()
+        for (px, py) in all_pts:
+            crop_data[px - min_x, py - min_y] = data[px, py]
 
-        cropped = cell.crop(bbox)
-        alpha = cropped.split()[-1]
-        opaque_count = sum(1 for a in alpha.tobytes() if a > 0)
+        # Check if the combined bounding box touches sheet or cell boundaries
+        touches_sheet = (min_x == 0 or min_y == 0 or max_x == width or max_y == height)
+        touch_str = "yes" if touches_sheet else "no"
+
+        opaque_count = len(all_pts)
         total_pixels = bw * bh
         opaque_pct = (opaque_count / total_pixels) * 100.0
 
-        # Pad to a square with about 6% margin
+        # 4. Pad to a square with about 6% margin
         max_dim = max(bw, bh)
         margin = int(round(max_dim * 0.06))
         square_size = max_dim + 2 * margin
@@ -148,11 +185,10 @@ def process_icons(filled_sheet, tolerance=100):
             "desc": desc,
             "row": row,
             "col": col,
-            "bbox": bbox,
+            "bbox": (min_x, min_y, max_x, max_y),
             "bbox_size": (bw, bh),
-            "cell_size": (cw, ch),
             "opaque_pct": opaque_pct,
-            "touches_edge": touches_edge,
+            "touches_edge": touches_sheet,
             "touch_details": touch_str,
             "icon_img": icon_96,
             "out_path": out_path,
