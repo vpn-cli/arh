@@ -92,18 +92,18 @@ export function SyncOffsetControl({
 
   return (
     <>
-      <div className="flex items-center gap-1 bg-white/90 border border-[#20233F]/40 rounded-full px-2 py-0.5 shadow-xs">
+      <div className="flex items-center gap-1 bg-white/90 border border-[var(--color-dark)]/40 rounded-full px-2 py-0.5 shadow-xs">
         <button
           type="button"
           onClick={handleDecrease}
           disabled={offsetMs <= -5000}
-          className="font-pixel text-[10px] font-bold px-1.5 py-0.5 rounded hover:bg-[#FFD0DC] text-[#20233F] transition-colors active:scale-95 disabled:opacity-40"
+          className="font-pixel text-[10px] font-bold px-1.5 py-0.5 rounded hover:bg-[var(--color-light)] text-[var(--color-dark)] transition-colors active:scale-95 disabled:opacity-40"
           title="Minus 100ms"
         >
           -100ms
         </button>
         <span
-          className="font-mono text-[11px] font-bold text-[#20233F] min-w-[52px] text-center select-none"
+          className="font-mono text-[11px] font-bold text-[var(--color-dark)] min-w-[52px] text-center select-none"
           title="Current lyric offset"
         >
           {offsetMs > 0 ? `+${offsetMs}ms` : `${offsetMs}ms`}
@@ -112,7 +112,7 @@ export function SyncOffsetControl({
           type="button"
           onClick={handleIncrease}
           disabled={offsetMs >= 5000}
-          className="font-pixel text-[10px] font-bold px-1.5 py-0.5 rounded hover:bg-[#B8E6D0] text-[#20233F] transition-colors active:scale-95 disabled:opacity-40"
+          className="font-pixel text-[10px] font-bold px-1.5 py-0.5 rounded hover:bg-[var(--color-light)] text-[var(--color-dark)] transition-colors active:scale-95 disabled:opacity-40"
           title="Plus 100ms"
         >
           +100ms
@@ -121,7 +121,7 @@ export function SyncOffsetControl({
           type="button"
           onClick={handleSaveClick}
           disabled={isSaving}
-          className="font-pixel text-[10px] font-bold px-2 py-0.5 ml-1 rounded-full border border-[#20233F] bg-[#B8E6D0] text-[#20233F] hover:bg-[#a2d8be] transition-all active:scale-95 disabled:opacity-50"
+          className="font-pixel text-[10px] font-bold px-2 py-0.5 ml-1 rounded-full border border-[var(--color-dark)] bg-[var(--color-light)] text-[var(--color-dark)] hover:bg-[var(--color-muted)]/40 transition-all active:scale-95 disabled:opacity-50"
           title="Save sync offset to database"
         >
           {isSaving ? '...' : saveSuccess ? '✓' : 'Save'}
@@ -130,9 +130,9 @@ export function SyncOffsetControl({
 
       {isSecretModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-[var(--color-bg)] border-4 border-[#20233F] rounded-2xl shadow-[6px_6px_0_#20233F] p-5 flex flex-col gap-3 text-[var(--color-dark)]">
+          <div className="w-full max-w-sm bg-[var(--color-bg)] border-4 border-[var(--color-dark)] rounded-2xl shadow-[6px_6px_0_var(--color-dark)] p-5 flex flex-col gap-3 text-[var(--color-dark)]">
             <div className="flex items-center justify-between border-b-2 border-[var(--color-muted)] pb-2">
-              <h3 className="font-pixel text-sm font-bold text-[#20233F] flex items-center gap-1.5">
+              <h3 className="font-pixel text-sm font-bold text-[var(--color-dark)] flex items-center gap-1.5">
                 <span>🔒</span> ADMIN SECRET
               </h3>
               <button
@@ -160,7 +160,7 @@ export function SyncOffsetControl({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && secretInput) saveOffsetWithSecret(secretInput);
               }}
-              className="w-full font-pixel text-xs p-2.5 border-2 border-[#20233F] rounded-xl outline-none focus:bg-[#FFF0F5]"
+              className="w-full font-pixel text-xs p-2.5 border-2 border-[var(--color-dark)] rounded-xl outline-none focus:bg-[var(--color-light)]"
               autoFocus
             />
 
@@ -177,7 +177,7 @@ export function SyncOffsetControl({
                   setIsSecretModalOpen(false);
                   setSecretError(null);
                 }}
-                className="font-pixel text-xs px-3 py-1.5 rounded-xl border-2 border-[#20233F] bg-white text-[#20233F] hover:bg-gray-50 active:scale-95"
+                className="font-pixel text-xs px-3 py-1.5 rounded-xl border-2 border-[var(--color-dark)] bg-white text-[var(--color-dark)] hover:bg-gray-50 active:scale-95"
               >
                 CANCEL
               </button>
@@ -185,7 +185,7 @@ export function SyncOffsetControl({
                 type="button"
                 onClick={() => saveOffsetWithSecret(secretInput)}
                 disabled={isSaving || !secretInput}
-                className="font-pixel text-xs px-4 py-1.5 rounded-xl border-2 border-[#20233F] bg-[#B8E6D0] text-[#20233F] font-bold shadow-[2px_2px_0_#20233F] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
+                className="font-pixel text-xs px-4 py-1.5 rounded-xl border-2 border-[var(--color-dark)] bg-[var(--color-light)] text-[var(--color-dark)] font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 active:scale-95 disabled:opacity-50"
               >
                 {isSaving ? 'SAVING...' : '✓ SAVE'}
               </button>

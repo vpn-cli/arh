@@ -27,7 +27,7 @@ export default function MusicWorld() {
       left: `${Math.random() * 100}%`,
       delay: `${Math.random() * 5}s`,
       duration: `${10 + Math.random() * 20}s`,
-      color: ['#FF99B9', '#FFB6C1', '#FF69B4', '#FFF0F5', '#FF8FB3'][Math.floor(Math.random() * 5)],
+      color: ['var(--color-vibrant)', 'var(--color-muted)', 'var(--color-dark)', 'var(--color-vibrant)', 'var(--color-muted)'][Math.floor(Math.random() * 5)],
       size: `${1 + Math.random() * 3}rem`,
       rotation: `${Math.random() * 60 - 30}deg`, // slight tilt
       symbol: ['♪', '♫', '♬', '♩', '♭', '♮', '♯'][Math.floor(Math.random() * 7)]
@@ -36,7 +36,7 @@ export default function MusicWorld() {
   }, []);
 
   return (
-    <div className="relative w-full min-h-screen bg-[var(--color-light)] text-[#9B4F96] overflow-hidden selection:bg-[var(--color-muted)]/40">
+    <div className="relative w-full min-h-screen bg-[var(--color-light)] text-[var(--color-dark)] overflow-hidden selection:bg-[var(--color-muted)]/40">
       
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none z-0">
@@ -48,7 +48,7 @@ export default function MusicWorld() {
         <div 
           className="absolute inset-0 opacity-[0.1]"
           style={{
-            backgroundImage: "radial-gradient(#FF99B9 2px, transparent 2px)",
+            backgroundImage: "radial-gradient(var(--color-muted) 2px, transparent 2px)",
             backgroundSize: "24px 24px"
           }}
         />

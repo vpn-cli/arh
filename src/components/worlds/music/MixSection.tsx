@@ -70,7 +70,7 @@ export function MixSection({
     <div className="flex flex-col gap-6 pb-6">
       
       {/* ✦ DYNAMIC BIRTHDAY / DAILY MIX ✦ */}
-      <section className="bg-gradient-to-br from-[var(--color-light)] via-[#FFF3F8] to-[#FFE8F3] border-2 border-[var(--color-muted)] rounded-3xl p-5 shadow-[0_10px_30px_rgba(255,105,180,0.18)]">
+      <section className="bg-gradient-to-br from-[var(--color-light)] via-[var(--color-bg)] to-[var(--color-light)] border-2 border-[var(--color-muted)] rounded-3xl p-5 shadow-[0_10px_30px_rgba(255,105,180,0.18)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <div className="flex items-center gap-2">

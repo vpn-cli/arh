@@ -34,7 +34,7 @@ export function LyricsInstrumentalView({
       {editMode && (
         <button
           onClick={onAddLyrics}
-          className="mt-6 border-2 border-[var(--color-dark)] px-4 py-2 font-pixel text-xs font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 transition-all bg-[#FFE4A1] text-[var(--color-dark)] active:scale-95"
+          className="mt-6 border-2 border-[var(--color-dark)] px-4 py-2 font-pixel text-xs font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 transition-all bg-[var(--color-light)] text-[var(--color-dark)] active:scale-95"
         >
           + ADD LYRICS (EDIT MODE)
         </button>
@@ -63,7 +63,7 @@ export function LyricsPlainView({
         <div className="mt-8 pt-6 border-t border-[var(--color-muted)]/50">
           <button
             onClick={onAddLyrics}
-            className="font-pixel text-xs px-4 py-2 rounded-full border-2 border-[var(--color-dark)] bg-[#FFE4A1] text-[var(--color-dark)] font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 active:scale-95 transition-all"
+            className="font-pixel text-xs px-4 py-2 rounded-full border-2 border-[var(--color-dark)] bg-[var(--color-light)] text-[var(--color-dark)] font-bold shadow-[2px_2px_0_var(--color-dark)] hover:-translate-y-0.5 active:scale-95 transition-all"
           >
             + Paste Synced LRC (Edit Mode)
           </button>
@@ -113,7 +113,7 @@ export function LyricsNotFoundView({
       {editMode && (
         <button
           onClick={onAddLyrics}
-          className="border-3 border-[var(--color-dark)] px-5 py-2.5 font-pixel text-xs font-bold shadow-[3px_3px_0_var(--color-dark)] hover:-translate-y-0.5 hover:shadow-[3px_5px_0_var(--color-dark)] transition-all bg-[#FFE4A1] text-[var(--color-dark)] active:scale-95"
+          className="border-3 border-[var(--color-dark)] px-5 py-2.5 font-pixel text-xs font-bold shadow-[3px_3px_0_var(--color-dark)] hover:-translate-y-0.5 hover:shadow-[3px_5px_0_var(--color-dark)] transition-all bg-[var(--color-light)] text-[var(--color-dark)] active:scale-95"
         >
           + ADD LYRICS
         </button>

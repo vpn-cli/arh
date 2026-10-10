@@ -14,7 +14,7 @@ export function AlbumActions({ onPlay, onShuffle, onToggleSave, isSaved, disable
       <button 
         onClick={onPlay}
         disabled={disabled}
-        className={`flex-1 shrink-0 bg-gradient-to-r from-[#FF99B9] to-[var(--color-muted)] text-white py-3 rounded-xl shadow-[0_4px_12px_rgba(255,105,180,0.4)] transition-all flex flex-col items-center justify-center gap-1 ${disabled ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
+        className={`flex-1 shrink-0 bg-gradient-to-r from-[var(--color-vibrant)] to-[var(--color-muted)] text-white py-3 rounded-xl shadow-[0_4px_12px_rgba(255,105,180,0.4)] transition-all flex flex-col items-center justify-center gap-1 ${disabled ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
       >
         <span className="font-pixel text-sm font-bold tracking-widest">
           ✨ PLAY ✨

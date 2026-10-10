@@ -393,7 +393,7 @@ export function QueueModal({
                         </div>
 
                         {/* Duration */}
-                        <span className="font-pixel text-xs text-[#82297D] font-bold shrink-0">
+                        <span className="font-pixel text-xs text-[var(--color-dark)] opacity-70 font-bold shrink-0">
                           {formatTime(item.track?.duration_ms)}
                         </span>
 
@@ -527,7 +527,7 @@ export function QueueModal({
                         </div>
                       </div>
 
-                      <span className="font-pixel text-xs text-[#82297D] font-bold shrink-0">
+                      <span className="font-pixel text-xs text-[var(--color-dark)] opacity-70 font-bold shrink-0">
                         {formatTime(track.duration_ms)}
                       </span>
 

@@ -298,7 +298,7 @@ export function VibesSection({
                <button
                  key={vibe.id}
                  onClick={() => setSelectedVibeId(vibe.id)}
-                 className="flex flex-col items-start p-4 bg-[#FFFFFF] border-2 border-[var(--color-light)] hover:border-[var(--color-muted)] hover:shadow-sm rounded-xl transition-all text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+                 className="flex flex-col items-start p-4 bg-[var(--color-bg)] border-2 border-[var(--color-light)] hover:border-[var(--color-muted)] hover:shadow-sm rounded-xl transition-all text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
                >
                  <span className="font-pixel text-sm font-bold text-[var(--color-dark)] mb-1 group-hover:text-[var(--color-dark)] transition-colors">{vibe.label}</span>
                  <span className="font-pixel text-xs text-[var(--color-dark)] font-medium">

@@ -45,7 +45,7 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
   if (isArtistError && (artistError as Record<string, unknown>)?.status === 429) {
     return (
       <div className="flex flex-col h-full items-center justify-center">
-        <div className="text-[#FF4500] font-pixel text-xs text-center px-4">
+        <div className="text-[var(--color-dark)] opacity-80 font-pixel text-xs text-center px-4">
           RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((artistError as any)?.retryAfter ?? 60)} SECONDS.
         </div>
         <button onClick={onBack} className="mt-4 font-pixel text-[var(--color-muted)] text-[10px]">GO BACK</button>
@@ -93,12 +93,12 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
       
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar flex flex-col gap-6">
         {isAlbumsError && (albumsError as Record<string, unknown>)?.status === 429 ? (
-          <div className="flex items-center justify-center text-[#FF4500] font-pixel text-xs text-center px-4 h-20">
+          <div className="flex items-center justify-center text-[var(--color-dark)] opacity-80 font-pixel text-xs text-center px-4 h-20">
             RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((albumsError as Record<string, unknown>)?.retryAfter as number ?? 60)} SECONDS.
           </div>
         ) : isAlbumsError ? (
           <div className="flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2 h-20">
-            <span className="text-[#FF4500]">RELEASES UNAVAILABLE</span>
+            <span className="text-[var(--color-dark)] opacity-80">RELEASES UNAVAILABLE</span>
           </div>
         ) : isLoadingAlbums ? (
           <div className="flex items-center justify-center text-[var(--color-muted)] font-pixel text-xs animate-pulse h-20">
@@ -108,12 +108,12 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
           <>
             {/* Featured Tracks Section */}
             {isFeaturedTracksError && (featuredTracksError as Record<string, unknown>)?.status === 429 ? (
-              <div className="flex items-center justify-center text-[#FF4500] font-pixel text-xs text-center px-4 h-20">
+              <div className="flex items-center justify-center text-[var(--color-dark)] opacity-80 font-pixel text-xs text-center px-4 h-20">
                 RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((featuredTracksError as Record<string, unknown>)?.retryAfter as number ?? 60)} SECONDS.
               </div>
             ) : isFeaturedTracksError ? (
               <div className="flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2 h-20">
-                <span className="text-[#FF4500]">FEATURED TRACKS UNAVAILABLE</span>
+                <span className="text-[var(--color-dark)] opacity-80">FEATURED TRACKS UNAVAILABLE</span>
               </div>
             ) : (featuredTracksData?.tracks?.items && featuredTracksData.tracks.items.length > 0) ? (
               <div className="flex flex-col gap-3">

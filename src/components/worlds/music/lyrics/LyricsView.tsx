@@ -285,7 +285,7 @@ export const LyricsView = React.memo(
               }}
               className={`font-pixel text-[10px] px-2.5 py-1 rounded-full border transition-all active:scale-95 ${
                 editMode
-                  ? 'bg-[#FFD0DC] text-[#20233F] border-[#20233F] font-bold shadow-xs'
+                  ? 'bg-[var(--color-light)] text-[var(--color-dark)] border-[var(--color-dark)] font-bold shadow-xs'
                   : 'bg-white hover:bg-[var(--color-light)] text-[var(--color-dark)]/70 border-[var(--color-muted)]'
               }`}
               title="Toggle Edit Mode (for VPN)"

@@ -139,15 +139,15 @@ Each task has a checkbox grouped by section. One git commit per section, updatin
 - Fallback initial constants in `PaletteBackground.tsx` (`#C2185B`, `#ffffff`, `#000000`).
 
 ### Section C Tasks
-- [ ] Replace purple durations in `QueueModal.tsx` (`#82297D`) with palette variables.
-- [ ] Replace hardcoded gradient in `AlbumActions.tsx` (`#FF99B9`) with palette variables.
-- [ ] Replace hardcoded error/rate-limit text colors in `AlbumDetail.tsx` and `ArtistDetail.tsx` (`#FF4500`).
-- [ ] Replace hardcoded hover gradient in `LibraryTab.tsx` (`#AD1457`) with palette variables.
-- [ ] Replace hardcoded text and pattern colors in `MusicWorld.tsx` (`#9B4F96`, `#FF99B9`) with palette variables.
-- [ ] Replace hardcoded pink borders and backgrounds in `MemoriesSection.tsx` and `MemoryEditorModal.tsx` (`#FFD9EA`, `#FFF0F7`) with palette variables.
-- [ ] Replace hardcoded banner gradient in `MixSection.tsx` (`#FFF3F8`, `#FFE8F3`) with palette variables.
-- [ ] Replace hardcoded `#FFFFFF` in `VibesSection.tsx` with palette variables.
-- [ ] Replace hardcoded colors in `lyrics/AddLyricsModal.tsx`, `lyrics/SyncOffsetControl.tsx`, `lyrics/LyricsStates.tsx`, `lyrics/LyricsView.tsx` with palette variables.
+- [x] Replace purple durations in `QueueModal.tsx` (`#82297D`) with palette variables.
+- [x] Replace hardcoded gradient in `AlbumActions.tsx` (`#FF99B9`) with palette variables.
+- [x] Replace hardcoded error/rate-limit text colors in `AlbumDetail.tsx` and `ArtistDetail.tsx` (`#FF4500`).
+- [x] Replace hardcoded hover gradient in `LibraryTab.tsx` (`#AD1457`) with palette variables.
+- [x] Replace hardcoded text and pattern colors in `MusicWorld.tsx` (`#9B4F96`, `#FF99B9`) with palette variables.
+- [x] Replace hardcoded pink borders and backgrounds in `MemoriesSection.tsx` and `MemoryEditorModal.tsx` (`#FFD9EA`, `#FFF0F7`) with palette variables.
+- [x] Replace hardcoded banner gradient in `MixSection.tsx` (`#FFF3F8`, `#FFE8F3`) with palette variables.
+- [x] Replace hardcoded `#FFFFFF` in `VibesSection.tsx` with palette variables.
+- [x] Replace hardcoded colors in `lyrics/AddLyricsModal.tsx`, `lyrics/SyncOffsetControl.tsx`, `lyrics/LyricsStates.tsx`, `lyrics/LyricsView.tsx` with palette variables.
 
 ---
 

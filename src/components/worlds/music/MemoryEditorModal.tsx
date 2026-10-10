@@ -73,7 +73,7 @@ export function MemoryEditorModal({ isOpen, onClose, entity, entityType, memoryI
   return (
     <div className="absolute inset-0 z-[100] flex items-center justify-center bg-[var(--color-light)]/80 backdrop-blur-sm rounded-3xl p-4">
       <div className="bg-white rounded-3xl border-4 border-[var(--color-muted)] shadow-[0_10px_40px_rgba(255,105,180,0.4)] p-6 flex flex-col gap-4 w-full max-w-sm">
-        <div className="flex justify-between items-center border-b-2 border-[#FFD9EA] pb-2">
+        <div className="flex justify-between items-center border-b-2 border-[var(--color-light)] pb-2">
           <h3 className="font-pixel text-base font-bold text-[var(--color-dark)]">{displayTitle}</h3>
           <button onClick={onClose} className="text-[var(--color-dark)] hover:text-[var(--color-dark)] p-1 transition-colors flex items-center justify-center" aria-label="Close modal">
             <CloseIcon size={16} />
@@ -92,7 +92,7 @@ export function MemoryEditorModal({ isOpen, onClose, entity, entityType, memoryI
           </div>
         )}
 
-        <div className="flex items-center gap-3 bg-[#FFF0F7] border border-[var(--color-light)] p-2.5 rounded-xl">
+        <div className="flex items-center gap-3 bg-[var(--color-light)] border border-[var(--color-muted)] p-2.5 rounded-xl">
           {imageSrc ? (
             <img src={imageSrc} className="w-10 h-10 rounded-lg object-cover border border-[var(--color-muted)]" alt="" />
           ) : (

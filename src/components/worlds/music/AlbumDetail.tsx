@@ -45,7 +45,7 @@ export function AlbumDetail({ albumId, onBack, onPlayAlbum, onPlayTrack, onAddTo
   if (isAlbumError && (albumError as any)?.status === 429) {
     return (
       <div className="flex flex-col h-full items-center justify-center">
-        <div className="text-[#FF4500] font-pixel text-xs text-center px-4">
+        <div className="text-[var(--color-dark)] opacity-80 font-pixel text-xs text-center px-4">
           RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((albumError as any)?.retryAfter ?? 60)} SECONDS.
         </div>
         <button onClick={onBack} className="mt-4 font-pixel text-[var(--color-muted)] text-[10px]">GO BACK</button>
@@ -104,12 +104,12 @@ export function AlbumDetail({ albumId, onBack, onPlayAlbum, onPlayTrack, onAddTo
         disabled={isLoadingItems || !itemsData?.items?.length} 
       />
       {isItemsError && (itemsError as any)?.status === 429 ? (
-        <div className="flex-1 flex items-center justify-center text-[#FF4500] font-pixel text-xs text-center px-4">
+        <div className="flex-1 flex items-center justify-center text-[var(--color-dark)] opacity-80 font-pixel text-xs text-center px-4">
           RATE LIMITED BY SPOTIFY.<br/>WAIT {rateLimitTimer || ((itemsError as any)?.retryAfter ?? 60)} SECONDS.
         </div>
       ) : isItemsError ? (
         <div className="flex-1 flex flex-col items-center justify-center font-pixel text-[10px] text-center px-4 gap-2">
-          <span className="text-[#FF4500]">TRACKS UNAVAILABLE</span>
+          <span className="text-[var(--color-dark)] opacity-80">TRACKS UNAVAILABLE</span>
           <span className="text-[var(--color-muted)]/70 leading-relaxed uppercase">UNABLE TO LOAD ALBUM TRACKS.</span>
         </div>
       ) : (

@@ -145,7 +145,7 @@ export function MemoriesSection({
           return (
             <div key={memory.id} className="flex flex-col bg-[var(--color-light)] border-2 border-[var(--color-muted)] rounded-2xl overflow-hidden hover:border-[var(--color-muted)] transition-colors group shadow-xs">
               {/* Note Section */}
-              <div className="p-3 bg-white/70 border-b-2 border-[#FFD9EA]">
+              <div className="p-3 bg-white/70 border-b-2 border-[var(--color-light)]">
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex gap-2 items-center flex-wrap">
                     {memory.category && (

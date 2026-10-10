@@ -52,7 +52,7 @@ export const LibraryTab = React.memo(function LibraryTab({
       <button
         onClick={() => playTracks(likedData?.tracks?.map((t: any) => t.uri) || [], likedData?.tracks || [])}
         disabled={!likedData?.tracks?.length}
-        className={`w-full mb-3 shrink-0 bg-gradient-to-r from-[var(--color-vibrant)] to-[var(--color-vibrant)] hover:from-[var(--color-vibrant)] hover:to-[#AD1457] text-white py-3 rounded-xl shadow-[0_4px_14px_var(--color-vibrant)] transition-all flex flex-col items-center justify-center gap-1 ${!likedData?.tracks?.length ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.01] active:scale-95'}`}
+        className={`w-full mb-3 shrink-0 bg-gradient-to-r from-[var(--color-vibrant)] to-[var(--color-vibrant)] hover:from-[var(--color-vibrant)] hover:to-[var(--color-dark)] text-white py-3 rounded-xl shadow-[0_4px_14px_var(--color-vibrant)] transition-all flex flex-col items-center justify-center gap-1 ${!likedData?.tracks?.length ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.01] active:scale-95'}`}
       >
         <span className="font-pixel text-sm font-bold tracking-widest">
           ✦ PLAY LIKED ✦
