@@ -1315,12 +1315,12 @@ html {
 
   @media (hover: hover) {
     .mw-nav-item:hover .mw-nav-icon {
-      transform: scale(calc(var(--icon-scale, 1) * 1.08)) !important;
+      transform: scale(calc(var(--icon-scale, 1) * 1.08));
     }
   }
 
   .mw-nav-item:focus-visible .mw-nav-icon {
-    transform: scale(calc(var(--icon-scale, 1) * 1.08)) !important;
+    transform: scale(calc(var(--icon-scale, 1) * 1.08));
   }
 
   /* 4. Buttons */

@@ -81,7 +81,6 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
           const iconScaleStyle = item.scale
             ? ({
                 '--icon-scale': item.scale,
-                transform: `scale(${item.scale})`,
               } as React.CSSProperties)
             : undefined;
 
@@ -123,7 +122,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
           <span className="font-pixel text-body font-bold uppercase tracking-wider text-[var(--color-dark)]">Your Playlists</span>
           <button
             onClick={onCreatePlaylist}
-            className="mw-btn font-bold text-[var(--color-dark)] p-1 rounded flex items-center justify-center hover:text-[var(--color-vibrant)]"
+            className="mw-btn font-bold text-[var(--color-dark)] w-6 h-6 min-w-[24px] min-h-[24px] rounded flex items-center justify-center hover:text-[var(--color-vibrant)]"
             aria-label="Create new playlist"
             title="Create new playlist"
           >
