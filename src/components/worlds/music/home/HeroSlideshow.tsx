@@ -7,18 +7,24 @@ import { CurrentlyPlayingHero } from "./CurrentlyPlayingHero";
 import { SlideLayer } from "./SlideLayer";
 import { PlayIcon, PauseIcon } from "../icons";
 
-// Timing constants: each slide stays for 3 minutes (180s)
+// Timing constants: each slide stays for 3 minutes (180s) by default
 export const STILL_MS = 180000;
 export const ANIMATED_MS = 180000;
 export const FADE_MS = 800;
 export const PRELOAD_LEAD_MS = 15000;
+export const SAFETY_TIMEOUT_MS = 10000;
 
-// Module-level persistence so navigation away from and back to Home preserves slideshow progress
+// Module-level persistence across tab switches
 let savedSlides: SlideItem[] | null = null;
 let savedCurrentIndex = 0;
 let savedRemainingMs: number | null = null;
 
-// Visual tuning constants for background slideshow & scrim
+export function _resetSlideshowStateForTesting() {
+  savedSlides = null;
+  savedCurrentIndex = 0;
+  savedRemainingMs = null;
+}
+
 export const BG_OPACITY = 0.55;
 export const BG_BLUR = "1px";
 export const SCRIM_GRADIENT =
@@ -33,6 +39,9 @@ export interface HeroSlideshowProps {
   onNavigate: (tab: any) => void;
   playTracks: (uris: string[], tracks?: any[]) => void;
   togglePlay: () => void;
+  stillMs?: number;
+  animatedMs?: number;
+  preloadLeadMs?: number;
 }
 
 export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlideshowProps) {
@@ -53,29 +62,32 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
   const preloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const slidesRef = useRef<SlideItem[]>([]);
   slidesRef.current = slides;
-
   const currentIndexRef = useRef(0);
   currentIndexRef.current = currentIndex;
-
   const nextIndexRef = useRef<number | null>(null);
   nextIndexRef.current = nextIndex;
-
   const isFadingRef = useRef(false);
   isFadingRef.current = isFading;
 
-  // Initialize slides: shuffle on mount, or pick one random still image for reduced motion
+  const clearTimers = () => {
+    if (preloadTimerRef.current) clearTimeout(preloadTimerRef.current);
+    if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+    if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+  };
+
+  // Initialize slides: shuffle on mount, or pick one still image for reduced motion
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const motionReduced = mediaQuery.matches;
-    setReducedMotion(motionReduced);
+    setReducedMotion(mediaQuery.matches);
 
     const setupSlides = (isReduced: boolean) => {
       if (isReduced) {
-        const stillSlides = slideshowSlides.filter((s) => !s.animated);
-        setSlides(stillSlides.length > 0 ? [stillSlides[Math.floor(Math.random() * stillSlides.length)]] : []);
+        const still = slideshowSlides.filter((s) => !s.animated);
+        setSlides(still.length > 0 ? [still[Math.floor(Math.random() * still.length)]] : []);
       } else if (slideshowSlides.length > 0) {
         if (savedSlides && savedSlides.length === slideshowSlides.length) {
           setSlides(savedSlides);
@@ -101,19 +113,14 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
       setIsFading(false);
     };
 
-    setupSlides(motionReduced);
-
+    setupSlides(mediaQuery.matches);
     const handleMotionChange = (e: MediaQueryListEvent) => {
       setReducedMotion(e.matches);
       setupSlides(e.matches);
     };
     mediaQuery.addEventListener("change", handleMotionChange);
-
-    const handleVisibility = () => {
-      setIsDocHidden(document.hidden);
-    };
+    const handleVisibility = () => setIsDocHidden(document.hidden);
     document.addEventListener("visibilitychange", handleVisibility);
-
     setHasInitialized(true);
 
     return () => {
@@ -122,42 +129,50 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     };
   }, []);
 
-  // IntersectionObserver to pause when the hero card is not shown in the viewport
+  // IntersectionObserver: attaches when hero card mounts; pauses only when entry is not intersecting
   useEffect(() => {
     const el = sectionRef.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsIntersecting(entry.isIntersecting);
-      },
-      { threshold: 0.1 }
-    );
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry) setIsIntersecting(entry.isIntersecting);
+    }, { threshold: 0 });
     observer.observe(el);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
+    return () => observer.disconnect();
+  }, [hasInitialized]);
 
   // Clear timers on unmount
-  useEffect(() => {
-    return () => {
-      if (preloadTimerRef.current) clearTimeout(preloadTimerRef.current);
-      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
-      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
-    };
+  useEffect(() => () => {
+    clearTimers();
+    if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+  }, []);
+
+  const skipToFollowingSlide = useCallback(() => {
+    const count = slidesRef.current.length;
+    if (count <= 1) return;
+    const currentNext = nextIndexRef.current ?? ((currentIndexRef.current + 1) % count);
+    const following = (currentNext + 1) % count;
+    nextReadyRef.current = false;
+    setNextIndex(following);
+    if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+    safetyTimerRef.current = setTimeout(() => {
+      if (!nextReadyRef.current && timerExpiredRef.current) skipToFollowingSlide();
+    }, SAFETY_TIMEOUT_MS);
   }, []);
 
   const triggerCrossfade = useCallback(() => {
     if (isFadingRef.current || nextIndexRef.current === null) return;
+    if (safetyTimerRef.current) {
+      clearTimeout(safetyTimerRef.current);
+      safetyTimerRef.current = null;
+    }
     setIsFading(true);
 
     fadeTimerRef.current = setTimeout(() => {
-      const finishedIndex = nextIndexRef.current;
-      if (finishedIndex !== null) {
-        setCurrentIndex(finishedIndex);
-        savedCurrentIndex = finishedIndex;
+      const finished = nextIndexRef.current;
+      if (finished !== null) {
+        setCurrentIndex(finished);
+        savedCurrentIndex = finished;
       }
       setNextIndex(null);
       setIsFading(false);
@@ -170,9 +185,11 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
 
   const handleNextReady = useCallback(() => {
     nextReadyRef.current = true;
-    if (timerExpiredRef.current) {
-      triggerCrossfade();
+    if (safetyTimerRef.current) {
+      clearTimeout(safetyTimerRef.current);
+      safetyTimerRef.current = null;
     }
+    if (timerExpiredRef.current) triggerCrossfade();
   }, [triggerCrossfade]);
 
   const handleNextError = useCallback(() => {
@@ -181,38 +198,55 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     const skipped = (nextIndexRef.current + 1) % count;
     nextReadyRef.current = false;
     setNextIndex(skipped);
-  }, []);
+    if (timerExpiredRef.current) {
+      if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+      safetyTimerRef.current = setTimeout(() => {
+        if (!nextReadyRef.current && timerExpiredRef.current) skipToFollowingSlide();
+      }, SAFETY_TIMEOUT_MS);
+    }
+  }, [skipToFollowingSlide]);
 
-  // Auto-advance & preload timer:
-  // Each slide stays for 3 minutes (180,000 ms).
-  // Preloads and decodes next slide ~15 seconds before switch.
-  // Pauses while tab is hidden or Home tab / hero is not shown, and resumes with remaining time.
+  // Auto-advance & preload timer: pauses when hidden/offscreen, resumes with remaining time
   useEffect(() => {
-    if (preloadTimerRef.current) clearTimeout(preloadTimerRef.current);
-    if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
-
-    if (
-      !hasInitialized ||
-      slides.length <= 1 ||
-      isFading ||
-      isDocHidden ||
-      !isIntersecting ||
-      reducedMotion
-    ) {
+    clearTimers();
+    if (!hasInitialized || slides.length <= 1 || isFading || isDocHidden || !isIntersecting || reducedMotion) {
       return;
     }
 
     const currentSlide = slides[currentIndex];
     if (!currentSlide) return;
 
-    const stayDuration = currentSlide.animated ? ANIMATED_MS : STILL_MS;
+    const stayDuration = currentSlide.animated ? (props.animatedMs ?? ANIMATED_MS) : (props.stillMs ?? STILL_MS);
     const remaining = remainingMsRef.current ?? stayDuration;
     remainingMsRef.current = remaining;
 
+    // Fix A: preload lead = min(PRELOAD_LEAD_MS, half of slide duration), never negative
+    const baseLead = props.preloadLeadMs ?? PRELOAD_LEAD_MS;
+    const preloadLead = Math.max(0, Math.min(baseLead, Math.floor(stayDuration / 2)));
+    const preloadDelay = Math.max(0, remaining - preloadLead);
+
+    // If remaining time is 0 (timer expired before or during pause)
+    if (remaining <= 0 || timerExpiredRef.current) {
+      if (nextReadyRef.current) {
+        triggerCrossfade();
+      } else {
+        timerExpiredRef.current = true;
+        if (nextIndexRef.current === null) {
+          nextReadyRef.current = false;
+          setNextIndex((currentIndex + 1) % slides.length);
+        }
+        if (slides.length > 1) {
+          safetyTimerRef.current = setTimeout(() => {
+            if (!nextReadyRef.current && timerExpiredRef.current) skipToFollowingSlide();
+          }, SAFETY_TIMEOUT_MS);
+        }
+      }
+      return;
+    }
+
     activeStartMarkRef.current = Date.now();
 
-    // 1. Preload timing: start preloading and decoding about 15s before switch
-    const preloadDelay = Math.max(0, remaining - PRELOAD_LEAD_MS);
+    // 1. Preload timing: start preloading and decoding before switch
     if (preloadDelay === 0) {
       if (nextIndexRef.current === null) {
         nextReadyRef.current = false;
@@ -231,22 +265,21 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     advanceTimerRef.current = setTimeout(() => {
       remainingMsRef.current = 0;
       savedRemainingMs = 0;
+      activeStartMarkRef.current = null;
       if (nextReadyRef.current) {
         triggerCrossfade();
       } else {
         timerExpiredRef.current = true;
+        if (slidesRef.current.length > 1) {
+          safetyTimerRef.current = setTimeout(() => {
+            if (!nextReadyRef.current && timerExpiredRef.current) skipToFollowingSlide();
+          }, SAFETY_TIMEOUT_MS);
+        }
       }
     }, remaining);
 
     return () => {
-      if (preloadTimerRef.current) {
-        clearTimeout(preloadTimerRef.current);
-        preloadTimerRef.current = null;
-      }
-      if (advanceTimerRef.current) {
-        clearTimeout(advanceTimerRef.current);
-        advanceTimerRef.current = null;
-      }
+      clearTimers();
       if (activeStartMarkRef.current !== null) {
         const elapsed = Date.now() - activeStartMarkRef.current;
         const newRemaining = Math.max(0, remaining - elapsed);
@@ -265,22 +298,20 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
     isDocHidden,
     isIntersecting,
     reducedMotion,
+    props.stillMs,
+    props.animatedMs,
+    props.preloadLeadMs,
     triggerCrossfade,
+    skipToFollowingSlide,
   ]);
 
   const handlePlayClick = () => {
     if (props.currentTrack) {
       props.togglePlay();
     } else {
-      const tracksToPlay =
-        props.birthdayMixTracks.length > 0
-          ? props.birthdayMixTracks
-          : props.likedTracks;
+      const tracksToPlay = props.birthdayMixTracks.length > 0 ? props.birthdayMixTracks : props.likedTracks;
       if (tracksToPlay.length > 0) {
-        props.playTracks(
-          tracksToPlay.map((t: any) => t.uri),
-          tracksToPlay
-        );
+        props.playTracks(tracksToPlay.map((t: any) => t.uri), tracksToPlay);
       } else {
         props.onNavigate("mix");
       }
@@ -311,38 +342,15 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
         }}
       >
         {currentSlide && (
-          <SlideLayer
-            key={currentSlide.src}
-            slide={currentSlide}
-            isPriority={true}
-            opacity={1}
-            isFading={false}
-            fadeMs={FADE_MS}
-          />
+          <SlideLayer key={currentSlide.src} slide={currentSlide} isPriority={true} opacity={1} isFading={false} fadeMs={FADE_MS} />
         )}
-
         {nextSlide && (
-          <SlideLayer
-            key={nextSlide.src}
-            slide={nextSlide}
-            isPriority={false}
-            opacity={isFading ? 1 : 0}
-            isFading={isFading}
-            fadeMs={FADE_MS}
-            onReady={handleNextReady}
-            onError={handleNextError}
-          />
+          <SlideLayer key={nextSlide.src} slide={nextSlide} isPriority={false} opacity={isFading ? 1 : 0} isFading={isFading} fadeMs={FADE_MS} onReady={handleNextReady} onError={handleNextError} />
         )}
       </div>
 
       {/* Scrim: horizontal gradient from var(--color-bg) at ~92% opacity to transparent at ~75% width */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden="true"
-        style={{
-          background: SCRIM_GRADIENT,
-        }}
-      />
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ background: SCRIM_GRADIENT }} />
 
       {/* Foreground Hero Content: restored from CurrentlyPlayingHero */}
       <div className="relative z-10 flex h-full items-center px-6 sm:px-8 py-6 sm:py-8">
@@ -354,22 +362,14 @@ export const HeroSlideshow = React.memo(function HeroSlideshow(props: HeroSlides
             {props.currentTrack ? props.currentTrack.name : "Let's listen together ♡"}
           </h2>
           <p className="mt-2 sm:mt-3 font-pixel text-body sm:text-title font-medium text-[var(--color-dark)] opacity-90 truncate">
-            {props.currentTrack
-              ? props.currentTrack.artists?.map((a: any) => a.name).join(", ")
-              : "What are we listening to today?"}
+            {props.currentTrack ? props.currentTrack.artists?.map((a: any) => a.name).join(", ") : "What are we listening to today?"}
           </p>
           <button
             type="button"
             onClick={handlePlayClick}
             className="mt-4 sm:mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-5 sm:px-6 py-2 sm:py-2.5 font-pixel text-body font-bold text-[var(--on-vibrant)] shadow-md mw-btn group cursor-pointer"
           >
-            <span>
-              {props.currentTrack ? (
-                props.isPaused ? <PlayIcon size={16} /> : <PauseIcon size={16} />
-              ) : (
-                <PlayIcon size={16} />
-              )}
-            </span>
+            <span>{props.currentTrack ? (props.isPaused ? <PlayIcon size={16} /> : <PauseIcon size={16} />) : <PlayIcon size={16} />}</span>
             {props.currentTrack ? (props.isPaused ? "Resume" : "Playing") : "Play Mix"}
           </button>
         </div>
