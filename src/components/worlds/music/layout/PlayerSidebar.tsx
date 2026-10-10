@@ -5,6 +5,15 @@ import { logoutSpotify } from "@/lib/spotifyAuth";
 import { usePlaylists } from "@/hooks/useSpotify";
 import { MediaRow } from "../MediaRow";
 import { PlaylistCover } from "../PlaylistCover";
+import {
+  HomeIcon,
+  PlaylistsIcon,
+  MixIcon,
+  VibesIcon,
+  LibraryIcon,
+  MemoriesIcon,
+  FrequenciesIcon,
+} from "../icons";
 
 export type MusicNavTab = 'home' | 'playlists' | 'mix' | 'vibes' | 'library' | 'memories' | 'frequencies';
 
@@ -16,14 +25,18 @@ export interface PlayerSidebarProps {
   onLogout?: () => void;
 }
 
-const NAV_ITEMS: { id: MusicNavTab; icon: string; label: string }[] = [
-  { id: 'home', icon: '⌂', label: 'Home' },
-  { id: 'playlists', icon: '♫', label: 'Playlists' },
-  { id: 'mix', icon: '✨', label: 'Mix' },
-  { id: 'vibes', icon: '✦', label: 'Vibes' },
-  { id: 'library', icon: '▥', label: 'Library' },
-  { id: 'memories', icon: '▣', label: 'Memories' },
-  { id: 'frequencies', icon: '≋', label: 'Frequencies' },
+const NAV_ITEMS: {
+  id: MusicNavTab;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+}[] = [
+  { id: 'home', icon: HomeIcon, label: 'Home' },
+  { id: 'playlists', icon: PlaylistsIcon, label: 'Playlists' },
+  { id: 'mix', icon: MixIcon, label: 'Mix' },
+  { id: 'vibes', icon: VibesIcon, label: 'Vibes' },
+  { id: 'library', icon: LibraryIcon, label: 'Library' },
+  { id: 'memories', icon: MemoriesIcon, label: 'Memories' },
+  { id: 'frequencies', icon: FrequenciesIcon, label: 'Frequencies' },
 ];
 
 export const PlayerSidebar = React.memo(function PlayerSidebar({
@@ -51,6 +64,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
       <nav className="flex flex-col gap-1 px-4 py-2 shrink-0" aria-label="Main Navigation">
         {NAV_ITEMS.map((item) => {
           const isActive = activeTab === item.id;
+          const IconComp = item.icon;
           return (
             <button
               key={item.id}
@@ -61,7 +75,9 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
                   : 'text-[var(--color-dark)] font-medium border border-transparent'
               }`}
             >
-              <span className="w-5 text-xl mw-nav-icon">{item.icon}</span>
+              <span className={`w-5 flex items-center justify-center mw-nav-icon shrink-0 ${isActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}>
+                <IconComp size={22} />
+              </span>
               <span className="text-base">{item.label}</span>
             </button>
           );
