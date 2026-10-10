@@ -1,4 +1,5 @@
 import React from 'react';
+import { MusicNoteIcon } from './icons';
 
 interface PlaylistCardProps {
   playlist: any;
@@ -30,8 +31,8 @@ export function PlaylistCard({ playlist, onClick, onAddMemory, variant = 'defaul
         ) : playlist.images && playlist.images[0] ? (
           <img src={playlist.images[0].url || playlist.images[0]} alt="" className={`${imgSize} rounded-lg shadow-sm object-cover shrink-0`} />
         ) : (
-          <div className={`${imgSize} rounded-lg bg-[var(--color-muted)] flex items-center justify-center shadow-sm shrink-0 text-[var(--color-dark)] font-bold text-xs`}>
-            ♪
+          <div className={`${imgSize} rounded-lg bg-[var(--color-muted)] flex items-center justify-center shadow-sm shrink-0 text-[var(--color-dark)]`}>
+            <MusicNoteIcon size={isCompact ? 14 : 16} />
           </div>
         )}
         <div className="flex-1 overflow-hidden z-10 relative flex flex-col min-w-0">

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useLikedTracks } from "@/hooks/useLikedTracks";
 import { TrackList } from "../TrackList";
+import { ChevronLeftIcon, ChevronRightIcon } from "../icons";
 
 export interface LibraryTabProps {
   playTrack: (uri: string, contextUri?: string, track?: any) => void;
@@ -32,19 +33,19 @@ export const LibraryTab = React.memo(function LibraryTab({
           <button
             onClick={() => setLibraryPage(p => Math.max(0, p - 1))}
             disabled={libraryPage === 0}
-            className="text-xs font-bold text-[var(--color-dark)] disabled:opacity-40 hover:text-[var(--color-dark)] cursor-pointer p-1"
+            className="text-xs font-bold text-[var(--color-dark)] disabled:opacity-40 hover:text-[var(--color-dark)] cursor-pointer p-1 flex items-center justify-center"
             aria-label="Previous page"
           >
-            ◀
+            <ChevronLeftIcon size={14} />
           </button>
           <span className="font-pixel text-xs font-bold text-[var(--color-dark)] px-1">{libraryPage + 1}</span>
           <button
             onClick={() => setLibraryPage(p => p + 1)}
             disabled={!likedData?.next}
-            className="text-xs font-bold text-[var(--color-dark)] disabled:opacity-40 hover:text-[var(--color-dark)] cursor-pointer p-1"
+            className="text-xs font-bold text-[var(--color-dark)] disabled:opacity-40 hover:text-[var(--color-dark)] cursor-pointer p-1 flex items-center justify-center"
             aria-label="Next page"
           >
-            ▶
+            <ChevronRightIcon size={14} />
           </button>
         </div>
       </div>

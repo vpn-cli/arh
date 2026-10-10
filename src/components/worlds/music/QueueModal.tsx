@@ -4,6 +4,17 @@ import React, { useState } from 'react';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { useRecentlyPlayed, usePlayerQueue } from '@/hooks/useSpotify';
 import { formatTime } from './playback/playbackHelpers';
+import {
+  CloseIcon,
+  SearchIcon,
+  ShuffleIcon,
+  MusicNoteIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  PlayIcon,
+  PlusIcon,
+  ChevronRightIcon,
+} from './icons';
 
 interface QueueModalProps {
   isOpen: boolean;
@@ -148,10 +159,10 @@ export function QueueModal({
 
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] transition-all flex items-center justify-center font-bold text-lg active:scale-95 shadow-xs border border-[var(--color-muted)]"
+            className="w-9 h-9 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] transition-all flex items-center justify-center font-bold active:scale-95 shadow-xs border border-[var(--color-muted)]"
             title="Close"
           >
-            ✕
+            <CloseIcon size={16} />
           </button>
         </div>
 
@@ -183,7 +194,7 @@ export function QueueModal({
 
           {/* Search Filter & Quick Actions */}
           <div className="flex items-center gap-2.5">
-            <div className="relative">
+            <div className="relative flex items-center">
               <input
                 type="text"
                 value={searchFilter}
@@ -191,13 +202,13 @@ export function QueueModal({
                 placeholder="Search tracks or artists..."
                 className="bg-white border border-[var(--color-muted)] focus:border-[var(--color-vibrant)] rounded-full px-3 py-1 pl-7 text-[11px] text-[var(--color-dark)] placeholder-[var(--color-dark)] opacity-80 outline-none font-pixel w-52 transition-all shadow-2xs"
               />
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[var(--color-dark)] opacity-70">🔍</span>
+              <SearchIcon size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-dark)] opacity-70 pointer-events-none" />
               {searchFilter && (
                 <button
                   onClick={() => setSearchFilter('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[var(--color-dark)] opacity-70 hover:opacity-100"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-dark)] opacity-70 hover:opacity-100 flex items-center justify-center p-0.5"
                 >
-                  ✕
+                  <CloseIcon size={10} />
                 </button>
               )}
             </div>
@@ -206,10 +217,10 @@ export function QueueModal({
               <>
                 <button
                   onClick={handleShuffleQueue}
-                  className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-light)] text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel text-xs px-3 py-1 rounded-full transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out flex items-center gap-1 font-bold shadow-2xs active:scale-95"
+                  className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-light)] text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel text-xs px-3 py-1 rounded-full transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out flex items-center gap-1.5 font-bold shadow-2xs active:scale-95"
                   title="Randomize upcoming tracks in queue"
                 >
-                  <span>🔀</span> Shuffle Queue
+                  <ShuffleIcon size={12} /> Shuffle Queue
                 </button>
                 <button
                   onClick={() => clearQueue()}
@@ -238,8 +249,8 @@ export function QueueModal({
                         className="w-13 h-13 rounded-xl object-cover border-2 border-white shadow-sm shrink-0"
                       />
                     ) : (
-                      <div className="w-13 h-13 rounded-xl bg-[var(--color-muted)] flex items-center justify-center text-xl text-white shadow-sm shrink-0">
-                        ♪
+                      <div className="w-13 h-13 rounded-xl bg-[var(--color-muted)] flex items-center justify-center text-white shadow-sm shrink-0">
+                        <MusicNoteIcon size={24} />
                       </div>
                     )}
                     <div className="flex flex-col min-w-0">
@@ -363,7 +374,7 @@ export function QueueModal({
                           />
                         ) : (
                           <div className="w-11 h-11 rounded-xl bg-[var(--color-muted)] shrink-0 flex items-center justify-center text-[var(--color-vibrant)] text-sm transition-colors duration-500">
-                            ♪
+                            <MusicNoteIcon size={18} />
                           </div>
                         )}
 
@@ -391,20 +402,20 @@ export function QueueModal({
                           <button
                             onClick={() => handleMoveUp(originalIndex)}
                             disabled={originalIndex === 0}
-                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-xs p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded"
+                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-xs p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
                             title="Move Up"
                             aria-label={`Move ${item.track?.name} up`}
                           >
-                            ▲
+                            <ChevronUpIcon size={12} />
                           </button>
                           <button
                             onClick={() => handleMoveDown(originalIndex)}
                             disabled={originalIndex === queue.length - 1}
-                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-xs p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded"
+                            className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-xs p-1 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
                             title="Move Down"
                             aria-label={`Move ${item.track?.name} down`}
                           >
-                            ▼
+                            <ChevronDownIcon size={12} />
                           </button>
                         </div>
 
@@ -422,7 +433,7 @@ export function QueueModal({
                             className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-xs shadow-2xs"
                             title="Play this track"
                           >
-                            ▶
+                            <PlayIcon size={13} />
                           </button>
                           {onAddToPlaylist && item.track?.uri && (
                             <button
@@ -430,7 +441,7 @@ export function QueueModal({
                               className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-sm font-bold shadow-2xs"
                               title="Add to Playlist"
                             >
-                              +
+                              <PlusIcon size={14} />
                             </button>
                           )}
                           <button
@@ -441,7 +452,7 @@ export function QueueModal({
                             className="mw-btn w-8 h-8 rounded-full hover:bg-rose-100 text-[var(--color-dark)] hover:text-rose-600 flex items-center justify-center text-xs"
                             title="Remove from Queue"
                           >
-                            ✕
+                            <CloseIcon size={13} />
                           </button>
                         </div>
                       </div>
@@ -496,7 +507,7 @@ export function QueueModal({
                         />
                       ) : (
                         <div className="w-11 h-11 rounded-xl bg-[var(--color-muted)] shrink-0 flex items-center justify-center text-[var(--color-dark)] text-sm font-bold">
-                          ♪
+                          <MusicNoteIcon size={18} />
                         </div>
                       )}
 
@@ -526,14 +537,14 @@ export function QueueModal({
                           className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-xs shadow-2xs"
                           title="Play Track"
                         >
-                          ▶
+                          <PlayIcon size={13} />
                         </button>
                         <button
                           onClick={() => addToQueue(track, item.context?.uri)}
                           className="mw-btn px-3 py-1 rounded-full bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-xs font-bold shadow-2xs flex items-center gap-1"
                           title="Add to Up Next Queue"
                         >
-                          <span>+</span> Queue
+                          <PlusIcon size={11} /> Queue
                         </button>
                         {onAddToPlaylist && (
                           <button
@@ -541,7 +552,7 @@ export function QueueModal({
                             className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-white text-[var(--color-dark)] flex items-center justify-center text-sm font-bold shadow-2xs"
                             title="Add to Playlist"
                           >
-                            +
+                            <PlusIcon size={14} />
                           </button>
                         )}
                       </div>
@@ -565,9 +576,9 @@ export function QueueModal({
           </div>
           <button
             onClick={onClose}
-            className="font-pixel text-xs font-bold text-[var(--color-vibrant)] hover:underline transition-colors"
+            className="font-pixel text-xs font-bold text-[var(--color-vibrant)] hover:underline transition-colors inline-flex items-center gap-1"
           >
-            Back to Player ➔
+            Back to Player <ChevronRightIcon size={12} />
           </button>
         </div>
       </div>

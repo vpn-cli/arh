@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { pickImage, SpotifyImage } from '@/lib/spotify/images';
+import { MusicNoteIcon } from './icons';
 
 export interface PlaylistCoverProps {
   /** Array of Spotify image objects or image URL strings */
@@ -25,7 +26,7 @@ export const PlaylistCover = React.memo(function PlaylistCover({
   images,
   size = 40,
   className = '',
-  fallbackIcon = '♪',
+  fallbackIcon,
 }: PlaylistCoverProps) {
   const [failedIndices, setFailedIndices] = useState<Record<number, boolean>>({});
   const [singleFailed, setSingleFailed] = useState(false);
@@ -109,7 +110,7 @@ export const PlaylistCover = React.memo(function PlaylistCover({
       style={{ width: `${size}px`, height: `${size}px` }}
       className={`w-full h-full bg-[var(--color-muted)]/20 text-[var(--color-dark)] font-bold flex items-center justify-center text-sm ${className}`}
     >
-      {fallbackIcon}
+      {fallbackIcon ?? <MusicNoteIcon size={Math.round(size * 0.45)} />}
     </div>
   );
 });

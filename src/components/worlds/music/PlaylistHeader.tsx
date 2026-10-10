@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronLeftIcon, MusicNoteIcon } from './icons';
 
 interface PlaylistHeaderProps {
   playlist: any;
@@ -14,16 +15,16 @@ export function PlaylistHeader({ playlist, onBack, isRestricted, onEdit, onRemov
     <div className="flex items-center gap-4 p-4 border-b-2 border-[var(--color-light)] shrink-0">
       <button 
         onClick={onBack} 
-        className="p-2 text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors cursor-pointer text-lg font-bold active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-full"
+        className="p-2 text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-full flex items-center justify-center"
         aria-label="Go back to playlists"
       >
-        ◀
+        <ChevronLeftIcon size={20} />
       </button>
       {playlist.images && playlist.images[0] ? (
         <img src={playlist.images[0].url} alt="" className="w-20 h-20 rounded-xl shadow-md object-cover shrink-0 border border-[var(--color-muted)]" />
       ) : (
-        <div className="w-20 h-20 rounded-xl bg-[var(--color-muted)] flex items-center justify-center shadow-md shrink-0 border border-[var(--color-muted)]">
-          <span className="text-[var(--color-dark)] text-2xl font-bold">♪</span>
+        <div className="w-20 h-20 rounded-xl bg-[var(--color-muted)] flex items-center justify-center shadow-md shrink-0 border border-[var(--color-muted)] text-[var(--color-dark)]">
+          <MusicNoteIcon size={32} />
         </div>
       )}
       <div className="flex-1 overflow-hidden flex flex-col justify-center relative">

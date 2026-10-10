@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { attachEstimatedWordTimings } from '@/lib/lyrics';
 import { LyricsData, setCachedLyrics } from './useLyrics';
+import { CloseIcon } from '../icons';
 
 export interface AddLyricsModalProps {
   isOpen: boolean;
@@ -111,9 +112,10 @@ export function AddLyricsModal({
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-full bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white font-bold"
+            className="w-7 h-7 flex items-center justify-center rounded-full bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white"
+            aria-label="Close modal"
           >
-            ✕
+            <CloseIcon size={14} />
           </button>
         </div>
 

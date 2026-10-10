@@ -4,6 +4,7 @@ import { useRecentlyPlayed, useTopTracks, useTopArtists, usePlaylists, useBirthd
 import { TrackList } from './TrackList';
 import { ArtistCard } from './ArtistCard';
 import { PlaylistCard } from './PlaylistCard';
+import { ShuffleIcon, PlayIcon } from './icons';
 
 interface MixSectionProps {
   onPlayTrack: (uri: string, contextUri?: string, track?: any) => void;
@@ -93,7 +94,7 @@ export function MixSection({
               className="bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] px-3.5 py-2 rounded-xl font-pixel text-xs font-bold transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-xs hover:scale-105 active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
               title="Generate a fresh new mix"
             >
-              <span>🔀</span> Re-mix
+              <ShuffleIcon size={14} /> Re-mix
             </button>
             <button
               onClick={() => {
@@ -104,7 +105,7 @@ export function MixSection({
               disabled={isMixLoading || filteredMix.length === 0}
               className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white px-5 py-2 rounded-xl font-pixel text-xs font-bold transition-[transform,background-color,color,box-shadow] duration-150 ease-in-out shadow-md hover:scale-105 active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
             >
-              <span>▶</span> Play Entire Mix ({filteredMix.length})
+              <PlayIcon size={14} /> Play Entire Mix ({filteredMix.length})
             </button>
           </div>
         </div>

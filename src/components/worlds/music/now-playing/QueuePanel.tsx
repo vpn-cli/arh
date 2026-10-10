@@ -4,6 +4,7 @@ import React, { useState, useMemo, memo } from 'react';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { useRecentlyPlayed, usePlayerQueue } from '@/hooks/useSpotify';
 import { formatTime } from '../playback/playbackHelpers';
+import { ChevronRightIcon, MusicNoteIcon, CloseIcon, PlusIcon } from '../icons';
 
 export interface QueuePanelProps {
   onExpand: (tab: 'queue' | 'recent') => void;
@@ -140,9 +141,9 @@ export const QueuePanel = memo(function QueuePanel({
               </p>
               <button
                 onClick={() => onExpand('recent')}
-                className="mt-2 font-pixel text-xs text-[var(--color-dark)] bg-white border border-[var(--color-muted)] px-3 py-1 rounded-full hover:bg-[var(--color-light)] transition-all font-bold shadow-xs"
+                className="mt-2 font-pixel text-xs text-[var(--color-dark)] bg-white border border-[var(--color-muted)] px-3 py-1 rounded-full hover:bg-[var(--color-light)] transition-all font-bold shadow-xs inline-flex items-center gap-1"
               >
-                Browse History ➔
+                Browse History <ChevronRightIcon size={12} />
               </button>
             </div>
           ) : (
@@ -196,8 +197,8 @@ export const QueuePanel = memo(function QueuePanel({
                     className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]"
                   />
                 ) : (
-                  <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)] text-xs font-bold">
-                    ♪
+                  <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)]">
+                    <MusicNoteIcon size={14} />
                   </div>
                 )}
                 <div className="flex flex-col overflow-hidden flex-1 min-w-0">
@@ -222,13 +223,13 @@ export const QueuePanel = memo(function QueuePanel({
                       removeFromQueue(idx);
                     }
                   }}
-                  className={`mw-btn mw-row-action text-[var(--color-dark)] hover:text-[var(--color-dark)] px-1 py-0.5 rounded shrink-0 font-bold text-xs ${
+                  className={`mw-btn mw-row-action text-[var(--color-dark)] hover:text-[var(--color-dark)] p-1 rounded shrink-0 flex items-center justify-center ${
                     queue.length > 0 ? '' : 'hidden'
                   }`}
                   aria-label="Remove from queue"
                   title="Remove from queue"
                 >
-                  ✕
+                  <CloseIcon size={12} />
                 </button>
               </div>
             ))
@@ -265,8 +266,8 @@ export const QueuePanel = memo(function QueuePanel({
                     className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]"
                   />
                 ) : (
-                  <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)] text-xs font-bold">
-                    ♪
+                  <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)]">
+                    <MusicNoteIcon size={14} />
                   </div>
                 )}
                 <div className="flex flex-col overflow-hidden flex-1 min-w-0">
@@ -282,10 +283,10 @@ export const QueuePanel = memo(function QueuePanel({
                     e.stopPropagation();
                     handleAddToQueue(track, item.context?.uri);
                   }}
-                  className="mw-btn mw-row-action text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white px-2.5 py-1 rounded-full font-pixel text-xs font-bold shadow-xs shrink-0"
+                  className="mw-btn mw-row-action text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white px-2.5 py-1 rounded-full font-pixel text-xs font-bold shadow-xs shrink-0 flex items-center gap-1"
                   title="Add to queue"
                 >
-                  + Queue
+                  <PlusIcon size={11} /> Queue
                 </button>
               </div>
             );

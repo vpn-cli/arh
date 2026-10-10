@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { WarningIcon, CloseIcon } from "../icons";
 import { redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
 
 export interface PlayerOverlaysProps {
@@ -39,13 +40,14 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
           )}
           {recoveryError && !isReconnecting && (
             <div className="pointer-events-auto bg-[#E11D48] text-white px-4 py-2 rounded-full font-pixel text-xs flex items-center gap-2 shadow-[0_4px_12px_rgba(225,29,72,0.4)] border border-white/20">
-              <span>⚠️ {recoveryError}</span>
+              <WarningIcon size={14} className="shrink-0 text-white" />
+              <span>{recoveryError}</span>
               <button
                 onClick={onDismissRecoveryError}
-                className="ml-2 hover:opacity-75 font-bold px-1"
+                className="ml-2 hover:opacity-75 font-bold p-0.5 flex items-center justify-center text-white"
                 aria-label="Dismiss error notice"
               >
-                ✕
+                <CloseIcon size={12} />
               </button>
             </div>
           )}

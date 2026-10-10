@@ -5,6 +5,7 @@ import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { ProgressBar, ProgressBarHandle } from './ProgressBar';
 import { PlaybackControls } from './PlaybackControls';
 import { QueuePanel } from './QueuePanel';
+import { ChevronDownIcon, MusicNoteIcon } from '../icons';
 
 export interface NowPlayingPanelProps {
   progressBarRef?: React.Ref<ProgressBarHandle>;
@@ -70,7 +71,7 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
               }`}
               title="Toggle Lyrics"
             >
-              <span>{showLyrics ? '▼' : '❝'}</span> Lyrics
+              {showLyrics ? <ChevronDownIcon size={12} /> : <span>❝</span>} Lyrics
             </button>
           )}
         </div>
@@ -187,7 +188,7 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
                 </div>
               </div>
               <div className="w-4/5 h-4/5 bg-[var(--color-light)] rounded-2xl shadow-[0_8px_24px_var(--color-muted)] relative z-10 border-2 border-[var(--color-muted)] flex items-center justify-center">
-                <span className="text-4xl text-[var(--color-vibrant)]">♪</span>
+                <MusicNoteIcon size={44} className="text-[var(--color-vibrant)]" />
               </div>
             </div>
             <div className="flex items-start justify-between mb-2">

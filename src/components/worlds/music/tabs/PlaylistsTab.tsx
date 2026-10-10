@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { usePlaylists } from "@/hooks/useSpotify";
 import { MediaRow } from "../MediaRow";
 import { PlaylistCover } from "../PlaylistCover";
+import { PlusIcon } from "../icons";
 
 export interface PlaylistsTabProps {
   onOpenPlaylist: (id: string) => void;
@@ -32,10 +33,10 @@ export const PlaylistsTab = React.memo(function PlaylistsTab({
         />
         <button
           onClick={onCreatePlaylist}
-          className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white px-4 py-2 rounded-xl font-pixel text-xs font-bold hover:scale-105 active:scale-95 transition-transform shadow-xs flex items-center gap-1"
+          className="bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-white px-4 py-2 rounded-xl font-pixel text-xs font-bold hover:scale-105 active:scale-95 transition-transform shadow-xs flex items-center gap-1.5"
           title="Create Playlist"
         >
-          <span>+</span> NEW
+          <PlusIcon size={14} /> NEW
         </button>
       </div>
       {(() => {

@@ -5,6 +5,7 @@ import { proxyFetch } from '@/lib/spotifyClient';
 import { TrackRow } from './TrackRow';
 import { ArtistCard } from './ArtistCard';
 import { PlaylistCard } from './PlaylistCard';
+import { WarningIcon, CloseIcon } from './icons';
 
 interface MemoriesSectionProps {
   onPlayTrack: (uri: string) => void;
@@ -120,8 +121,13 @@ export function MemoriesSection({
 
       {error && (
         <div className="bg-[var(--color-light)] border border-[var(--color-vibrant)] text-[var(--color-vibrant)] p-2.5 rounded-xl font-pixel text-xs flex items-center justify-between font-bold mb-3 shrink-0 shadow-2xs">
-          <span>⚠️ {error}</span>
-          <button onClick={clearError} className="text-[var(--color-dark)] hover:opacity-75 font-bold ml-2">✕</button>
+          <span className="flex items-center gap-1.5">
+            <WarningIcon size={14} className="shrink-0 text-[var(--color-vibrant)]" />
+            {error}
+          </span>
+          <button onClick={clearError} className="text-[var(--color-dark)] hover:opacity-75 p-1 flex items-center justify-center" aria-label="Clear error">
+            <CloseIcon size={12} />
+          </button>
         </div>
       )}
 

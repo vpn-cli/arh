@@ -7,6 +7,7 @@ import { usePlaylists, useBirthdayMix, useRecentlyPlayed } from "@/hooks/useSpot
 import { useLikedTracks } from "@/hooks/useLikedTracks";
 import { VIBES } from "@/config/vibes";
 import { useResolvedVibes } from "../hooks/useResolvedVibes";
+import { PlayIcon, PauseIcon, ChevronRightIcon, MusicNoteIcon } from "../icons";
 
 export interface HomeTabProps {
   token: string | null;
@@ -88,7 +89,7 @@ export const HomeTab = React.memo(function HomeTab({
               }}
               className="mt-4 sm:mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--color-vibrant)] px-5 sm:px-6 py-2 sm:py-2.5 font-pixel text-sm sm:text-base font-bold text-white shadow-md mw-btn group"
             >
-              <span>{currentTrack ? (isPaused ? '▶' : '⏸') : '▶'}</span>
+              <span>{currentTrack ? (isPaused ? <PlayIcon size={16} /> : <PauseIcon size={16} />) : <PlayIcon size={16} />}</span>
               {currentTrack ? (isPaused ? 'Resume' : 'Playing') : 'Play Mix'}
             </button>
           </div>
@@ -100,7 +101,9 @@ export const HomeTab = React.memo(function HomeTab({
           <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
             <span className="text-[var(--color-vibrant)]">♥</span> Continue Listening
           </h3>
-          <button onClick={() => onNavigate('playlists')} className="mw-btn font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)]">See all →</button>
+          <button onClick={() => onNavigate('playlists')} className="mw-btn font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
+            See all <ChevronRightIcon size={14} />
+          </button>
         </div>
         <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
           {homePlaylists.map((playlist: any, idx: number) => (
@@ -115,21 +118,27 @@ export const HomeTab = React.memo(function HomeTab({
                     <img key={i} src={img.url || img} alt="" className="w-full h-full object-cover" />
                   ))}
                   <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
-                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-xl shadow-lg mw-card-play">▶</div>
+                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center shadow-lg mw-card-play">
+                      <PlayIcon size={20} />
+                    </div>
                   </div>
                 </div>
               ) : playlist.images?.[0] ? (
                 <div className="relative aspect-[4/3] w-full">
                   <img src={(playlist.images[1] || playlist.images[0]).url || playlist.images[0]} loading="lazy" alt={playlist.name} className="absolute inset-0 h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
-                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-xl shadow-lg mw-card-play">▶</div>
+                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center shadow-lg mw-card-play">
+                      <PlayIcon size={20} />
+                    </div>
                   </div>
                 </div>
               ) : (
                 <div className="relative aspect-[4/3] w-full bg-[var(--color-light)] flex items-center justify-center font-bold text-2xl text-[var(--color-muted)]">
-                  ♪
+                  <MusicNoteIcon size={28} className="text-[var(--color-muted)]" />
                   <div className="absolute inset-0 bg-black/5 flex items-center justify-center pointer-events-none">
-                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-xl shadow-lg mw-card-play">▶</div>
+                    <div className="w-12 h-12 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center shadow-lg mw-card-play">
+                      <PlayIcon size={20} />
+                    </div>
                   </div>
                 </div>
               )}
@@ -147,7 +156,9 @@ export const HomeTab = React.memo(function HomeTab({
           <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
             <span className="text-[var(--color-vibrant)]">♥</span> Vibes
           </h3>
-          <button onClick={() => onNavigate('vibes')} className="mw-btn font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)]">See all →</button>
+          <button onClick={() => onNavigate('vibes')} className="mw-btn font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
+            See all <ChevronRightIcon size={14} />
+          </button>
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
           {VIBES.filter(vibe => resolvedVibes[vibe.id] !== null).map((vibe) => (
@@ -164,7 +175,9 @@ export const HomeTab = React.memo(function HomeTab({
                 <div className="font-pixel text-sm sm:text-base font-bold text-white drop-shadow-md group-hover:text-[var(--color-vibrant)] mw-card-title">{vibe.label}</div>
               </div>
               <div className="absolute top-2 right-2 pointer-events-none">
-                <div className="w-8 h-8 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center text-sm shadow-md mw-card-play">▶</div>
+                <div className="w-8 h-8 rounded-full bg-[var(--color-vibrant)] text-white flex items-center justify-center shadow-md mw-card-play">
+                  <PlayIcon size={14} />
+                </div>
               </div>
             </button>
           ))}
@@ -176,7 +189,9 @@ export const HomeTab = React.memo(function HomeTab({
           <h3 className="font-pixel text-xl sm:text-2xl font-bold text-[var(--color-dark)] flex items-center gap-2">
             <span className="text-[var(--color-vibrant)]">◷</span> Recently Played
           </h3>
-          <button onClick={() => onNavigate('recent')} className="mw-btn font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)]">See all →</button>
+          <button onClick={() => onNavigate('recent')} className="mw-btn font-pixel text-xs sm:text-sm font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
+            See all <ChevronRightIcon size={14} />
+          </button>
         </div>
         {recentHomeTracks.length === 0 && likedHomeTracks.length === 0 ? (
           <div className="p-8 text-center rounded-2xl border-2 border-dashed border-[var(--color-muted)] bg-[var(--color-light)]/50">
@@ -194,10 +209,14 @@ export const HomeTab = React.memo(function HomeTab({
                   {track.album?.images?.[0]?.url ? (
                     <img src={(track.album.images[1] || track.album.images[0]).url} loading="lazy" alt={track.name} className="absolute inset-0 w-full h-full object-cover" />
                   ) : (
-                    <div className="absolute inset-0 bg-[var(--color-muted)]" />
+                    <div className="absolute inset-0 bg-[var(--color-muted)] flex items-center justify-center">
+                      <MusicNoteIcon size={16} className="text-[var(--color-dark)] opacity-60" />
+                    </div>
                   )}
                   <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
-                    <span className="text-white text-lg shadow-sm mw-card-play">▶</span>
+                    <span className="text-white shadow-sm mw-card-play">
+                      <PlayIcon size={16} />
+                    </span>
                   </div>
                 </div>
                 <div className="flex-1 min-w-0 pr-2">

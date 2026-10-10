@@ -23,6 +23,7 @@ import {
 } from './LyricsStates';
 import { AddLyricsModal } from './AddLyricsModal';
 import { SyncOffsetControl } from './SyncOffsetControl';
+import { CloseIcon, ChevronDownIcon } from '../icons';
 
 export interface LyricsTrackDisplay {
   name?: string;
@@ -296,7 +297,7 @@ export const LyricsView = React.memo(
               className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-white border border-[var(--color-muted)] transition-colors shadow-xs active:scale-95"
               aria-label="Close Lyrics"
             >
-              ✕
+              <CloseIcon size={14} />
             </button>
           </div>
         </div>
@@ -367,9 +368,9 @@ export const LyricsView = React.memo(
         >
           <button
             onClick={resumeToActive}
-            className="bg-[var(--color-dark)] text-white font-pixel text-xs font-bold px-4 py-2 rounded-full shadow-lg hover:bg-[var(--color-vibrant)] transition-colors active:scale-95 flex items-center gap-2"
+            className="bg-[var(--color-dark)] text-white font-pixel text-xs font-bold px-4 py-2 rounded-full shadow-lg hover:bg-[var(--color-vibrant)] transition-colors active:scale-95 flex items-center gap-1.5"
           >
-            <span className="text-white/70">↓</span> Back to now
+            <ChevronDownIcon size={14} className="text-white/70" /> Back to now
           </button>
         </div>
 

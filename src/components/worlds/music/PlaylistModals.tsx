@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { usePlaylists } from '@/hooks/useSpotify';
 import { usePlaylistMutations } from '@/hooks/usePlaylistMutations';
+import { PlusIcon, MusicNoteIcon } from './icons';
 
 interface AddToPlaylistModalProps {
   trackUri: string;
@@ -33,7 +34,9 @@ export function AddToPlaylistModal({ trackUri, onClose }: AddToPlaylistModalProp
             onClick={() => setIsCreating(true)}
             className="w-full p-3 flex items-center gap-3 hover:bg-white rounded-xl transition-colors font-pixel text-[var(--color-dark)] text-sm font-bold border border-transparent hover:border-[var(--color-muted)] mb-2"
           >
-            <div className="w-8 h-8 rounded bg-[var(--color-muted)] flex items-center justify-center text-[var(--color-dark)] text-lg font-bold">+</div>
+            <div className="w-8 h-8 rounded bg-[var(--color-muted)] flex items-center justify-center text-[var(--color-dark)]">
+              <PlusIcon size={16} />
+            </div>
             Create New Playlist
           </button>
           
@@ -49,7 +52,9 @@ export function AddToPlaylistModal({ trackUri, onClose }: AddToPlaylistModalProp
                 {playlist.images?.[0] ? (
                   <img src={playlist.images[0].url} className="w-8 h-8 rounded object-cover" alt="" />
                 ) : (
-                  <div className="w-8 h-8 rounded bg-[var(--color-muted)] flex items-center justify-center text-[var(--color-dark)] text-xs font-bold">♪</div>
+                  <div className="w-8 h-8 rounded bg-[var(--color-muted)] flex items-center justify-center text-[var(--color-dark)]">
+                    <MusicNoteIcon size={14} />
+                  </div>
                 )}
                 <div className="flex-1 truncate font-pixel text-sm font-bold text-[var(--color-dark)]">
                   {playlist.name}

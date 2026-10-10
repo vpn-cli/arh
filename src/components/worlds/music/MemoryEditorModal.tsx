@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMemoriesStore } from '@/store/useMemoriesStore';
+import { CloseIcon, WarningIcon, MusicNoteIcon } from './icons';
 
 interface MemoryEditorModalProps {
   isOpen: boolean;
@@ -74,13 +75,20 @@ export function MemoryEditorModal({ isOpen, onClose, entity, entityType, memoryI
       <div className="bg-white rounded-3xl border-4 border-[var(--color-muted)] shadow-[0_10px_40px_rgba(255,105,180,0.4)] p-6 flex flex-col gap-4 w-full max-w-sm">
         <div className="flex justify-between items-center border-b-2 border-[#FFD9EA] pb-2">
           <h3 className="font-pixel text-base font-bold text-[var(--color-dark)]">{displayTitle}</h3>
-          <button onClick={onClose} className="text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel text-base p-1 transition-colors" aria-label="Close modal">✕</button>
+          <button onClick={onClose} className="text-[var(--color-dark)] hover:text-[var(--color-dark)] p-1 transition-colors flex items-center justify-center" aria-label="Close modal">
+            <CloseIcon size={16} />
+          </button>
         </div>
 
         {error && (
           <div className="bg-[var(--color-light)] border border-[var(--color-vibrant)] text-[var(--color-vibrant)] p-2.5 rounded-xl font-pixel text-xs flex items-center justify-between font-bold shadow-2xs">
-            <span>⚠️ {error}</span>
-            <button onClick={clearError} className="text-[var(--color-dark)] hover:opacity-75 font-bold ml-2">✕</button>
+            <span className="flex items-center gap-1.5">
+              <WarningIcon size={14} className="shrink-0 text-[var(--color-vibrant)]" />
+              {error}
+            </span>
+            <button onClick={clearError} className="text-[var(--color-dark)] hover:opacity-75 p-1 flex items-center justify-center" aria-label="Clear error">
+              <CloseIcon size={12} />
+            </button>
           </div>
         )}
 
@@ -88,7 +96,9 @@ export function MemoryEditorModal({ isOpen, onClose, entity, entityType, memoryI
           {imageSrc ? (
             <img src={imageSrc} className="w-10 h-10 rounded-lg object-cover border border-[var(--color-muted)]" alt="" />
           ) : (
-            <div className="w-10 h-10 rounded-lg bg-[var(--color-light)] flex items-center justify-center text-[var(--color-dark)] font-bold">♪</div>
+            <div className="w-10 h-10 rounded-lg bg-[var(--color-light)] flex items-center justify-center text-[var(--color-dark)]">
+              <MusicNoteIcon size={18} />
+            </div>
           )}
           <div className="flex flex-col min-w-0">
             <span className="font-pixel text-xs font-bold text-[var(--color-dark)] truncate">{displayName}</span>

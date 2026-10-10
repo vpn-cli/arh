@@ -3,6 +3,7 @@ import { useTopTracks, useTopArtists } from '@/hooks/useSpotify';
 import { TrackList } from './TrackList';
 import { MediaRow } from './MediaRow';
 import { pickImage } from '@/lib/spotify/images';
+import { ChevronLeftIcon } from './icons';
 
 interface VibesSectionProps {
   onPlayTrack: (uri: string) => void;
@@ -186,7 +187,7 @@ export function VibesSection({
             onClick={() => setSelectedVibeId(null)}
             className="text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] cursor-pointer font-pixel font-bold tracking-wide flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-lg px-2 py-1"
           >
-            ◀ Back to Vibes
+            <ChevronLeftIcon size={14} /> Back to Vibes
           </button>
         </div>
         

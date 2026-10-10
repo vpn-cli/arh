@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { ChevronLeftIcon, SearchIcon, CloseIcon, MusicNoteIcon } from "../icons";
 
 export interface PlayerHeaderProps {
   onGoHome?: () => void;
@@ -31,7 +32,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
             aria-label="Return to Home World"
             title="Return to Home World"
           >
-            <span className="text-[var(--color-dark)] text-[10px] font-pixel mt-0.5 group-hover:-translate-x-0.5 transition-transform">◀</span>
+            <ChevronLeftIcon size={12} className="text-[var(--color-dark)] group-hover:-translate-x-0.5 transition-transform" />
             <span className="font-pixel text-[10px] text-[var(--color-dark)] font-bold tracking-wider uppercase group-hover:text-[var(--color-vibrant)] transition-colors">
               Home World
             </span>
@@ -51,26 +52,28 @@ export const PlayerHeader = React.memo(function PlayerHeader({
           aria-label="Search songs, artists, playlists"
           className="w-full bg-white/95 border-2 border-[var(--color-muted)] rounded-full px-10 py-2 font-pixel text-sm text-[var(--color-dark)] placeholder:text-[var(--color-dark)]/80 focus:outline-none focus:border-[var(--color-vibrant)] focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]/20 transition-colors"
         />
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-dark)] font-bold">⌕</span>
+        <SearchIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-dark)] opacity-70" />
         {searchQuery && (
           <button
             onClick={onClearSearch}
-            className="mw-btn absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel p-1"
+            className="mw-btn absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-dark)] hover:text-[var(--color-dark)] p-1 flex items-center justify-center"
             aria-label="Clear search"
             title="Clear search"
           >
-            ✕
+            <CloseIcon size={13} />
           </button>
         )}
       </div>
       <div className="flex items-center gap-4 text-[var(--color-dark)] font-bold text-lg shrink-0">
         <div className="hidden lg:flex px-3 py-1 bg-white/50 border border-[var(--color-muted)] rounded-full items-center gap-1.5 mr-2">
           <span className="font-pixel text-[10px] text-[var(--color-dark)] font-bold tracking-wider uppercase">Music World</span>
-          <span className="font-pixel text-[10px] text-[var(--color-vibrant)]">♪</span>
+          <MusicNoteIcon size={12} className="text-[var(--color-vibrant)]" />
         </div>
         <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Minimize window"><span className="text-sm">_</span></button>
         <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Maximize window"><span className="text-base">□</span></button>
-        <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Close window"><span className="text-xl leading-none">×</span></button>
+        <button className="mw-btn hover:text-[var(--color-vibrant)] p-1 flex items-center justify-center" aria-label="Close window">
+          <CloseIcon size={16} />
+        </button>
       </div>
     </div>
   );

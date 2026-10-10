@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { formatTime } from './playback/playbackHelpers';
+import { PersonIcon, MusicNoteIcon } from './icons';
 
 export interface MediaRowProps {
   /** Main title of the media item (e.g. track name, artist name, playlist name) */
@@ -86,7 +87,7 @@ export const MediaRow = React.memo(function MediaRow({
           className={`${shapeClass} bg-[var(--color-muted)]/20 border border-[var(--color-muted)]/30 text-[var(--color-dark)] font-bold flex items-center justify-center shadow-2xs shrink-0 text-base`}
           aria-hidden="true"
         >
-          {fallbackIcon ?? (isCircle ? '👤' : '♪')}
+          {fallbackIcon ?? (isCircle ? <PersonIcon size={Math.round(imageSize * 0.45)} /> : <MusicNoteIcon size={Math.round(imageSize * 0.45)} />)}
         </div>
       ) : (
         <img

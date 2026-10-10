@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { CloseIcon } from '../icons';
 
 export interface SyncOffsetControlProps {
   trackId: string | null;
@@ -140,9 +141,10 @@ export function SyncOffsetControl({
                   setIsSecretModalOpen(false);
                   setSecretError(null);
                 }}
-                className="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white text-xs font-bold"
+                className="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-white"
+                aria-label="Close modal"
               >
-                ✕
+                <CloseIcon size={12} />
               </button>
             </div>
 

@@ -13,6 +13,7 @@ import {
   LibraryIcon,
   MemoriesIcon,
   FrequenciesIcon,
+  PlusIcon,
 } from "../icons";
 
 export type MusicNavTab = 'home' | 'playlists' | 'mix' | 'vibes' | 'library' | 'memories' | 'frequencies';
@@ -89,11 +90,11 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
           <span className="font-pixel text-sm font-bold uppercase tracking-wider text-[var(--color-dark)]">Your Playlists</span>
           <button
             onClick={onCreatePlaylist}
-            className="mw-btn font-bold text-base text-[var(--color-dark)] p-1 rounded"
+            className="mw-btn font-bold text-[var(--color-dark)] p-1 rounded flex items-center justify-center hover:text-[var(--color-vibrant)]"
             aria-label="Create new playlist"
             title="Create new playlist"
           >
-            +
+            <PlusIcon size={16} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-2 pb-4 custom-scrollbar flex flex-col gap-0.5">
