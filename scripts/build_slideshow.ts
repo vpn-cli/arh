@@ -46,6 +46,8 @@ async function main() {
   const ignoredItems: IgnoredItem[] = [];
   const expectedManualOutputs = new Set<string>();
 
+  // Filter accepted source files and classify ignored items
+  const acceptedEntries: string[] = [];
   for (const entry of entries) {
     const filePath = path.join(srcDir, entry);
     let stat: fs.Stats;
@@ -67,6 +69,45 @@ async function main() {
           ? 'Git directory placeholder'
           : `Unsupported file extension (${ext || 'no extension'})`;
       ignoredItems.push({ file: entry, reason });
+      continue;
+    }
+
+    acceptedEntries.push(entry);
+  }
+
+  // Find all existing manual ('m-*.webp') slides currently on disk
+  const existingOutputFiles = fs.existsSync(outputDir) ? fs.readdirSync(outputDir) : [];
+  const existingMFiles = existingOutputFiles.filter(
+    (file) => file.startsWith('m-') && file.endsWith('.webp')
+  );
+
+  const isPrune = process.argv.includes('--prune');
+
+  // Guard against accidental wipes:
+  // If assets-src/slideshow/ contains no accepted source files but public/slideshow/
+  // contains "m-" outputs, do NOT delete anything unless --prune is explicitly passed.
+  if (acceptedEntries.length === 0 && existingMFiles.length > 0 && !isPrune) {
+    const count = existingMFiles.length;
+    const plural = count === 1 ? 'slide' : 'slides';
+    console.error(
+      `\nError: assets-src/slideshow/ contains no accepted source files, but public/slideshow/ contains ${count} manual ${plural} ("m-*" outputs).`
+    );
+    console.error(
+      `Aborting deletion to protect against accidental wipes. Deleting would remove ${count} ${plural}.`
+    );
+    console.error(
+      `If you want to remove all manual slides, re-run with --prune:\n  npm run slideshow -- --prune\n  # or: npx tsx scripts/build_slideshow.ts --prune\n`
+    );
+    process.exit(1);
+  }
+
+  // Process accepted source files
+  for (const entry of acceptedEntries) {
+    const filePath = path.join(srcDir, entry);
+    let stat: fs.Stats;
+    try {
+      stat = fs.statSync(filePath);
+    } catch {
       continue;
     }
 
@@ -138,16 +179,13 @@ async function main() {
 
   // Delete orphaned manual outputs whose source file is gone (only 'm-' prefixed files)
   const deletedFiles: string[] = [];
-  const existingOutputFiles = fs.readdirSync(outputDir);
-  for (const file of existingOutputFiles) {
-    if (file.startsWith('m-') && file.endsWith('.webp')) {
-      if (!expectedManualOutputs.has(file)) {
-        try {
-          fs.unlinkSync(path.join(outputDir, file));
-          deletedFiles.push(file);
-        } catch (err) {
-          console.warn(`Warning: Could not delete orphaned file ${file}:`, err);
-        }
+  for (const file of existingMFiles) {
+    if (!expectedManualOutputs.has(file)) {
+      try {
+        fs.unlinkSync(path.join(outputDir, file));
+        deletedFiles.push(file);
+      } catch (err) {
+        console.warn(`Warning: Could not delete orphaned file ${file}:`, err);
       }
     }
   }
