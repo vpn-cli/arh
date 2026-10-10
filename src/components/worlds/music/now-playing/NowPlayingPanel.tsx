@@ -64,7 +64,7 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
           {currentTrack && (
             <button
               onClick={onToggleLyrics}
-              className={`font-pixel text-meta min-h-[28px] px-3 py-1 rounded-full flex items-center gap-1 transition-all duration-150 ease-in-out shadow-xs font-bold active:scale-95 border ${
+              className={`font-pixel text-meta min-h-[30px] px-3.5 py-1 rounded-full flex items-center gap-1 transition-all duration-150 ease-in-out shadow-xs font-bold active:scale-95 border ${
                 showLyrics
                   ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] border-[var(--color-vibrant)]'
                   : 'text-[var(--color-dark)] hover:text-[var(--on-vibrant)] bg-white hover:bg-[var(--color-vibrant)] border-[var(--color-muted)]'

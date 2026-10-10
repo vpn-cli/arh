@@ -175,7 +175,7 @@ export function MixSection({
             <div className="flex items-center bg-[var(--color-light)] p-0.5 rounded-lg border border-[var(--color-light)]">
               <button
                 onClick={() => setTimeRange('short_term')}
-                className={`font-pixel text-meta min-h-[24px] px-2.5 py-1 rounded-md transition-all font-bold flex items-center justify-center ${
+                className={`font-pixel text-meta min-h-[28px] px-3 py-1 rounded-md transition-all font-bold flex items-center justify-center ${
                   timeRange === 'short_term' ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-2xs' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
                 }`}
               >
@@ -183,7 +183,7 @@ export function MixSection({
               </button>
               <button
                 onClick={() => setTimeRange('medium_term')}
-                className={`font-pixel text-meta min-h-[24px] px-2.5 py-1 rounded-md transition-all font-bold flex items-center justify-center ${
+                className={`font-pixel text-meta min-h-[28px] px-3 py-1 rounded-md transition-all font-bold flex items-center justify-center ${
                   timeRange === 'medium_term' ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-2xs' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
                 }`}
               >
@@ -191,7 +191,7 @@ export function MixSection({
               </button>
               <button
                 onClick={() => setTimeRange('long_term')}
-                className={`font-pixel text-meta min-h-[24px] px-2.5 py-1 rounded-md transition-all font-bold flex items-center justify-center ${
+                className={`font-pixel text-meta min-h-[28px] px-3 py-1 rounded-md transition-all font-bold flex items-center justify-center ${
                   timeRange === 'long_term' ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-2xs' : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
                 }`}
               >
@@ -202,7 +202,7 @@ export function MixSection({
           <button 
             onClick={() => topTracks && onPlayTracks(topTracks.map((t: any) => t.uri), topTracks)}
             disabled={!topTracks || topTracks.length === 0}
-            className="font-pixel text-meta min-h-[24px] font-bold bg-[var(--color-vibrant)] text-[var(--on-vibrant)] px-3 py-1.5 rounded-lg hover:bg-[var(--color-vibrant)] transition-colors shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] flex items-center justify-center"
+            className="font-pixel text-meta min-h-[28px] font-bold bg-[var(--color-vibrant)] text-[var(--on-vibrant)] px-3.5 py-1.5 rounded-lg hover:bg-[var(--color-vibrant)] transition-colors shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] flex items-center justify-center"
           >
             Play All
           </button>

@@ -7,7 +7,7 @@ Pipeline:
 3. For the 7 specified icons:
    - Crop to bounding box of non-transparent pixels.
    - Pad to a square with ~6% margin.
-   - Resize to 96x96 (LANCZOS).
+   - Resize to 144x144 (LANCZOS).
    - Save to public/icons/nav/<name>.png.
 4. Report bounding-box size, opaque pixel %, and edge-touch status.
 5. Generate assets-src/nav-icons-preview.png on dark background and sidebar color.
@@ -175,10 +175,10 @@ def process_icons(filled_sheet, tolerance=100):
         paste_y = (square_size - bh) // 2
         square_img.paste(cropped, (paste_x, paste_y))
 
-        # Resize to 96x96 (LANCZOS)
-        icon_96 = square_img.resize((96, 96), resample=Image.Resampling.LANCZOS)
+        # Resize to 144x144 (LANCZOS)
+        icon_144 = square_img.resize((144, 144), resample=Image.Resampling.LANCZOS)
         out_path = os.path.join(OUTPUT_DIR, f"{name}.png")
-        icon_96.save(out_path)
+        icon_144.save(out_path)
 
         results.append({
             "name": name,
@@ -190,7 +190,7 @@ def process_icons(filled_sheet, tolerance=100):
             "opaque_pct": opaque_pct,
             "touches_edge": touches_sheet,
             "touch_details": touch_str,
-            "icon_img": icon_96,
+            "icon_img": icon_144,
             "out_path": out_path,
         })
 
@@ -200,7 +200,7 @@ def generate_preview_image(results, output_path):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     # 7 icons side by side
-    icon_size = 96
+    icon_size = 144
     num_icons = len(results)
     padding = 24
     header_height = 36

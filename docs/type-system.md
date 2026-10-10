@@ -166,12 +166,12 @@ root.style.setProperty("--color-dark", computedDark);
 
 ### Specification
 Define 6 sizes in the Tailwind theme `@theme` in `src/app/globals.css`, in rem, each with an associated line height:
-- `caption`: `0.75rem` (12px), line-height: `1rem` (16px) -> utility: `text-caption`
-- `meta`: `0.8125rem` (13px), line-height: `1.125rem` (18px) -> utility: `text-meta`
-- `body`: `0.9375rem` (15px), line-height: `1.375rem` (22px) -> utility: `text-body`
-- `title`: `1.125rem` (18px), line-height: `1.5rem` (24px) -> utility: `text-title`
-- `heading`: `1.5rem` (24px), line-height: `1.875rem` (30px) -> utility: `text-heading`
-- `display`: `2.25rem` (36px), line-height: `2.5rem` (40px) -> utility: `text-display`
+- `caption`: `0.8125rem` (13px), line-height: `1.125rem` (18px) -> utility: `text-caption`
+- `meta`: `0.875rem` (14px), line-height: `1.25rem` (20px) -> utility: `text-meta`
+- `body`: `1rem` (16px), line-height: `1.5rem` (24px) -> utility: `text-body`
+- `title`: `1.25rem` (20px), line-height: `1.75rem` (28px) -> utility: `text-title`
+- `heading`: `1.75rem` (28px), line-height: `2.25rem` (36px) -> utility: `text-heading`
+- `display`: `2.5rem` (40px), line-height: `2.75rem` (44px) -> utility: `text-display`
 
 ### Rules
 - Nothing under `caption` (`0.75rem`).

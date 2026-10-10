@@ -97,21 +97,21 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
               {iconStyle === 'stickers' ? (
                 <img
                   src={`/icons/nav/${item.id}.png`}
-                  width={32}
-                  height={32}
+                  width={44}
+                  height={44}
                   alt=""
                   style={iconScaleStyle}
-                  className="w-8 h-8 object-contain mw-nav-icon shrink-0"
+                  className="w-11 h-11 object-contain mw-nav-icon shrink-0"
                 />
               ) : (
                 <span
                   style={iconScaleStyle}
-                  className={`w-8 flex items-center justify-center mw-nav-icon shrink-0 ${isActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}
+                  className={`w-11 flex items-center justify-center mw-nav-icon shrink-0 ${isActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'}`}
                 >
-                  <IconComp size={22} />
+                  <IconComp size={24} />
                 </span>
               )}
-              <span className="text-body">{item.label}</span>
+              <span className="text-body font-bold">{item.label}</span>
             </button>
           );
         })}
@@ -148,8 +148,8 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
                 key={`${p.id || 'playlist'}-${idx}`}
                 title={p.name}
                 subtitle={`${songCount} songs`}
-                imageSlot={<PlaylistCover images={p.images} size={40} />}
-                imageSize={40}
+                imageSlot={<PlaylistCover images={p.images} size={44} />}
+                imageSize={44}
                 imageShape="rounded"
                 onClick={() => onOpenPlaylist(p.id)}
               />

@@ -69,7 +69,7 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
         <div className="text-[var(--color-dark)] font-pixel text-caption font-bold text-center px-4">
           Rate limited by Spotify.<br/>Wait {rateLimitTimer || ((playlistError as any)?.retryAfter ?? 60)} seconds.
         </div>
-        <button onClick={onBack} className="mt-4 font-pixel text-meta font-bold text-[var(--color-dark)] bg-white border border-[var(--color-muted)] min-h-[28px] px-4 py-1.5 rounded-full hover:bg-[var(--color-light)] transition-all inline-flex items-center justify-center">Go Back</button>
+        <button onClick={onBack} className="mt-4 font-pixel text-meta font-bold text-[var(--color-dark)] bg-white border border-[var(--color-muted)] min-h-[32px] px-4 py-1.5 rounded-full hover:bg-[var(--color-light)] transition-all inline-flex items-center justify-center">Go Back</button>
       </div>
     );
   }
@@ -86,7 +86,7 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
     return (
       <div className="flex flex-col h-full items-center justify-center p-4">
         <div className="text-[var(--color-dark)] font-pixel text-caption font-medium">Playlist not found</div>
-        <button onClick={onBack} className="mt-4 font-pixel text-meta font-bold text-[var(--color-dark)] bg-white border border-[var(--color-muted)] min-h-[28px] px-4 py-1.5 rounded-full hover:bg-[var(--color-light)] transition-all inline-flex items-center justify-center">Go Back</button>
+        <button onClick={onBack} className="mt-4 font-pixel text-meta font-bold text-[var(--color-dark)] bg-white border border-[var(--color-muted)] min-h-[32px] px-4 py-1.5 rounded-full hover:bg-[var(--color-light)] transition-all inline-flex items-center justify-center">Go Back</button>
       </div>
     );
   }

@@ -67,7 +67,7 @@ export const MediaRow = React.memo(function MediaRow({
     <>
       {/* Optional Rank Number */}
       {rank !== undefined && (
-        <span className="font-pixel text-caption font-bold text-[var(--color-dark)] w-5 text-center shrink-0 text-[var(--color-text-muted)]">
+        <span className="font-pixel text-caption font-bold text-[var(--color-dark)] w-7 text-center shrink-0 text-[var(--color-text-muted)]">
           {rank}
         </span>
       )}
@@ -160,7 +160,7 @@ export const MediaRow = React.memo(function MediaRow({
 
       {/* Duration (flush right in consistent column) */}
       {formattedDuration && (
-        <span className="relative z-10 font-pixel text-caption font-bold text-[var(--color-text-muted)] shrink-0 w-11 text-right tabular-nums pointer-events-none">
+        <span className="relative z-10 font-pixel text-caption font-bold text-[var(--color-text-muted)] shrink-0 w-14 text-right tabular-nums pointer-events-none">
           {formattedDuration}
         </span>
       )}
