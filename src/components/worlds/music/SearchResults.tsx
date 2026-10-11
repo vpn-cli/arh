@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useSearch } from '@/hooks/useSearch';
+import { usePlaylists } from '@/hooks/useSpotify';
 import { TrackRow } from './TrackRow';
 import { ArtistCard } from './ArtistCard';
 import { AlbumCard } from './AlbumCard';
@@ -19,8 +20,19 @@ interface SearchResultsProps {
 
 export const SearchResults = React.memo(function SearchResults({ query, onPlayTrack, onPlayPlaylist, onAddToQueue, onAddToPlaylist, onClickPlaylist, onClickAlbum, onClickArtist, onAddMemory }: SearchResultsProps) {
   const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useSearch(query);
+  const { data: libraryPlaylists = [] } = usePlaylists({ enabled: true });
 
-  if (!query.trim()) {
+  const trimmedQuery = query.trim();
+  const normalizedQuery = trimmedQuery.toLowerCase();
+
+  const matchingPlaylists = useMemo(() => {
+    if (!normalizedQuery) return [];
+    return libraryPlaylists.filter((p: any) =>
+      typeof p?.name === 'string' && p.name.toLowerCase().includes(normalizedQuery)
+    );
+  }, [libraryPlaylists, normalizedQuery]);
+
+  if (!trimmedQuery) {
     return <div className="text-center text-[var(--color-dark)] font-pixel text-body font-medium mt-8">Type to search songs, artists, and playlists ♡</div>;
   }
 
@@ -48,9 +60,8 @@ export const SearchResults = React.memo(function SearchResults({ query, onPlayTr
   const tracks = dedupe(pages.flatMap(p => p?.tracks?.items || []));
   const artists = dedupe(pages.flatMap(p => p?.artists?.items || []));
   const albums = dedupe(pages.flatMap(p => p?.albums?.items || []));
-  const playlists = dedupe(pages.flatMap(p => p?.playlists?.items || []));
 
-  const hasResults = tracks.length > 0 || artists.length > 0 || albums.length > 0 || playlists.length > 0;
+  const hasResults = tracks.length > 0 || artists.length > 0 || albums.length > 0 || matchingPlaylists.length > 0;
 
   if (!hasResults) {
     return <div className="text-center text-[var(--color-dark)] font-pixel text-body font-medium mt-8">No matches found for &quot;{query}&quot;</div>;
@@ -95,10 +106,10 @@ export const SearchResults = React.memo(function SearchResults({ query, onPlayTr
         </div>
       )}
 
-      {playlists.length > 0 && (
+      {matchingPlaylists.length > 0 && (
         <div className="flex flex-col gap-1">
           <h4 className="font-pixel text-body font-bold text-[var(--color-dark)] tracking-wider uppercase px-1 mb-1">Playlists</h4>
-          {playlists.map((p, idx) => (
+          {matchingPlaylists.map((p, idx) => (
             <PlaylistCard key={`${p.id}-${idx}`} playlist={p} onClick={() => onClickPlaylist(p.id)} onAddMemory={(playlist) => onAddMemory(playlist, 'playlist')} variant="compact" />
           ))}
         </div>

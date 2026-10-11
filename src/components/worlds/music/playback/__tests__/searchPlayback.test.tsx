@@ -21,6 +21,7 @@ vi.mock("@/hooks/useSpotify", () => ({
   }),
   usePlayerQueue: () => ({ data: { queue: [] } }),
   useTrackSavedStatus: () => ({ data: false }),
+  usePlaylists: () => ({ data: [] }),
 }));
 
 vi.mock("@/hooks/useSearch", () => ({
