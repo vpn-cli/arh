@@ -109,7 +109,7 @@ export const SearchResults = React.memo(function SearchResults({ query, onPlayTr
       {matchingPlaylists.length > 0 && (
         <div className="flex flex-col gap-1">
           <h4 className="font-pixel text-body font-bold text-[var(--color-dark)] tracking-wider uppercase px-1 mb-1">Playlists</h4>
-          {matchingPlaylists.map((p, idx) => (
+          {matchingPlaylists.map((p: any, idx: number) => (
             <PlaylistCard key={`${p.id}-${idx}`} playlist={p} onClick={() => onClickPlaylist(p.id)} onAddMemory={(playlist) => onAddMemory(playlist, 'playlist')} variant="compact" />
           ))}
         </div>
