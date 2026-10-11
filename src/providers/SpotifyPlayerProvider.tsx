@@ -20,6 +20,7 @@ import {
   clearNeedsRecovery,
 } from "@/lib/spotifyRecovery";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
+import { getPersistedVolume } from "./volumeStore";
 import { MediaSessionHost } from "@/components/worlds/music/pip/MediaSessionHost";
 import { updateSharedPlaybackState } from "@/components/worlds/music/playback/playbackClock";
 import { PLAYBACK_DEBUG } from "@/components/worlds/music/playback/playbackHelpers";
@@ -249,7 +250,7 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
             );
           }
         },
-        volume: 0.5,
+        volume: getPersistedVolume(),
       });
 
       sharedPlayer = spotifyPlayer;
@@ -267,6 +268,12 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
         notReadyFiredRef.current = false;
         useSpotifyPlayerStore.getState().setDeviceId(device_id);
         useSpotifyPlayerStore.getState().setIsReady(true);
+        const initialVol = getPersistedVolume();
+        if (typeof spotifyPlayer.setVolume === "function") {
+          spotifyPlayer.setVolume(initialVol).catch((err: unknown) => {
+            console.warn("[Spotify SDK] failed to apply volume on ready:", err);
+          });
+        }
         if (typeof spotifyPlayer.getCurrentState === "function") {
           spotifyPlayer.getCurrentState().then((state: any) => {
             if (state) {

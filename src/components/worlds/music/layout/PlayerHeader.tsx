@@ -5,6 +5,7 @@ import { ChevronLeftIcon, SearchIcon, CloseIcon, MusicNoteIcon } from "../icons"
 import { InstallAppButton } from "./InstallAppButton";
 import { useMusicView } from "../hooks/useMusicView";
 import { StickerIcon } from "../StickerIcon";
+import { HEADER_TITLE } from "../textConfig";
 
 export interface PlayerHeaderProps {
   onGoHome?: () => void;
@@ -37,11 +38,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
   return (
     <div className="mw-player-header flex h-14 border-b-2 border-[var(--color-muted)] items-center px-4 justify-between shrink-0 bg-[var(--color-bg)]/95 backdrop-blur">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 mr-2">
-          <div className="w-3 h-3 rounded-full bg-[var(--color-muted)]" />
-          <div className="w-3 h-3 rounded-full bg-[#FFDAB9]" />
-          <div className="w-3 h-3 rounded-full bg-[#86EFAC]" />
-        </div>
+
 
         {onGoHome && (
           <button
@@ -58,8 +55,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
         )}
 
         <StickerIcon name="header" size={32} className="w-8 h-8 object-contain hidden sm:block ml-2 shrink-0" />
-        <span className="font-pixel text-body font-bold text-[var(--color-dark)] hidden xl:inline-block">KAWAII_PLAYER.EXE</span>
-        <span className="font-pixel text-body text-[var(--color-vibrant)] hidden xl:inline-block">♥</span>
+        <span className="font-pixel text-body font-bold text-[var(--color-dark)] hidden xl:inline-block">{HEADER_TITLE}</span>
       </div>
       <div className="flex-1 max-w-md mx-4 relative">
         <input
@@ -90,7 +86,6 @@ export const PlayerHeader = React.memo(function PlayerHeader({
             title="Switch to compact widget view"
             aria-label="Switch to compact widget view"
           >
-            <span className="text-[var(--color-vibrant)] text-meta">♥</span>
             <span className="group-hover:text-[var(--color-vibrant)] transition-colors">Widget</span>
           </button>
         )}
@@ -99,11 +94,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
           <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tracking-wider uppercase">Music World</span>
           <MusicNoteIcon size={12} className="text-[var(--color-vibrant)]" />
         </div>
-        <button className="mw-btn hover:text-[var(--color-vibrant)] w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded" aria-label="Minimize window"><span className="text-body leading-none">_</span></button>
-        <button className="mw-btn hover:text-[var(--color-vibrant)] w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded" aria-label="Maximize window"><span className="text-body leading-none">□</span></button>
-        <button className="mw-btn hover:text-[var(--color-vibrant)] w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded" aria-label="Close window">
-          <CloseIcon size={16} />
-        </button>
+
       </div>
     </div>
   );

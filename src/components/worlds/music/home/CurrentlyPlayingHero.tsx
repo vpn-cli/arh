@@ -43,7 +43,7 @@ export const CurrentlyPlayingHero = React.memo(function CurrentlyPlayingHero({
             {currentTrack ? "CURRENTLY PLAYING" : "GOOD EVENING"}
           </p>
           <h2 className="mt-2 font-pixel text-display font-extrabold leading-tight text-[var(--color-dark)] drop-shadow-[0_2px_0_#FFFFFF]">
-            {currentTrack ? currentTrack.name : "Let's listen together ♡"}
+            {currentTrack ? currentTrack.name : "Let's listen together"}
           </h2>
           <p className="mt-2 sm:mt-3 font-pixel text-body sm:text-title font-medium text-[var(--color-dark)] opacity-90 truncate">
             {currentTrack

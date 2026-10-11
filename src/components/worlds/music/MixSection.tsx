@@ -80,7 +80,7 @@ export function MixSection({
               </h2>
             </div>
             <p className="font-pixel text-caption text-[var(--color-dark)] mt-1 font-medium">
-              Dynamic blend of your recent listens, top tracks, and personal favorites ♡
+              Dynamic blend of your recent listens, top tracks, and personal favorites
             </p>
           </div>
 

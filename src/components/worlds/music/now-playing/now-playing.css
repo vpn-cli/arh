@@ -7,3 +7,219 @@
   transform: translateX(-100%);
   transition: transform 250ms linear;
 }
+
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  height: 24px;
+}
+
+.volume-slider:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.volume-slider:focus-visible {
+  outline: none;
+}
+
+.volume-slider:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-dark);
+  outline-offset: 2px;
+}
+
+.volume-slider:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--color-dark);
+  outline-offset: 2px;
+}
+
+.volume-slider::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--color-text-muted) var(--volume-percent, 50%),
+    var(--color-muted) var(--volume-percent, 50%)
+  );
+}
+
+.volume-slider::-moz-range-track {
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--color-muted);
+}
+
+.volume-slider::-moz-range-progress {
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--color-text-muted);
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: var(--color-text-muted);
+  border: 1px solid var(--color-light);
+  margin-top: -3.5px;
+  transition: transform 150ms ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.volume-slider:hover:not(:disabled)::-webkit-slider-thumb {
+  transform: scale(1.2);
+  background: var(--color-dark);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: var(--color-text-muted);
+  border: 1px solid var(--color-light);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* Vinyl 3D Perspective & Flipper */
+.vinyl-perspective {
+  perspective: 1000px;
+}
+
+.vinyl-flipper {
+  transform-style: preserve-3d;
+  transition: transform 500ms cubic-bezier(0.34, 1.25, 0.64, 1);
+}
+
+.vinyl-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.vinyl-back {
+  transform: rotateY(180deg);
+}
+
+.vinyl-flipped {
+  transform: rotateY(180deg);
+}
+
+
+/* Vinyl Spin */
+@keyframes vinyl-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vinyl-spin-running {
+  animation: vinyl-spin 10s linear infinite;
+}
+
+.vinyl-spin-paused {
+  animation-play-state: paused;
+}
+
+/* Sleeve Track Change (~450ms total) */
+.vinyl-sleeve-jacket {
+  transform: translateX(-24px);
+  opacity: 0;
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              opacity 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.vinyl-sleeve-jacket-active {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.vinyl-slide-into-sleeve {
+  transform: translateX(-62%);
+  transition: transform 220ms cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+.vinyl-slide-to-center {
+  transform: translateX(0);
+  transition: transform 225ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Like Reaction: Sticker r2c1 hops onto the record, rides one turn and fades */
+@keyframes vinyl-orbit-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes vinyl-hop-fade {
+  0% {
+    transform: translate(60px, 80px) scale(0.3);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(38px, -38px) scale(1);
+    opacity: 1;
+  }
+  85% {
+    transform: translate(38px, -38px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(38px, -38px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+.vinyl-orbit-rotator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+  z-index: 30;
+  animation: vinyl-orbit-rotate 1800ms linear forwards;
+}
+
+.vinyl-sticker-hop {
+  animation: vinyl-hop-fade 1800ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* Paused when document / tab is hidden */
+.tab-hidden .vinyl-spin-running,
+.tab-hidden .vinyl-orbit-rotator,
+.tab-hidden .vinyl-sticker-hop {
+  animation-play-state: paused !important;
+}
+
+/* Accessibility: prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .vinyl-flipper {
+    transition: none !important;
+  }
+  .vinyl-slide-into-sleeve,
+  .vinyl-slide-to-center {
+    transition: none !important;
+    transform: translateX(0) !important;
+  }
+  .vinyl-sleeve-jacket {
+    display: none !important;
+  }
+  .vinyl-orbit-rotator {
+    display: none !important;
+    animation: none !important;
+  }
+  .vinyl-sticker-hop {
+    display: none !important;
+    animation: none !important;
+  }
+}

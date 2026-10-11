@@ -1175,6 +1175,7 @@ html {
   --motion-fast: 120ms;
   --motion-base: 180ms;
   --motion-slow: 240ms;
+  --motion-burst: 400ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --row-hover: color-mix(in srgb, var(--color-dark) 7%, transparent);
 }
@@ -1374,6 +1375,86 @@ html {
     animation: mw-view-enter var(--motion-slow) var(--ease-out);
   }
 
+  /* 6. LikeButton Animations */
+  @keyframes mw-star-spring {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.35); }
+    70% { transform: scale(0.92); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes mw-sparkle-1 {
+    0% { transform: translate(0, 0) scale(0); opacity: 1; }
+    60% { transform: translate(-14px, -12px) scale(1.1); opacity: 0.9; }
+    100% { transform: translate(-18px, -16px) scale(0); opacity: 0; }
+  }
+
+  @keyframes mw-sparkle-2 {
+    0% { transform: translate(0, 0) scale(0); opacity: 1; }
+    60% { transform: translate(14px, -12px) scale(1.1); opacity: 0.9; }
+    100% { transform: translate(18px, -16px) scale(0); opacity: 0; }
+  }
+
+  @keyframes mw-sparkle-3 {
+    0% { transform: translate(0, 0) scale(0); opacity: 1; }
+    60% { transform: translate(-12px, 14px) scale(1); opacity: 0.9; }
+    100% { transform: translate(-16px, 18px) scale(0); opacity: 0; }
+  }
+
+  @keyframes mw-sparkle-4 {
+    0% { transform: translate(0, 0) scale(0); opacity: 1; }
+    60% { transform: translate(12px, 14px) scale(1); opacity: 0.9; }
+    100% { transform: translate(16px, 18px) scale(0); opacity: 0; }
+  }
+
+  @keyframes mw-snoopy-pop {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, 8px) scale(0.6);
+    }
+    25% {
+      opacity: 1;
+      transform: translate(-50%, -4px) scale(1.08);
+    }
+    45% {
+      opacity: 1;
+      transform: translate(-50%, 0) scale(1);
+    }
+    75% {
+      opacity: 1;
+      transform: translate(-50%, 0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -8px) scale(0.9);
+    }
+  }
+
+  .mw-like-star-spring {
+    animation: mw-star-spring var(--motion-burst) var(--ease-out);
+  }
+
+  .mw-like-sparkle-1 {
+    animation: mw-sparkle-1 var(--motion-burst) var(--ease-out) forwards;
+  }
+  .mw-like-sparkle-2 {
+    animation: mw-sparkle-2 var(--motion-burst) var(--ease-out) forwards;
+  }
+  .mw-like-sparkle-3 {
+    animation: mw-sparkle-3 var(--motion-burst) var(--ease-out) forwards;
+  }
+  .mw-like-sparkle-4 {
+    animation: mw-sparkle-4 var(--motion-burst) var(--ease-out) forwards;
+  }
+
+  .mw-like-snoopy {
+    animation: mw-snoopy-pop 850ms var(--ease-out) forwards;
+  }
+
+  .mw-like-un-saving {
+    transition: opacity var(--motion-fast) var(--ease-out);
+  }
+
   /* Accessibility: prefers-reduced-motion (lyrics animation untouched) */
   @media (prefers-reduced-motion: reduce) {
     .mw-card,
@@ -1397,6 +1478,21 @@ html {
 
     .mw-view-enter {
       animation-name: mw-view-enter-reduced !important;
+    }
+
+    .mw-like-star-spring {
+      animation: none !important;
+    }
+
+    .mw-like-sparkle-1,
+    .mw-like-sparkle-2,
+    .mw-like-sparkle-3,
+    .mw-like-sparkle-4 {
+      display: none !important;
+    }
+
+    .mw-like-snoopy {
+      display: none !important;
     }
   }
 }

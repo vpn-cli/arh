@@ -1,4 +1,5 @@
 import React from 'react';
+import { LikeButton } from './LikeButton';
 
 interface AlbumActionsProps {
   onPlay: () => void;
@@ -22,16 +23,13 @@ export function AlbumActions({ onPlay, onShuffle, onToggleSave, isSaved, disable
       </button>
       
       {onToggleSave && (
-        <button
-          onClick={onToggleSave}
+        <LikeButton
+          isSaved={isSaved}
+          onToggle={onToggleSave}
           disabled={disabled}
-          className={`px-4 py-3 bg-[var(--color-light)] border-2 border-[var(--color-muted)] rounded-xl transition-all flex items-center justify-center ${disabled ? 'opacity-70 cursor-not-allowed' : 'active:scale-95 hover:scale-[1.02] hover:bg-[var(--color-light)]'}`}
-          title={isSaved ? "Remove from Library" : "Save to Library"}
-        >
-          <span className={`text-title ${isSaved ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-muted)]'}`}>
-            {isSaved ? '♥' : '♡'}
-          </span>
-        </button>
+          ariaLabel={isSaved ? "Remove album from Library" : "Save album to Library"}
+          className="px-4 py-3 bg-[var(--color-light)] border-2 border-[var(--color-muted)] rounded-xl"
+        />
       )}
 
       <button

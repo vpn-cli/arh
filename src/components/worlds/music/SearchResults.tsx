@@ -33,7 +33,7 @@ export const SearchResults = React.memo(function SearchResults({ query, onPlayTr
   }, [libraryPlaylists, normalizedQuery]);
 
   if (!trimmedQuery) {
-    return <div className="text-center text-[var(--color-dark)] font-pixel text-body font-medium mt-8">Type to search songs, artists, and playlists ♡</div>;
+    return <div className="text-center text-[var(--color-dark)] font-pixel text-body font-medium mt-8">Type to search songs, artists, and playlists</div>;
   }
 
   if (isLoading) {

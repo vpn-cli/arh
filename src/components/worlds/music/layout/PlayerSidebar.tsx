@@ -7,6 +7,7 @@ import { usePlaylists } from "@/hooks/useSpotify";
 import { MediaRow } from "../MediaRow";
 import { PlaylistCover } from "../PlaylistCover";
 import { StickerIcon } from "../StickerIcon";
+import { SIDEBAR_CARD_TITLE, SIDEBAR_CARD_SUBTITLE } from "../textConfig";
 import {
   HomeIcon,
   PlaylistsIcon,
@@ -70,8 +71,8 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
       <div className="h-28 border-2 border-[var(--color-muted)] bg-[var(--color-light)] flex items-center gap-3 justify-start pl-3 pr-2 m-4 rounded-2xl shrink-0">
         <StickerIcon name="kawaiiCard" size={80} className="w-20 h-20 object-contain shrink-0" />
         <div>
-          <div className="font-pixel text-title font-bold text-[var(--color-dark)]">KAWAII</div>
-          <div className="font-pixel text-caption text-[var(--color-dark)] font-medium">vibes • memories</div>
+          <div className="font-pixel text-title font-bold text-[var(--color-dark)]">{SIDEBAR_CARD_TITLE}</div>
+          <div className="font-pixel text-caption text-[var(--color-dark)] font-medium">{SIDEBAR_CARD_SUBTITLE}</div>
         </div>
       </div>
 

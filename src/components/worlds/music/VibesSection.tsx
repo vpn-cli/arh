@@ -319,7 +319,7 @@ export function VibesSection({
              ))}
            </div>
          ) : (
-           <div className="text-[var(--color-dark)] font-pixel text-caption font-medium px-1">No vibes found. Listen to more music! ♡</div>
+           <div className="text-[var(--color-dark)] font-pixel text-caption font-medium px-1">No vibes found. Listen to more music!</div>
          )
         }
       </section>

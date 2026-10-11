@@ -13,6 +13,7 @@ import {
 import { formatTime } from "../playback/playbackHelpers";
 import { useMusicView, isStandaloneMode } from "../hooks/useMusicView";
 import { PaletteBackground } from "../palette/PaletteBackground";
+import { LikeButton } from "../LikeButton";
 
 export function WidgetPlayer() {
   const { expandToFull } = useMusicView();
@@ -290,18 +291,11 @@ export function WidgetPlayer() {
                   </svg>
                 </button>
 
-                <button
-                  onClick={handleToggleLike}
-                  className="mw-btn app-region-no-drag w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-full text-title transition-transform hover:scale-110 active:scale-95 cursor-pointer ml-auto"
-                  title={isSaved ? "Remove from Library" : "Save to Library"}
-                  aria-label={isSaved ? "Remove from Library" : "Save to Library"}
-                >
-                  {isSaved ? (
-                    <span className="text-[var(--color-vibrant)]">♥</span>
-                  ) : (
-                    <span className="text-[var(--color-dark)] hover:text-[var(--color-vibrant)]">♡</span>
-                  )}
-                </button>
+                <LikeButton
+                  isSaved={Boolean(isSaved)}
+                  onToggle={handleToggleLike}
+                  className="mw-btn app-region-no-drag w-9 h-9 min-w-[36px] min-h-[36px] rounded-full ml-auto"
+                />
               </div>
 
               {/* Bottom: Slim Progress Bar with Elapsed and Total Time */}

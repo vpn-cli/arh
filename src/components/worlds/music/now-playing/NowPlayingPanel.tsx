@@ -4,9 +4,13 @@ import React, { memo } from 'react';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { ProgressBar, ProgressBarHandle } from './ProgressBar';
 import { PlaybackControls } from './PlaybackControls';
+import { VolumeControl } from './VolumeControl';
 import { QueuePanel } from './QueuePanel';
 import { ChevronDownIcon, MusicNoteIcon } from '../icons';
 import { TrackActionsMenu } from '../TrackActionsMenu';
+import { LikeButton } from '../LikeButton';
+import { VinylRecord } from './VinylRecord';
+
 
 export interface NowPlayingPanelProps {
   progressBarRef?: React.Ref<ProgressBarHandle>;
@@ -61,13 +65,21 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
 }: NowPlayingPanelProps) {
   const currentTrack = useSpotifyPlayerStore((s) => s.currentTrack);
   const isPaused = useSpotifyPlayerStore((s) => s.isPaused);
+  const [likeTrigger, setLikeTrigger] = React.useState(0);
+
+  const handleToggleLike = React.useCallback(async () => {
+    const willSave = !isSaved;
+    await toggleSaveTrack();
+    if (willSave) {
+      setLikeTrigger((n) => n + 1);
+    }
+  }, [isSaved, toggleSaveTrack]);
 
   return (
     <div className="mw-now-playing-panel w-[380px] lg:w-[400px] xl:w-[420px] 2xl:w-[440px] border-l-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-[var(--color-light)]">
       <div className="flex flex-col p-5 pb-3 relative shrink-0">
         <div className="flex items-center justify-between mb-3 gap-2">
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[var(--color-vibrant)] text-title">♥</span>
             <span className="font-pixel text-[var(--color-dark)] text-body font-bold">Now Playing</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -117,22 +129,12 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
                 </div>
               )}
               {/* Record */}
-              <div className="relative w-4/5 h-4/5 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group cursor-pointer hover:scale-[1.08] z-10">
-                <img
-                  src={
-                    currentTrack.album?.images?.[0]?.url ||
-                    (typeof currentTrack.album?.images?.[0] === 'string'
-                      ? currentTrack.album.images[0]
-                      : '') ||
-                    '/soundscape_ref/finalui.png'
-                  }
-                  alt="Album Cover"
-                  className={`w-full h-full object-cover rounded-full shadow-[0_8px_24px_rgba(255,105,180,0.5)] border-4 border-[#FFFFFF] origin-center ${
-                    !isPaused ? 'animate-[spin_10s_linear_infinite]' : ''
-                  }`}
-                />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/4 h-1/4 bg-gradient-to-br from-[var(--color-light)] to-[var(--color-muted)] rounded-full border-2 border-[#FFFFFF] shadow-inner" />
-              </div>
+              <VinylRecord
+                currentTrack={currentTrack}
+                isPaused={isPaused}
+                onAddMemory={onAddMemory}
+                likeTrigger={likeTrigger}
+              />
             </div>
 
             {/* Track Info */}
@@ -158,18 +160,14 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
                 </p>
               </div>
               <div className="flex gap-2 shrink-0 ml-2">
-                <button
-                  onClick={toggleSaveTrack}
-                  className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-title transition-transform hover:scale-110 active:scale-95"
-                  title={isSaved ? 'Remove from Library' : 'Save to Library'}
-                  aria-label={isSaved ? 'Remove from Library' : 'Save to Library'}
-                >
-                  {isSaved ? (
-                    <span className="text-[var(--color-vibrant)]">♥</span>
-                  ) : (
-                    <span className="text-[var(--color-dark)] hover:text-[var(--color-vibrant)]">♡</span>
-                  )}
-                </button>
+                <LikeButton
+                  isSaved={isSaved}
+                  onToggle={handleToggleLike}
+                  disableSnoopyPop
+                  className="w-8 h-8 min-w-[32px] min-h-[32px]"
+                />
+
+
                 <TrackActionsMenu
                   track={currentTrack}
                   onAddToQueue={handleAddToQueue}
@@ -198,6 +196,8 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
               toggleShuffle={toggleShuffle}
               toggleRepeat={toggleRepeat}
             />
+
+            <VolumeControl className="mt-2" />
           </div>
         ) : (
           <div className="flex flex-col mb-4">
@@ -222,7 +222,13 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
                 </p>
               </div>
               <div className="flex gap-2 shrink-0 ml-2">
-                <button className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-title text-[var(--color-dark)]">♡</button>
+                <LikeButton
+                  isSaved={false}
+                  disabled
+                  disableSnoopyPop
+                  className="w-8 h-8 min-w-[32px] min-h-[32px]"
+                />
+
                 <button
                   disabled
                   className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-title text-[var(--color-dark)] pb-1 font-bold opacity-40 cursor-not-allowed"
@@ -270,6 +276,8 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
                 </svg>
               </button>
             </div>
+
+            <VolumeControl className="mt-2" />
           </div>
         )}
       </div>

@@ -135,13 +135,6 @@ export function LyricLines({
                 willChange: isNearby ? 'transform, opacity' : undefined,
               }}
             >
-              <div
-                className={`absolute right-[100%] mr-4 top-1/2 -translate-y-1/2 text-[var(--color-vibrant)] text-title transition-opacity duration-300 ${
-                  isActive ? 'opacity-100' : 'opacity-0'
-                }`}
-              >
-                ♥
-              </div>
               {line.words && line.words.length > 0 ? (
                 line.words.map((word, wIdx, arr) => {
                   const wordDurationMs = word.endMs - word.startMs;

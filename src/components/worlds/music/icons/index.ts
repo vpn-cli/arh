@@ -20,3 +20,4 @@ export { SearchIcon } from './SearchIcon';
 export { ShuffleIcon } from './ShuffleIcon';
 export { EditIcon } from './EditIcon';
 export { TrashIcon } from './TrashIcon';
+export { SpeakerIcon, type SpeakerIconProps } from './SpeakerIcon';

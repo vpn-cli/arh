@@ -202,7 +202,7 @@ export function FrequenciesSection({
       <section>
         <div className="flex items-center justify-between mb-3 px-1">
           <h2 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] flex items-center gap-2">
-            <span className="text-[var(--color-vibrant)]">♥</span> Top Artists
+            Top Artists
           </h2>
         </div>
         {isTopArtistsError ? renderError(topArtistsError, 'TOP ARTISTS') :
