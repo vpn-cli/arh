@@ -6,9 +6,9 @@ import { pickImage } from '@/lib/spotify/images';
 import { ChevronLeftIcon } from './icons';
 
 interface VibesSectionProps {
-  onPlayTrack: (uri: string) => void;
-  onPlayTracks: (uris: string[]) => void;
-  onAddToQueue: (uri: string) => void;
+  onPlayTrack: (uri: string, contextUri?: string, trackObj?: any) => void;
+  onPlayTracks: (uris: string[], tracks?: any[]) => void;
+  onAddToQueue: (track: any, contextUri?: string) => void;
   onAddToPlaylist: (uri: string) => void;
   onClickArtist: (id: string) => void;
   onAddMemory: (entity: any, type: 'track' | 'artist' | 'playlist') => void;
@@ -199,7 +199,7 @@ export function VibesSection({
           <button 
             onClick={() => {
               if (selectedVibe.tracks.length > 0) {
-                onPlayTracks(selectedVibe.tracks.map(t => t.uri));
+                onPlayTracks(selectedVibe.tracks.map(t => t.uri), selectedVibe.tracks);
               }
             }}
             disabled={selectedVibe.tracks.length === 0}
@@ -249,8 +249,14 @@ export function VibesSection({
               <h3 className="font-pixel text-caption font-bold text-[var(--color-dark)] tracking-wider uppercase mb-3 px-1">Vibe Tracks</h3>
               <TrackList 
                 tracks={selectedVibe.tracks} 
-                onPlayTrack={onPlayTrack} 
-                onAddToQueue={onAddToQueue} 
+                onPlayTrack={(uri, contextUri, trackObj) => {
+                  const track = trackObj || selectedVibe.tracks.find((t: any) => t.uri === uri);
+                  onPlayTrack(uri, contextUri, track);
+                }} 
+                onAddToQueue={(trackOrUri) => {
+                  const track = typeof trackOrUri === 'object' ? trackOrUri : selectedVibe.tracks.find((t: any) => t.uri === trackOrUri);
+                  onAddToQueue(track || trackOrUri);
+                }} 
                 onAddToPlaylist={onAddToPlaylist} 
                 onAddMemory={(track) => onAddMemory(track, 'track')}
               />

@@ -76,7 +76,7 @@ describe('playbackHelpers pure functions', () => {
     it('resolves queue track from string and object', () => {
       expect(resolveQueueTrack('spotify:track:1')).toEqual({
         uri: 'spotify:track:1',
-        track: { uri: 'spotify:track:1', name: 'Queued Track' },
+        track: { uri: 'spotify:track:1' },
       });
       expect(resolveQueueTrack({ uri: 'spotify:track:2', name: 'My Track' })).toEqual({
         uri: 'spotify:track:2',

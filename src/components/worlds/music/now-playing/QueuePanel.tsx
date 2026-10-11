@@ -53,6 +53,7 @@ export const QueuePanel = memo(function QueuePanel({
   const [rightPanelTab, setRightPanelTab] = useState<'queue' | 'recent'>('queue');
   const [draggedQueueIndex, setDraggedQueueIndex] = useState<number | null>(null);
   const [dragOverQueueIndex, setDragOverQueueIndex] = useState<number | null>(null);
+  const isDraggingRef = React.useRef(false);
 
   const queue = useSpotifyPlayerStore((s) => s.queue);
   const queueIndex = useSpotifyPlayerStore((s) => s.queueIndex);
@@ -65,6 +66,8 @@ export const QueuePanel = memo(function QueuePanel({
   const { data: recentTracks = [] } = useRecentlyPlayed({
     enabled: !currentTrack || rightPanelTab === 'recent',
   });
+
+  const isLiveQueue = queue.length === 0 && Boolean(playerQueueData?.queue?.length);
 
   const effectiveQueue = useMemo<QueueEntry[]>(() => {
     if (queue && queue.length > 0) return queue as QueueEntry[];
@@ -147,92 +150,105 @@ export const QueuePanel = memo(function QueuePanel({
               </button>
             </div>
           ) : (
-            effectiveQueue.map((item, idx: number) => (
-              <div
-                key={`${item.track?.id || item.track?.uri || 'queue'}-${idx}`}
-                draggable={queue.length > 0}
-                onDragStart={(e) => {
-                  if (queue.length === 0) return;
-                  setDraggedQueueIndex(idx);
-                  e.dataTransfer.effectAllowed = 'move';
-                }}
-                onDragOver={(e) => {
-                  if (queue.length === 0) return;
-                  e.preventDefault();
-                  setDragOverQueueIndex(idx);
-                }}
-                onDragEnd={() => {
-                  setDraggedQueueIndex(null);
-                  setDragOverQueueIndex(null);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (queue.length > 0 && draggedQueueIndex !== null && draggedQueueIndex !== idx) {
-                    reorderQueue(draggedQueueIndex, idx);
-                  }
-                  setDraggedQueueIndex(null);
-                  setDragOverQueueIndex(null);
-                }}
-                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl mw-row group cursor-pointer ${
-                  dragOverQueueIndex === idx
-                    ? draggedQueueIndex !== null && draggedQueueIndex < idx
-                      ? 'border-b-[var(--color-vibrant)] border-b-2'
-                      : 'border-t-[var(--color-vibrant)] border-t-2'
-                    : ''
-                } ${draggedQueueIndex === idx ? 'opacity-50' : 'opacity-100'}`}
-                onClick={() => playQueueItem(idx)}
-              >
-                <span
-                  className={`font-pixel text-caption w-6 text-center shrink-0 font-bold ${
-                    idx === queueIndex ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'
-                  }`}
+            effectiveQueue.map((item, idx: number) => {
+              const isCurrentlyActive = !isLiveQueue && idx === queueIndex;
+              return (
+                <div
+                  key={`${item.track?.id || item.track?.uri || 'queue'}-${idx}`}
+                  draggable={queue.length > 0}
+                  onDragStart={(e) => {
+                    if (queue.length === 0) return;
+                    isDraggingRef.current = true;
+                    setDraggedQueueIndex(idx);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  onDragOver={(e) => {
+                    if (queue.length === 0) return;
+                    e.preventDefault();
+                    setDragOverQueueIndex(idx);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedQueueIndex(null);
+                    setDragOverQueueIndex(null);
+                    setTimeout(() => {
+                      isDraggingRef.current = false;
+                    }, 50);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (queue.length > 0 && draggedQueueIndex !== null && draggedQueueIndex !== idx) {
+                      reorderQueue(draggedQueueIndex, idx);
+                    }
+                    setDraggedQueueIndex(null);
+                    setDragOverQueueIndex(null);
+                    setTimeout(() => {
+                      isDraggingRef.current = false;
+                    }, 50);
+                  }}
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl mw-row group cursor-pointer ${
+                    dragOverQueueIndex === idx
+                      ? draggedQueueIndex !== null && draggedQueueIndex < idx
+                        ? 'border-b-[var(--color-vibrant)] border-b-2'
+                        : 'border-t-[var(--color-vibrant)] border-t-2'
+                      : ''
+                  } ${draggedQueueIndex === idx ? 'opacity-50' : 'opacity-100'}`}
+                  onClick={() => {
+                    if (isDraggingRef.current) return;
+                    playQueueItem(idx);
+                  }}
                 >
-                  {idx + 1}
-                </span>
-                {item.track?.album?.images?.[0]?.url ? (
-                  <img
-                    src={(item.track.album.images[2] || item.track.album.images[0]).url}
-                    loading="lazy"
-                    alt=""
-                    className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]"
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)]">
-                    <MusicNoteIcon size={14} />
-                  </div>
-                )}
-                <div className="flex flex-col overflow-hidden flex-1 min-w-0">
                   <span
-                    className={`font-pixel text-body font-bold truncate ${
-                      idx === queueIndex ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'
+                    className={`font-pixel text-caption w-6 text-center shrink-0 font-bold ${
+                      isCurrentlyActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'
                     }`}
                   >
-                    {item.track?.name}
+                    {idx + 1}
                   </span>
-                  <span className="font-pixel text-body text-[var(--color-dark)] font-medium truncate">
-                    {item.track?.artists?.map((a: { name: string }) => a.name).join(', ')}
+                  {item.track?.album?.images?.[0]?.url ? (
+                    <img
+                      src={(item.track.album.images[2] || item.track.album.images[0]).url}
+                      loading="lazy"
+                      alt=""
+                      className="w-9 h-9 rounded-lg object-cover shrink-0 shadow-2xs border border-[var(--color-muted)]"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-lg bg-[var(--color-muted)] border border-[var(--color-muted)] shrink-0 shadow-2xs flex items-center justify-center text-[var(--color-dark)]">
+                      <MusicNoteIcon size={14} />
+                    </div>
+                  )}
+                  <div className="flex flex-col overflow-hidden flex-1 min-w-0">
+                    <span
+                      className={`font-pixel text-body font-bold truncate ${
+                        isCurrentlyActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'
+                      }`}
+                    >
+                      {item.track?.name}
+                    </span>
+                    <span className="font-pixel text-body text-[var(--color-dark)] font-medium truncate">
+                      {item.track?.artists?.map((a: { name: string }) => a.name).join(', ')}
+                    </span>
+                  </div>
+                  <span className="font-pixel text-caption text-[var(--color-dark)] font-bold shrink-0">
+                    {item.track?.duration_ms ? formatTime(item.track.duration_ms) : ''}
                   </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (queue.length > 0) {
+                        removeFromQueue(idx);
+                      }
+                    }}
+                    className={`mw-btn mw-row-action text-[var(--color-dark)] hover:text-[var(--color-dark)] w-6 h-6 min-w-[24px] min-h-[24px] rounded shrink-0 flex items-center justify-center ${
+                      queue.length > 0 ? '' : 'hidden'
+                    }`}
+                    aria-label="Remove from queue"
+                    title="Remove from queue"
+                  >
+                    <CloseIcon size={12} />
+                  </button>
                 </div>
-                <span className="font-pixel text-caption text-[var(--color-dark)] font-bold shrink-0">
-                  {formatTime(item.track?.duration_ms || 0)}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (queue.length > 0) {
-                      removeFromQueue(idx);
-                    }
-                  }}
-                  className={`mw-btn mw-row-action text-[var(--color-dark)] hover:text-[var(--color-dark)] w-6 h-6 min-w-[24px] min-h-[24px] rounded shrink-0 flex items-center justify-center ${
-                    queue.length > 0 ? '' : 'hidden'
-                  }`}
-                  aria-label="Remove from queue"
-                  title="Remove from queue"
-                >
-                  <CloseIcon size={12} />
-                </button>
-              </div>
-            ))
+              );
+            })
           )
         ) : recentTracks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">

@@ -209,7 +209,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
                   onEdit={() => { const p = playlists.find((pl: any) => pl.id === selectedPlaylistId); if (p) setEditingPlaylist(p); }}
                   onRemove={() => { const p = playlists.find((pl: any) => pl.id === selectedPlaylistId); if (p) setRemovingPlaylist(p); }}
                   onPlayPlaylist={(uri, tracks) => playPlaylist(uri, tracks)}
-                  onPlayTrack={(uri, contextUri, track) => contextUri ? playContextTrack(contextUri, uri) : playTrack(uri, undefined, track)}
+                  onPlayTrack={(uri, contextUri, track, tracksList) => contextUri ? playContextTrack(contextUri, uri, tracksList) : playTrack(uri, undefined, track)}
                   onAddToQueue={handleAddToQueue} onAddToPlaylist={handleAddToPlaylist}
                   onRemoveFromPlaylist={async (uri) => { if (selectedPlaylistId) await removeItems.mutateAsync({ playlistId: selectedPlaylistId, uri }); }}
                   onAddMemory={handleAddMemory}
@@ -283,7 +283,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             {activeTab === 'album' && selectedAlbumId && (
               <AlbumDetail
                 albumId={selectedAlbumId} onBack={handleBackFromAlbum}
-                onPlayAlbum={playPlaylist} onPlayTrack={(uri, contextUri) => playTrack(uri, contextUri)}
+                onPlayAlbum={playPlaylist} onPlayTrack={(uri, contextUri, track, tracksList) => contextUri ? playContextTrack(contextUri, uri, tracksList) : playTrack(uri, undefined, track)}
                 onAddToQueue={handleAddToQueue} onAddToPlaylist={handleAddToPlaylist} onAddMemory={handleAddMemory}
                 onShufflePlay={async (uri) => { if (!isShuffle) await toggleShuffle(); playPlaylist(uri); }}
               />
@@ -292,7 +292,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             {activeTab === 'artist' && selectedArtistId && (
               <ArtistDetail
                 artistId={selectedArtistId} onBack={handleBackFromArtist}
-                onClickAlbum={openAlbum} onPlayTrack={(uri, contextUri) => playTrack(uri, contextUri)}
+                onClickAlbum={openAlbum} onPlayTrack={(uri, contextUri, track) => contextUri ? playContextTrack(contextUri, uri) : playTrack(uri, undefined, track)}
                 onAddToQueue={handleAddToQueue} onAddToPlaylist={handleAddToPlaylist}
                 onAddMemory={(entity, type) => { setMemoryEditorEntity(entity); setMemoryEditorType(type); setMemoryEditorMemoryId(null); }}
               />
@@ -326,8 +326,9 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
         <QueueModal
           isOpen={isQueueModalOpen} onClose={() => setIsQueueModalOpen(false)} initialTab={queueModalTab}
-          onPlayTrack={(uri, contextUri) => contextUri ? playContextTrack(contextUri, uri) : playTrack(uri)}
+          onPlayTrack={(uri, contextUri, track) => contextUri ? playContextTrack(contextUri, uri) : playTrack(uri, undefined, track)}
           onAddToPlaylist={handleAddToPlaylist}
+          playQueueItem={playQueueItem}
         />
 
         <MemoryEditorModal

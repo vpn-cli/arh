@@ -8,7 +8,7 @@ interface PlaylistDetailProps {
   playlistId: string;
   onBack: () => void;
   onPlayPlaylist: (uri: string, tracks?: any[]) => void;
-  onPlayTrack: (uri: string, contextUri?: string, track?: any) => void;
+  onPlayTrack: (uri: string, contextUri?: string, track?: any, tracksList?: any[]) => void;
   onAddToQueue?: (track: any, contextUri?: string) => void;
   onShufflePlay?: (uri: string, tracks?: any[]) => void;
   onAddToPlaylist?: (uri: string) => void;
@@ -148,7 +148,7 @@ export function PlaylistDetail({ playlistId, onBack, onPlayPlaylist, onPlayTrack
           isLoading={isLoadingItems && resolvedTracks.length === 0} 
           onPlayTrack={(uri) => {
             const trackObj = resolvedTracks.find((t: any) => t.uri === uri);
-            onPlayTrack(uri, playlist?.uri, trackObj);
+            onPlayTrack(uri, playlist?.uri, trackObj, resolvedTracks);
           }} 
           onAddToQueue={(track) => onAddToQueue && onAddToQueue(track, playlist?.uri)}
           onAddToPlaylist={onAddToPlaylist}

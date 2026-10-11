@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { useRecentlyPlayed, usePlayerQueue } from '@/hooks/useSpotify';
 import { formatTime } from './playback/playbackHelpers';
+import { playQueueItemGlobal } from './playback/globalPlaybackActions';
 import {
   CloseIcon,
   SearchIcon,
@@ -20,8 +21,9 @@ interface QueueModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialTab?: 'queue' | 'recent';
-  onPlayTrack: (uri: string, contextUri?: string) => void;
+  onPlayTrack: (uri: string, contextUri?: string, track?: any) => void;
   onAddToPlaylist?: (uri: string) => void;
+  playQueueItem?: (index: number) => Promise<void> | void;
 }
 
 export function QueueModal({
@@ -30,11 +32,13 @@ export function QueueModal({
   initialTab = 'queue',
   onPlayTrack,
   onAddToPlaylist,
+  playQueueItem,
 }: QueueModalProps) {
   const [activeTab, setActiveTab] = useState<'queue' | 'recent'>(initialTab);
   const [searchFilter, setSearchFilter] = useState('');
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const isDraggingRef = React.useRef(false);
 
   const {
     queue,
@@ -88,6 +92,17 @@ export function QueueModal({
       return effectiveQueue;
     }
     return queue;
+  };
+
+  const isLiveQueue = queue.length === 0 && Boolean(playerQueueData?.queue?.length);
+
+  const handlePlayQueueItem = (index: number) => {
+    ensureQueueInitialized();
+    if (playQueueItem) {
+      playQueueItem(index);
+    } else {
+      playQueueItemGlobal(index);
+    }
   };
 
   const handleShuffleQueue = () => {
@@ -311,13 +326,14 @@ export function QueueModal({
 
                   {filteredQueue.map((item: any, idx: number) => {
                     const originalIndex = effectiveQueue.indexOf(item);
-                    const isCurrentlyActive = originalIndex === queueIndex;
+                    const isCurrentlyActive = !isLiveQueue && originalIndex === queueIndex;
 
                     return (
                       <div
                         key={`${item.track?.id}-${originalIndex}`}
                         draggable
                         onDragStart={(e) => {
+                          isDraggingRef.current = true;
                           setDraggedIdx(originalIndex);
                           e.dataTransfer.effectAllowed = 'move';
                         }}
@@ -328,6 +344,9 @@ export function QueueModal({
                         onDragEnd={() => {
                           setDraggedIdx(null);
                           setDragOverIdx(null);
+                          setTimeout(() => {
+                            isDraggingRef.current = false;
+                          }, 50);
                         }}
                         onDrop={(e) => {
                           e.preventDefault();
@@ -336,8 +355,15 @@ export function QueueModal({
                           }
                           setDraggedIdx(null);
                           setDragOverIdx(null);
+                          setTimeout(() => {
+                            isDraggingRef.current = false;
+                          }, 50);
                         }}
-                        className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-2xl mw-row ${
+                        onClick={() => {
+                          if (isDraggingRef.current) return;
+                          handlePlayQueueItem(originalIndex);
+                        }}
+                        className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-2xl mw-row cursor-pointer ${
                           isCurrentlyActive
                             ? 'bg-[var(--color-light)] border-[var(--color-vibrant)] shadow-xs'
                             : 'bg-white border-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:shadow-2xs'
@@ -350,7 +376,10 @@ export function QueueModal({
                         } ${draggedIdx === originalIndex ? 'opacity-40' : 'opacity-100'}`}
                       >
                         {/* Drag Handle & Reorder Controls */}
-                        <div className="flex items-center gap-1 shrink-0 text-[var(--color-text-muted)]">
+                        <div
+                          className="flex items-center gap-1 shrink-0 text-[var(--color-text-muted)]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <span
                             className="cursor-grab active:cursor-grabbing hover:opacity-100 p-0.5 font-bold text-body select-none transition-opacity"
                             title="Drag to reorder"
@@ -395,13 +424,19 @@ export function QueueModal({
 
                         {/* Duration */}
                         <span className="font-pixel text-caption text-[var(--color-text-muted)] font-bold shrink-0">
-                          {formatTime(item.track?.duration_ms)}
+                          {item.track?.duration_ms ? formatTime(item.track.duration_ms) : ''}
                         </span>
 
                         {/* Reorder Up/Down arrows */}
-                        <div className="flex flex-col mw-row-action">
+                        <div
+                          className="flex flex-col mw-row-action"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <button
-                            onClick={() => handleMoveUp(originalIndex)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveUp(originalIndex);
+                            }}
                             disabled={originalIndex === 0}
                             className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-meta w-6 h-6 min-w-[24px] min-h-[24px] leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
                             title="Move Up"
@@ -410,7 +445,10 @@ export function QueueModal({
                             <ChevronUpIcon size={12} />
                           </button>
                           <button
-                            onClick={() => handleMoveDown(originalIndex)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveDown(originalIndex);
+                            }}
                             disabled={originalIndex === queue.length - 1}
                             className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-meta w-6 h-6 min-w-[24px] min-h-[24px] leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
                             title="Move Down"
@@ -421,15 +459,14 @@ export function QueueModal({
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div
+                          className="flex items-center gap-1.5 shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <button
-                            onClick={() => {
-                              setQueueIndex(originalIndex);
-                              if (item.contextUri) {
-                                onPlayTrack(item.track.uri, item.contextUri);
-                              } else {
-                                onPlayTrack(item.track.uri);
-                              }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePlayQueueItem(originalIndex);
                             }}
                             className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] text-[var(--color-dark)] flex items-center justify-center text-meta shadow-2xs"
                             title="Play this track"
@@ -438,7 +475,10 @@ export function QueueModal({
                           </button>
                           {onAddToPlaylist && item.track?.uri && (
                             <button
-                              onClick={() => onAddToPlaylist(item.track.uri)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAddToPlaylist(item.track.uri);
+                              }}
                               className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] text-[var(--color-dark)] flex items-center justify-center text-body font-bold shadow-2xs"
                               title="Add to Playlist"
                             >
@@ -446,7 +486,8 @@ export function QueueModal({
                             </button>
                           )}
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               ensureQueueInitialized();
                               removeFromQueue(originalIndex);
                             }}
@@ -529,12 +570,12 @@ export function QueueModal({
                       </div>
 
                       <span className="font-pixel text-caption text-[var(--color-text-muted)] font-bold shrink-0">
-                        {formatTime(track.duration_ms)}
+                        {track.duration_ms ? formatTime(track.duration_ms) : ''}
                       </span>
 
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
-                          onClick={() => onPlayTrack(track.uri, item.context?.uri)}
+                          onClick={() => onPlayTrack(track.uri, item.context?.uri, track)}
                           className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] text-[var(--color-dark)] flex items-center justify-center text-meta shadow-2xs"
                           title="Play Track"
                         >

@@ -14,7 +14,7 @@ export interface UsePlaybackActionsReturn {
   playTrack: (uri: string, contextUri?: any, trackObj?: any) => Promise<void>;
   playTracks: (uris: string[], tracksList?: any[], offsetPosition?: number) => Promise<void>;
   playPlaylist: (uri: string, playlistTracks?: any[]) => Promise<void>;
-  playContextTrack: (contextUri: string, trackUri: string) => Promise<void>;
+  playContextTrack: (contextUri: string, trackUri: string, tracksList?: any[]) => Promise<void>;
   playQueueItem: (index: number) => Promise<void>;
   togglePlay: () => Promise<void>;
   nextTrack: () => void;
@@ -45,11 +45,11 @@ export function openInSpotify(uri?: string): void {
 }
 
 export const sfx = {
-  select: () => {},
-  hover: () => {},
-  pop: () => {},
-  move: () => {},
-  error: () => {},
+  select: () => { },
+  hover: () => { },
+  pop: () => { },
+  move: () => { },
+  error: () => { },
 };
 
 export function findTrackInSources(
@@ -112,9 +112,11 @@ export async function executeContinuousPlayTrack(
   setStoreQueue: (queue: any[]) => void,
   setStoreQueueIndex: (index: number) => void
 ): Promise<void> {
-  const resolvedTrack = track || { uri, name: 'Playing Track' };
+  const resolvedTrack = track;
   const { useSpotifyPlayerStore } = await import('@/store/spotifyStore');
-  useSpotifyPlayerStore.getState().setCurrentTrack?.(resolvedTrack);
+  if (resolvedTrack) {
+    useSpotifyPlayerStore.getState().setCurrentTrack?.(resolvedTrack);
+  }
 
   const relevant = await fetchRelevantTracks(track);
   const relevantUris = relevant.map((t: any) => t.uri).filter(Boolean);
@@ -129,8 +131,9 @@ export async function executeContinuousPlayTrack(
     });
   }
   await playMutation.mutateAsync(requestBody);
+  const initialItems = resolvedTrack ? [{ track: resolvedTrack, contextUri: undefined }] : [];
   setStoreQueue([
-    { track: resolvedTrack, contextUri: undefined },
+    ...initialItems,
     ...relevant.map((t: any) => ({ track: t, contextUri: undefined })),
   ]);
   setStoreQueueIndex(0);
@@ -161,14 +164,31 @@ export async function executePlayTracks(
       requestBody,
     });
   }
-  await playMutation.mutateAsync(requestBody);
+  if (playMutation?.mutateAsync) {
+    await playMutation.mutateAsync(requestBody);
+  } else {
+    let url = '/me/player/play';
+    if (targetDevice) url += `?device_id=${targetDevice}`;
+    const { proxyFetch } = await import('@/lib/spotifyClient');
+    await proxyFetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+  }
 
   if (tracksList && tracksList.length > 0) {
-    setStoreQueue(tracksList.map((t) => ({ track: t })));
+    setStoreQueue(tracksList.map((t) => (t && 'track' in t ? t : { track: t })));
   } else {
-    setStoreQueue(uris.map((u) => ({ track: { uri: u, name: 'Queued Track' } })));
+    setStoreQueue(uris.map((u) => ({ track: { uri: u } })));
   }
   setStoreQueueIndex(startIndex);
+
+  const selectedTrack = tracksList?.[startIndex]?.track || tracksList?.[startIndex];
+  if (selectedTrack) {
+    const { useSpotifyPlayerStore } = await import('@/store/spotifyStore');
+    useSpotifyPlayerStore.getState().setCurrentTrack(selectedTrack);
+  }
 }
 
 export function resolveQueueTrack(
@@ -182,7 +202,7 @@ export function resolveQueueTrack(
     track = contextUri;
   }
   if (!track) {
-    track = { uri, name: 'Queued Track' };
+    track = { uri };
   }
   return { uri, track };
 }
@@ -281,7 +301,10 @@ export async function executeTogglePlay(
   }
 }
 
-export function formatTime(ms: number): string {
+export function formatTime(ms?: number | null): string {
+  if (typeof ms !== 'number' || isNaN(ms)) {
+    return '';
+  }
   const totalSeconds = Math.floor(ms / 1000);
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;

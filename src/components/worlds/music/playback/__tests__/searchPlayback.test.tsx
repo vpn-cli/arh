@@ -24,6 +24,12 @@ vi.mock("@/hooks/useSpotify", () => ({
   usePlaylists: () => ({ data: [] }),
 }));
 
+vi.mock("@tanstack/react-query", () => ({
+  useQueryClient: () => ({
+    invalidateQueries: vi.fn(),
+  }),
+}));
+
 vi.mock("@/hooks/useSearch", () => ({
   useSearch: (query: string) => ({
     data: {

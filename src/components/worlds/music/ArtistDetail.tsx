@@ -8,7 +8,7 @@ interface ArtistDetailProps {
   artistId: string;
   onBack: () => void;
   onClickAlbum: (id: string) => void;
-  onPlayTrack?: (uri: string, contextUri?: string) => void;
+  onPlayTrack?: (uri: string, contextUri?: string, trackObj?: any) => void;
   onAddToQueue?: (track: any, contextUri?: string) => void;
   onAddToPlaylist?: (uri: string) => void;
   onAddMemory?: (entity: any, type: 'track' | 'artist' | 'playlist') => void;
@@ -121,7 +121,10 @@ export function ArtistDetail({ artistId, onBack, onClickAlbum, onPlayTrack, onAd
                 <TrackList 
                   tracks={featuredTracksData.tracks.items.slice(0, 5)} 
                   isLoading={isLoadingFeaturedTracks} 
-                  onPlayTrack={(uri) => onPlayTrack?.(uri)} 
+                  onPlayTrack={(uri) => {
+                    const trackObj = featuredTracksData?.tracks?.items?.find((t: any) => t.uri === uri);
+                    onPlayTrack?.(uri, undefined, trackObj);
+                  }} 
                   onAddToQueue={(track) => onAddToQueue && onAddToQueue(track)}
                   onAddMemory={onAddMemory ? (track) => onAddMemory(track, 'track') : undefined}
                   variant="compact"

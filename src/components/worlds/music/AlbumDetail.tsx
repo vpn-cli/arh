@@ -7,8 +7,8 @@ import { AlbumTrackList } from './AlbumTrackList';
 interface AlbumDetailProps {
   albumId: string;
   onBack: () => void;
-  onPlayAlbum: (uri: string) => void;
-  onPlayTrack: (uri: string, contextUri?: string) => void;
+  onPlayAlbum: (uri: string, tracks?: any[]) => void;
+  onPlayTrack: (uri: string, contextUri?: string, track?: any, tracksList?: any[]) => void;
   onAddToQueue?: (track: any, contextUri?: string) => void;
   onAddToPlaylist?: (uri: string) => void;
   onShufflePlay?: (uri: string) => void;
@@ -70,9 +70,18 @@ export function AlbumDetail({ albumId, onBack, onPlayAlbum, onPlayTrack, onAddTo
     );
   }
 
+  const albumTracksWithAlbum = React.useMemo(() => {
+    if (!itemsData?.items) return [];
+    if (!album) return itemsData.items;
+    return itemsData.items.map((t: any) => ({
+      ...t,
+      album: t.album || album,
+    }));
+  }, [itemsData?.items, album]);
+
   const handlePlay = () => {
     if (album?.uri) {
-      onPlayAlbum(album.uri);
+      onPlayAlbum(album.uri, albumTracksWithAlbum);
     }
   };
 
@@ -101,7 +110,7 @@ export function AlbumDetail({ albumId, onBack, onPlayAlbum, onPlayTrack, onAddTo
         onShuffle={handleShuffle} 
         onToggleSave={handleToggleSave}
         isSaved={isSaved}
-        disabled={isLoadingItems || !itemsData?.items?.length} 
+        disabled={isLoadingItems || !albumTracksWithAlbum.length} 
       />
       {isItemsError && (itemsError as any)?.status === 429 ? (
         <div className="flex-1 flex items-center justify-center text-[var(--color-dark)] opacity-80 font-pixel text-caption text-center px-4">
@@ -114,9 +123,12 @@ export function AlbumDetail({ albumId, onBack, onPlayAlbum, onPlayTrack, onAddTo
         </div>
       ) : (
         <AlbumTrackList 
-          tracks={itemsData?.items || []} 
+          tracks={albumTracksWithAlbum} 
           isLoading={isLoadingItems} 
-          onPlayTrack={(uri) => onPlayTrack(uri, album?.uri)} 
+          onPlayTrack={(uri) => {
+            const trackObj = albumTracksWithAlbum.find((t: any) => t.uri === uri);
+            onPlayTrack(uri, album?.uri, trackObj, albumTracksWithAlbum);
+          }} 
           onAddToQueue={(track) => onAddToQueue && onAddToQueue(track, album?.uri)}
           onAddMemory={onAddMemory ? (track) => onAddMemory(track, 'track') : undefined}
         />

@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, RefObject, MutableRefObject } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSpotifyPlayer } from "@/providers/SpotifyPlayerProvider";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { useSpotifyMutations } from "@/hooks/useSpotify";
@@ -29,6 +30,7 @@ export function usePlayerStateSync({
   userPausedRef,
   selectedDevice = "",
 }: UsePlayerStateSyncOptions) {
+  const queryClient = useQueryClient();
   const {
     player: providerPlayer,
     deviceIdRef,
@@ -95,6 +97,7 @@ export function usePlayerStateSync({
 
       if (newTrack?.id !== storeState.currentTrack?.id) {
         setCurrentTrack(newTrack);
+        queryClient.invalidateQueries({ queryKey: ['spotify', 'playerQueue'] });
       }
       if (storeState.isPaused !== state.paused) {
         setIsPaused(state.paused);
@@ -214,6 +217,7 @@ export function usePlayerStateSync({
       userPausedRef,
       progressBarRef,
       lyricsViewRef,
+      queryClient,
     ]
   );
 

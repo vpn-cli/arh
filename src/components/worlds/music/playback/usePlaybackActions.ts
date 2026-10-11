@@ -133,7 +133,7 @@ export function usePlaybackActions({
     return targetDevice || '';
   }, []);
 
-  const playContextTrack = useCallback(async (contextUri: string, trackUri: string) => {
+  const playContextTrack = useCallback(async (contextUri: string, trackUri: string, tracksList?: any[]) => {
     if (!isValidContextUri(contextUri)) {
       await playTrackRef.current(trackUri);
       return;
@@ -157,6 +157,18 @@ export function usePlaybackActions({
         });
       }
       await mutationsRef.current.play.mutateAsync(requestBody);
+      const store = useSpotifyPlayerStore.getState();
+      if (tracksList && tracksList.length > 0) {
+        const clickedIdx = tracksList.findIndex((t: any) => (t?.uri || t?.track?.uri) === trackUri);
+        store.setQueue(tracksList.map((t) => ({ track: t?.track || t, contextUri })));
+        store.setQueueIndex(clickedIdx >= 0 ? clickedIdx : 0);
+        const clickedTrack = clickedIdx >= 0 ? (tracksList[clickedIdx]?.track || tracksList[clickedIdx]) : null;
+        if (clickedTrack) {
+          store.setCurrentTrack(clickedTrack);
+        }
+      } else {
+        store.clearQueue();
+      }
     } catch (e: any) {
       console.error(`[${new Date().toISOString()}] [Play Context Track Error]`, e);
       optionsRef.current.setRecoveryError(e.message || 'Error playing track in context');
@@ -253,10 +265,14 @@ export function usePlaybackActions({
         });
       }
       await mutationsRef.current.play.mutateAsync(requestBody);
+      const store = useSpotifyPlayerStore.getState();
       if (playlistTracks && playlistTracks.length > 0) {
-        const store = useSpotifyPlayerStore.getState();
-        store.setQueue(playlistTracks.map((t) => ({ track: t, contextUri: uri })));
+        store.setQueue(playlistTracks.map((t) => ({ track: t?.track || t, contextUri: uri })));
         store.setQueueIndex(0);
+        const first = playlistTracks[0]?.track || playlistTracks[0];
+        if (first) store.setCurrentTrack(first);
+      } else {
+        store.clearQueue();
       }
     } catch (e: any) {
       console.error(`[${new Date().toISOString()}] [Play Playlist Error]`, e);

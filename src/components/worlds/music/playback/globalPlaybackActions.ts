@@ -14,6 +14,7 @@ import {
   openInSpotify,
   sfx,
   PLAYBACK_DEBUG,
+  executePlayTracks,
 } from "./playbackHelpers";
 import { seekSharedClock } from "./playbackClock";
 
@@ -92,12 +93,53 @@ export async function playQueueItemGlobal(index: number): Promise<void> {
   const queue = store.queue;
   if (index < 0 || index >= queue.length) return;
   const item = queue[index];
+  if (!item) return;
+
+  sfx.select();
+  const targetDevice = await ensurePlaybackDevice(item.track?.uri);
+  if (targetDevice === null) return;
+
   store.setQueueIndex(index);
-  if (item.contextUri) {
-    await playTrackGlobal(item.track.uri, item.contextUri, item.track);
-  } else {
-    await playTrackGlobal(item.track.uri, undefined, item.track);
+  if (item.track) {
+    store.setCurrentTrack(item.track);
   }
+
+  const contextUri =
+    item.contextUri ||
+    (isValidContextUri((item as any).context?.uri) ? (item as any).context?.uri : undefined);
+
+  if (contextUri && isValidContextUri(contextUri)) {
+    try {
+      let url = "/me/player/play";
+      if (targetDevice) url += `?device_id=${targetDevice}`;
+      const body = {
+        context_uri: contextUri,
+        offset: { uri: item.track?.uri },
+      };
+      if (PLAYBACK_DEBUG) {
+        console.debug("[PLAYBACK_DEBUG] playQueueItemGlobal context request:", body);
+      }
+      await proxyFetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    } catch (e: any) {
+      console.error("[playQueueItemGlobal] Error playing context track:", e);
+    }
+    return;
+  }
+
+  const uris = queue.map((q) => q.track?.uri).filter(Boolean) as string[];
+  await executePlayTracks(
+    uris,
+    queue,
+    index,
+    targetDevice,
+    null,
+    store.setQueue,
+    store.setQueueIndex
+  );
 }
 
 export async function togglePlayGlobal(): Promise<void> {
