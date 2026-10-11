@@ -13,7 +13,7 @@ export function AlbumHeader({ album, onBack }: AlbumHeaderProps) {
   const artistName = album.artists?.map((a: any) => a.name).join(', ') || '';
   
   return (
-    <div className="flex items-center gap-4 p-4 border-b-2 border-[var(--color-light)] shrink-0">
+    <div className="mw-panel flex items-center gap-4 shrink-0">
       <button 
         onClick={onBack} 
         className="p-2 text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-full flex items-center justify-center"
