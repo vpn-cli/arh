@@ -122,6 +122,7 @@ export async function executeContinuousPlayTrack(
   const relevantUris = relevant.map((t: any) => t.uri).filter(Boolean);
   const requestBody = {
     uris: [uri, ...relevantUris],
+    offset: { position: 0 },
     device_id: targetDevice || undefined,
   };
   if (PLAYBACK_DEBUG) {

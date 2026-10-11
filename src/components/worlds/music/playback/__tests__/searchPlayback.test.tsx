@@ -126,8 +126,32 @@ describe("Search track click playback", () => {
 
     expect(lastCall.uris).toBeDefined();
     expect(lastCall.uris[0]).toBe("spotify:track:tum_se_hi_123");
+    expect(lastCall.offset).toEqual({ position: 0 });
 
     expect(useSpotifyPlayerStore.getState().currentTrack?.name).toBe("Tum Se Hi");
+  });
+
+  it("continuous-play request includes offset position 0 so playback starts at the clicked track", async () => {
+    const { result } = renderHook(() =>
+      usePlaybackActions({
+        selectedDevice: "dev_123",
+        setRecoveryError: vi.fn(),
+      })
+    );
+
+    await act(async () => {
+      await result.current.playTrack("spotify:track:tum_se_hi_123", undefined, {
+        id: "track_tum_se_hi",
+        uri: "spotify:track:tum_se_hi_123",
+        name: "Tum Se Hi",
+      });
+    });
+
+    expect(mockPlayMutateAsync).toHaveBeenCalledTimes(1);
+    const lastCall = mockPlayMutateAsync.mock.calls[0][0];
+    expect(lastCall.uris).toBeDefined();
+    expect(lastCall.uris[0]).toBe("spotify:track:tum_se_hi_123");
+    expect(lastCall.offset).toEqual({ position: 0 });
   });
 
   it("does not issue a second play request when player state changes at position 0 with empty next_tracks", async () => {

@@ -22,6 +22,7 @@ import {
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { MediaSessionHost } from "@/components/worlds/music/pip/MediaSessionHost";
 import { updateSharedPlaybackState } from "@/components/worlds/music/playback/playbackClock";
+import { PLAYBACK_DEBUG } from "@/components/worlds/music/playback/playbackHelpers";
 
 declare global {
   interface Window {
@@ -266,6 +267,21 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
         notReadyFiredRef.current = false;
         useSpotifyPlayerStore.getState().setDeviceId(device_id);
         useSpotifyPlayerStore.getState().setIsReady(true);
+        if (typeof spotifyPlayer.getCurrentState === "function") {
+          spotifyPlayer.getCurrentState().then((state: any) => {
+            if (state) {
+              const incomingShuffle =
+                typeof state.shuffle === "boolean"
+                  ? state.shuffle
+                  : typeof state.shuffle_state === "boolean"
+                    ? state.shuffle_state
+                    : undefined;
+              if (typeof incomingShuffle === "boolean") {
+                useSpotifyPlayerStore.getState().setIsShuffle(incomingShuffle);
+              }
+            }
+          });
+        }
       });
 
       spotifyPlayer.addListener("not_ready", ({ device_id }: { device_id: string }) => {
@@ -283,13 +299,29 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
         latestStateRef.current = state;
         sharedLatestState = state;
 
+        if (PLAYBACK_DEBUG) {
+          console.debug("[PLAYBACK_DEBUG] SDK player_state_changed:", {
+            shuffle: state.shuffle,
+            shuffle_state: state.shuffle_state,
+            currentStoreShuffle: useSpotifyPlayerStore.getState().isShuffle,
+          });
+        }
+
         updateSharedPlaybackState(state.position, state.paused);
 
         const newTrack = state.track_window?.current_track;
         const store = useSpotifyPlayerStore.getState();
         store.setCurrentTrack(newTrack);
         store.setIsPaused(state.paused);
-        store.setIsShuffle(state.shuffle);
+        const incomingShuffle =
+          typeof state.shuffle === "boolean"
+            ? state.shuffle
+            : typeof state.shuffle_state === "boolean"
+              ? state.shuffle_state
+              : undefined;
+        if (typeof incomingShuffle === "boolean") {
+          store.setIsShuffle(incomingShuffle);
+        }
         if (state.repeat_mode !== undefined) {
           if (
             state.repeat_mode === 0 ||

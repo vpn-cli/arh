@@ -67,6 +67,7 @@ export async function playTrackGlobal(
       body.offset = { uri };
     } else {
       body.uris = [uri];
+      body.offset = { position: 0 };
     }
     if (PLAYBACK_DEBUG) {
       console.debug("[PLAYBACK_DEBUG] playTrackGlobal request:", {

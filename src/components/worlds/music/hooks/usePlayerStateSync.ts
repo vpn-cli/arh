@@ -102,8 +102,24 @@ export function usePlayerStateSync({
       if (storeState.isPaused !== state.paused) {
         setIsPaused(state.paused);
       }
-      if (storeState.isShuffle !== state.shuffle) {
-        setIsShuffle(state.shuffle);
+      const incomingShuffle =
+        typeof state.shuffle === 'boolean'
+          ? state.shuffle
+          : typeof state.shuffle_state === 'boolean'
+            ? state.shuffle_state
+            : undefined;
+
+      if (PLAYBACK_DEBUG) {
+        console.debug('[PLAYBACK_DEBUG] player state shuffle:', {
+          incomingShuffle,
+          rawShuffle: state.shuffle,
+          rawShuffleState: state.shuffle_state,
+          storeShuffle: storeState.isShuffle,
+        });
+      }
+
+      if (typeof incomingShuffle === 'boolean' && storeState.isShuffle !== incomingShuffle) {
+        setIsShuffle(incomingShuffle);
       }
       if (state.repeat_mode !== undefined) {
         let nextRepeat: "off" | "context" | "track" = "off";
