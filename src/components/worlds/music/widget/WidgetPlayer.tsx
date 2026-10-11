@@ -15,7 +15,7 @@ import { useMusicView, isStandaloneMode } from "../hooks/useMusicView";
 import { PaletteBackground } from "../palette/PaletteBackground";
 
 export function WidgetPlayer() {
-  const { expandToFull, isStandalone } = useMusicView();
+  const { expandToFull } = useMusicView();
   const { data: sessionData } = useSpotifySession();
   const token = sessionData?.accessToken || null;
 
@@ -32,9 +32,21 @@ export function WidgetPlayer() {
   const durationRef = useRef(duration > 0 ? duration : 0);
   const isPausedRef = useRef(isPaused);
   const hasResizedRef = useRef(false);
+  const [isWidgetSized, setIsWidgetSized] = React.useState(false);
 
-  // Standalone window: call resizeTo(440, 210) on initial mount of widget view
+  // Measure window size and update isWidgetSized (within tolerance of documented 440x210)
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkSize = () => {
+      const isAboutWidget = window.innerWidth <= 520 && window.innerHeight <= 260;
+      setIsWidgetSized(isAboutWidget);
+    };
+
+    checkSize();
+    window.addEventListener("resize", checkSize);
+
+    // Standalone window: call resizeTo(440, 210) on initial mount of widget view
     if (!hasResizedRef.current && isStandaloneMode()) {
       hasResizedRef.current = true;
       try {
@@ -42,7 +54,12 @@ export function WidgetPlayer() {
       } catch {
         // Silently skip if resizing is not permitted
       }
+      setTimeout(checkSize, 100);
     }
+
+    return () => {
+      window.removeEventListener("resize", checkSize);
+    };
   }, []);
 
   useEffect(() => {
@@ -152,7 +169,7 @@ export function WidgetPlayer() {
   return (
     <div
       className={
-        isStandalone
+        isWidgetSized
           ? "w-screen h-screen overflow-hidden bg-[var(--color-bg)] flex box-border"
           : "min-h-screen w-full bg-[var(--color-light)] flex items-center justify-center p-4 selection:bg-[var(--color-muted)]/40 box-border"
       }
@@ -162,10 +179,12 @@ export function WidgetPlayer() {
       {/* Main Widget Card */}
       <div
         className={`app-region-drag relative bg-[var(--color-bg)] border-2 border-[var(--color-muted)] rounded-[24px] p-3.5 flex gap-3.5 overflow-hidden box-border select-none shadow-md ${
-          isStandalone ? "w-full h-full" : "w-full max-w-[460px] h-[210px]"
+          isWidgetSized ? "w-full h-full" : "w-full max-w-[440px] h-[210px]"
         }`}
         style={{
-          paddingTop: "max(0.875rem, env(titlebar-area-height, 0px))",
+          paddingTop: isWidgetSized
+            ? "max(0.875rem, env(titlebar-area-height, 0px))"
+            : "0.875rem",
         }}
       >
         {/* Left: Album Artwork (rounded square, full card height minus padding) */}
