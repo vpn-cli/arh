@@ -2,7 +2,7 @@
  * Configuration for Music World branding and text.
  */
 export const MUSIC_TEXT_CONFIG = {
-  headerTitle: "KAWAII_PLAYER.EXE",
+  headerTitle: "punkrose.fm",
   sidebarCardTitle: "KAWAII",
   sidebarCardSubtitle: "vibes • memories",
 } as const;

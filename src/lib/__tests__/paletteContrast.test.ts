@@ -43,17 +43,11 @@ describe('Music World Palette Generator - WCAG Contrast Guarantees', () => {
         expect(ratio).toBeGreaterThanOrEqual(4.5);
       });
 
-      it('guarantees --color-dark on --color-surface blended over the page background is at least 4.5:1', () => {
-        // --color-surface: color-mix(in srgb, var(--color-bg) 80%, transparent)
-        // Blended over main page background (--color-light):
-        const surfaceOverLight = mixColors(palette.bg, palette.light, 0.8);
-        const ratioOverLight = getContrastRatio(palette.dark, surfaceOverLight);
-        expect(ratioOverLight).toBeGreaterThanOrEqual(4.5);
-
-        // Blended over base background (--color-bg):
-        const surfaceOverBg = mixColors(palette.bg, palette.bg, 0.8);
-        const ratioOverBg = getContrastRatio(palette.dark, surfaceOverBg);
-        expect(ratioOverBg).toBeGreaterThanOrEqual(4.5);
+      it('guarantees --color-dark on --color-surface is at least 4.5:1', () => {
+        // --color-surface: color-mix(in srgb, var(--color-bg) 50%, #ffffff)
+        const surfaceColor = mixColors(palette.bg, '#ffffff', 0.5);
+        const ratio = getContrastRatio(palette.dark, surfaceColor);
+        expect(ratio).toBeGreaterThanOrEqual(4.5);
       });
     });
   });

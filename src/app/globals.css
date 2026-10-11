@@ -1172,7 +1172,7 @@ html {
 
 :root {
   --sidebar-width: 256px;
-  --color-surface: color-mix(in srgb, var(--color-bg) 80%, transparent);
+  --color-surface: color-mix(in srgb, var(--color-bg) 50%, #ffffff);
   --motion-fast: 120ms;
   --motion-base: 180ms;
   --motion-slow: 240ms;
@@ -1370,6 +1370,35 @@ html {
 
   .mw-memory-card:active {
     transform: scale(0.98) rotate(0deg);
+  }
+
+  /* Gentle Bob for Stickers */
+  @keyframes mw-sticker-gentle-bob {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  .mw-sticker-bob {
+    animation: mw-sticker-gentle-bob 2s ease-in-out infinite;
+  }
+
+  /* Memory scrapbook card sticker: plays once on hover and focus-within */
+  .mw-memory-card .mw-sticker-bob {
+    animation: none;
+  }
+
+  @media (hover: hover) {
+    .mw-memory-card:hover .mw-sticker-bob {
+      animation: mw-sticker-gentle-bob 600ms ease-in-out 1;
+    }
+  }
+
+  .mw-memory-card:focus-within .mw-sticker-bob {
+    animation: mw-sticker-gentle-bob 600ms ease-in-out 1;
   }
 
   /* Title transition inside cards */
@@ -1642,6 +1671,13 @@ html {
     .soundwave-bar.is-rippling {
       animation: none !important;
       transform: scaleY(0.6) !important;
+    }
+
+    .mw-sticker-bob,
+    .mw-memory-card .mw-sticker-bob,
+    .mw-memory-card:hover .mw-sticker-bob,
+    .mw-memory-card:focus-within .mw-sticker-bob {
+      animation: none !important;
     }
 
     .mw-nav-icon,
