@@ -18,20 +18,20 @@ interface BarConfig {
 }
 
 const BAR_CONFIGS: BarConfig[] = [
-  { keyframe: 'eq-bar-1', durationMs: 820, delayMs: -320 },
-  { keyframe: 'eq-bar-3', durationMs: 1140, delayMs: -850 },
-  { keyframe: 'eq-bar-5', durationMs: 740, delayMs: -190 },
-  { keyframe: 'eq-bar-2', durationMs: 1260, delayMs: -640 },
-  { keyframe: 'eq-bar-4', durationMs: 910, delayMs: -1080 },
-  { keyframe: 'eq-bar-1', durationMs: 1180, delayMs: -410 },
-  { keyframe: 'eq-bar-3', durationMs: 770, delayMs: -920 },
-  { keyframe: 'eq-bar-5', durationMs: 1050, delayMs: -150 },
-  { keyframe: 'eq-bar-2', durationMs: 860, delayMs: -730 },
-  { keyframe: 'eq-bar-4', durationMs: 1290, delayMs: -1160 },
-  { keyframe: 'eq-bar-1', durationMs: 710, delayMs: -270 },
-  { keyframe: 'eq-bar-3', durationMs: 1110, delayMs: -580 },
-  { keyframe: 'eq-bar-2', durationMs: 950, delayMs: -890 },
-  { keyframe: 'eq-bar-5', durationMs: 1220, delayMs: -460 },
+  { keyframe: 'eq-bar-1', durationMs: 2100, delayMs: -650 },
+  { keyframe: 'eq-bar-3', durationMs: 3100, delayMs: -1900 },
+  { keyframe: 'eq-bar-2', durationMs: 2450, delayMs: -450 },
+  { keyframe: 'eq-bar-4', durationMs: 3500, delayMs: -2800 },
+  { keyframe: 'eq-bar-1', durationMs: 1800, delayMs: -1200 },
+  { keyframe: 'eq-bar-3', durationMs: 2900, delayMs: -2300 },
+  { keyframe: 'eq-bar-2', durationMs: 2200, delayMs: -750 },
+  { keyframe: 'eq-bar-4', durationMs: 3300, delayMs: -1600 },
+  { keyframe: 'eq-bar-1', durationMs: 1950, delayMs: -3100 },
+  { keyframe: 'eq-bar-3', durationMs: 2700, delayMs: -850 },
+  { keyframe: 'eq-bar-2', durationMs: 3650, delayMs: -2500 },
+  { keyframe: 'eq-bar-4', durationMs: 2300, delayMs: -1400 },
+  { keyframe: 'eq-bar-1', durationMs: 3200, delayMs: -500 },
+  { keyframe: 'eq-bar-3', durationMs: 1750, delayMs: -2100 },
 ];
 
 export const SoundWaves = memo(function SoundWaves({

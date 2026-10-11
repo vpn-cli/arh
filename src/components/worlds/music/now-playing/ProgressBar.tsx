@@ -12,7 +12,16 @@ import React, {
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { formatTime } from '../playback/playbackHelpers';
 import { StickerIcon } from '../StickerIcon';
+import { SNOOPY_STICKERS_ENABLED } from '../stickerConfig';
 import './now-playing.css';
+
+/**
+ * Distance from lowest non-transparent pixel in r5c2.png (129x160) to the bottom of the image:
+ * Measured via alpha channel inspection: lowest non-transparent pixel is at row y=159 (out of 160 rows).
+ * Distance to bottom edge = 0px (0% of image height).
+ * (With alpha > 13 anti-aliasing cutoff: y=158, 1px / 0.625%).
+ */
+const SCOOTER_WHEEL_BOTTOM_OFFSET_PCT = 0;
 
 export interface ProgressBarApplyStateParams {
   positionMs?: number;
@@ -255,7 +264,7 @@ export const ProgressBar = memo(
     }, [getPositionMs, renderProgress]);
 
     return (
-      <div className="w-full flex flex-col gap-1 mt-1 group/slider">
+      <div className="w-full flex flex-col gap-1 mt-4 group/slider">
         <div
           ref={progressBarRef}
           role="slider"
@@ -270,7 +279,7 @@ export const ProgressBar = memo(
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
-          <div className="absolute left-0 right-0 h-4 overflow-hidden rounded-full pointer-events-none scale-y-[0.6] group-hover/slider:scale-y-[0.85] transition-transform duration-300 ease-out origin-center bg-[var(--color-muted)]">
+          <div className="progress-track absolute left-0 right-0 h-4 overflow-hidden rounded-full pointer-events-none scale-y-[0.6] group-hover/slider:scale-y-[0.85] transition-transform duration-300 ease-out origin-bottom bg-[var(--color-muted)]">
             <div
               ref={progressBarFillRef}
               className="progress-fill absolute left-0 top-0 bottom-0 w-full bg-[var(--color-dark)] rounded-full origin-left"
@@ -283,9 +292,28 @@ export const ProgressBar = memo(
             <StickerIcon
               name="progressThumb"
               size={36}
-              className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300 max-w-none ${
-                isDragging ? 'scale-125' : ''
-              }`}
+              className={
+                SNOOPY_STICKERS_ENABLED
+                  ? `progress-handle-scooter absolute right-0 bottom-2 translate-x-1/2 origin-bottom z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300 max-w-none ${
+                      isDragging ? 'scale-125' : ''
+                    }`
+                  : `absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 origin-center z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300 max-w-none ${
+                      isDragging ? 'scale-125' : ''
+                    }`
+              }
+              style={
+                SNOOPY_STICKERS_ENABLED
+                  ? {
+                      transformOrigin:
+                        SCOOTER_WHEEL_BOTTOM_OFFSET_PCT === 0
+                          ? 'center bottom'
+                          : `center calc(100% - ${SCOOTER_WHEEL_BOTTOM_OFFSET_PCT}%)`,
+                      bottom: `calc(8px - ${(36 * SCOOTER_WHEEL_BOTTOM_OFFSET_PCT) / 100}px)`,
+                    }
+                  : {
+                      transformOrigin: 'center center',
+                    }
+              }
             />
           </div>
         </div>

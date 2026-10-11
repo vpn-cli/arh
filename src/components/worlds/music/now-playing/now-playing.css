@@ -8,6 +8,14 @@
   transition: transform 250ms linear;
 }
 
+.progress-track {
+  transform-origin: center bottom;
+}
+
+.progress-handle-scooter {
+  transform-origin: center bottom;
+}
+
 .volume-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -238,46 +246,37 @@
 
 @keyframes eq-bar-1 {
   0%, 100% {
-    transform: scaleY(0.4);
+    transform: scaleY(0.42);
   }
-  17% {
-    transform: scaleY(0.95);
+  20% {
+    transform: scaleY(0.88);
   }
-  34% {
+  40% {
     transform: scaleY(0.55);
   }
-  51% {
-    transform: scaleY(1);
+  60% {
+    transform: scaleY(0.96);
   }
-  68% {
-    transform: scaleY(0.3);
-  }
-  85% {
-    transform: scaleY(0.8);
+  80% {
+    transform: scaleY(0.64);
   }
 }
 
 @keyframes eq-bar-2 {
   0%, 100% {
-    transform: scaleY(0.3);
+    transform: scaleY(0.68);
   }
-  14% {
-    transform: scaleY(0.85);
+  18% {
+    transform: scaleY(0.44);
   }
-  29% {
-    transform: scaleY(0.45);
+  38% {
+    transform: scaleY(0.92);
   }
-  43% {
-    transform: scaleY(0.9);
+  58% {
+    transform: scaleY(0.58);
   }
-  57% {
-    transform: scaleY(0.6);
-  }
-  71% {
-    transform: scaleY(0.95);
-  }
-  86% {
-    transform: scaleY(0.35);
+  78% {
+    transform: scaleY(1);
   }
 }
 
@@ -285,71 +284,38 @@
   0%, 100% {
     transform: scaleY(0.5);
   }
-  13% {
-    transform: scaleY(0.28);
+  16% {
+    transform: scaleY(0.82);
   }
-  25% {
-    transform: scaleY(0.92);
-  }
-  38% {
-    transform: scaleY(0.38);
+  33% {
+    transform: scaleY(0.45);
   }
   50% {
-    transform: scaleY(0.75);
+    transform: scaleY(0.74);
   }
-  63% {
-    transform: scaleY(0.42);
+  67% {
+    transform: scaleY(0.98);
   }
-  75% {
-    transform: scaleY(1);
-  }
-  88% {
-    transform: scaleY(0.65);
+  84% {
+    transform: scaleY(0.62);
   }
 }
 
 @keyframes eq-bar-4 {
   0%, 100% {
-    transform: scaleY(0.25);
+    transform: scaleY(0.85);
   }
-  14% {
-    transform: scaleY(0.78);
-  }
-  29% {
-    transform: scaleY(0.35);
-  }
-  43% {
-    transform: scaleY(1);
-  }
-  57% {
+  22% {
     transform: scaleY(0.48);
   }
-  71% {
-    transform: scaleY(0.88);
+  42% {
+    transform: scaleY(0.78);
   }
-  86% {
-    transform: scaleY(0.58);
+  64% {
+    transform: scaleY(0.41);
   }
-}
-
-@keyframes eq-bar-5 {
-  0%, 100% {
-    transform: scaleY(0.6);
-  }
-  17% {
-    transform: scaleY(1);
-  }
-  33% {
-    transform: scaleY(0.32);
-  }
-  50% {
-    transform: scaleY(0.82);
-  }
-  67% {
-    transform: scaleY(0.46);
-  }
-  83% {
-    transform: scaleY(0.9);
+  82% {
+    transform: scaleY(0.94);
   }
 }
 

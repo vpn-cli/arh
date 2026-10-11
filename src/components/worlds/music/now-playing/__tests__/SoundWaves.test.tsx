@@ -96,7 +96,7 @@ describe('SoundWaves', () => {
       const animDur = bars[i].style.animationDuration;
       const animDelay = bars[i].style.animationDelay;
 
-      expect(animName).toMatch(/^eq-bar-[1-5]$/);
+      expect(animName).toMatch(/^eq-bar-[1-4]$/);
       expect(animDur).toMatch(/^calc\(\d+ms \/ var\(--wave-speed, 1\)\)$/);
       expect(animDelay).toMatch(/^-\d+ms$/);
 
