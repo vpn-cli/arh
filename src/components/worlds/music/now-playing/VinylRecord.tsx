@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
 import { useMemoriesStore } from '@/store/useMemoriesStore';
-import { MusicNoteIcon } from '../icons';
 import { trackChange, SNOOPY_STICKERS_ENABLED } from '../stickerConfig';
 import './now-playing.css';
 
@@ -11,12 +10,21 @@ export interface VinylRecordProps {
   likeTrigger?: number;
 }
 
-type SleevePhase = 'idle' | 'slide-in' | 'slide-out';
+import {
+  LIKE_REACTION_DURATION_MS,
+  TRACK_CHANGE_SLIDE_IN_MS,
+  TRACK_CHANGE_SLIDE_OUT_MS,
+  TRACK_CHANGE_TOTAL_MS,
+} from './vinylConstants';
 
-export const LIKE_REACTION_DURATION_MS = 4000;
-export const TRACK_CHANGE_SLIDE_IN_MS = 375;
-export const TRACK_CHANGE_SLIDE_OUT_MS = 375;
-export const TRACK_CHANGE_TOTAL_MS = TRACK_CHANGE_SLIDE_IN_MS + TRACK_CHANGE_SLIDE_OUT_MS;
+export {
+  LIKE_REACTION_DURATION_MS,
+  TRACK_CHANGE_SLIDE_IN_MS,
+  TRACK_CHANGE_SLIDE_OUT_MS,
+  TRACK_CHANGE_TOTAL_MS,
+} from './vinylConstants';
+
+type SleevePhase = 'idle' | 'slide-in' | 'slide-out';
 
 export const VinylRecord = memo(function VinylRecord({
   currentTrack,
@@ -66,27 +74,18 @@ export const VinylRecord = memo(function VinylRecord({
     return memories.find((m) => m.spotifyUri === trackUri) || null;
   }, [memories, trackUri]);
 
-  // Interaction 2: Sleeve animation on track change (750ms total: 375ms in, 375ms out)
+  // Sleeve animation on track change: 500ms slide-in, 650ms slide-out (1150ms total)
   useEffect(() => {
     const next = currentTrack;
     if (!next?.id) return;
 
-    // Flip to side A on track change
     if (originTrackRef.current?.id !== next.id && targetTrackRef.current?.id !== next.id) {
       setIsFlipped(false);
     }
 
-    // Mid-animation handling:
     if (isMidAnimationRef.current) {
-      // 1. If next matches the target we are already animating towards, continue uninterrupted
-      if (next.id === targetTrackRef.current?.id) {
-        return;
-      }
-      // 2. If next is a brief revert to the origin/previous track, IGNORE IT
-      if (next.id === originTrackRef.current?.id) {
-        return;
-      }
-      // 3. Genuinely different third track arrives: cut animation short, jump straight to final state
+      if (next.id === targetTrackRef.current?.id) return;
+      if (next.id === originTrackRef.current?.id) return;
       if (sleeveTimerRef.current) clearTimeout(sleeveTimerRef.current);
       isMidAnimationRef.current = false;
       setSleevePhase('idle');
@@ -97,7 +96,6 @@ export const VinylRecord = memo(function VinylRecord({
       return;
     }
 
-    // Immediate transition if reduced motion or hidden tab
     if (reducedMotion || (typeof document !== 'undefined' && document.hidden)) {
       if (sleeveTimerRef.current) clearTimeout(sleeveTimerRef.current);
       isMidAnimationRef.current = false;
@@ -109,18 +107,15 @@ export const VinylRecord = memo(function VinylRecord({
       return;
     }
 
-    // At rest: check if track is identical to resting track
     if (originTrackRef.current?.id === next.id) {
       setDisplayTrack(next);
       return;
     }
 
-    // Starting new track change transition from origin to next
     targetTrackRef.current = next;
     isMidAnimationRef.current = true;
     setIsFlipped(false);
 
-    // Pick next Snoopy sticker in order from trackChange
     if (SNOOPY_STICKERS_ENABLED && trackChange.length > 0) {
       const sticker = trackChange[trackChangeIndexRef.current % trackChange.length];
       trackChangeIndexRef.current += 1;
@@ -129,16 +124,15 @@ export const VinylRecord = memo(function VinylRecord({
       setCurrentTrackChangeSticker(null);
     }
 
-    // Phase 1: Slide into sleeve (375ms)
+    // Phase 1: Slide into sleeve (500ms)
     setSleevePhase('slide-in');
 
     sleeveTimerRef.current = setTimeout(() => {
-      // Phase 2: Swap to new record and slide out from sleeve (375ms)
+      // Phase 2: Swap to new record and slide out from sleeve (650ms)
       setDisplayTrack(next);
       setSleevePhase('slide-out');
 
       sleeveTimerRef.current = setTimeout(() => {
-        // Animation finished: resting state
         setSleevePhase('idle');
         setCurrentTrackChangeSticker(null);
         isMidAnimationRef.current = false;
@@ -155,7 +149,7 @@ export const VinylRecord = memo(function VinylRecord({
     };
   }, []);
 
-  // Interaction 3: Like reaction (sticker r2c1 hops onto record, rides one turn, fades)
+  // Like reaction (sticker r2c1 rides one turn around inner label rim, fades)
   useEffect(() => {
     if (likeTrigger > 0 && likeTrigger !== prevLikeTriggerRef.current) {
       prevLikeTriggerRef.current = likeTrigger;
@@ -176,6 +170,18 @@ export const VinylRecord = memo(function VinylRecord({
       : '') ||
     '/soundscape_ref/finalui.png';
 
+  const sleeveCoverTrack =
+    sleevePhase === 'slide-in'
+      ? originTrackRef.current
+      : targetTrackRef.current || displayTrack;
+
+  const sleeveArtUrl =
+    sleeveCoverTrack?.album?.images?.[0]?.url ||
+    (typeof sleeveCoverTrack?.album?.images?.[0] === 'string'
+      ? sleeveCoverTrack.album.images[0]
+      : '') ||
+    '/soundscape_ref/finalui.png';
+
   const recordSlideClass =
     sleevePhase === 'slide-in'
       ? 'vinyl-slide-into-sleeve'
@@ -192,35 +198,39 @@ export const VinylRecord = memo(function VinylRecord({
           '--vinyl-slide-in-duration': `${TRACK_CHANGE_SLIDE_IN_MS}ms`,
           '--vinyl-slide-out-duration': `${TRACK_CHANGE_SLIDE_OUT_MS}ms`,
           '--vinyl-track-change-duration': `${TRACK_CHANGE_TOTAL_MS}ms`,
+          '--vinyl-label-size': '25%',
         } as React.CSSProperties
       }
     >
-      {/* Sleeve Jacket (slides in during track change) */}
+      {/* Sleeve Jacket (square record sleeve showing album art) */}
       <div
         aria-hidden="true"
-        className={`absolute left-0 top-1/2 -translate-y-1/2 w-[55%] h-[82%] z-20 pointer-events-none vinyl-sleeve-jacket ${
+        className={`absolute left-0 top-1/2 -translate-y-1/2 w-4/5 aspect-square z-20 pointer-events-none vinyl-sleeve-jacket ${
           sleevePhase !== 'idle' ? 'vinyl-sleeve-jacket-active' : ''
         }`}
       >
-        {/* Pop-up Snoopy sticker behind top of sleeve */}
+        {/* Snoopy sits on sleeve top edge at 64px for whole time */}
         {SNOOPY_STICKERS_ENABLED && currentTrackChangeSticker && sleevePhase !== 'idle' && (
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 z-0 pointer-events-none select-none">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[82%] z-0 pointer-events-none select-none">
             <img
               src={`/stickers/snoopy-v1/${currentTrackChangeSticker}.png`}
               alt=""
               aria-hidden="true"
-              width={56}
-              height={56}
-              className="w-[56px] h-[56px] object-contain max-w-none vinyl-sleeve-sticker"
+              width={64}
+              height={64}
+              className="w-[64px] h-[64px] object-contain max-w-none vinyl-sleeve-sticker drop-shadow-sm"
             />
           </div>
         )}
 
-        <div className="relative z-10 w-full h-full rounded-2xl bg-[var(--color-light)] border-2 border-[var(--color-muted)] shadow-[0_8px_20px_var(--color-muted)] flex items-center justify-center">
-          <div className="absolute right-0 top-1/4 bottom-1/4 w-1 bg-[var(--color-muted)]/60 rounded-l" />
-          <div className="w-10 h-10 rounded-full border-2 border-dashed border-[var(--color-muted)] opacity-50 flex items-center justify-center">
-            <MusicNoteIcon size={16} className="text-[var(--color-vibrant)]" />
-          </div>
+        <div className="relative z-10 w-full h-full rounded-2xl overflow-hidden border border-[var(--color-muted)] shadow-[0_8px_20px_rgba(0,0,0,0.15)] bg-[var(--color-light)]">
+          <img
+            src={sleeveArtUrl}
+            alt="Sleeve Cover"
+            className="w-full h-full object-cover"
+          />
+          {/* Darker slot line on the edge where the record enters */}
+          <div className="absolute right-0 top-2 bottom-2 w-1 bg-[var(--color-dark)]/50 rounded-l" />
         </div>
       </div>
 
@@ -264,8 +274,10 @@ export const VinylRecord = memo(function VinylRecord({
             />
 
             {/* Center Spindle Label */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/4 h-1/4 bg-gradient-to-br from-[var(--color-light)] to-[var(--color-muted)] rounded-full border-2 border-[#FFFFFF] shadow-inner flex items-center justify-center">
-              {/* Marker when current song has a memory */}
+            <div
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-br from-[var(--color-light)] to-[var(--color-muted)] rounded-full border-2 border-[#FFFFFF] shadow-inner flex items-center justify-center"
+              style={{ width: 'var(--vinyl-label-size)', height: 'var(--vinyl-label-size)' }}
+            >
               {currentMemory ? (
                 <span
                   aria-hidden="true"
@@ -288,11 +300,9 @@ export const VinylRecord = memo(function VinylRecord({
             aria-hidden={!isFlipped ? true : undefined}
             className="absolute inset-0 w-full h-full rounded-full vinyl-face vinyl-back bg-[#1F2937] border-4 border-[#374151] shadow-[0_8px_24px_rgba(0,0,0,0.4)] flex items-center justify-center overflow-hidden"
           >
-            {/* Groove arcs */}
             <div className="absolute inset-3 rounded-full border border-gray-700/50 pointer-events-none" />
             <div className="absolute inset-6 rounded-full border border-gray-700/30 pointer-events-none" />
 
-            {/* Accessible background button to flip back to Side A */}
             <button
               type="button"
               onClick={() => setIsFlipped(false)}
@@ -301,7 +311,6 @@ export const VinylRecord = memo(function VinylRecord({
               className="absolute inset-0 w-full h-full rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"
             />
 
-            {/* Center Memory Label on Side B */}
             <div className="relative z-10 w-3/5 h-3/5 bg-[var(--color-light)] rounded-full border-2 border-[var(--color-muted)] shadow-md flex flex-col items-center justify-center p-3 text-center pointer-events-auto">
               {currentMemory ? (
                 <div className="flex flex-col items-center justify-center max-w-full">
@@ -352,8 +361,7 @@ export const VinylRecord = memo(function VinylRecord({
           </div>
         </div>
 
-
-        {/* Interaction 3: Like reaction sticker (r2c1) */}
+        {/* Like reaction sticker (r2c1: 56px, standing on center label rim) */}
         {SNOOPY_STICKERS_ENABLED && isLikeReacting && !reducedMotion && (
           <div
             key={likeTrigger}
@@ -369,9 +377,9 @@ export const VinylRecord = memo(function VinylRecord({
               <img
                 src="/stickers/snoopy-v1/r2c1.png"
                 alt=""
-                width={72}
-                height={72}
-                className="-translate-x-1/2 -translate-y-1/2 w-[72px] h-[72px] object-contain drop-shadow-sm pointer-events-none select-none max-w-none"
+                width={56}
+                height={56}
+                className="w-[56px] h-[56px] object-contain drop-shadow-sm pointer-events-none select-none max-w-none"
               />
             </div>
           </div>

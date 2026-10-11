@@ -14,14 +14,14 @@ describe('SoundWaves', () => {
     vi.useRealTimers();
   });
 
-  it('renders 16 soundwave bars with scalloped rounded tops', () => {
+  it('renders 14 soundwave bars with rounded pill shape', () => {
     const { container } = render(
       <SoundWaves currentTrack={{ id: 't1' }} isPaused={false} />
     );
 
     const bars = container.querySelectorAll('.soundwave-bar');
-    expect(bars.length).toBe(16);
-    expect(bars[0].className).toContain('rounded-t-full');
+    expect(bars.length).toBe(14);
+    expect(bars[0].className).toContain('rounded-full');
   });
 
   it('drives container --wave-level higher when playing and sinks low (0.15) when paused', () => {
@@ -72,7 +72,7 @@ describe('SoundWaves', () => {
     expect(container.querySelectorAll('.is-rippling').length).toBe(0);
 
     rerender(<SoundWaves currentTrack={{ id: 't1' }} isPaused={false} likeTrigger={1} />);
-    expect(container.querySelectorAll('.is-rippling').length).toBe(16);
+    expect(container.querySelectorAll('.is-rippling').length).toBe(14);
 
     act(() => {
       vi.advanceTimersByTime(650);

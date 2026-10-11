@@ -180,7 +180,7 @@ export function MemoriesSection({
           return (
             <div
               key={memory.id}
-              className="mw-card mw-memory-card relative bg-[#fffdfa] rounded-2xl p-4 flex flex-col justify-between select-none"
+              className="mw-card mw-memory-card relative bg-[var(--color-surface,#fffdfa)] rounded-2xl p-4 flex flex-col justify-between select-none"
               style={{
                 '--memory-tilt': tiltDeg,
               } as React.CSSProperties}

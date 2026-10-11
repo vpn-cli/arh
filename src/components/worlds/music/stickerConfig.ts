@@ -34,6 +34,7 @@ export const SNOOPY_STICKER_MAP = {
   vibes: 'r2c3',              // sunglasses Joe Cool
   memories: 'r3c4',           // scrapbook / memory
   restingWave: 'r5c3',        // resting / sleeping
+  progressThumb: 'r5c2',      // progress bar handle
   r1c1: 'r1c1',
   r1c2: 'r1c2',
   r1c3: 'r1c3',

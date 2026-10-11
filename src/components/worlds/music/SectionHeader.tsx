@@ -39,18 +39,18 @@ export const SectionHeader = React.memo(function SectionHeader({
 
   return (
     <header className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0 ${className}`}>
-      <div className="flex flex-col min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          {renderedSticker}
+      <div className="flex items-start gap-2 min-w-0">
+        {renderedSticker}
+        <div className="flex flex-col min-w-0">
           <HeadingTag className="font-pixel text-heading font-bold text-[var(--color-dark)] tracking-wide truncate">
             {title}
           </HeadingTag>
+          {subtitle && (
+            <div className="font-pixel text-caption text-[var(--color-dark)] mt-1 font-medium opacity-80 leading-relaxed">
+              {subtitle}
+            </div>
+          )}
         </div>
-        {subtitle && (
-          <div className="font-pixel text-caption text-[var(--color-dark)] mt-1 font-medium opacity-80 leading-relaxed">
-            {subtitle}
-          </div>
-        )}
       </div>
 
       {actions && (

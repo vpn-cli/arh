@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { formatTime } from '../playback/playbackHelpers';
+import { StickerIcon } from '../StickerIcon';
 import './now-playing.css';
 
 export interface ProgressBarApplyStateParams {
@@ -275,18 +276,18 @@ export const ProgressBar = memo(
             ref={progressBarThumbRef}
             className="progress-thumb absolute left-0 top-0 bottom-0 w-full pointer-events-none"
           >
-            <img
-              src="/hampter/hello_kitty_pin.png"
-              alt="Kitty Pin"
-              className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 max-w-none object-contain translate-x-1/2 z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300"
+            <StickerIcon
+              name="progressThumb"
+              size={28}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300 max-w-none"
             />
           </div>
         </div>
         <div className="flex justify-between w-full mt-1">
-          <span ref={positionLabelRef} className="font-pixel text-caption text-[var(--color-dark)] font-bold">
+          <span ref={positionLabelRef} className="font-pixel text-caption text-[var(--color-dark)] font-bold tabular-nums">
             0:00
           </span>
-          <span className="font-pixel text-caption text-[var(--color-dark)] font-bold">
+          <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tabular-nums">
             {formatTime(duration || durationRef.current || 0)}
           </span>
         </div>

@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { usePlayerVolumeStore } from '@/providers/volumeStore';
 import { StickerIcon } from '../StickerIcon';
+import { TRACK_CHANGE_SLIDE_IN_MS } from './vinylConstants';
+import './now-playing.css';
 
 export interface SoundWavesProps {
   currentTrack: any;
@@ -10,7 +12,7 @@ export interface SoundWavesProps {
   likeTrigger?: number;
 }
 
-const NUM_BARS = 16;
+const NUM_BARS = 14;
 const BARS = Array.from({ length: NUM_BARS }, (_, i) => i);
 
 export const SoundWaves = memo(function SoundWaves({
@@ -50,7 +52,7 @@ export const SoundWaves = memo(function SoundWaves({
     return () => mq.removeEventListener?.('change', handler);
   }, []);
 
-  // Track change: wave dips during sleeve slide-in (~220ms) and rises with new record
+  // Track change: wave dips during sleeve slide-in (~500ms) and rises with new record
   useEffect(() => {
     const prevId = prevTrackIdRef.current;
     const nextId = currentTrack?.id;
@@ -62,7 +64,7 @@ export const SoundWaves = memo(function SoundWaves({
         if (dipTimerRef.current) clearTimeout(dipTimerRef.current);
         dipTimerRef.current = setTimeout(() => {
           setIsDipping(false);
-        }, 220);
+        }, TRACK_CHANGE_SLIDE_IN_MS);
       }
     } else {
       prevTrackIdRef.current = nextId;
@@ -122,7 +124,7 @@ export const SoundWaves = memo(function SoundWaves({
   return (
     <>
       <div
-        className="absolute bottom-0 left-0 w-full h-1/2 flex items-end justify-center pointer-events-none z-0 px-2 overflow-hidden"
+        className="absolute bottom-0 left-0 w-full h-1/2 flex items-end justify-center gap-2 pointer-events-none z-0 px-6 pb-2 overflow-hidden"
         style={
           {
             '--wave-level': waveLevel,
@@ -133,17 +135,19 @@ export const SoundWaves = memo(function SoundWaves({
         }
       >
         {BARS.map((i) => {
-          const staggerDelay = (i * 0.18).toFixed(2);
+          const staggerDelay = (i * 0.16).toFixed(2);
           const isPausedAnim = isPaused || isDocHidden || reducedMotion;
+          // Arch: lowest at edges (~42%), highest at center (~86%)
+          const archHeight = Math.round(36 + Math.sin(((i + 0.5) / NUM_BARS) * Math.PI) * 50);
 
           return (
             <div
               key={i}
-              className={`soundwave-bar -mx-1.5 flex-1 rounded-t-full bg-[var(--color-vibrant)] opacity-25 select-none ${
+              className={`soundwave-bar flex-1 max-w-[12px] rounded-full bg-[var(--color-vibrant)] opacity-25 select-none ${
                 isRippling ? 'is-rippling' : ''
               }`}
               style={{
-                height: `${45 + ((i * 11) % 40)}%`,
+                height: `${archHeight}%`,
                 animationDelay: `${staggerDelay}s`,
                 animationPlayState: isPausedAnim ? 'paused' : 'running',
               }}
@@ -168,3 +172,5 @@ export const SoundWaves = memo(function SoundWaves({
     </>
   );
 });
+
+SoundWaves.displayName = 'SoundWaves';

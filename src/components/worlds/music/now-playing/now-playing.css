@@ -126,12 +126,12 @@
   animation-play-state: paused;
 }
 
-/* Sleeve Track Change (~750ms total: slide-in and slide-out) */
+/* Sleeve Track Change (500ms slide-in, 650ms slide-out, 1150ms total) */
 .vinyl-sleeve-jacket {
   transform: translateX(-24px);
   opacity: 0;
-  transition: transform var(--vinyl-slide-in-duration, 375ms) cubic-bezier(0.2, 0.8, 0.2, 1),
-              opacity var(--vinyl-slide-in-duration, 375ms) cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform var(--vinyl-slide-in-duration, 500ms) cubic-bezier(0.2, 0.8, 0.2, 1),
+              opacity var(--vinyl-slide-in-duration, 500ms) cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .vinyl-sleeve-jacket-active {
@@ -141,40 +141,44 @@
 
 .vinyl-slide-into-sleeve {
   transform: translateX(-62%);
-  transition: transform var(--vinyl-slide-in-duration, 375ms) cubic-bezier(0.4, 0, 0.6, 1);
+  transition: transform var(--vinyl-slide-in-duration, 500ms) cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .vinyl-slide-to-center {
   transform: translateX(0);
-  transition: transform var(--vinyl-slide-out-duration, 375ms) cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform var(--vinyl-slide-out-duration, 650ms) cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Track Change Sticker Peek (pops up behind sleeve top and ducks back) */
+/* Track Change Sticker: sits on sleeve's top edge at 64px for whole time, rises, bobs once, lowers */
 @keyframes vinyl-sleeve-peek {
   0% {
-    transform: translateY(24px);
+    transform: translateY(28px);
     opacity: 0;
   }
-  25% {
-    transform: translateY(24px);
+  20% {
+    transform: translateY(0);
     opacity: 1;
   }
-  50% {
-    transform: translateY(-34px);
+  45% {
+    transform: translateY(-8px);
     opacity: 1;
   }
-  75% {
-    transform: translateY(-34px);
+  65% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  85% {
+    transform: translateY(0);
     opacity: 1;
   }
   100% {
-    transform: translateY(24px);
+    transform: translateY(28px);
     opacity: 0;
   }
 }
 
 .vinyl-sleeve-sticker {
-  animation: vinyl-sleeve-peek var(--vinyl-track-change-duration, 750ms) cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: vinyl-sleeve-peek var(--vinyl-track-change-duration, 1150ms) cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 /* Gentle Bob for Loading Sticker */
@@ -191,7 +195,38 @@
   animation: mw-sticker-gentle-bob 2s ease-in-out infinite;
 }
 
-/* Like Reaction: Sticker r2c1 hops onto the record, rides one turn and fades */
+/* Sound Waves Behind Record */
+@keyframes soundwave-travel {
+  0%, 100% {
+    transform: scaleY(0.6);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes soundwave-ripple {
+  0% {
+    transform: scaleY(0.6);
+  }
+  50% {
+    transform: scaleY(1.3);
+  }
+  100% {
+    transform: scaleY(0.6);
+  }
+}
+
+.soundwave-bar {
+  transform-origin: bottom center;
+  animation: soundwave-travel 2.8s ease-in-out infinite;
+}
+
+.soundwave-bar.is-rippling {
+  animation: soundwave-ripple 600ms ease-in-out;
+}
+
+/* Like Reaction: Sticker r2c1 feet rest on label rim, body pointing outward, rides one turn */
 @keyframes vinyl-orbit-rotate {
   0% {
     transform: rotate(0deg);
@@ -203,36 +238,39 @@
 
 @keyframes vinyl-hop-fade {
   0% {
-    transform: translate(60px, 80px) scale(0.3);
+    transform: translateX(-50%) translateY(8px) scale(0.4);
     opacity: 0;
   }
   10% {
-    transform: translate(38px, -38px) scale(1);
+    transform: translateX(-50%) translateY(0) scale(1);
     opacity: 1;
   }
   87.5% {
-    transform: translate(38px, -38px) scale(1);
+    transform: translateX(-50%) translateY(0) scale(1);
     opacity: 1;
   }
   100% {
-    transform: translate(38px, -38px) scale(0.8);
+    transform: translateX(-50%) translateY(0) scale(0.8);
     opacity: 0;
   }
 }
 
 .vinyl-orbit-rotator {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  transform-origin: 0 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 50%;
   pointer-events: none;
   z-index: 30;
   animation: vinyl-orbit-rotate var(--vinyl-reaction-duration, 4000ms) linear forwards;
 }
 
 .vinyl-sticker-hop {
+  position: absolute;
+  left: 50%;
+  bottom: calc(50% + var(--vinyl-label-size) / 2);
+  transform-origin: bottom center;
   animation: vinyl-hop-fade var(--vinyl-reaction-duration, 4000ms) cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
@@ -241,7 +279,8 @@
 .tab-hidden .vinyl-orbit-rotator,
 .tab-hidden .vinyl-sticker-hop,
 .tab-hidden .vinyl-sleeve-sticker,
-.tab-hidden .mw-sticker-bob {
+.tab-hidden .mw-sticker-bob,
+.tab-hidden .soundwave-bar {
   animation-play-state: paused !important;
 }
 
@@ -272,5 +311,10 @@
   }
   .mw-sticker-bob {
     animation: none !important;
+  }
+  .soundwave-bar,
+  .soundwave-bar.is-rippling {
+    animation: none !important;
+    transform: scaleY(0.8) !important;
   }
 }

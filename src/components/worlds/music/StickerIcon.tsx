@@ -98,6 +98,25 @@ export const StickerIcon = React.memo(function StickerIcon({
             🎀
           </span>
         );
+      case 'progressThumb':
+        return (
+          <img
+            src="/hampter/hello_kitty_pin.png"
+            alt="Kitty Pin"
+            aria-hidden="true"
+            width={40}
+            height={40}
+            className={className}
+            style={{
+              ...(scale !== undefined
+                ? ({ '--icon-scale': scale, transform: 'scale(var(--icon-scale, 1))' } as React.CSSProperties)
+                : {}),
+              ...style,
+              width: 40,
+              height: 40,
+            }}
+          />
+        );
     }
   }
 

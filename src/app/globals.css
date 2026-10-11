@@ -1172,6 +1172,7 @@ html {
 
 :root {
   --sidebar-width: 256px;
+  --color-surface: #fffdfa;
   --motion-fast: 120ms;
   --motion-base: 180ms;
   --motion-slow: 240ms;
@@ -1190,7 +1191,7 @@ html {
   /* 1. Cards and Tiles (.mw-card) */
   .mw-card {
     position: relative;
-    outline: 1px solid var(--color-muted);
+    border: 1px solid var(--color-muted);
     border-radius: 1rem;
     transition: transform var(--motion-base, 180ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
   }
@@ -1224,6 +1225,14 @@ html {
 
   .mw-card:active {
     transform: scale(0.98);
+  }
+
+  /* 1b. Panels (.mw-panel) */
+  .mw-panel {
+    background-color: var(--color-surface, #fffdfa);
+    border: 1px solid var(--color-muted);
+    border-radius: 1.25rem;
+    padding: 20px;
   }
 
   /* Play button inside cards & tiles: 40px at bottom-right, fades in on hover/focus-within, always visible on touch */
@@ -1267,43 +1276,51 @@ html {
 
   /* Buttons: .mw-btn-primary and .mw-btn-secondary */
   .mw-btn-primary {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     height: 40px;
     min-height: 40px;
+    padding: 0 18px;
     border-radius: 9999px;
     background-color: var(--color-vibrant);
     color: var(--on-vibrant, #ffffff);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0 1.25rem;
     font-family: var(--font-pixel, inherit);
     font-size: var(--text-caption);
     font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
     border: none;
     cursor: pointer;
     user-select: none;
+    box-sizing: border-box;
     transition: transform var(--motion-base, 150ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
                 opacity var(--motion-base, 150ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
   }
 
   .mw-btn-secondary {
-    height: 40px;
-    min-height: 40px;
-    border-radius: 9999px;
-    background-color: #ffffff;
-    border: 1px solid var(--color-muted);
-    color: var(--color-dark);
     display: inline-flex;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    padding: 0 1.25rem;
+    gap: 8px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 18px;
+    border-radius: 9999px;
+    background-color: var(--color-surface, #fffdfa);
+    border: 1px solid var(--color-muted);
+    color: var(--color-dark);
     font-family: var(--font-pixel, inherit);
     font-size: var(--text-caption);
     font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
     cursor: pointer;
     user-select: none;
+    box-sizing: border-box;
     transition: transform var(--motion-base, 150ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
                 opacity var(--motion-base, 150ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
   }
@@ -1335,6 +1352,7 @@ html {
 
   /* Memory scrapbook cards */
   .mw-memory-card {
+    background-color: var(--color-surface, #fffdfa);
     --memory-tilt: -1.2deg;
     transform: rotate(var(--memory-tilt));
     transition: transform var(--motion-base, 180ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
@@ -1573,7 +1591,7 @@ html {
   /* Sound Waves Behind Record */
   @keyframes soundwave-travel {
     0%, 100% {
-      transform: scaleY(0.4);
+      transform: scaleY(0.6);
     }
     50% {
       transform: scaleY(1);
@@ -1582,19 +1600,19 @@ html {
 
   @keyframes soundwave-ripple {
     0% {
-      transform: scaleY(0.3);
+      transform: scaleY(0.6);
     }
     50% {
       transform: scaleY(1.3);
     }
     100% {
-      transform: scaleY(0.4);
+      transform: scaleY(0.6);
     }
   }
 
   .soundwave-bar {
     transform-origin: bottom center;
-    animation: soundwave-travel 3s ease-in-out infinite;
+    animation: soundwave-travel 2.8s ease-in-out infinite;
   }
 
   .soundwave-bar.is-rippling {

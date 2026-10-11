@@ -196,7 +196,7 @@ describe('VinylRecord interactions', () => {
       album: { images: [{ url: 'https://example.com/cover5.jpg' }] },
     };
 
-    it('slides old record into sleeve and new one out over about 750ms', () => {
+    it('slides old record into sleeve and new one out over about 1150ms', () => {
       const { rerender } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} />);
 
       // Initial cover image
@@ -208,27 +208,30 @@ describe('VinylRecord interactions', () => {
         rerender(<VinylRecord currentTrack={mockTrack2} isPaused={false} />);
       });
 
-      // Still showing old track during slide-in (~375ms)
+      // Still showing old track during slide-in (500ms)
       expect(img.src).toContain('cover1.jpg');
+      const sleeveCover = screen.getByAltText('Sleeve Cover') as HTMLImageElement;
+      expect(sleeveCover.src).toContain('cover1.jpg');
 
-      // Sticker pops up behind sleeve (56px, max-w-none)
+      // Sticker sits on sleeve top edge (64px, max-w-none)
       const sleeveSticker = document.querySelector('img[src="/stickers/snoopy-v1/r2c3.png"]') as HTMLImageElement;
       expect(sleeveSticker).not.toBeNull();
       expect(sleeveSticker.classList.contains('max-w-none')).toBe(true);
-      expect(sleeveSticker.getAttribute('width')).toBe('56');
-      expect(sleeveSticker.getAttribute('height')).toBe('56');
+      expect(sleeveSticker.getAttribute('width')).toBe('64');
+      expect(sleeveSticker.getAttribute('height')).toBe('64');
 
-      // Advance past slide-in
+      // Advance past slide-in (500ms)
       act(() => {
-        vi.advanceTimersByTime(380);
+        vi.advanceTimersByTime(510);
       });
 
-      // Swapped to new track during slide-out
+      // Swapped to new track during slide-out (650ms)
       expect(img.src).toContain('cover2.jpg');
+      expect(sleeveCover.src).toContain('cover2.jpg');
 
-      // Advance to full 750ms
+      // Advance remaining slide-out (650ms total)
       act(() => {
-        vi.advanceTimersByTime(380);
+        vi.advanceTimersByTime(650);
       });
 
       expect(img.src).toContain('cover2.jpg');
@@ -263,16 +266,16 @@ describe('VinylRecord interactions', () => {
       // Still in slide-in
       expect(img.src).toContain('cover1.jpg');
 
-      // Advance to 375ms (slide-in finishes, swaps to track2, slide-out starts)
+      // Advance to 500ms (slide-in finishes, swaps to track2, slide-out starts)
       act(() => {
-        vi.advanceTimersByTime(290);
+        vi.advanceTimersByTime(420);
       });
       expect(img.src).toContain('cover2.jpg');
       expect(document.querySelector('.vinyl-slide-to-center')).not.toBeNull();
 
-      // Advance remaining slide-out (375ms)
+      // Advance remaining slide-out (650ms)
       act(() => {
-        vi.advanceTimersByTime(380);
+        vi.advanceTimersByTime(660);
       });
       expect(img.src).toContain('cover2.jpg');
       expect(document.querySelector('.vinyl-slide-into-sleeve')).toBeNull();
@@ -310,7 +313,7 @@ describe('VinylRecord interactions', () => {
       });
       expect(document.querySelector('img[src="/stickers/snoopy-v1/r2c3.png"]')).not.toBeNull();
       act(() => {
-        vi.advanceTimersByTime(760);
+        vi.advanceTimersByTime(1160);
       });
 
       // Change 2: track2 -> track3 (index 1: r2c4)
@@ -319,7 +322,7 @@ describe('VinylRecord interactions', () => {
       });
       expect(document.querySelector('img[src="/stickers/snoopy-v1/r2c4.png"]')).not.toBeNull();
       act(() => {
-        vi.advanceTimersByTime(760);
+        vi.advanceTimersByTime(1160);
       });
 
       // Change 3: track3 -> mockTrack4 (index 2: r3c1)
@@ -328,7 +331,7 @@ describe('VinylRecord interactions', () => {
       });
       expect(document.querySelector('img[src="/stickers/snoopy-v1/r3c1.png"]')).not.toBeNull();
       act(() => {
-        vi.advanceTimersByTime(760);
+        vi.advanceTimersByTime(1160);
       });
 
       // Change 4: mockTrack4 -> mockTrack5 (index 3: r5c2)
@@ -337,7 +340,7 @@ describe('VinylRecord interactions', () => {
       });
       expect(document.querySelector('img[src="/stickers/snoopy-v1/r5c2.png"]')).not.toBeNull();
       act(() => {
-        vi.advanceTimersByTime(760);
+        vi.advanceTimersByTime(1160);
       });
 
       // Change 5: mockTrack5 -> mockTrack1 (wraps to index 0: r2c3)
@@ -346,7 +349,7 @@ describe('VinylRecord interactions', () => {
       });
       expect(document.querySelector('img[src="/stickers/snoopy-v1/r2c3.png"]')).not.toBeNull();
       act(() => {
-        vi.advanceTimersByTime(760);
+        vi.advanceTimersByTime(1160);
       });
     });
   });
@@ -379,7 +382,7 @@ describe('VinylRecord interactions', () => {
       expect(finishedSticker).toBeNull();
     });
 
-    it('renders sticker image in DOM at 72px, centered on orbit point, with max-w-none', () => {
+    it('renders sticker image in DOM at 56px, standing on inner label rim, with max-w-none', () => {
       const { rerender } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} likeTrigger={0} />);
 
       act(() => {
@@ -388,14 +391,11 @@ describe('VinylRecord interactions', () => {
 
       const stickerImg = document.querySelector('img[src="/stickers/snoopy-v1/r2c1.png"]') as HTMLImageElement;
       expect(stickerImg).not.toBeNull();
-      // Ensure the image inside the 0-width rotator box is not constrained to 0 width by Tailwind img { max-width: 100% }
       expect(stickerImg.classList.contains('max-w-none')).toBe(true);
-      expect(stickerImg.classList.contains('w-[72px]')).toBe(true);
-      expect(stickerImg.classList.contains('h-[72px]')).toBe(true);
-      expect(stickerImg.classList.contains('-translate-x-1/2')).toBe(true);
-      expect(stickerImg.classList.contains('-translate-y-1/2')).toBe(true);
-      expect(stickerImg.getAttribute('width')).toBe('72');
-      expect(stickerImg.getAttribute('height')).toBe('72');
+      expect(stickerImg.classList.contains('w-[56px]')).toBe(true);
+      expect(stickerImg.classList.contains('h-[56px]')).toBe(true);
+      expect(stickerImg.getAttribute('width')).toBe('56');
+      expect(stickerImg.getAttribute('height')).toBe('56');
 
       act(() => {
         vi.advanceTimersByTime(LIKE_REACTION_DURATION_MS + 50);

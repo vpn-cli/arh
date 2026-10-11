@@ -33,4 +33,18 @@ describe('SectionHeader', () => {
     expect(img?.getAttribute('alt')).toBe('');
     expect(img?.getAttribute('aria-hidden')).toBe('true');
   });
+
+  it('aligns subtitle with title left edge alongside sticker', () => {
+    const { container } = render(
+      <SectionHeader
+        title="Daily Birthday Mix"
+        sticker="r4c4"
+        subtitle="Dynamic blend of your recent listens"
+      />
+    );
+    const heading = screen.getByRole('heading', { name: /Daily Birthday Mix/i });
+    const subtitle = screen.getByText('Dynamic blend of your recent listens');
+    // Both heading and subtitle share the same parent container (flex-col)
+    expect(heading.parentElement).toBe(subtitle.parentElement);
+  });
 });

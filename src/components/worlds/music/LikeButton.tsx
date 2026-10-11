@@ -77,7 +77,7 @@ export const LikeButton = React.memo(function LikeButton({
         disabled={disabled}
         aria-label={label}
         title={label}
-        className={`relative inline-flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] ${
+        className={`relative inline-flex items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] focus-visible:ring-offset-2 ${
           disabled ? "opacity-40 cursor-not-allowed hover:scale-100 active:scale-100" : ""
         } ${className}`}
       >

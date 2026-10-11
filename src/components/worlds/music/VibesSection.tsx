@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useTopTracks, useTopArtists } from '@/hooks/useSpotify';
 import { TrackList } from './TrackList';
 import { MediaRow } from './MediaRow';
-import { PlaylistCover } from './PlaylistCover';
 import { SectionHeader } from './SectionHeader';
 import { SegmentedControl } from './SegmentedControl';
 import { pickImage } from '@/lib/spotify/images';
@@ -274,26 +273,28 @@ export function VibesSection({
 
   return (
     <div className="flex flex-col gap-6 pb-6">
-      <div className="flex items-center justify-between shrink-0">
-        <SegmentedControl
-          value={timeRange}
-          onChange={(val) => setTimeRange(val as TimeRange)}
-          ariaLabel="Vibes time range"
-        />
-      </div>
-
       <section className="flex flex-col">
         <SectionHeader
           title="Your top vibes"
           sticker="r2c3"
           subtitle="Based on your top artists' genres in the selected time range."
+          actions={
+            <SegmentedControl
+              value={timeRange}
+              onChange={(val) => setTimeRange(val as TimeRange)}
+              ariaLabel="Vibes time range"
+            />
+          }
         />
 
         {isTopArtistsError ? renderError(topArtistsError, 'DATA') :
          isTopTracksError ? renderError(topTracksError, 'DATA') :
          (isTopArtistsLoading || isTopTracksLoading) ? renderLoading('vibes') :
          vibeCategories.length > 0 ? (
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+           <div
+             className="grid gap-4"
+             style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
+           >
              {vibeCategories.map((vibe) => {
                const artistCount = vibe.artists.length;
                const trackCount = vibe.tracks.length;
@@ -301,14 +302,16 @@ export function VibesSection({
                const trackText = `${trackCount} ${trackCount === 1 ? 'track' : 'tracks'}`;
                const countLabel = `${artistText} · ${trackText}`;
 
+               const coverUrls = vibe.tracks
+                 .map((t: any) => t.album?.images?.[0]?.url || t.album?.images?.[0])
+                 .filter(Boolean);
+
                return (
                  <div
                    key={vibe.id}
                    onClick={() => setSelectedVibeId(vibe.id)}
-                   className="mw-card p-4 flex flex-col items-start text-left cursor-pointer select-none group"
-                   style={{
-                     backgroundColor: 'color-mix(in srgb, var(--color-vibrant) 8%, #ffffff)',
-                   }}
+                   className="mw-card p-3 flex flex-col items-start text-left cursor-pointer select-none group rounded-[1rem] overflow-hidden"
+                   style={{ backgroundColor: 'color-mix(in srgb, var(--color-vibrant) 8%, #ffffff)' }}
                    role="button"
                    tabIndex={0}
                    onKeyDown={(e) => {
@@ -319,12 +322,20 @@ export function VibesSection({
                    }}
                    aria-label={`Open vibe ${vibe.label}`}
                  >
-                   <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-3 bg-[var(--color-light)]">
-                     <PlaylistCover
-                       images={vibe.tracks.map((t: any) => t.album?.images?.[0]?.url || t.album?.images?.[0]).filter(Boolean)}
-                       size={200}
-                       className="w-full h-full object-cover"
-                     />
+                   {/* Collage filling full width at 1/1 aspect ratio with 0.75rem radius */}
+                   <div className="relative w-full aspect-square rounded-xl overflow-hidden shrink-0">
+                     {coverUrls.length >= 4 ? (
+                       <div className="w-full h-full grid grid-cols-2 grid-rows-2">
+                         {coverUrls.slice(0, 4).map((src: any, idx: number) => (
+                           <img key={idx} src={typeof src === 'string' ? src : src.url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                         ))}
+                       </div>
+                     ) : coverUrls.length > 0 ? (
+                       <img src={typeof coverUrls[0] === 'string' ? coverUrls[0] : coverUrls[0].url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                     ) : (
+                       <div className="w-full h-full bg-[var(--color-muted)]/20 flex items-center justify-center text-[var(--color-dark)] font-bold text-caption">♪</div>
+                     )}
+
                      {vibe.tracks.length > 0 && (
                        <button
                          type="button"
@@ -332,19 +343,26 @@ export function VibesSection({
                            e.stopPropagation();
                            onPlayTracks(vibe.tracks.map((t: any) => t.uri), vibe.tracks);
                          }}
-                         className="mw-card-play"
+                         className="mw-card-play absolute bottom-2 right-2"
                          aria-label={`Play ${vibe.label} vibe`}
                        >
                          <PlayIcon size={18} className="text-white ml-0.5" />
                        </button>
                      )}
                    </div>
-                   <span className="font-pixel text-body font-bold text-[var(--color-dark)] mb-1 mw-card-title truncate w-full">
-                     {vibe.label}
-                   </span>
-                   <span className="font-pixel text-caption text-[var(--color-dark)] font-medium opacity-80">
-                     {countLabel}
-                   </span>
+
+                   {/* Name & counts with 12px padding; name clamps to 2 lines */}
+                   <div className="pt-3 w-full flex flex-col">
+                     <span
+                       className="font-pixel text-body font-bold text-[var(--color-dark)] mb-1 mw-card-title line-clamp-2 w-full"
+                       style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                     >
+                       {vibe.label}
+                     </span>
+                     <span className="font-pixel text-caption text-[var(--color-dark)] font-medium opacity-80">
+                       {countLabel}
+                     </span>
+                   </div>
                  </div>
                );
              })}

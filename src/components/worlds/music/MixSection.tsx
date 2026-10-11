@@ -75,7 +75,7 @@ export function MixSection({
     <div className="flex flex-col gap-6 pb-6">
       
       {/* ✦ DYNAMIC BIRTHDAY / DAILY MIX ✦ */}
-      <section className="flex flex-col">
+      <section className="mw-panel flex flex-col">
         <SectionHeader
           title="Daily Birthday Mix"
           sticker="r4c4"
@@ -111,6 +111,7 @@ export function MixSection({
             </>
           }
         />
+        <div className="border-b border-[var(--color-muted)] my-3" />
 
         {/* Search within Mix — appears only when expanded */}
         {isExpanded && (
@@ -166,11 +167,12 @@ export function MixSection({
       </section>
 
       {/* Continue Listening (Latest from Recently Played) */}
-      <section className="flex flex-col">
+      <section className="mw-panel flex flex-col">
         <SectionHeader
           title="Continue listening"
           sticker="r5c2"
         />
+        <div className="border-b border-[var(--color-muted)] my-3" />
         {isRecentError ? renderError(recentError, 'RECENTLY PLAYED') :
          isRecentLoading ? renderLoading('continue listening') :
          recentData && recentData.length > 0 ? (
@@ -188,7 +190,7 @@ export function MixSection({
       </section>
 
       {/* Top Tracks with Time Range Selector */}
-      <section className="flex flex-col">
+      <section className="mw-panel flex flex-col">
         <SectionHeader
           title="Top tracks"
           sticker="r2c1"
@@ -211,6 +213,7 @@ export function MixSection({
             </>
           }
         />
+        <div className="border-b border-[var(--color-muted)] my-3" />
         {isTopTracksError ? renderError(topTracksError, 'TOP TRACKS') :
          isTopTracksLoading ? renderLoading('top tracks') :
          topTracks && topTracks.length > 0 ? (

@@ -189,7 +189,7 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
               toggleRepeat={toggleRepeat}
             />
 
-            <VolumeControl className="mt-2" />
+            <VolumeControl className="mt-2 w-[70%] mx-auto" />
           </div>
         ) : (
           <div className="flex flex-col mb-4">
@@ -234,8 +234,8 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
             <div className="w-full flex flex-col gap-1 mt-2">
               <div className="w-full h-2.5 bg-[var(--color-muted)] rounded-full"></div>
               <div className="flex justify-between w-full">
-                <span className="font-pixel text-caption text-[var(--color-dark)] font-bold">0:00</span>
-                <span className="font-pixel text-caption text-[var(--color-dark)] font-bold">0:00</span>
+                <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tabular-nums">0:00</span>
+                <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tabular-nums">0:00</span>
               </div>
             </div>
             <div className="flex items-center justify-between mt-4 px-2">
@@ -269,7 +269,7 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
               </button>
             </div>
 
-            <VolumeControl className="mt-2" />
+            <VolumeControl className="mt-2 w-[70%] mx-auto" />
           </div>
         )}
       </div>

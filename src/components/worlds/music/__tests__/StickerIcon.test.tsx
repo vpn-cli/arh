@@ -46,6 +46,7 @@ describe('Snoopy Stickers & StickerIcon', () => {
       ['recentlyPlayed', '/stickers/snoopy-v1/r4c1.png', 48],
       ['queueTab', '/stickers/snoopy-v1/r1c4.png', 28],
       ['queueModal', '/stickers/snoopy-v1/r1c4.png', 48],
+      ['progressThumb', '/stickers/snoopy-v1/r5c2.png', 28],
     ];
 
     for (const [slot, expectedSrc, expectedSize] of slots) {
@@ -74,6 +75,7 @@ describe('Snoopy Stickers & StickerIcon', () => {
         recentlyPlayed: 'r4c1',
         queueTab: 'r1c4',
         queueModal: 'r1c4',
+        progressThumb: 'r5c2',
       },
     }));
 
@@ -104,6 +106,15 @@ describe('Snoopy Stickers & StickerIcon', () => {
     // QueueModal restores ribbon
     const modalRender = render(<FallbackStickerIcon name="queueModal" size={48} />);
     expect(modalRender.container.textContent).toContain('🎀');
+
+    // ProgressThumb restores hello_kitty_pin at 40px whatever size is passed
+    const thumbRender = render(<FallbackStickerIcon name="progressThumb" size={28} />);
+    const thumbImg = thumbRender.container.querySelector('img');
+    expect(thumbImg?.getAttribute('src')).toBe('/hampter/hello_kitty_pin.png');
+    expect(thumbImg?.getAttribute('width')).toBe('40');
+    expect(thumbImg?.getAttribute('height')).toBe('40');
+    expect(thumbImg?.style.width).toBe('40px');
+    expect(thumbImg?.style.height).toBe('40px');
 
     vi.doUnmock('../stickerConfig');
     vi.resetModules();
