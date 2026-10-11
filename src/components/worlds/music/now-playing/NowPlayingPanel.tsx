@@ -4,7 +4,7 @@ import React, { memo } from 'react';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { ProgressBar, ProgressBarHandle } from './ProgressBar';
 import { PlaybackControls } from './PlaybackControls';
-import { VolumeControl } from './VolumeControl';
+import { VolumeButton } from './VolumeButton';
 import { QueuePanel } from './QueuePanel';
 import { ChevronDownIcon, MusicNoteIcon } from '../icons';
 import { TrackActionsMenu } from '../TrackActionsMenu';
@@ -84,6 +84,7 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
             <span className="font-pixel text-[var(--color-dark)] text-body font-bold">Now Playing</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <VolumeButton />
             {currentTrack && (
               <button
                 onClick={onToggleLyrics}
@@ -188,8 +189,6 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
               toggleShuffle={toggleShuffle}
               toggleRepeat={toggleRepeat}
             />
-
-            <VolumeControl className="mt-2 w-[70%] mx-auto" />
           </div>
         ) : (
           <div className="flex flex-col mb-4">
@@ -268,8 +267,6 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
                 </svg>
               </button>
             </div>
-
-            <VolumeControl className="mt-2 w-[70%] mx-auto" />
           </div>
         )}
       </div>

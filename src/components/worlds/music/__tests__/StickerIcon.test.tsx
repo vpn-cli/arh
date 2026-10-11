@@ -46,7 +46,7 @@ describe('Snoopy Stickers & StickerIcon', () => {
       ['recentlyPlayed', '/stickers/snoopy-v1/r4c1.png', 48],
       ['queueTab', '/stickers/snoopy-v1/r1c4.png', 28],
       ['queueModal', '/stickers/snoopy-v1/r1c4.png', 48],
-      ['progressThumb', '/stickers/snoopy-v1/r5c2.png', 28],
+      ['progressThumb', '/stickers/snoopy-v1/r5c2.png', 36],
     ];
 
     for (const [slot, expectedSrc, expectedSize] of slots) {

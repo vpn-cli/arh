@@ -70,8 +70,8 @@ export function PlaylistHeader({
         </button>
       </div>
 
-      {/* Tinted card container matching Vibes detail header */}
-      <div className="bg-gradient-to-r from-[var(--color-light)] to-[var(--color-light)] p-5 sm:p-6 rounded-2xl border-2 border-[var(--color-muted)] shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-6">
+      {/* Panel container matching Vibes detail header */}
+      <div className="mw-panel shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-6">
         {/* Cover: about 160px with a shadow on the left */}
         {coverUrl ? (
           <img

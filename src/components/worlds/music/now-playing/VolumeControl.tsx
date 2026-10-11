@@ -5,6 +5,7 @@ import { useSpotifyPlayer } from '@/providers/SpotifyPlayerProvider';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { usePlayerVolumeStore, DEFAULT_VOLUME } from '@/providers/volumeStore';
 import { SpeakerIcon } from '../icons';
+import './now-playing.css';
 
 export interface VolumeControlProps {
   className?: string;
@@ -142,7 +143,7 @@ export const VolumeControl = memo(function VolumeControl({
 
   return (
     <div
-      className={`mw-volume-control flex items-center gap-2 px-2 h-6 select-none shrink-0 ${className}`}
+      className={`mw-volume-control flex items-center gap-2 px-2 h-7 select-none shrink-0 ${className}`}
       role="group"
       aria-label="Volume controls"
     >

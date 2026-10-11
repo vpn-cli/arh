@@ -7,6 +7,7 @@ import React, {
   useImperativeHandle,
   forwardRef,
   memo,
+  useState,
 } from 'react';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { formatTime } from '../playback/playbackHelpers';
@@ -49,6 +50,7 @@ export const ProgressBar = memo(
     const durationRef = useRef(duration > 0 ? duration : 0);
     const isPausedRef = useRef(isPaused);
     const isDraggingRef = useRef(false);
+    const [isDragging, setIsDragging] = useState(false);
     const lastPositionMsRef = useRef(0);
     const lastTrackIdRef = useRef(currentTrackId);
 
@@ -183,7 +185,8 @@ export const ProgressBar = memo(
       const currentDuration = durationRef.current;
       if (!player || !currentDuration || currentDuration <= 0) return;
       isDraggingRef.current = true;
-      e.currentTarget.setPointerCapture(e.pointerId);
+      setIsDragging(true);
+      e.currentTarget.setPointerCapture?.(e.pointerId);
       updatePositionFromPointer(e.clientX);
     };
 
@@ -197,7 +200,8 @@ export const ProgressBar = memo(
       const currentDuration = durationRef.current;
       if (!isDraggingRef.current || !player || !currentDuration || currentDuration <= 0) return;
       isDraggingRef.current = false;
-      e.currentTarget.releasePointerCapture(e.pointerId);
+      setIsDragging(false);
+      e.currentTarget.releasePointerCapture?.(e.pointerId);
       const percent = updatePositionFromPointer(e.clientX);
       if (percent !== undefined) {
         const seekPos = percent * currentDuration;
@@ -278,8 +282,10 @@ export const ProgressBar = memo(
           >
             <StickerIcon
               name="progressThumb"
-              size={28}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300 max-w-none"
+              size={36}
+              className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300 max-w-none ${
+                isDragging ? 'scale-125' : ''
+              }`}
             />
           </div>
         </div>
