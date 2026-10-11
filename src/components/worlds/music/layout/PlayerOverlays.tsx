@@ -3,6 +3,7 @@
 import React from "react";
 import { WarningIcon, CloseIcon } from "../icons";
 import { redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
+import { HEADER_TITLE } from "../textConfig";
 
 export interface PlayerOverlaysProps {
   isReconnecting: boolean;
@@ -76,7 +77,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-bg)]/75 backdrop-blur-sm px-4">
           <div className="bg-white/95 rounded-3xl border-2 border-[var(--color-muted)] shadow-[0_18px_45px_var(--color-muted)] shadow-opacity-20 p-8 flex flex-col items-center gap-4 max-w-sm text-center">
             <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
-            <h3 className="font-pixel text-heading font-bold text-[var(--color-dark)] leading-snug">KAWAII_PLAYER.EXE</h3>
+            <h3 className="font-pixel text-heading font-bold text-[var(--color-dark)] leading-snug">{HEADER_TITLE}</h3>
             <p className="font-pixel text-body text-[var(--color-dark)] leading-relaxed font-medium">
               Connect Spotify to load your playlists, queue, and soundscape controls.
             </p>

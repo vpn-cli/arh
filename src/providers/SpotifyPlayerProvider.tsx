@@ -236,7 +236,7 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
       }
 
       const spotifyPlayer = new window.Spotify.Player({
-        name: "Kawaii Web Player",
+        name: "punkrose.fm",
         getOAuthToken: async (cb: (token: string) => void) => {
           try {
             const freshToken = await getFreshToken();
