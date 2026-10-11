@@ -3,8 +3,8 @@
  */
 export const MUSIC_TEXT_CONFIG = {
   headerTitle: "punkrose.fm",
-  sidebarCardTitle: "KAWAII",
-  sidebarCardSubtitle: "vibes • memories",
+  sidebarCardTitle: "A LITTLE PIECE",
+  sidebarCardSubtitle: "of heaven",
 } as const;
 
 export const HEADER_TITLE = MUSIC_TEXT_CONFIG.headerTitle;

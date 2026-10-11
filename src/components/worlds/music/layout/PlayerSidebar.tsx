@@ -68,11 +68,11 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
       className="w-[var(--sidebar-width)] border-r-2 border-[var(--color-muted)] flex flex-col shrink-0 bg-white/90 hidden md:flex"
       style={{ backgroundColor: 'color-mix(in srgb, var(--color-bg) 8%, white)' }}
     >
-      <div className="h-28 border-2 border-[var(--color-muted)] bg-[var(--color-light)] flex items-center gap-3 justify-start pl-3 pr-2 m-4 rounded-2xl shrink-0">
-        <StickerIcon name="kawaiiCard" size={80} className="w-20 h-20 object-contain shrink-0" />
+      <div className="border-2 border-[var(--color-muted)] bg-[var(--color-light)] flex items-center gap-3 justify-start pl-3 pr-2 py-2.5 m-4 rounded-2xl shrink-0">
+        <StickerIcon name="kawaiiCard" size={60} className="w-[60px] h-[60px] object-contain shrink-0" />
         <div>
-          <div className="font-pixel text-title font-bold text-[var(--color-dark)]">{SIDEBAR_CARD_TITLE}</div>
-          <div className="font-pixel text-caption text-[var(--color-dark)] font-medium">{SIDEBAR_CARD_SUBTITLE}</div>
+          <div className="font-pixel text-body font-bold text-[var(--color-dark)] whitespace-nowrap">{SIDEBAR_CARD_TITLE}</div>
+          <div className="font-pixel text-caption text-[var(--color-dark)] font-medium whitespace-nowrap">{SIDEBAR_CARD_SUBTITLE}</div>
         </div>
       </div>
 
