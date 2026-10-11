@@ -69,8 +69,6 @@ export function QueueModal({
     return [];
   }, [queue, playerQueueData]);
 
-  if (!isOpen) return null;
-
   const formatRelativeTime = (isoString?: string) => {
     if (!isoString) return '';
     try {
@@ -106,36 +104,58 @@ export function QueueModal({
     }
   };
 
+  const upcomingQueue = React.useMemo(() => {
+    if (isLiveQueue) {
+      return effectiveQueue.map((item: any, idx: number) => ({
+        item,
+        storeIndex: idx,
+      }));
+    }
+    if (!queue || queue.length === 0) return [];
+    const startIndex = queueIndex >= 0 ? queueIndex + 1 : 0;
+    const items: { item: any; storeIndex: number }[] = [];
+    for (let i = startIndex; i < queue.length; i++) {
+      items.push({ item: queue[i], storeIndex: i });
+    }
+    return items;
+  }, [isLiveQueue, effectiveQueue, queue, queueIndex]);
+
   const handleShuffleQueue = () => {
     const currentList = ensureQueueInitialized();
     if (currentList.length <= 1) return;
     const newQueue = [...currentList];
-    const upcoming = newQueue.slice(queueIndex + 1);
+    const startIndex = queueIndex >= 0 ? queueIndex + 1 : 0;
+    const upcoming = newQueue.slice(startIndex);
+    if (upcoming.length <= 1) return;
     for (let i = upcoming.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [upcoming[i], upcoming[j]] = [upcoming[j], upcoming[i]];
     }
-    const combined = [...newQueue.slice(0, queueIndex + 1), ...upcoming];
+    const combined = [...newQueue.slice(0, startIndex), ...upcoming];
     setQueue(combined);
   };
 
   const handleMoveUp = (index: number) => {
     ensureQueueInitialized();
-    if (index > 0) reorderQueue(index, index - 1);
+    const minUpcomingIndex = !isLiveQueue && queueIndex >= 0 ? queueIndex + 1 : 0;
+    if (index > minUpcomingIndex) reorderQueue(index, index - 1);
   };
 
   const handleMoveDown = (index: number) => {
     ensureQueueInitialized();
-    if (index < effectiveQueue.length - 1) reorderQueue(index, index + 1);
+    const maxIndex = queue.length > 0 ? queue.length - 1 : effectiveQueue.length - 1;
+    if (index < maxIndex) reorderQueue(index, index + 1);
   };
 
-  const filteredQueue = effectiveQueue.filter((item: any) => {
-    if (!searchFilter.trim()) return true;
-    const q = searchFilter.toLowerCase();
-    const name = item.track?.name?.toLowerCase() || '';
-    const artist = item.track?.artists?.map((a: any) => a.name).join(' ').toLowerCase() || '';
-    return name.includes(q) || artist.includes(q);
-  });
+  const filteredQueue = React.useMemo(() => {
+    return upcomingQueue.filter(({ item }: { item: any }) => {
+      if (!searchFilter.trim()) return true;
+      const q = searchFilter.toLowerCase();
+      const name = item.track?.name?.toLowerCase() || '';
+      const artist = item.track?.artists?.map((a: any) => a.name).join(' ').toLowerCase() || '';
+      return name.includes(q) || artist.includes(q);
+    });
+  }, [upcomingQueue, searchFilter]);
 
   const filteredRecent = (recentTracks as any[]).filter((item) => {
     if (!searchFilter.trim()) return true;
@@ -144,6 +164,8 @@ export function QueueModal({
     const artist = item.track?.artists?.map((a: any) => a.name).join(' ').toLowerCase() || '';
     return name.includes(q) || artist.includes(q);
   });
+
+  if (!isOpen) return null;
 
   return (
     <div
@@ -162,7 +184,7 @@ export function QueueModal({
               <h2 className="font-pixel text-title text-[var(--color-dark)] font-bold tracking-wide flex items-center gap-2">
                 Playback Queue & History Tuner
                 <span className="text-caption bg-[var(--color-vibrant)] text-[var(--on-vibrant)] px-2.5 py-0.5 rounded-full font-normal transition-colors duration-500">
-                  {activeTab === 'queue' ? `${effectiveQueue.length} Tracks` : `${recentTracks.length} Recent`}
+                  {activeTab === 'queue' ? `${upcomingQueue.length} Tracks` : `${recentTracks.length} Recent`}
                 </span>
               </h2>
               <p className="font-pixel text-caption text-[var(--color-dark)]">
@@ -192,7 +214,7 @@ export function QueueModal({
                   : 'text-[var(--color-dark)] hover:text-[var(--color-dark)] hover:bg-[var(--color-muted)]/40'
               }`}
             >
-              <span className="text-meta">♥</span> Up Next ({effectiveQueue.length})
+              Up Next ({upcomingQueue.length})
             </button>
             <button
               onClick={() => setActiveTab('recent')}
@@ -228,7 +250,7 @@ export function QueueModal({
               )}
             </div>
 
-            {activeTab === 'queue' && effectiveQueue.length > 0 && (
+            {activeTab === 'queue' && upcomingQueue.length > 0 && (
               <>
                 <button
                   onClick={handleShuffleQueue}
@@ -302,7 +324,7 @@ export function QueueModal({
                   <h3 className="font-pixel text-body font-bold text-[var(--color-dark)]">Loading Upcoming Tracks...</h3>
                   <p className="font-pixel text-meta text-[var(--color-dark)] max-w-sm mt-1">Fetching live queue from Spotify</p>
                 </div>
-              ) : effectiveQueue.length === 0 ? (
+              ) : upcomingQueue.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="w-16 h-16 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-heading mb-2 shadow-inner">
                     🌸
@@ -323,22 +345,23 @@ export function QueueModal({
                     <span className="text-caption text-[var(--color-dark)] font-medium lowercase">Drag items or use arrows to reorder</span>
                   </div>
 
-                  {filteredQueue.map((item: any, idx: number) => {
-                    const originalIndex = effectiveQueue.indexOf(item);
-                    const isCurrentlyActive = !isLiveQueue && originalIndex === queueIndex;
+                  {filteredQueue.map(({ item, storeIndex }: { item: any; storeIndex: number }, idx: number) => {
+                    const minUpcomingIndex = !isLiveQueue && queueIndex >= 0 ? queueIndex + 1 : 0;
+                    const maxQueueIndex = queue.length > 0 ? queue.length - 1 : effectiveQueue.length - 1;
+                    const isCurrentlyActive = !isLiveQueue && storeIndex === queueIndex;
 
                     return (
                       <div
-                        key={`${item.track?.id}-${originalIndex}`}
+                        key={`${item.track?.id || item.track?.uri || 'queue'}-${storeIndex}`}
                         draggable
                         onDragStart={(e) => {
                           isDraggingRef.current = true;
-                          setDraggedIdx(originalIndex);
+                          setDraggedIdx(storeIndex);
                           e.dataTransfer.effectAllowed = 'move';
                         }}
                         onDragOver={(e) => {
                           e.preventDefault();
-                          setDragOverIdx(originalIndex);
+                          setDragOverIdx(storeIndex);
                         }}
                         onDragEnd={() => {
                           setDraggedIdx(null);
@@ -349,8 +372,13 @@ export function QueueModal({
                         }}
                         onDrop={(e) => {
                           e.preventDefault();
-                          if (draggedIdx !== null && draggedIdx !== originalIndex) {
-                            reorderQueue(draggedIdx, originalIndex);
+                          if (
+                            draggedIdx !== null &&
+                            draggedIdx !== storeIndex &&
+                            draggedIdx >= minUpcomingIndex &&
+                            storeIndex >= minUpcomingIndex
+                          ) {
+                            reorderQueue(draggedIdx, storeIndex);
                           }
                           setDraggedIdx(null);
                           setDragOverIdx(null);
@@ -360,19 +388,19 @@ export function QueueModal({
                         }}
                         onClick={() => {
                           if (isDraggingRef.current) return;
-                          handlePlayQueueItem(originalIndex);
+                          handlePlayQueueItem(storeIndex);
                         }}
                         className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-2xl mw-row cursor-pointer ${
                           isCurrentlyActive
                             ? 'bg-[var(--color-light)] border-[var(--color-vibrant)] shadow-xs'
                             : 'bg-white border-[var(--color-muted)] hover:bg-[var(--color-bg)] hover:shadow-2xs'
                         } ${
-                          dragOverIdx === originalIndex
-                            ? draggedIdx !== null && draggedIdx < originalIndex
+                          dragOverIdx === storeIndex
+                            ? draggedIdx !== null && draggedIdx < storeIndex
                               ? 'border-b-2 border-b-[var(--color-vibrant)]'
                               : 'border-t-2 border-t-[var(--color-vibrant)]'
                             : ''
-                        } ${draggedIdx === originalIndex ? 'opacity-40' : 'opacity-100'}`}
+                        } ${draggedIdx === storeIndex ? 'opacity-40' : 'opacity-100'}`}
                       >
                         {/* Drag Handle & Reorder Controls */}
                         <div
@@ -388,7 +416,7 @@ export function QueueModal({
                           <span
                             className="font-pixel text-caption font-bold w-7 text-center text-[var(--color-dark)]"
                           >
-                            {originalIndex + 1}
+                            {idx + 1}
                           </span>
                         </div>
 
@@ -430,9 +458,9 @@ export function QueueModal({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleMoveUp(originalIndex);
+                              handleMoveUp(storeIndex);
                             }}
-                            disabled={originalIndex === 0}
+                            disabled={storeIndex <= minUpcomingIndex}
                             className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-meta w-6 h-6 min-w-[24px] min-h-[24px] leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
                             title="Move Up"
                             aria-label={`Move ${item.track?.name} up`}
@@ -442,9 +470,9 @@ export function QueueModal({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleMoveDown(originalIndex);
+                              handleMoveDown(storeIndex);
                             }}
-                            disabled={originalIndex === queue.length - 1}
+                            disabled={storeIndex >= maxQueueIndex}
                             className="mw-btn text-[var(--color-dark)] hover:text-[var(--color-dark)] disabled:opacity-20 text-meta w-6 h-6 min-w-[24px] min-h-[24px] leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded flex items-center justify-center"
                             title="Move Down"
                             aria-label={`Move ${item.track?.name} down`}
@@ -461,7 +489,7 @@ export function QueueModal({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handlePlayQueueItem(originalIndex);
+                              handlePlayQueueItem(storeIndex);
                             }}
                             className="mw-btn w-8 h-8 rounded-full bg-[var(--color-light)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] text-[var(--color-dark)] flex items-center justify-center text-meta shadow-2xs"
                             title="Play this track"
@@ -484,7 +512,7 @@ export function QueueModal({
                             onClick={(e) => {
                               e.stopPropagation();
                               ensureQueueInitialized();
-                              removeFromQueue(originalIndex);
+                              removeFromQueue(storeIndex);
                             }}
                             className="mw-btn w-8 h-8 rounded-full hover:bg-rose-100 text-[var(--color-dark)] hover:text-rose-600 flex items-center justify-center text-meta"
                             title="Remove from Queue"
@@ -605,7 +633,8 @@ export function QueueModal({
         <div className="px-6 py-3 border-t border-[var(--color-muted)] bg-white/70 flex items-center justify-between font-pixel text-caption text-[var(--color-dark)] shrink-0">
           <div className="font-bold">
             {(() => {
-              const listBeingShown = activeTab === 'queue' ? filteredQueue : filteredRecent;
+              const listBeingShown =
+                activeTab === 'queue' ? filteredQueue.map((q: any) => q.item) : filteredRecent;
               const songCount = listBeingShown.length;
               const totalDurationMs = listBeingShown.reduce((acc: number, item: any) => {
                 const d = item?.track?.duration_ms ?? item?.duration_ms ?? 0;

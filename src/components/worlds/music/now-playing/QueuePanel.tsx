@@ -78,6 +78,19 @@ export const QueuePanel = memo(function QueuePanel({
     return [];
   }, [queue, playerQueueData]);
 
+  const upcomingQueue = useMemo<{ item: QueueEntry; storeIndex: number }[]>(() => {
+    if (isLiveQueue) {
+      return effectiveQueue.map((item, idx) => ({ item, storeIndex: idx }));
+    }
+    if (!queue || queue.length === 0) return [];
+    const startIndex = queueIndex >= 0 ? queueIndex + 1 : 0;
+    const items: { item: QueueEntry; storeIndex: number }[] = [];
+    for (let i = startIndex; i < queue.length; i++) {
+      items.push({ item: queue[i] as QueueEntry, storeIndex: i });
+    }
+    return items;
+  }, [isLiveQueue, effectiveQueue, queue, queueIndex]);
+
   return (
     <div className="mw-queue-panel-container flex flex-col flex-1 overflow-hidden px-4 pb-4">
       {/* Tab Switcher & Bow */}
@@ -91,7 +104,7 @@ export const QueuePanel = memo(function QueuePanel({
                 : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
             }`}
           >
-            <span>♥</span> Queue ({queue.length})
+            Queue ({upcomingQueue.length})
           </button>
           <button
             onClick={() => setRightPanelTab('recent')}
@@ -113,7 +126,7 @@ export const QueuePanel = memo(function QueuePanel({
           {rightPanelTab === 'queue' ? '+ Up Next' : '🕒 Recently Played'}
         </span>
         <div className="flex items-center gap-2">
-          {rightPanelTab === 'queue' && effectiveQueue.length > 0 && (
+          {rightPanelTab === 'queue' && upcomingQueue.length > 0 && (
             <button
               onClick={() => clearQueue()}
               className="font-pixel text-meta min-h-[24px] px-2 py-0.5 rounded flex items-center justify-center text-[var(--color-dark)] hover:text-[var(--color-dark)] transition-colors font-bold"
@@ -134,7 +147,7 @@ export const QueuePanel = memo(function QueuePanel({
       {/* Tracks List */}
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1">
         {rightPanelTab === 'queue' ? (
-          effectiveQueue.length === 0 ? (
+          upcomingQueue.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
               <div className="text-title mb-1">🌸</div>
               <div className="text-[var(--color-dark)] font-pixel text-meta font-bold">QUEUE IS EMPTY</div>
@@ -149,22 +162,23 @@ export const QueuePanel = memo(function QueuePanel({
               </button>
             </div>
           ) : (
-            effectiveQueue.map((item, idx: number) => {
-              const isCurrentlyActive = !isLiveQueue && idx === queueIndex;
+            upcomingQueue.map(({ item, storeIndex }, idx: number) => {
+              const isCurrentlyActive = !isLiveQueue && storeIndex === queueIndex;
+              const minUpcomingIndex = !isLiveQueue && queueIndex >= 0 ? queueIndex + 1 : 0;
               return (
                 <div
-                  key={`${item.track?.id || item.track?.uri || 'queue'}-${idx}`}
+                  key={`${item.track?.id || item.track?.uri || 'queue'}-${storeIndex}`}
                   draggable={queue.length > 0}
                   onDragStart={(e) => {
                     if (queue.length === 0) return;
                     isDraggingRef.current = true;
-                    setDraggedQueueIndex(idx);
+                    setDraggedQueueIndex(storeIndex);
                     e.dataTransfer.effectAllowed = 'move';
                   }}
                   onDragOver={(e) => {
                     if (queue.length === 0) return;
                     e.preventDefault();
-                    setDragOverQueueIndex(idx);
+                    setDragOverQueueIndex(storeIndex);
                   }}
                   onDragEnd={() => {
                     setDraggedQueueIndex(null);
@@ -175,8 +189,14 @@ export const QueuePanel = memo(function QueuePanel({
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
-                    if (queue.length > 0 && draggedQueueIndex !== null && draggedQueueIndex !== idx) {
-                      reorderQueue(draggedQueueIndex, idx);
+                    if (
+                      queue.length > 0 &&
+                      draggedQueueIndex !== null &&
+                      draggedQueueIndex !== storeIndex &&
+                      draggedQueueIndex >= minUpcomingIndex &&
+                      storeIndex >= minUpcomingIndex
+                    ) {
+                      reorderQueue(draggedQueueIndex, storeIndex);
                     }
                     setDraggedQueueIndex(null);
                     setDragOverQueueIndex(null);
@@ -189,15 +209,15 @@ export const QueuePanel = memo(function QueuePanel({
                       ? 'bg-[var(--color-light)] border-[var(--color-vibrant)]'
                       : ''
                   } ${
-                    dragOverQueueIndex === idx
-                      ? draggedQueueIndex !== null && draggedQueueIndex < idx
+                    dragOverQueueIndex === storeIndex
+                      ? draggedQueueIndex !== null && draggedQueueIndex < storeIndex
                         ? 'border-b-[var(--color-vibrant)] border-b-2'
                         : 'border-t-[var(--color-vibrant)] border-t-2'
                       : ''
-                  } ${draggedQueueIndex === idx ? 'opacity-50' : 'opacity-100'}`}
+                  } ${draggedQueueIndex === storeIndex ? 'opacity-50' : 'opacity-100'}`}
                   onClick={() => {
                     if (isDraggingRef.current) return;
-                    playQueueItem(idx);
+                    playQueueItem(storeIndex);
                   }}
                 >
                   <span
@@ -234,7 +254,7 @@ export const QueuePanel = memo(function QueuePanel({
                     onClick={(e) => {
                       e.stopPropagation();
                       if (queue.length > 0) {
-                        removeFromQueue(idx);
+                        removeFromQueue(storeIndex);
                       }
                     }}
                     className={`mw-btn mw-row-action text-[var(--color-dark)] hover:text-[var(--color-dark)] w-6 h-6 min-w-[24px] min-h-[24px] rounded shrink-0 flex items-center justify-center ${
