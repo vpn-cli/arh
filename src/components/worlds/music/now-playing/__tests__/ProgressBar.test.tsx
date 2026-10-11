@@ -22,7 +22,7 @@ describe('ProgressBar', () => {
       />
     );
 
-    const thumbImg = container.querySelector('.progress-thumb img');
+    const thumbImg = container.querySelector('.progress-thumb img') as HTMLImageElement | null;
     expect(thumbImg).not.toBeNull();
     expect(thumbImg?.getAttribute('src')).toBe('/stickers/snoopy-v1/r5c2.png');
     expect(thumbImg?.getAttribute('width')).toBe('36');

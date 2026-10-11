@@ -123,4 +123,11 @@ describe('MixSection playback', () => {
       0
     );
   });
+
+  it('renders mix rows in collapsed state without max-h-[360px] clipping', () => {
+    const { container } = renderComponent();
+    const rows = screen.getAllByRole('button', { name: /Play Track/i });
+    expect(rows).toHaveLength(3);
+    expect(container.querySelector('.max-h-\\[360px\\]')).toBeNull();
+  });
 });
