@@ -1,5 +1,6 @@
 import React from 'react';
 import { LikeButton } from './LikeButton';
+import { PlayIcon, ShuffleIcon } from './icons';
 
 interface AlbumActionsProps {
   onPlay: () => void;
@@ -13,13 +14,13 @@ export function AlbumActions({ onPlay, onShuffle, onToggleSave, isSaved, disable
   return (
     <div className="flex items-center gap-3 p-4 shrink-0">
       <button 
+        type="button"
         onClick={onPlay}
         disabled={disabled}
-        className={`flex-1 shrink-0 bg-gradient-to-r from-[var(--color-vibrant)] to-[var(--color-muted)] text-[var(--on-vibrant)] py-3 rounded-xl shadow-[0_4px_12px_rgba(255,105,180,0.4)] transition-all flex flex-col items-center justify-center gap-1 ${disabled ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-95'}`}
+        className="mw-btn-primary flex-1"
       >
-        <span className="font-pixel text-body font-bold tracking-widest">
-          ✨ PLAY ✨
-        </span>
+        <PlayIcon size={16} />
+        <span>Play</span>
       </button>
       
       {onToggleSave && (
@@ -28,19 +29,20 @@ export function AlbumActions({ onPlay, onShuffle, onToggleSave, isSaved, disable
           onToggle={onToggleSave}
           disabled={disabled}
           ariaLabel={isSaved ? "Remove album from Library" : "Save album to Library"}
-          className="px-4 py-3 bg-[var(--color-light)] border-2 border-[var(--color-muted)] rounded-xl"
+          className="h-10 min-h-[40px] px-3.5 bg-white border border-[var(--color-muted)] rounded-full text-[var(--color-dark)] flex items-center justify-center cursor-pointer hover:bg-[var(--color-light)] active:scale-95"
         />
       )}
 
       <button
+        type="button"
         onClick={onShuffle}
         disabled={disabled}
-        className={`px-4 py-3 bg-[var(--color-light)] border-2 border-[var(--color-muted)] rounded-xl text-[var(--color-muted)] hover:bg-[var(--color-light)] transition-all flex items-center justify-center ${disabled ? 'opacity-70 cursor-not-allowed' : 'active:scale-95 hover:scale-[1.02]'}`}
+        className="mw-btn-secondary"
         title="Shuffle Play"
+        aria-label="Shuffle Play"
       >
-        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-          <path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" />
-        </svg>
+        <ShuffleIcon size={16} />
+        <span>Shuffle</span>
       </button>
     </div>
   );

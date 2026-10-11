@@ -2,8 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { useTopTracks, useTopArtists } from '@/hooks/useSpotify';
 import { TrackList } from './TrackList';
 import { MediaRow } from './MediaRow';
+import { PlaylistCover } from './PlaylistCover';
+import { SectionHeader } from './SectionHeader';
+import { SegmentedControl } from './SegmentedControl';
 import { pickImage } from '@/lib/spotify/images';
-import { ChevronLeftIcon } from './icons';
+import { ChevronLeftIcon, PlayIcon } from './icons';
 
 interface VibesSectionProps {
   onPlayTrack: (uri: string, contextUri?: string, trackObj?: any) => void;
@@ -114,7 +117,7 @@ export function VibesSection({
         labels.push(`${decade} MUSIC`);
       }
 
-      // Popularity Vibe (degraded gracefully: popularity removed from track objects in Feb 2026)
+      // Popularity Vibe
       if (typeof track.popularity === 'number') {
         if (track.popularity >= 80) labels.push('MAINSTREAM HITS');
         else if (track.popularity < 40) labels.push('HIDDEN GEMS');
@@ -129,7 +132,6 @@ export function VibesSection({
         if (!entry.tracks.find(t => t.id === track.id)) {
           entry.tracks.push(track);
         }
-        // Extract artists from track
         if (track.artists) {
           track.artists.forEach((a: any) => {
             const fullArtist = topArtists.find((ta: any) => ta.id === a.id) || a;
@@ -145,7 +147,7 @@ export function VibesSection({
       .map(([id, data]) => ({
         id,
         label: id,
-        count: data.count, // count represents track count here roughly
+        count: data.count,
         artists: data.artists,
         tracks: data.tracks
       }))
@@ -184,6 +186,7 @@ export function VibesSection({
       <div className="flex flex-col h-full min-h-0 pb-6">
         <div className="flex items-center justify-between mb-4 shrink-0">
           <button 
+            type="button"
             onClick={() => setSelectedVibeId(null)}
             className="text-meta text-[var(--color-dark)] hover:text-[var(--color-dark)] cursor-pointer font-pixel font-bold tracking-wide flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)] rounded-lg min-h-[24px] px-2 py-1"
           >
@@ -194,18 +197,20 @@ export function VibesSection({
         <div className="flex flex-col items-center justify-center mb-6 shrink-0 bg-gradient-to-r from-[var(--color-light)] to-[var(--color-light)] p-6 rounded-2xl border-2 border-[var(--color-muted)]">
           <h2 className="font-pixel text-heading font-bold text-[var(--color-dark)] mb-1 text-center">{selectedVibe.label}</h2>
           <p className="font-pixel text-caption text-[var(--color-dark)] font-medium">
-            {selectedVibe.artists.length} Top Artists • {selectedVibe.tracks.length} Top Tracks
+            {selectedVibe.artists.length} {selectedVibe.artists.length === 1 ? 'Top Artist' : 'Top Artists'} • {selectedVibe.tracks.length} {selectedVibe.tracks.length === 1 ? 'Top Track' : 'Top Tracks'}
           </p>
           <button 
+            type="button"
             onClick={() => {
               if (selectedVibe.tracks.length > 0) {
                 onPlayTracks(selectedVibe.tracks.map(t => t.uri), selectedVibe.tracks);
               }
             }}
             disabled={selectedVibe.tracks.length === 0}
-            className="mt-4 bg-[var(--color-vibrant)] text-[var(--on-vibrant)] px-6 py-2.5 rounded-full font-pixel text-body font-bold hover:bg-[var(--color-vibrant)] active:scale-95 transition-all shadow-[0_4px_14px_var(--color-vibrant)] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+            className="mt-4 mw-btn-primary"
           >
-            Play Vibe
+            <PlayIcon size={14} />
+            <span>Play Vibe</span>
           </button>
         </div>
 
@@ -269,54 +274,80 @@ export function VibesSection({
 
   return (
     <div className="flex flex-col gap-6 pb-6">
-      <div className="flex bg-[var(--color-light)] p-1 rounded-xl shrink-0 border border-[var(--color-light)]">
-        {[
-          { id: 'short_term', label: 'Short Term (~4 wks)' },
-          { id: 'medium_term', label: 'Medium Term (~6 mos)' },
-          { id: 'long_term', label: 'Long Term (all time)' }
-        ].map((range) => (
-          <button
-            key={range.id}
-            onClick={() => setTimeRange(range.id as TimeRange)}
-            className={`flex-1 font-pixel text-caption py-2 rounded-lg transition-colors font-bold ${
-              timeRange === range.id 
-                ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs' 
-                : 'text-[var(--color-dark)] hover:bg-[var(--color-light)]'
-            }`}
-          >
-            {range.label}
-          </button>
-        ))}
+      <div className="flex items-center justify-between shrink-0">
+        <SegmentedControl
+          value={timeRange}
+          onChange={(val) => setTimeRange(val as TimeRange)}
+          ariaLabel="Vibes time range"
+        />
       </div>
 
-      <section>
-        <h2 className="font-pixel text-caption font-bold text-[var(--color-dark)] tracking-wider uppercase mb-1 px-1">Your Top Vibes</h2>
-        <p className="font-pixel text-caption text-[var(--color-dark)] font-medium mb-4 px-1 leading-relaxed">
-          Based on your top artists&apos; genres in the selected time range.
-        </p>
+      <section className="flex flex-col">
+        <SectionHeader
+          title="Your top vibes"
+          sticker="r2c3"
+          subtitle="Based on your top artists' genres in the selected time range."
+        />
 
         {isTopArtistsError ? renderError(topArtistsError, 'DATA') :
          isTopTracksError ? renderError(topTracksError, 'DATA') :
          (isTopArtistsLoading || isTopTracksLoading) ? renderLoading('vibes') :
          vibeCategories.length > 0 ? (
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-             {vibeCategories.map(vibe => (
-               <button
-                 key={vibe.id}
-                 onClick={() => setSelectedVibeId(vibe.id)}
-                 className="flex flex-col items-start p-4 bg-[var(--color-bg)] border-2 border-[var(--color-light)] hover:border-[var(--color-muted)] hover:shadow-sm rounded-xl transition-all text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
-               >
-                 <span className="font-pixel text-body font-bold text-[var(--color-dark)] mb-1 group-hover:text-[var(--color-dark)] transition-colors">{vibe.label}</span>
-                 <span className="font-pixel text-caption text-[var(--color-dark)] font-medium">
-                   {vibe.artists.length} artists
-                 </span>
-                 {vibe.tracks.length > 0 && (
-                   <span className="font-pixel text-caption text-[var(--color-dark)] font-medium">
-                     {vibe.tracks.length} tracks
+             {vibeCategories.map((vibe) => {
+               const artistCount = vibe.artists.length;
+               const trackCount = vibe.tracks.length;
+               const artistText = `${artistCount} ${artistCount === 1 ? 'artist' : 'artists'}`;
+               const trackText = `${trackCount} ${trackCount === 1 ? 'track' : 'tracks'}`;
+               const countLabel = `${artistText} · ${trackText}`;
+
+               return (
+                 <div
+                   key={vibe.id}
+                   onClick={() => setSelectedVibeId(vibe.id)}
+                   className="mw-card p-4 flex flex-col items-start text-left cursor-pointer select-none group"
+                   style={{
+                     backgroundColor: 'color-mix(in srgb, var(--color-vibrant) 8%, #ffffff)',
+                   }}
+                   role="button"
+                   tabIndex={0}
+                   onKeyDown={(e) => {
+                     if (e.key === 'Enter' || e.key === ' ') {
+                       e.preventDefault();
+                       setSelectedVibeId(vibe.id);
+                     }
+                   }}
+                   aria-label={`Open vibe ${vibe.label}`}
+                 >
+                   <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-3 bg-[var(--color-light)]">
+                     <PlaylistCover
+                       images={vibe.tracks.map((t: any) => t.album?.images?.[0]?.url || t.album?.images?.[0]).filter(Boolean)}
+                       size={200}
+                       className="w-full h-full object-cover"
+                     />
+                     {vibe.tracks.length > 0 && (
+                       <button
+                         type="button"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           onPlayTracks(vibe.tracks.map((t: any) => t.uri), vibe.tracks);
+                         }}
+                         className="mw-card-play"
+                         aria-label={`Play ${vibe.label} vibe`}
+                       >
+                         <PlayIcon size={18} className="text-white ml-0.5" />
+                       </button>
+                     )}
+                   </div>
+                   <span className="font-pixel text-body font-bold text-[var(--color-dark)] mb-1 mw-card-title truncate w-full">
+                     {vibe.label}
                    </span>
-                 )}
-               </button>
-             ))}
+                   <span className="font-pixel text-caption text-[var(--color-dark)] font-medium opacity-80">
+                     {countLabel}
+                   </span>
+                 </div>
+               );
+             })}
            </div>
          ) : (
            <div className="text-[var(--color-dark)] font-pixel text-caption font-medium px-1">No vibes found. Listen to more music!</div>

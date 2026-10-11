@@ -8,6 +8,7 @@ import { useLikedTracks } from "@/hooks/useLikedTracks";
 import { PlayIcon, ChevronRightIcon, MusicNoteIcon } from "../icons";
 import { HeroSlideshow } from "./HeroSlideshow";
 import { StickerIcon } from "../StickerIcon";
+import { SectionHeader } from "../SectionHeader";
 
 export interface HomeTabProps {
   token?: string | null;
@@ -87,20 +88,22 @@ export const HomeTab = React.memo(function HomeTab({
       />
 
       <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] flex items-center gap-2">
-            <StickerIcon name="continueListening" size={48} className="inline-block object-contain shrink-0" /> Continue Listening
-          </h3>
-          <button onClick={() => onNavigate('playlists')} className="mw-btn font-pixel text-meta sm:text-body font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
-            See all <ChevronRightIcon size={14} />
-          </button>
-        </div>
+        <SectionHeader
+          title="Continue Listening"
+          sticker="continueListening"
+          stickerSize={48}
+          actions={
+            <button onClick={() => onNavigate('playlists')} className="mw-btn font-pixel text-meta sm:text-body font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
+              See all <ChevronRightIcon size={14} />
+            </button>
+          }
+        />
         <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
           {homePlaylists.map((playlist: any, idx: number) => (
             <button
               key={`${playlist.id || 'playlist'}-${idx}`}
               onClick={() => onOpenPlaylist(playlist.id)}
-              className="w-[160px] sm:w-[180px] shrink-0 group overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-bg)]/95 text-left mw-card"
+              className="w-[160px] sm:w-[180px] shrink-0 group overflow-hidden rounded-2xl bg-[var(--color-bg)]/95 text-left mw-card"
             >
               {playlist.images && playlist.images.length >= 4 ? (
                 <div className="relative aspect-[4/3] w-full overflow-hidden grid grid-cols-2 grid-rows-2 bg-[var(--color-light)]">
@@ -136,14 +139,16 @@ export const HomeTab = React.memo(function HomeTab({
       </section>
 
       <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] flex items-center gap-2">
-            <StickerIcon name="recentlyPlayed" size={48} className="inline-block object-contain shrink-0" /> Recently Played
-          </h3>
-          <button onClick={() => onNavigate('recent')} className="mw-btn font-pixel text-meta sm:text-body font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
-            See all <ChevronRightIcon size={14} />
-          </button>
-        </div>
+        <SectionHeader
+          title="Recently Played"
+          sticker="recentlyPlayed"
+          stickerSize={48}
+          actions={
+            <button onClick={() => onNavigate('recent')} className="mw-btn font-pixel text-meta sm:text-body font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
+              See all <ChevronRightIcon size={14} />
+            </button>
+          }
+        />
         {recentHomeTracks.length === 0 && likedHomeTracks.length === 0 ? (
           <div className="p-8 text-center rounded-2xl border-2 border-dashed border-[var(--color-muted)] bg-[var(--color-light)]/50">
             <p className="font-pixel text-body text-[var(--color-dark)] font-bold text-[var(--color-text-muted)]">Nothing here yet! Start playing some tunes ~</p>
@@ -154,7 +159,7 @@ export const HomeTab = React.memo(function HomeTab({
               <button
                 key={`${track.id || track.uri || 'track'}-${idx}`}
                 onClick={() => playTrack(track.uri)}
-                className="group flex items-center gap-3.5 overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-bg)]/95 text-left p-3 shadow-2xs hover:border-[var(--color-dark)]/40 hover:shadow-md transition-[border-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] h-full"
+                className="mw-card group flex items-center gap-3.5 overflow-hidden rounded-2xl bg-[var(--color-bg)]/95 text-left p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] h-full"
               >
                 <div className="relative w-14 h-14 shrink-0 rounded-xl overflow-hidden shadow-xs bg-[var(--color-light)]">
                   {track.album?.images?.[0]?.url ? (

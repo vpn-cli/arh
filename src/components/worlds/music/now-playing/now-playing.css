@@ -126,12 +126,12 @@
   animation-play-state: paused;
 }
 
-/* Sleeve Track Change (~450ms total) */
+/* Sleeve Track Change (~750ms total: slide-in and slide-out) */
 .vinyl-sleeve-jacket {
   transform: translateX(-24px);
   opacity: 0;
-  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
-              opacity 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform var(--vinyl-slide-in-duration, 375ms) cubic-bezier(0.2, 0.8, 0.2, 1),
+              opacity var(--vinyl-slide-in-duration, 375ms) cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .vinyl-sleeve-jacket-active {
@@ -141,12 +141,54 @@
 
 .vinyl-slide-into-sleeve {
   transform: translateX(-62%);
-  transition: transform 220ms cubic-bezier(0.4, 0, 0.6, 1);
+  transition: transform var(--vinyl-slide-in-duration, 375ms) cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .vinyl-slide-to-center {
   transform: translateX(0);
-  transition: transform 225ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform var(--vinyl-slide-out-duration, 375ms) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Track Change Sticker Peek (pops up behind sleeve top and ducks back) */
+@keyframes vinyl-sleeve-peek {
+  0% {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  25% {
+    transform: translateY(24px);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-34px);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-34px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+.vinyl-sleeve-sticker {
+  animation: vinyl-sleeve-peek var(--vinyl-track-change-duration, 750ms) cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* Gentle Bob for Loading Sticker */
+@keyframes mw-sticker-gentle-bob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.mw-sticker-bob {
+  animation: mw-sticker-gentle-bob 2s ease-in-out infinite;
 }
 
 /* Like Reaction: Sticker r2c1 hops onto the record, rides one turn and fades */
@@ -164,11 +206,11 @@
     transform: translate(60px, 80px) scale(0.3);
     opacity: 0;
   }
-  15% {
+  10% {
     transform: translate(38px, -38px) scale(1);
     opacity: 1;
   }
-  85% {
+  87.5% {
     transform: translate(38px, -38px) scale(1);
     opacity: 1;
   }
@@ -187,17 +229,19 @@
   transform-origin: 0 0;
   pointer-events: none;
   z-index: 30;
-  animation: vinyl-orbit-rotate 1800ms linear forwards;
+  animation: vinyl-orbit-rotate var(--vinyl-reaction-duration, 4000ms) linear forwards;
 }
 
 .vinyl-sticker-hop {
-  animation: vinyl-hop-fade 1800ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: vinyl-hop-fade var(--vinyl-reaction-duration, 4000ms) cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 /* Paused when document / tab is hidden */
 .tab-hidden .vinyl-spin-running,
 .tab-hidden .vinyl-orbit-rotator,
-.tab-hidden .vinyl-sticker-hop {
+.tab-hidden .vinyl-sticker-hop,
+.tab-hidden .vinyl-sleeve-sticker,
+.tab-hidden .mw-sticker-bob {
   animation-play-state: paused !important;
 }
 
@@ -214,12 +258,19 @@
   .vinyl-sleeve-jacket {
     display: none !important;
   }
+  .vinyl-sleeve-sticker {
+    display: none !important;
+    animation: none !important;
+  }
   .vinyl-orbit-rotator {
     display: none !important;
     animation: none !important;
   }
   .vinyl-sticker-hop {
     display: none !important;
+    animation: none !important;
+  }
+  .mw-sticker-bob {
     animation: none !important;
   }
 }

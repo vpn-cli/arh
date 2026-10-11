@@ -17,6 +17,7 @@ import {
   ChevronRightIcon,
 } from './icons';
 import { StickerIcon } from './StickerIcon';
+import { MomentSticker } from './MomentSticker';
 
 interface QueueModalProps {
   isOpen: boolean;
@@ -319,17 +320,31 @@ export function QueueModal({
               {/* Up Next List */}
               {isPlayerQueueLoading && effectiveQueue.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-12 h-12 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-title mb-2 animate-bounce">
-                    🎵
-                  </div>
+                  <MomentSticker
+                    moment="loading"
+                    size={64}
+                    className="mb-2"
+                    fallback={
+                      <div className="w-12 h-12 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-title mb-2 animate-bounce">
+                        🎵
+                      </div>
+                    }
+                  />
                   <h3 className="font-pixel text-body font-bold text-[var(--color-dark)]">Loading Upcoming Tracks...</h3>
                   <p className="font-pixel text-meta text-[var(--color-dark)] max-w-sm mt-1">Fetching live queue from Spotify</p>
                 </div>
               ) : upcomingQueue.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-16 h-16 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-heading mb-2 shadow-inner">
-                    🌸
-                  </div>
+                  <MomentSticker
+                    moment="queueEmpty"
+                    size={64}
+                    className="mb-2"
+                    fallback={
+                      <div className="w-16 h-16 rounded-full bg-[var(--color-light)] border-2 border-[var(--color-muted)] flex items-center justify-center text-heading mb-2 shadow-inner">
+                        🌸
+                      </div>
+                    }
+                  />
                   <h3 className="font-pixel text-body font-bold text-[var(--color-dark)]">Queue is Empty</h3>
                   <p className="font-pixel text-caption text-[var(--color-dark)] max-w-sm mt-1">
                     Play a playlist, album, mix, or click the options menu on any track to add it to your queue!

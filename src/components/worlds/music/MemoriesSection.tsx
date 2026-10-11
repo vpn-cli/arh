@@ -2,10 +2,10 @@ import React, { useMemo } from 'react';
 import { useMemoriesStore } from '@/store/useMemoriesStore';
 import { useQueries } from '@tanstack/react-query';
 import { proxyFetch } from '@/lib/spotifyClient';
-import { TrackRow } from './TrackRow';
-import { ArtistCard } from './ArtistCard';
-import { PlaylistCard } from './PlaylistCard';
-import { WarningIcon, CloseIcon } from './icons';
+import { SectionHeader } from './SectionHeader';
+import { StickerIcon } from './StickerIcon';
+import { StickerSlot } from './stickerConfig';
+import { PlayIcon, WarningIcon, CloseIcon } from './icons';
 
 interface MemoriesSectionProps {
   onPlayTrack: (uri: string) => void;
@@ -16,6 +16,8 @@ interface MemoriesSectionProps {
   onClickPlaylist: (id: string) => void;
   onEditMemory: (entity: any | null, type: 'track' | 'artist' | 'playlist', memoryId?: string) => void;
 }
+
+const STICKER_CYCLE: StickerSlot[] = ['r3c4', 'r2c2', 'r1c3', 'r5c3'];
 
 export function MemoriesSection({
   onPlayTrack,
@@ -94,30 +96,49 @@ export function MemoriesSection({
 
   const isLoading = tracksLoading || artistsLoading || playlistsLoading;
 
+  // Map to entity
+  const entityMap = useMemo(() => {
+    const map = new Map<string, any>();
+    tracksData?.forEach((t: any) => t && map.set(t.uri, t));
+    artistsData?.forEach((a: any) => a && map.set(a.uri, a));
+    playlistsData?.forEach((p: any) => p && map.set(p.uri, p));
+    return map;
+  }, [tracksData, artistsData, playlistsData]);
+
   if (memories.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full opacity-80 min-h-[200px]">
-        <div className="text-display mb-4">📓</div>
-        <div className="text-[var(--color-dark)] font-pixel text-caption font-bold text-center">NO MEMORIES YET</div>
-        <div className="text-[var(--color-dark)] font-pixel text-caption mt-2 text-center max-w-[240px] font-medium">
-          Save a song, artist, or playlist here when it means something special to you.
+      <div className="flex flex-col h-full overflow-y-auto min-h-0 pb-10">
+        <SectionHeader
+          title="My memories"
+          sticker="r3c4"
+          actions={
+            <span className="font-pixel text-caption font-bold text-[var(--color-dark)] px-2.5 py-1 bg-white border border-[var(--color-muted)] rounded-full">
+              0 SAVED
+            </span>
+          }
+        />
+        <div className="flex flex-col items-center justify-center flex-1 opacity-80 min-h-[200px]">
+          <div className="text-display mb-4">📓</div>
+          <div className="text-[var(--color-dark)] font-pixel text-caption font-bold text-center">NO MEMORIES YET</div>
+          <div className="text-[var(--color-dark)] font-pixel text-caption mt-2 text-center max-w-[240px] font-medium">
+            Save a song, artist, or playlist here when it means something special to you.
+          </div>
         </div>
       </div>
     );
   }
 
-  // Map to entity
-  const entityMap = new Map<string, any>();
-  tracksData?.forEach((t: any) => t && entityMap.set(t.uri, t));
-  artistsData?.forEach((a: any) => a && entityMap.set(a.uri, a));
-  playlistsData?.forEach((p: any) => p && entityMap.set(p.uri, p));
-
   return (
     <div className="flex flex-col h-full overflow-y-auto min-h-0 pb-10">
-      <div className="flex items-center justify-between mb-4 shrink-0">
-        <span className="font-pixel text-caption font-bold uppercase tracking-wider text-[var(--color-dark)]">MY MEMORIES</span>
-        <span className="text-caption text-[var(--color-dark)] font-pixel font-bold">{memories.length} SAVED</span>
-      </div>
+      <SectionHeader
+        title="My memories"
+        sticker="r3c4"
+        actions={
+          <span className="font-pixel text-caption font-bold text-[var(--color-dark)] px-2.5 py-1 bg-white border border-[var(--color-muted)] rounded-full">
+            {memories.length} {memories.length === 1 ? 'SAVED' : 'SAVED'}
+          </span>
+        }
+      />
 
       {error && (
         <div className="bg-[var(--color-light)] border border-[var(--color-vibrant)] text-[var(--color-vibrant)] p-2.5 rounded-xl font-pixel text-caption flex items-center justify-between font-bold mb-3 shrink-0 shadow-2xs">
@@ -137,71 +158,141 @@ export function MemoriesSection({
         </div>
       )}
 
-      <div className="flex flex-col gap-4">
-        {memories.map((memory) => {
+      {/* Scrapbook Grid: one column when narrow, two when wide */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-3">
+        {memories.map((memory, idx) => {
           const entity = entityMap.get(memory.spotifyUri);
           const isFailed = !isLoading && !entity;
+          const cornerSticker = STICKER_CYCLE[idx % STICKER_CYCLE.length];
+          const tiltDeg = idx % 2 === 0 ? '-1.2deg' : '1.2deg';
+
+          const coverImage =
+            entity?.album?.images?.[0]?.url ||
+            entity?.images?.[0]?.url ||
+            (typeof entity?.album?.images?.[0] === 'string' ? entity.album.images[0] : null) ||
+            (typeof entity?.images?.[0] === 'string' ? entity.images[0] : null) ||
+            null;
+
+          const artistOrSubtitle =
+            entity?.artists?.map((a: any) => a.name).join(', ') ||
+            (memory.entityType === 'artist' ? 'Artist' : memory.entityType === 'playlist' ? 'Playlist' : '');
 
           return (
-            <div key={memory.id} className="flex flex-col bg-[var(--color-light)] border-2 border-[var(--color-muted)] rounded-2xl overflow-hidden hover:border-[var(--color-muted)] transition-colors group shadow-xs">
-              {/* Note Section */}
-              <div className="p-3 bg-white/70 border-b-2 border-[var(--color-light)]">
-                <div className="flex justify-between items-start mb-1">
-                  <div className="flex gap-2 items-center flex-wrap">
-                    {memory.category && (
-                      <span className="bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-caption px-2.5 py-0.5 rounded-full font-bold uppercase">
-                        {memory.category}
-                      </span>
-                    )}
-                    {memory.dateLabel && (
-                      <span className="text-[var(--color-dark)] font-pixel text-caption font-semibold uppercase">
-                        {memory.dateLabel}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => onEditMemory(entity || null, memory.entityType, memory.id)} className="text-meta font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel min-h-[24px] px-2 py-0.5 rounded hover:bg-white/80 transition-colors inline-flex items-center justify-center">EDIT</button>
-                    <button onClick={() => deleteMemory(memory.id)} className="text-meta font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] font-pixel min-h-[24px] px-2 py-0.5 rounded hover:bg-white/80 transition-colors inline-flex items-center justify-center">DELETE</button>
-                  </div>
+            <div
+              key={memory.id}
+              className="mw-card mw-memory-card relative bg-[#fffdfa] rounded-2xl p-4 flex flex-col justify-between select-none"
+              style={{
+                '--memory-tilt': tiltDeg,
+              } as React.CSSProperties}
+            >
+              {/* Strip of decorative tape at the top centre */}
+              <div
+                className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-14 h-4 bg-white/80 border border-[var(--color-muted)]/40 shadow-2xs rotate-[-1deg] pointer-events-none rounded-xs z-10"
+                aria-hidden="true"
+              />
+
+              {/* 40px corner sticker cycling through ['r3c4', 'r2c2', 'r1c3', 'r5c3'] */}
+              <div className="absolute -top-2 -right-2 z-10 pointer-events-none drop-shadow-xs">
+                <StickerIcon name={cornerSticker} size={40} />
+              </div>
+
+              {/* Header: Chips & Actions */}
+              <div className="flex justify-between items-start gap-2 mb-2 pr-6">
+                <div className="flex gap-2 items-center flex-wrap">
+                  {memory.category && (
+                    <span className="bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-caption px-2.5 py-0.5 rounded-full font-bold uppercase">
+                      {memory.category}
+                    </span>
+                  )}
+                  {memory.dateLabel && (
+                    <span className="text-[var(--color-dark)] font-pixel text-caption font-semibold uppercase">
+                      {memory.dateLabel}
+                    </span>
+                  )}
                 </div>
-                <p className="font-pixel text-caption sm:text-body text-[var(--color-dark)] leading-relaxed whitespace-pre-wrap mt-2 font-medium">
-                  "{memory.note}"
-                </p>
-                <div className="text-[var(--color-dark)] font-pixel text-caption mt-2 text-right font-medium">
-                  {new Date(memory.createdAt).toLocaleDateString()}
+
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    onClick={() => onEditMemory(entity || null, memory.entityType, memory.id)}
+                    className="text-meta font-bold text-[var(--color-dark)] font-pixel min-h-[24px] px-2 py-0.5 rounded hover:bg-[var(--color-light)] transition-colors inline-flex items-center justify-center cursor-pointer"
+                  >
+                    EDIT
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteMemory(memory.id)}
+                    className="text-meta font-bold text-[var(--color-dark)] font-pixel min-h-[24px] px-2 py-0.5 rounded hover:bg-[var(--color-light)] transition-colors inline-flex items-center justify-center cursor-pointer"
+                  >
+                    DELETE
+                  </button>
                 </div>
               </div>
 
-              {/* Entity Section */}
-              <div className="p-1">
+              {/* Note text large, in quotes */}
+              <blockquote className="font-pixel text-title font-bold text-[var(--color-dark)] leading-snug my-2 select-text">
+                &ldquo;{memory.note}&rdquo;
+              </blockquote>
+
+              {/* Song as a mini polaroid */}
+              <div className="mt-3">
                 {isFailed ? (
-                  <div className="p-2 text-center text-[var(--color-dark)] font-pixel text-caption font-medium">
+                  <div className="p-2 text-center text-[var(--color-dark)] font-pixel text-caption font-medium border border-[var(--color-muted)]/30 rounded-xl bg-white/50">
                     SPOTIFY ENTITY UNAVAILABLE
                   </div>
                 ) : entity ? (
-                  memory.entityType === 'track' ? (
-                    <TrackRow
-                      track={entity}
-                      onPlay={() => onPlayTrack(entity.uri)}
-                      onAddToQueue={onAddToQueue}
-                      onAddToPlaylist={onAddToPlaylist}
-                    />
-                  ) : memory.entityType === 'artist' ? (
-                    <ArtistCard
-                      artist={entity}
-                      onClick={onClickArtist}
-                      variant="compact"
-                    />
-                  ) : memory.entityType === 'playlist' ? (
-                    <PlaylistCard
-                      playlist={entity}
-                      onClick={() => onClickPlaylist(entity.id)}
-                      variant="compact"
-                    />
-                  ) : null
+                  <div
+                    onClick={() => {
+                      if (memory.entityType === 'track') onPlayTrack(entity.uri);
+                      else if (memory.entityType === 'artist') onClickArtist(entity.id);
+                      else if (memory.entityType === 'playlist') onClickPlaylist(entity.id);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (memory.entityType === 'track') onPlayTrack(entity.uri);
+                        else if (memory.entityType === 'artist') onClickArtist(entity.id);
+                        else if (memory.entityType === 'playlist') onClickPlaylist(entity.id);
+                      }
+                    }}
+                    aria-label={`Play ${entity.name || 'item'}`}
+                    className="group/polaroid flex items-center gap-3 p-2 bg-white rounded-xl border border-[var(--color-muted)] shadow-2xs hover:bg-[var(--color-light)]/50 cursor-pointer transition-colors"
+                  >
+                    {/* 56px cover with white border */}
+                    <div className="w-14 h-14 min-w-[56px] min-h-[56px] rounded-lg overflow-hidden border-2 border-white shadow-2xs shrink-0 bg-[var(--color-muted)]/20 relative">
+                      {coverImage ? (
+                        <img src={coverImage} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[var(--color-dark)] font-bold text-caption">
+                          ♪
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/polaroid:opacity-100 flex items-center justify-center transition-opacity">
+                        <PlayIcon size={18} className="text-white ml-0.5" />
+                      </div>
+                    </div>
+
+                    <div className="flex-1 min-w-0 pr-1">
+                      <div className="font-pixel text-body font-bold text-[var(--color-dark)] truncate">
+                        {entity.name}
+                      </div>
+                      {artistOrSubtitle && (
+                        <div className="font-pixel text-caption text-[var(--color-text-muted)] truncate mt-0.5">
+                          {artistOrSubtitle}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 ) : (
-                  <div className="h-10 animate-pulse bg-[var(--color-light)] rounded-xl mx-2 my-1" />
+                  <div className="h-14 animate-pulse bg-[var(--color-light)] rounded-xl border border-[var(--color-muted)]/30" />
                 )}
+              </div>
+
+              {/* Date as small stamp at bottom right */}
+              <div className="text-[var(--color-dark)] font-pixel text-caption font-semibold self-end opacity-75 mt-3 px-2 py-0.5 border border-dashed border-[var(--color-muted)] rounded bg-white/60">
+                {new Date(memory.createdAt).toLocaleDateString()}
               </div>
             </div>
           );

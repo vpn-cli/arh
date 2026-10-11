@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { VinylRecord } from '../VinylRecord';
+import { VinylRecord, LIKE_REACTION_DURATION_MS } from '../VinylRecord';
 import { useMemoriesStore } from '@/store/useMemoriesStore';
 
 vi.mock('@/lib/memoriesClient', () => ({
@@ -182,7 +182,21 @@ describe('VinylRecord interactions', () => {
   });
 
   describe('2. Sleeve on track change', () => {
-    it('slides old record into sleeve and new one out over about 450ms', () => {
+    const mockTrack4 = {
+      id: 'track4',
+      uri: 'spotify:track:track4',
+      name: 'Song Four',
+      album: { images: [{ url: 'https://example.com/cover4.jpg' }] },
+    };
+
+    const mockTrack5 = {
+      id: 'track5',
+      uri: 'spotify:track:track5',
+      name: 'Song Five',
+      album: { images: [{ url: 'https://example.com/cover5.jpg' }] },
+    };
+
+    it('slides old record into sleeve and new one out over about 750ms', () => {
       const { rerender } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} />);
 
       // Initial cover image
@@ -194,26 +208,78 @@ describe('VinylRecord interactions', () => {
         rerender(<VinylRecord currentTrack={mockTrack2} isPaused={false} />);
       });
 
-      // Still showing old track during slide-in (~220ms)
+      // Still showing old track during slide-in (~375ms)
       expect(img.src).toContain('cover1.jpg');
+
+      // Sticker pops up behind sleeve (56px, max-w-none)
+      const sleeveSticker = document.querySelector('img[src="/stickers/snoopy-v1/r2c3.png"]') as HTMLImageElement;
+      expect(sleeveSticker).not.toBeNull();
+      expect(sleeveSticker.classList.contains('max-w-none')).toBe(true);
+      expect(sleeveSticker.getAttribute('width')).toBe('56');
+      expect(sleeveSticker.getAttribute('height')).toBe('56');
 
       // Advance past slide-in
       act(() => {
-        vi.advanceTimersByTime(225);
+        vi.advanceTimersByTime(380);
       });
 
       // Swapped to new track during slide-out
       expect(img.src).toContain('cover2.jpg');
 
-      // Advance to full 450ms
+      // Advance to full 750ms
       act(() => {
-        vi.advanceTimersByTime(230);
+        vi.advanceTimersByTime(380);
       });
 
       expect(img.src).toContain('cover2.jpg');
+      // Sticker disappears when idle
+      expect(document.querySelector('img[src="/stickers/snoopy-v1/r2c3.png"]')).toBeNull();
     });
 
-    it('jumps straight to final state if another track change arrives mid-animation', () => {
+    it('(a) new, old, new within 100ms plays one full transition', () => {
+      const { rerender } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} />);
+      const img = screen.getByAltText('Album Cover') as HTMLImageElement;
+
+      // t=0ms: change to new track2 (starts transition)
+      act(() => {
+        rerender(<VinylRecord currentTrack={mockTrack2} isPaused={false} />);
+      });
+      expect(img.src).toContain('cover1.jpg');
+      expect(document.querySelector('.vinyl-slide-into-sleeve')).not.toBeNull();
+
+      // t=40ms: brief revert to old track1 arrives
+      act(() => {
+        vi.advanceTimersByTime(40);
+        rerender(<VinylRecord currentTrack={mockTrack1} isPaused={false} />);
+      });
+      // Should NOT cancel the animation
+      expect(document.querySelector('.vinyl-slide-into-sleeve')).not.toBeNull();
+
+      // t=90ms: new track2 arrives again
+      act(() => {
+        vi.advanceTimersByTime(50);
+        rerender(<VinylRecord currentTrack={mockTrack2} isPaused={false} />);
+      });
+      // Still in slide-in
+      expect(img.src).toContain('cover1.jpg');
+
+      // Advance to 375ms (slide-in finishes, swaps to track2, slide-out starts)
+      act(() => {
+        vi.advanceTimersByTime(290);
+      });
+      expect(img.src).toContain('cover2.jpg');
+      expect(document.querySelector('.vinyl-slide-to-center')).not.toBeNull();
+
+      // Advance remaining slide-out (375ms)
+      act(() => {
+        vi.advanceTimersByTime(380);
+      });
+      expect(img.src).toContain('cover2.jpg');
+      expect(document.querySelector('.vinyl-slide-into-sleeve')).toBeNull();
+      expect(document.querySelector('.vinyl-slide-to-center')).toBeNull();
+    });
+
+    it('(b) a third different track mid-transition jumps to the final state', () => {
       const { rerender } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} />);
       const img = screen.getByAltText('Album Cover') as HTMLImageElement;
 
@@ -221,20 +287,72 @@ describe('VinylRecord interactions', () => {
       act(() => {
         rerender(<VinylRecord currentTrack={mockTrack2} isPaused={false} />);
       });
+      expect(document.querySelector('.vinyl-slide-into-sleeve')).not.toBeNull();
 
-      // Mid-animation at 100ms: user quickly switches to track3
+      // Mid-animation at 100ms: user quickly switches to genuinely different track3
       act(() => {
         vi.advanceTimersByTime(100);
         rerender(<VinylRecord currentTrack={mockTrack3} isPaused={false} />);
       });
 
-      // Must jump straight to final state with track3 without delay
+      // Must jump straight to final state with track3 without delay and idle phase
       expect(img.src).toContain('cover3.jpg');
+      expect(document.querySelector('.vinyl-slide-into-sleeve')).toBeNull();
+      expect(document.querySelector('.vinyl-slide-to-center')).toBeNull();
+    });
+
+    it('(c) the sticker cycles through the list in order', () => {
+      const { rerender } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} />);
+
+      // Change 1: track1 -> track2 (index 0: r2c3)
+      act(() => {
+        rerender(<VinylRecord currentTrack={mockTrack2} isPaused={false} />);
+      });
+      expect(document.querySelector('img[src="/stickers/snoopy-v1/r2c3.png"]')).not.toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(760);
+      });
+
+      // Change 2: track2 -> track3 (index 1: r2c4)
+      act(() => {
+        rerender(<VinylRecord currentTrack={mockTrack3} isPaused={false} />);
+      });
+      expect(document.querySelector('img[src="/stickers/snoopy-v1/r2c4.png"]')).not.toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(760);
+      });
+
+      // Change 3: track3 -> mockTrack4 (index 2: r3c1)
+      act(() => {
+        rerender(<VinylRecord currentTrack={mockTrack4} isPaused={false} />);
+      });
+      expect(document.querySelector('img[src="/stickers/snoopy-v1/r3c1.png"]')).not.toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(760);
+      });
+
+      // Change 4: mockTrack4 -> mockTrack5 (index 3: r5c2)
+      act(() => {
+        rerender(<VinylRecord currentTrack={mockTrack5} isPaused={false} />);
+      });
+      expect(document.querySelector('img[src="/stickers/snoopy-v1/r5c2.png"]')).not.toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(760);
+      });
+
+      // Change 5: mockTrack5 -> mockTrack1 (wraps to index 0: r2c3)
+      act(() => {
+        rerender(<VinylRecord currentTrack={mockTrack1} isPaused={false} />);
+      });
+      expect(document.querySelector('img[src="/stickers/snoopy-v1/r2c3.png"]')).not.toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(760);
+      });
     });
   });
 
   describe('3. Like reaction', () => {
-    it('renders sticker r2c1 when likeTrigger fires and fades after one turn', () => {
+    it('renders sticker r2c1 when likeTrigger fires and fades after one turn (4 seconds)', () => {
       const { rerender } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} likeTrigger={0} />);
       expect(screen.queryByAltText('')).toBeNull();
 
@@ -246,16 +364,22 @@ describe('VinylRecord interactions', () => {
       const stickerImg = document.querySelector('img[src="/stickers/snoopy-v1/r2c1.png"]');
       expect(stickerImg).not.toBeNull();
 
-      // After 1800ms ride and fade completes
+      // Still running at halfway (2000ms)
       act(() => {
-        vi.advanceTimersByTime(1850);
+        vi.advanceTimersByTime(2000);
+      });
+      expect(document.querySelector('img[src="/stickers/snoopy-v1/r2c1.png"]')).not.toBeNull();
+
+      // After 4000ms duration completes
+      act(() => {
+        vi.advanceTimersByTime(LIKE_REACTION_DURATION_MS - 2000 + 50);
       });
 
       const finishedSticker = document.querySelector('img[src="/stickers/snoopy-v1/r2c1.png"]');
       expect(finishedSticker).toBeNull();
     });
 
-    it('renders sticker image in DOM and unconstrained by zero-width parent with max-w-none at 40px', () => {
+    it('renders sticker image in DOM at 72px, centered on orbit point, with max-w-none', () => {
       const { rerender } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} likeTrigger={0} />);
 
       act(() => {
@@ -266,13 +390,66 @@ describe('VinylRecord interactions', () => {
       expect(stickerImg).not.toBeNull();
       // Ensure the image inside the 0-width rotator box is not constrained to 0 width by Tailwind img { max-width: 100% }
       expect(stickerImg.classList.contains('max-w-none')).toBe(true);
-      expect(stickerImg.classList.contains('w-10')).toBe(true);
-      expect(stickerImg.getAttribute('width')).toBe('40');
-      expect(stickerImg.getAttribute('height')).toBe('40');
+      expect(stickerImg.classList.contains('w-[72px]')).toBe(true);
+      expect(stickerImg.classList.contains('h-[72px]')).toBe(true);
+      expect(stickerImg.classList.contains('-translate-x-1/2')).toBe(true);
+      expect(stickerImg.classList.contains('-translate-y-1/2')).toBe(true);
+      expect(stickerImg.getAttribute('width')).toBe('72');
+      expect(stickerImg.getAttribute('height')).toBe('72');
 
       act(() => {
-        vi.advanceTimersByTime(1850);
+        vi.advanceTimersByTime(LIKE_REACTION_DURATION_MS + 50);
       });
+    });
+
+    it('passes custom property for duration to CSS', () => {
+      const { rerender } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} likeTrigger={0} />);
+
+      act(() => {
+        rerender(<VinylRecord currentTrack={mockTrack1} isPaused={false} likeTrigger={1} />);
+      });
+
+      const rotator = document.querySelector('.vinyl-orbit-rotator') as HTMLElement;
+      expect(rotator).not.toBeNull();
+      expect(rotator.style.getPropertyValue('--vinyl-reaction-duration')).toBe(`${LIKE_REACTION_DURATION_MS}ms`);
+
+      act(() => {
+        vi.advanceTimersByTime(LIKE_REACTION_DURATION_MS + 50);
+      });
+    });
+
+    it('restarts cleanly from the beginning if a second star arrives while reaction is running', () => {
+      const { rerender } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} likeTrigger={0} />);
+
+      act(() => {
+        rerender(<VinylRecord currentTrack={mockTrack1} isPaused={false} likeTrigger={1} />);
+      });
+
+      expect(document.querySelector('img[src="/stickers/snoopy-v1/r2c1.png"]')).not.toBeNull();
+
+      // Advance halfway through (2000ms)
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
+      expect(document.querySelector('img[src="/stickers/snoopy-v1/r2c1.png"]')).not.toBeNull();
+
+      // Second star arrives while reaction is running
+      act(() => {
+        rerender(<VinylRecord currentTrack={mockTrack1} isPaused={false} likeTrigger={2} />);
+      });
+
+      // Advance by another 2500ms (total 4500ms since star 1, but only 2500ms since star 2)
+      act(() => {
+        vi.advanceTimersByTime(2500);
+      });
+      // Reaction should still be active because second star restarted the 4s timer
+      expect(document.querySelector('img[src="/stickers/snoopy-v1/r2c1.png"]')).not.toBeNull();
+
+      // Advance remaining time for second star (1550ms, exceeding 4000ms from star 2)
+      act(() => {
+        vi.advanceTimersByTime(1550);
+      });
+      expect(document.querySelector('img[src="/stickers/snoopy-v1/r2c1.png"]')).toBeNull();
     });
   });
 });

@@ -123,23 +123,25 @@ export function PlaylistHeader({
           <div className="flex items-center justify-center sm:justify-start gap-3 mt-4 flex-wrap">
             {onPlay && (
               <button
+                type="button"
                 onClick={onPlay}
                 disabled={playDisabled}
-                className="bg-[var(--color-vibrant)] text-[var(--on-vibrant)] px-6 py-2.5 rounded-full font-pixel text-body font-bold shadow-md hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+                className="mw-btn-primary"
               >
-                <PlayIcon size={14} className="fill-current ml-0.5" /> Play
+                <PlayIcon size={14} /> Play
               </button>
             )}
 
             {onShuffle && (
               <button
+                type="button"
                 onClick={onShuffle}
                 disabled={shuffleDisabled}
-                className="w-10 h-10 rounded-full bg-[var(--color-bg)] border-2 border-[var(--color-muted)] text-[var(--color-dark)] hover:bg-[var(--color-muted)]/20 active:scale-95 transition-all flex items-center justify-center shadow-xs disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+                className="mw-btn-secondary"
                 title="Shuffle Play"
                 aria-label="Shuffle Play"
               >
-                <ShuffleIcon size={16} />
+                <ShuffleIcon size={16} /> Shuffle
               </button>
             )}
 

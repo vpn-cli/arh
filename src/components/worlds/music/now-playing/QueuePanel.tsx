@@ -6,6 +6,7 @@ import { useRecentlyPlayed, usePlayerQueue } from '@/hooks/useSpotify';
 import { formatTime } from '../playback/playbackHelpers';
 import { ChevronRightIcon, MusicNoteIcon, CloseIcon, PlusIcon } from '../icons';
 import { StickerIcon } from '../StickerIcon';
+import { MomentSticker } from '../MomentSticker';
 
 export interface QueuePanelProps {
   onExpand: (tab: 'queue' | 'recent') => void;
@@ -157,8 +158,13 @@ export const QueuePanel = memo(function QueuePanel({
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1">
         {rightPanelTab === 'queue' ? (
           upcomingQueue.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 text-center px-2 py-4">
-              <div className="text-title mb-1">🌸</div>
+            <div className="flex flex-col items-center justify-center text-center px-2 py-4">
+              <MomentSticker
+                moment="queueEmpty"
+                size={64}
+                className="mb-1"
+                fallback={<div className="text-title mb-1">🌸</div>}
+              />
               <div className="text-[var(--color-dark)] font-pixel text-meta font-bold">QUEUE IS EMPTY</div>
               <p className="text-[var(--color-dark)] font-pixel text-caption mt-0.5 font-medium">
                 Play or add tracks to build your list

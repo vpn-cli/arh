@@ -5,6 +5,7 @@ import { TrackRow } from './TrackRow';
 import { ArtistCard } from './ArtistCard';
 import { AlbumCard } from './AlbumCard';
 import { PlaylistCard } from './PlaylistCard';
+import { MomentSticker } from './MomentSticker';
 
 interface SearchResultsProps {
   query: string;
@@ -37,11 +38,25 @@ export const SearchResults = React.memo(function SearchResults({ query, onPlayTr
   }
 
   if (isLoading) {
-    return <div className="text-center text-[var(--color-dark)] font-pixel text-body font-medium mt-8 animate-pulse">Searching music world...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center text-center mt-8 gap-2">
+        <MomentSticker moment="loading" size={64} />
+        <div className="text-[var(--color-dark)] font-pixel text-body font-medium animate-pulse">
+          Searching music world...
+        </div>
+      </div>
+    );
   }
 
   if (isError) {
-    return <div className="text-center text-[var(--color-dark)] font-pixel text-body font-medium mt-8">Error searching. Please try again!</div>;
+    return (
+      <div className="flex flex-col items-center justify-center text-center mt-8 gap-2">
+        <MomentSticker moment="error" size={64} />
+        <div className="text-[var(--color-dark)] font-pixel text-body font-medium">
+          Error searching. Please try again!
+        </div>
+      </div>
+    );
   }
 
   const pages = data?.pages || [];
@@ -64,7 +79,14 @@ export const SearchResults = React.memo(function SearchResults({ query, onPlayTr
   const hasResults = tracks.length > 0 || artists.length > 0 || albums.length > 0 || matchingPlaylists.length > 0;
 
   if (!hasResults) {
-    return <div className="text-center text-[var(--color-dark)] font-pixel text-body font-medium mt-8">No matches found for &quot;{query}&quot;</div>;
+    return (
+      <div className="flex flex-col items-center justify-center text-center mt-8 gap-2">
+        <MomentSticker moment="searchEmpty" size={64} />
+        <div className="text-[var(--color-dark)] font-pixel text-body font-medium">
+          No matches found for &quot;{query}&quot;
+        </div>
+      </div>
+    );
   }
 
   const handleArtistClick = (id: string) => {

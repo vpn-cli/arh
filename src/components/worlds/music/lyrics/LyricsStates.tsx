@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { hasRangeTimestamps, attachEstimatedWordTimings } from '@/lib/lyrics';
 import { LyricsData, setCachedLyrics } from './useLyrics';
+import { MomentSticker } from '../MomentSticker';
 
 export function LyricsLoadingView() {
   return (
@@ -182,8 +183,12 @@ export function LyricsNotFoundView({
       <p className="font-pixel text-caption text-[var(--color-text-muted)] mb-3 max-w-xs truncate">
         {artistName || 'Unknown Artist'}
       </p>
-      <div className="flex flex-col items-center gap-1 mb-5">
-        <div className="text-heading text-[var(--color-dark)]">ʕ•́ᴥ•̀ʔっ</div>
+      <div className="flex flex-col items-center gap-2 mb-5">
+        <MomentSticker
+          moment="lyricsMissing"
+          size={64}
+          fallback={<div className="text-heading text-[var(--color-dark)]">ʕ•́ᴥ•̀ʔっ</div>}
+        />
         <span className="font-pixel text-caption text-[var(--color-text-muted)] font-bold">
           No lyrics found for this track
         </span>

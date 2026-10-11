@@ -1187,43 +1187,63 @@ html {
 }
 
 @layer components {
-  /* 1. Cards and Tiles (Continue Listening, Vibes, Recently Played) */
+  /* 1. Cards and Tiles (.mw-card) */
   .mw-card {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08);
-    transition: transform var(--motion-base) var(--ease-out),
-                box-shadow var(--motion-base) var(--ease-out),
-                border-color var(--motion-base) var(--ease-out);
+    position: relative;
+    outline: 1px solid var(--color-muted);
+    border-radius: 1rem;
+    transition: transform var(--motion-base, 180ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+  }
+
+  .mw-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.12), 0 4px 8px -2px rgba(0, 0, 0, 0.06);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--motion-base, 180ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
   }
 
   @media (hover: hover) {
     .mw-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.12), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+    .mw-card:hover::after {
+      opacity: 1;
     }
   }
 
-  .mw-card:focus-visible {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.12), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-    outline: 2px solid var(--color-vibrant);
-    outline-offset: 2px;
+  .mw-card:focus-within {
+    transform: translateY(-2px);
+  }
+  .mw-card:focus-within::after {
+    opacity: 1;
   }
 
-  /* Play button inside cards & tiles */
+  .mw-card:active {
+    transform: scale(0.98);
+  }
+
+  /* Play button inside cards & tiles: 40px at bottom-right, fades in on hover/focus-within, always visible on touch */
   .mw-card-play {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
     width: 40px;
     height: 40px;
     border-radius: 9999px;
     background-color: var(--color-vibrant);
-    color: #ffffff;
+    color: var(--on-vibrant, #ffffff);
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     opacity: 0;
     transform: translateY(4px);
-    transition: opacity var(--motion-base) var(--ease-out),
-                transform var(--motion-base) var(--ease-out);
+    transition: opacity var(--motion-base, 180ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
+                transform var(--motion-base, 180ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
   }
 
   @media (hover: hover) {
@@ -1233,10 +1253,105 @@ html {
     }
   }
 
-  .mw-card:focus-visible .mw-card-play,
-  .mw-card:focus .mw-card-play {
+  .mw-card:focus-within .mw-card-play {
     opacity: 1;
     transform: translateY(0);
+  }
+
+  @media (hover: none), (pointer: coarse) {
+    .mw-card-play {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Buttons: .mw-btn-primary and .mw-btn-secondary */
+  .mw-btn-primary {
+    height: 40px;
+    min-height: 40px;
+    border-radius: 9999px;
+    background-color: var(--color-vibrant);
+    color: var(--on-vibrant, #ffffff);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0 1.25rem;
+    font-family: var(--font-pixel, inherit);
+    font-size: var(--text-caption);
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    user-select: none;
+    transition: transform var(--motion-base, 150ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
+                opacity var(--motion-base, 150ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+  }
+
+  .mw-btn-secondary {
+    height: 40px;
+    min-height: 40px;
+    border-radius: 9999px;
+    background-color: #ffffff;
+    border: 1px solid var(--color-muted);
+    color: var(--color-dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0 1.25rem;
+    font-family: var(--font-pixel, inherit);
+    font-size: var(--text-caption);
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    transition: transform var(--motion-base, 150ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
+                opacity var(--motion-base, 150ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+  }
+
+  @media (hover: hover) {
+    .mw-btn-primary:hover,
+    .mw-btn-secondary:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  .mw-btn-primary:active,
+  .mw-btn-secondary:active {
+    transform: scale(0.98);
+  }
+
+  .mw-btn-primary:focus-visible,
+  .mw-btn-secondary:focus-visible {
+    outline: 2px solid var(--color-dark);
+    outline-offset: 2px;
+  }
+
+  .mw-btn-primary:disabled,
+  .mw-btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  /* Memory scrapbook cards */
+  .mw-memory-card {
+    --memory-tilt: -1.2deg;
+    transform: rotate(var(--memory-tilt));
+    transition: transform var(--motion-base, 180ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+  }
+
+  @media (hover: hover) {
+    .mw-memory-card:hover {
+      transform: translateY(-2px) rotate(0deg);
+    }
+  }
+
+  .mw-memory-card:focus-within {
+    transform: translateY(-2px) rotate(0deg);
+  }
+
+  .mw-memory-card:active {
+    transform: scale(0.98) rotate(0deg);
   }
 
   /* Title transition inside cards */
@@ -1455,19 +1570,70 @@ html {
     transition: opacity var(--motion-fast) var(--ease-out);
   }
 
+  /* Sound Waves Behind Record */
+  @keyframes soundwave-travel {
+    0%, 100% {
+      transform: scaleY(0.4);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+
+  @keyframes soundwave-ripple {
+    0% {
+      transform: scaleY(0.3);
+    }
+    50% {
+      transform: scaleY(1.3);
+    }
+    100% {
+      transform: scaleY(0.4);
+    }
+  }
+
+  .soundwave-bar {
+    transform-origin: bottom center;
+    animation: soundwave-travel 3s ease-in-out infinite;
+  }
+
+  .soundwave-bar.is-rippling {
+    animation: soundwave-ripple 600ms ease-in-out;
+  }
+
   /* Accessibility: prefers-reduced-motion (lyrics animation untouched) */
   @media (prefers-reduced-motion: reduce) {
     .mw-card,
     .mw-card:hover,
-    .mw-card:focus-visible,
+    .mw-card:focus-within,
+    .mw-card:active,
     .mw-card-play,
     .mw-card:hover .mw-card-play,
-    .mw-card:focus-visible .mw-card-play,
+    .mw-card:focus-within .mw-card-play,
+    .mw-memory-card,
+    .mw-memory-card:hover,
+    .mw-memory-card:focus-within,
+    .mw-memory-card:active,
     .mw-btn,
     .mw-btn:hover,
     .mw-btn:active,
-    .mw-btn:focus-visible {
+    .mw-btn:focus-visible,
+    .mw-btn-primary,
+    .mw-btn-primary:hover,
+    .mw-btn-primary:active,
+    .mw-btn-primary:focus-visible,
+    .mw-btn-secondary,
+    .mw-btn-secondary:hover,
+    .mw-btn-secondary:active,
+    .mw-btn-secondary:focus-visible {
       transform: none !important;
+      transition: none !important;
+    }
+
+    .soundwave-bar,
+    .soundwave-bar.is-rippling {
+      animation: none !important;
+      transform: scaleY(0.6) !important;
     }
 
     .mw-nav-icon,

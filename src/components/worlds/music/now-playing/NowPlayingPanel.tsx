@@ -10,6 +10,7 @@ import { ChevronDownIcon, MusicNoteIcon } from '../icons';
 import { TrackActionsMenu } from '../TrackActionsMenu';
 import { LikeButton } from '../LikeButton';
 import { VinylRecord } from './VinylRecord';
+import { SoundWaves } from './SoundWaves';
 
 
 export interface NowPlayingPanelProps {
@@ -113,21 +114,12 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
           <div className="flex flex-col">
             {/* Art, Vinyl & Frequencies */}
             <div className="relative w-full aspect-square mb-3 flex items-center justify-center overflow-hidden rounded-2xl border-2 border-[var(--color-muted)] bg-[var(--color-light)] shadow-[0_8px_24px_var(--color-muted)]">
-              {/* Audio Visualizer Frequencies */}
-              {!isPaused && (
-                <div className="absolute bottom-0 left-0 w-full h-1/2 flex items-end justify-center gap-1 opacity-40 px-2 z-0">
-                  {[...Array(16)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-full bg-gradient-to-t from-[var(--color-muted)] to-[var(--color-muted)] animate-pulse rounded-t-full"
-                      style={{
-                        height: `${20 + ((i * 17) % 80)}%`,
-                        animationDuration: `${0.2 + ((i * 13) % 50) / 100}s`,
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
+              {/* Sound Waves behind record */}
+              <SoundWaves
+                currentTrack={currentTrack}
+                isPaused={isPaused}
+                likeTrigger={likeTrigger}
+              />
               {/* Record */}
               <VinylRecord
                 currentTrack={currentTrack}
