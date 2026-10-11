@@ -104,6 +104,29 @@ export async function fetchRelevantTracks(track: any): Promise<any[]> {
 
 export const PLAYBACK_DEBUG = false;
 
+export function isQueueItem(item: any): boolean {
+  return Boolean(
+    item &&
+    typeof item === 'object' &&
+    typeof item.track === 'object' &&
+    item.track !== null
+  );
+}
+
+export function toQueueItem(item: any, contextUri?: string): { track: any; contextUri?: string } {
+  if (isQueueItem(item)) {
+    return contextUri && !item.contextUri ? { ...item, contextUri } : item;
+  }
+  return { track: item, contextUri };
+}
+
+export function extractTrack(item: any): any {
+  if (isQueueItem(item)) {
+    return item.track;
+  }
+  return item;
+}
+
 export async function executeContinuousPlayTrack(
   uri: string,
   track: any,
@@ -179,13 +202,13 @@ export async function executePlayTracks(
   }
 
   if (tracksList && tracksList.length > 0) {
-    setStoreQueue(tracksList.map((t) => (t && 'track' in t ? t : { track: t })));
+    setStoreQueue(tracksList.map((t) => toQueueItem(t)));
   } else {
     setStoreQueue(uris.map((u) => ({ track: { uri: u } })));
   }
   setStoreQueueIndex(startIndex);
 
-  const selectedTrack = tracksList?.[startIndex]?.track || tracksList?.[startIndex];
+  const selectedTrack = extractTrack(tracksList?.[startIndex]);
   if (selectedTrack) {
     const { useSpotifyPlayerStore } = await import('@/store/spotifyStore');
     useSpotifyPlayerStore.getState().setCurrentTrack(selectedTrack);
@@ -196,9 +219,10 @@ export function resolveQueueTrack(
   trackOrUri: any,
   contextUri?: any
 ): { uri: string; track: any } | null {
-  const uri = typeof trackOrUri === 'string' ? trackOrUri : trackOrUri?.uri;
+  const unwrapped = extractTrack(trackOrUri);
+  const uri = typeof unwrapped === 'string' ? unwrapped : unwrapped?.uri;
   if (!uri) return null;
-  let track = typeof trackOrUri === 'object' ? trackOrUri : null;
+  let track = typeof unwrapped === 'object' && unwrapped !== null ? unwrapped : null;
   if (!track && typeof contextUri === 'object' && contextUri !== null) {
     track = contextUri;
   }

@@ -88,6 +88,7 @@ export function QueueModal({
   const ensureQueueInitialized = () => {
     if (queue.length === 0 && effectiveQueue.length > 0) {
       setQueue(effectiveQueue);
+      setQueueIndex(-1);
       return effectiveQueue;
     }
     return queue;
@@ -640,6 +641,9 @@ export function QueueModal({
                 const d = item?.track?.duration_ms ?? item?.duration_ms ?? 0;
                 return typeof d === 'number' && d > 0 ? acc + d : acc;
               }, 0);
+              if (totalDurationMs <= 0) {
+                return `${songCount} ${songCount === 1 ? 'song' : 'songs'}`;
+              }
               const totalMinutes = Math.floor(totalDurationMs / 60000);
               const totalHours = Math.floor(totalMinutes / 60);
               const remainingMinutes = totalMinutes % 60;

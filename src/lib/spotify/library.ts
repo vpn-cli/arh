@@ -23,9 +23,9 @@ export async function removeTrack(trackId: string) {
 export function normalizeSavedTrack(item: any) {
   if (!item) return null;
   // If the object is wrapped in a saved-track wrapper, extract the track
-  const track = item.track ? item.track : item;
+  const track = item.track && typeof item.track === 'object' ? item.track : item;
   
-  if (!track) return null;
+  if (!track || typeof track !== 'object') return null;
 
   // Guarantee a URI is present for playback
   if (!track.uri && track.id) {
@@ -41,8 +41,13 @@ export function normalizeSavedTrack(item: any) {
 export function normalizePlaylistItem(playlistItem: any) {
   if (!playlistItem) return null;
   
-  const item = playlistItem.item || playlistItem.track || playlistItem;
-  if (!item) return null;
+  const item =
+    playlistItem.item && typeof playlistItem.item === 'object'
+      ? playlistItem.item
+      : playlistItem.track && typeof playlistItem.track === 'object'
+      ? playlistItem.track
+      : playlistItem;
+  if (!item || typeof item !== 'object') return null;
   
   // Only accept playable track items (skip episodes/podcasts if not track)
   if (item.type && item.type !== "track") return null;

@@ -58,6 +58,8 @@ export const QueuePanel = memo(function QueuePanel({
 
   const queue = useSpotifyPlayerStore((s) => s.queue);
   const queueIndex = useSpotifyPlayerStore((s) => s.queueIndex);
+  const setQueue = useSpotifyPlayerStore((s) => s.setQueue);
+  const setQueueIndex = useSpotifyPlayerStore((s) => s.setQueueIndex);
   const clearQueue = useSpotifyPlayerStore((s) => s.clearQueue);
   const reorderQueue = useSpotifyPlayerStore((s) => s.reorderQueue);
   const removeFromQueue = useSpotifyPlayerStore((s) => s.removeFromQueue);
@@ -77,6 +79,15 @@ export const QueuePanel = memo(function QueuePanel({
     }
     return [];
   }, [queue, playerQueueData]);
+
+  const ensureQueueInitialized = () => {
+    if (queue.length === 0 && effectiveQueue.length > 0) {
+      setQueue(effectiveQueue);
+      setQueueIndex(-1);
+      return effectiveQueue;
+    }
+    return queue;
+  };
 
   const upcomingQueue = useMemo<{ item: QueueEntry; storeIndex: number }[]>(() => {
     if (isLiveQueue) {
@@ -168,15 +179,16 @@ export const QueuePanel = memo(function QueuePanel({
               return (
                 <div
                   key={`${item.track?.id || item.track?.uri || 'queue'}-${storeIndex}`}
-                  draggable={queue.length > 0}
+                  draggable={effectiveQueue.length > 0}
                   onDragStart={(e) => {
-                    if (queue.length === 0) return;
+                    if (effectiveQueue.length === 0) return;
+                    ensureQueueInitialized();
                     isDraggingRef.current = true;
                     setDraggedQueueIndex(storeIndex);
                     e.dataTransfer.effectAllowed = 'move';
                   }}
                   onDragOver={(e) => {
-                    if (queue.length === 0) return;
+                    if (effectiveQueue.length === 0) return;
                     e.preventDefault();
                     setDragOverQueueIndex(storeIndex);
                   }}
@@ -189,8 +201,8 @@ export const QueuePanel = memo(function QueuePanel({
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
+                    ensureQueueInitialized();
                     if (
-                      queue.length > 0 &&
                       draggedQueueIndex !== null &&
                       draggedQueueIndex !== storeIndex &&
                       draggedQueueIndex >= minUpcomingIndex &&
@@ -217,6 +229,7 @@ export const QueuePanel = memo(function QueuePanel({
                   } ${draggedQueueIndex === storeIndex ? 'opacity-50' : 'opacity-100'}`}
                   onClick={() => {
                     if (isDraggingRef.current) return;
+                    ensureQueueInitialized();
                     playQueueItem(storeIndex);
                   }}
                 >
@@ -253,12 +266,11 @@ export const QueuePanel = memo(function QueuePanel({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (queue.length > 0) {
-                        removeFromQueue(storeIndex);
-                      }
+                      ensureQueueInitialized();
+                      removeFromQueue(storeIndex);
                     }}
                     className={`mw-btn mw-row-action text-[var(--color-dark)] hover:text-[var(--color-dark)] w-6 h-6 min-w-[24px] min-h-[24px] rounded shrink-0 flex items-center justify-center ${
-                      queue.length > 0 ? '' : 'hidden'
+                      effectiveQueue.length > 0 ? '' : 'hidden'
                     }`}
                     aria-label="Remove from queue"
                     title="Remove from queue"

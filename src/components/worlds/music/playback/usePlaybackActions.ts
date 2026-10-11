@@ -16,6 +16,8 @@ import {
   sfx,
   PLAYBACK_DEBUG,
   resolveTrackForPlayback,
+  toQueueItem,
+  extractTrack,
   executeContinuousPlayTrack,
   executePlayTracks,
   executeQueueTrackAddition,
@@ -159,10 +161,10 @@ export function usePlaybackActions({
       await mutationsRef.current.play.mutateAsync(requestBody);
       const store = useSpotifyPlayerStore.getState();
       if (tracksList && tracksList.length > 0) {
-        const clickedIdx = tracksList.findIndex((t: any) => (t?.uri || t?.track?.uri) === trackUri);
-        store.setQueue(tracksList.map((t) => ({ track: t?.track || t, contextUri })));
+        const clickedIdx = tracksList.findIndex((t: any) => (extractTrack(t)?.uri || t?.uri) === trackUri);
+        store.setQueue(tracksList.map((t) => toQueueItem(t, contextUri)));
         store.setQueueIndex(clickedIdx >= 0 ? clickedIdx : 0);
-        const clickedTrack = clickedIdx >= 0 ? (tracksList[clickedIdx]?.track || tracksList[clickedIdx]) : null;
+        const clickedTrack = clickedIdx >= 0 ? extractTrack(tracksList[clickedIdx]) : null;
         if (clickedTrack) {
           store.setCurrentTrack(clickedTrack);
         }
@@ -267,9 +269,9 @@ export function usePlaybackActions({
       await mutationsRef.current.play.mutateAsync(requestBody);
       const store = useSpotifyPlayerStore.getState();
       if (playlistTracks && playlistTracks.length > 0) {
-        store.setQueue(playlistTracks.map((t) => ({ track: t?.track || t, contextUri: uri })));
+        store.setQueue(playlistTracks.map((t) => toQueueItem(t, uri)));
         store.setQueueIndex(0);
-        const first = playlistTracks[0]?.track || playlistTracks[0];
+        const first = extractTrack(playlistTracks[0]);
         if (first) store.setCurrentTrack(first);
       } else {
         store.clearQueue();

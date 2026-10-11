@@ -189,4 +189,32 @@ describe('Queue bugs and playback matching tests', () => {
     expect(state.queue).toEqual([]);
     expect(state.queue).toHaveLength(0);
   });
+
+  it('correctly handles track objects with boolean track: true (e.g. from Mix or playlists)', async () => {
+    const { result } = renderHook(() =>
+      usePlaybackActions({
+        selectedDevice: 'test_device_123',
+        setRecoveryError: vi.fn(),
+      })
+    );
+
+    const playlistUri = 'spotify:playlist:test_mix';
+    const mixTracks = [
+      { uri: 'spotify:track:mix_0', name: 'Mix Track 0', id: 'm0', track: true, duration_ms: 180000 },
+      { uri: 'spotify:track:mix_1', name: 'Mix Track 1', id: 'm1', track: true, duration_ms: 200000 },
+    ];
+
+    await act(async () => {
+      await result.current.playContextTrack(playlistUri, 'spotify:track:mix_1', mixTracks);
+    });
+
+    const state = useSpotifyPlayerStore.getState();
+    expect(state.queue).toHaveLength(2);
+    expect(state.queue[0].track).toEqual(mixTracks[0]);
+    expect(state.queue[0].track.name).toBe('Mix Track 0');
+    expect(state.queue[1].track).toEqual(mixTracks[1]);
+    expect(state.queue[1].track.name).toBe('Mix Track 1');
+    expect(state.queueIndex).toBe(1);
+    expect(state.currentTrack).toEqual(mixTracks[1]);
+  });
 });
