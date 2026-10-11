@@ -231,35 +231,146 @@
   animation: mw-sticker-gentle-bob 2s ease-in-out infinite;
 }
 
-/* Sound Waves Behind Record */
-@keyframes soundwave-travel {
+/* Sound Waves Behind Record: Equalizer */
+.soundwave-container {
+  --wave-speed: 1;
+}
+
+@keyframes eq-bar-1 {
+  0%, 100% {
+    transform: scaleY(0.4);
+  }
+  17% {
+    transform: scaleY(0.95);
+  }
+  34% {
+    transform: scaleY(0.55);
+  }
+  51% {
+    transform: scaleY(1);
+  }
+  68% {
+    transform: scaleY(0.3);
+  }
+  85% {
+    transform: scaleY(0.8);
+  }
+}
+
+@keyframes eq-bar-2 {
+  0%, 100% {
+    transform: scaleY(0.3);
+  }
+  14% {
+    transform: scaleY(0.85);
+  }
+  29% {
+    transform: scaleY(0.45);
+  }
+  43% {
+    transform: scaleY(0.9);
+  }
+  57% {
+    transform: scaleY(0.6);
+  }
+  71% {
+    transform: scaleY(0.95);
+  }
+  86% {
+    transform: scaleY(0.35);
+  }
+}
+
+@keyframes eq-bar-3 {
+  0%, 100% {
+    transform: scaleY(0.5);
+  }
+  13% {
+    transform: scaleY(0.28);
+  }
+  25% {
+    transform: scaleY(0.92);
+  }
+  38% {
+    transform: scaleY(0.38);
+  }
+  50% {
+    transform: scaleY(0.75);
+  }
+  63% {
+    transform: scaleY(0.42);
+  }
+  75% {
+    transform: scaleY(1);
+  }
+  88% {
+    transform: scaleY(0.65);
+  }
+}
+
+@keyframes eq-bar-4 {
+  0%, 100% {
+    transform: scaleY(0.25);
+  }
+  14% {
+    transform: scaleY(0.78);
+  }
+  29% {
+    transform: scaleY(0.35);
+  }
+  43% {
+    transform: scaleY(1);
+  }
+  57% {
+    transform: scaleY(0.48);
+  }
+  71% {
+    transform: scaleY(0.88);
+  }
+  86% {
+    transform: scaleY(0.58);
+  }
+}
+
+@keyframes eq-bar-5 {
   0%, 100% {
     transform: scaleY(0.6);
   }
-  50% {
+  17% {
     transform: scaleY(1);
+  }
+  33% {
+    transform: scaleY(0.32);
+  }
+  50% {
+    transform: scaleY(0.82);
+  }
+  67% {
+    transform: scaleY(0.46);
+  }
+  83% {
+    transform: scaleY(0.9);
   }
 }
 
 @keyframes soundwave-ripple {
   0% {
-    transform: scaleY(0.6);
+    transform: scaleY(0.3);
   }
   50% {
     transform: scaleY(1.3);
   }
   100% {
-    transform: scaleY(0.6);
+    transform: scaleY(0.4);
   }
 }
 
 .soundwave-bar {
   transform-origin: bottom center;
-  animation: soundwave-travel 2.8s ease-in-out infinite;
 }
 
 .soundwave-bar.is-rippling {
-  animation: soundwave-ripple 600ms ease-in-out;
+  animation: soundwave-ripple 600ms ease-in-out !important;
 }
 
 /* Like Reaction: Sticker r2c1 feet rest on label rim, body pointing outward, rides one turn */

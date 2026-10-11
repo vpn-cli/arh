@@ -14,14 +14,14 @@ describe('SoundWaves', () => {
     vi.useRealTimers();
   });
 
-  it('renders 16 soundwave bars with scalloped rounded tops', () => {
+  it('renders 14 soundwave bars as rounded pills with clear gaps', () => {
     const { container } = render(
       <SoundWaves currentTrack={{ id: 't1' }} isPaused={false} />
     );
 
     const bars = container.querySelectorAll('.soundwave-bar');
-    expect(bars.length).toBe(16);
-    expect(bars[0].className).toContain('rounded-t-full');
+    expect(bars.length).toBe(14);
+    expect(bars[0].className).toContain('rounded-full');
   });
 
   it('drives container --wave-level higher when playing and sinks low (0.15) when paused', () => {
@@ -72,11 +72,40 @@ describe('SoundWaves', () => {
     expect(container.querySelectorAll('.is-rippling').length).toBe(0);
 
     rerender(<SoundWaves currentTrack={{ id: 't1' }} isPaused={false} likeTrigger={1} />);
-    expect(container.querySelectorAll('.is-rippling').length).toBe(16);
+    expect(container.querySelectorAll('.is-rippling').length).toBe(14);
 
     act(() => {
       vi.advanceTimersByTime(650);
     });
     expect(container.querySelectorAll('.is-rippling').length).toBe(0);
+  });
+
+  it('configures equalizer bars with keyframes, durations divided by --wave-speed, and negative delays', () => {
+    const { container } = render(
+      <SoundWaves currentTrack={{ id: 't1' }} isPaused={false} />
+    );
+
+    const waveContainer = container.querySelector('.soundwave-bar')?.parentElement as HTMLElement;
+    expect(waveContainer.style.getPropertyValue('--wave-speed')).toBe('1');
+
+    const bars = container.querySelectorAll<HTMLElement>('.soundwave-bar');
+    expect(bars.length).toBe(14);
+
+    for (let i = 0; i < bars.length; i++) {
+      const animName = bars[i].style.animationName;
+      const animDur = bars[i].style.animationDuration;
+      const animDelay = bars[i].style.animationDelay;
+
+      expect(animName).toMatch(/^eq-bar-[1-5]$/);
+      expect(animDur).toMatch(/^calc\(\d+ms \/ var\(--wave-speed, 1\)\)$/);
+      expect(animDelay).toMatch(/^-\d+ms$/);
+
+      if (i > 0) {
+        const prevAnimName = bars[i - 1].style.animationName;
+        const prevAnimDur = bars[i - 1].style.animationDuration;
+        expect(animName).not.toBe(prevAnimName);
+        expect(animDur).not.toBe(prevAnimDur);
+      }
+    }
   });
 });

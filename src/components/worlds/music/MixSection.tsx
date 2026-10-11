@@ -130,7 +130,7 @@ export function MixSection({
          isMixLoading ? renderLoading('your dynamic mix') :
          filteredMix.length > 0 ? (
            <>
-             <div className="max-h-[360px] overflow-y-auto pr-1 custom-scrollbar">
+             <div className={isExpanded ? "max-h-[600px] overflow-y-auto pr-1 custom-scrollbar" : ""}>
                <TrackList 
                  tracks={displayedMix} 
                  onPlayTrack={(uri) => {

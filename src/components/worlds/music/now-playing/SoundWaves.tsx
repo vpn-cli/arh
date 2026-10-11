@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { usePlayerVolumeStore } from '@/providers/volumeStore';
 import { StickerIcon } from '../StickerIcon';
+import './now-playing.css';
 
 export interface SoundWavesProps {
   currentTrack: any;
@@ -10,8 +11,28 @@ export interface SoundWavesProps {
   likeTrigger?: number;
 }
 
-const NUM_BARS = 16;
-const BARS = Array.from({ length: NUM_BARS }, (_, i) => i);
+interface BarConfig {
+  keyframe: string;
+  durationMs: number;
+  delayMs: number;
+}
+
+const BAR_CONFIGS: BarConfig[] = [
+  { keyframe: 'eq-bar-1', durationMs: 820, delayMs: -320 },
+  { keyframe: 'eq-bar-3', durationMs: 1140, delayMs: -850 },
+  { keyframe: 'eq-bar-5', durationMs: 740, delayMs: -190 },
+  { keyframe: 'eq-bar-2', durationMs: 1260, delayMs: -640 },
+  { keyframe: 'eq-bar-4', durationMs: 910, delayMs: -1080 },
+  { keyframe: 'eq-bar-1', durationMs: 1180, delayMs: -410 },
+  { keyframe: 'eq-bar-3', durationMs: 770, delayMs: -920 },
+  { keyframe: 'eq-bar-5', durationMs: 1050, delayMs: -150 },
+  { keyframe: 'eq-bar-2', durationMs: 860, delayMs: -730 },
+  { keyframe: 'eq-bar-4', durationMs: 1290, delayMs: -1160 },
+  { keyframe: 'eq-bar-1', durationMs: 710, delayMs: -270 },
+  { keyframe: 'eq-bar-3', durationMs: 1110, delayMs: -580 },
+  { keyframe: 'eq-bar-2', durationMs: 950, delayMs: -890 },
+  { keyframe: 'eq-bar-5', durationMs: 1220, delayMs: -460 },
+];
 
 export const SoundWaves = memo(function SoundWaves({
   currentTrack,
@@ -118,34 +139,37 @@ export const SoundWaves = memo(function SoundWaves({
   // - sinks low (0.15) on pause or during track dip
   const effectiveVolumeLevel = 0.35 + (typeof volume === 'number' && !isNaN(volume) ? volume : 0.5) * 0.65;
   const waveLevel = isPaused || isDipping ? 0.15 : effectiveVolumeLevel;
+  const isPausedAnim = isPaused || isDocHidden || reducedMotion;
 
   return (
     <>
       <div
-        className="absolute bottom-0 left-0 w-full h-1/2 flex items-end justify-center pointer-events-none z-0 px-2 overflow-hidden"
+        className="soundwave-container absolute bottom-0 left-0 w-full h-1/2 flex items-end justify-between gap-1.5 px-3 pointer-events-none z-0 overflow-hidden"
         style={
           {
             '--wave-level': waveLevel,
+            '--wave-speed': 1,
             transform: 'scaleY(var(--wave-level, 1))',
             transformOrigin: 'bottom center',
             transition: 'transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1)',
           } as React.CSSProperties
         }
       >
-        {BARS.map((i) => {
-          const staggerDelay = (i * 0.18).toFixed(2);
-          const isPausedAnim = isPaused || isDocHidden || reducedMotion;
-
+        {BAR_CONFIGS.map((config, i) => {
           return (
             <div
               key={i}
-              className={`soundwave-bar -mx-1.5 flex-1 rounded-t-full bg-[var(--color-vibrant)] opacity-25 select-none ${
+              className={`soundwave-bar flex-1 h-full rounded-full bg-[var(--color-vibrant)] opacity-25 select-none origin-bottom ${
                 isRippling ? 'is-rippling' : ''
               }`}
               style={{
-                height: `${45 + ((i * 11) % 40)}%`,
-                animationDelay: `${staggerDelay}s`,
+                animationName: isRippling ? undefined : config.keyframe,
+                animationDuration: isRippling ? undefined : `calc(${config.durationMs}ms / var(--wave-speed, 1))`,
+                animationDelay: isRippling ? undefined : `${config.delayMs}ms`,
+                animationTimingFunction: 'ease-in-out',
+                animationIterationCount: 'infinite',
                 animationPlayState: isPausedAnim ? 'paused' : 'running',
+                transformOrigin: 'bottom center',
               }}
             />
           );
@@ -168,3 +192,5 @@ export const SoundWaves = memo(function SoundWaves({
     </>
   );
 });
+
+SoundWaves.displayName = 'SoundWaves';

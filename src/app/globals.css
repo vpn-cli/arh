@@ -1589,15 +1589,6 @@ html {
   }
 
   /* Sound Waves Behind Record */
-  @keyframes soundwave-travel {
-    0%, 100% {
-      transform: scaleY(0.4);
-    }
-    50% {
-      transform: scaleY(1);
-    }
-  }
-
   @keyframes soundwave-ripple {
     0% {
       transform: scaleY(0.3);
@@ -1612,11 +1603,10 @@ html {
 
   .soundwave-bar {
     transform-origin: bottom center;
-    animation: soundwave-travel 3s ease-in-out infinite;
   }
 
   .soundwave-bar.is-rippling {
-    animation: soundwave-ripple 600ms ease-in-out;
+    animation: soundwave-ripple 600ms ease-in-out !important;
   }
 
   /* Accessibility: prefers-reduced-motion (lyrics animation untouched) */
