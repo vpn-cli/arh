@@ -104,7 +104,7 @@ export const QueuePanel = memo(function QueuePanel({
             <span>🕒</span> Recent
           </button>
         </div>
-        <StickerIcon name="queueTab" size={28} className="px-2 select-none shrink-0" />
+        <StickerIcon name="queueTab" size={28} className="mx-2 object-contain select-none shrink-0" />
       </div>
 
       {/* Header with Title and Clear / Expand */}
@@ -185,6 +185,10 @@ export const QueuePanel = memo(function QueuePanel({
                     }, 50);
                   }}
                   className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl mw-row group cursor-pointer ${
+                    isCurrentlyActive
+                      ? 'bg-[var(--color-light)] border-[var(--color-vibrant)]'
+                      : ''
+                  } ${
                     dragOverQueueIndex === idx
                       ? draggedQueueIndex !== null && draggedQueueIndex < idx
                         ? 'border-b-[var(--color-vibrant)] border-b-2'
@@ -197,9 +201,7 @@ export const QueuePanel = memo(function QueuePanel({
                   }}
                 >
                   <span
-                    className={`font-pixel text-caption w-6 text-center shrink-0 font-bold ${
-                      isCurrentlyActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'
-                    }`}
+                    className="font-pixel text-caption w-6 text-center shrink-0 font-bold text-[var(--color-dark)]"
                   >
                     {idx + 1}
                   </span>
@@ -217,9 +219,7 @@ export const QueuePanel = memo(function QueuePanel({
                   )}
                   <div className="flex flex-col overflow-hidden flex-1 min-w-0">
                     <span
-                      className={`font-pixel text-body font-bold truncate ${
-                        isCurrentlyActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'
-                      }`}
+                      className="font-pixel text-body font-bold truncate text-[var(--color-dark)]"
                     >
                       {item.track?.name}
                     </span>

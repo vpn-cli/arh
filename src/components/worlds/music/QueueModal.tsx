@@ -155,11 +155,9 @@ export function QueueModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b-2 border-[var(--color-muted)] flex items-center justify-between bg-white/70 backdrop-blur-md shrink-0">
+        <div className="px-6 py-3 border-b-2 border-[var(--color-muted)] flex items-center justify-between bg-white/70 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-[var(--color-light)] border border-[var(--color-muted)] flex items-center justify-center text-title shadow-xs transition-colors duration-500 shrink-0">
-              <StickerIcon name="queueModal" size={52} className="object-contain" />
-            </div>
+            <StickerIcon name="queueModal" size={48} className="object-contain shrink-0" />
             <div>
               <h2 className="font-pixel text-title text-[var(--color-dark)] font-bold tracking-wide flex items-center gap-2">
                 Playback Queue & History Tuner
@@ -388,9 +386,7 @@ export function QueueModal({
                             ⋮⋮
                           </span>
                           <span
-                            className={`font-pixel text-caption font-bold w-7 text-center ${
-                              isCurrentlyActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'
-                            }`}
+                            className="font-pixel text-caption font-bold w-7 text-center text-[var(--color-dark)]"
                           >
                             {originalIndex + 1}
                           </span>
@@ -412,9 +408,7 @@ export function QueueModal({
                         {/* Title & Artist */}
                         <div className="flex flex-col flex-1 min-w-0">
                           <span
-                            className={`font-pixel text-body font-bold truncate ${
-                              isCurrentlyActive ? 'text-[var(--color-vibrant)]' : 'text-[var(--color-dark)]'
-                            }`}
+                            className="font-pixel text-body font-bold truncate text-[var(--color-dark)]"
                           >
                             {item.track?.name || 'Unknown Track'}
                           </span>
@@ -609,17 +603,27 @@ export function QueueModal({
 
         {/* Footer info bar */}
         <div className="px-6 py-3 border-t border-[var(--color-muted)] bg-white/70 flex items-center justify-between font-pixel text-caption text-[var(--color-dark)] shrink-0">
-          <div className="flex items-center gap-2">
-            <span>✨ Kawaii Hint:</span>
-            <span className="text-[var(--color-dark)]">
-              {activeTab === 'queue'
-                ? 'Songs will play sequentially in order from top to bottom.'
-                : 'Click "+ Queue" on any song to add it straight to your playback line.'}
-            </span>
+          <div className="font-bold">
+            {(() => {
+              const listBeingShown = activeTab === 'queue' ? filteredQueue : filteredRecent;
+              const songCount = listBeingShown.length;
+              const totalDurationMs = listBeingShown.reduce((acc: number, item: any) => {
+                const d = item?.track?.duration_ms ?? item?.duration_ms ?? 0;
+                return typeof d === 'number' && d > 0 ? acc + d : acc;
+              }, 0);
+              const totalMinutes = Math.floor(totalDurationMs / 60000);
+              const totalHours = Math.floor(totalMinutes / 60);
+              const remainingMinutes = totalMinutes % 60;
+              const totalDurationText =
+                totalHours > 0
+                  ? `${totalHours} hr ${remainingMinutes} min`
+                  : `${totalMinutes} min`;
+              return `${songCount} ${songCount === 1 ? 'song' : 'songs'} · ${totalDurationText}`;
+            })()}
           </div>
           <button
             onClick={onClose}
-            className="font-pixel text-caption font-bold text-[var(--color-vibrant)] hover:underline transition-colors inline-flex items-center gap-1"
+            className="font-pixel text-caption font-bold text-[var(--color-dark)] hover:underline transition-colors inline-flex items-center gap-1"
           >
             Back to Player <ChevronRightIcon size={12} />
           </button>

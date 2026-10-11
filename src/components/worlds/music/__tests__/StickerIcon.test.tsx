@@ -45,7 +45,7 @@ describe('Snoopy Stickers & StickerIcon', () => {
       ['continueListening', '/stickers/snoopy-v1/r5c2.png', 48],
       ['recentlyPlayed', '/stickers/snoopy-v1/r4c1.png', 48],
       ['queueTab', '/stickers/snoopy-v1/r1c4.png', 28],
-      ['queueModal', '/stickers/snoopy-v1/r1c4.png', 52],
+      ['queueModal', '/stickers/snoopy-v1/r1c4.png', 48],
     ];
 
     for (const [slot, expectedSrc, expectedSize] of slots) {
@@ -102,7 +102,7 @@ describe('Snoopy Stickers & StickerIcon', () => {
     expect(tabRender.container.textContent).toContain('🎀');
 
     // QueueModal restores ribbon
-    const modalRender = render(<FallbackStickerIcon name="queueModal" size={52} />);
+    const modalRender = render(<FallbackStickerIcon name="queueModal" size={48} />);
     expect(modalRender.container.textContent).toContain('🎀');
 
     vi.doUnmock('../stickerConfig');
