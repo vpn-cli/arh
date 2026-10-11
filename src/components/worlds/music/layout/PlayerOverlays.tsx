@@ -4,6 +4,7 @@ import React from "react";
 import { WarningIcon, CloseIcon } from "../icons";
 import { redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
 import { HEADER_TITLE } from "../textConfig";
+import { SpotifyRestingBanner } from "../SpotifyRestingBanner";
 
 export interface PlayerOverlaysProps {
   isReconnecting: boolean;
@@ -30,6 +31,8 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
 
   return (
     <>
+      <SpotifyRestingBanner />
+
       {/* Inline Reconnecting Notice / Recovery Error Banner */}
       {(isReconnecting || recoveryError) && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center pointer-events-none transition-all duration-300">

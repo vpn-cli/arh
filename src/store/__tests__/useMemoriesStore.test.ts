@@ -182,5 +182,50 @@ describe('useMemoriesStore', () => {
     // Confirm store has cleared category
     expect(useMemoriesStore.getState().memories[0].category).toBeUndefined();
   });
+
+  it('importing useMemoriesStore makes no fetch and adds no window listener', async () => {
+    const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+    vi.mocked(memoriesFetch).mockClear();
+
+    await vi.importActual('../useMemoriesStore');
+
+    expect(memoriesFetch).not.toHaveBeenCalled();
+    expect(addEventListenerSpy).not.toHaveBeenCalledWith('focus', expect.any(Function));
+    addEventListenerSpy.mockRestore();
+  });
+
+  it('loadMemories does nothing when the user is not authenticated', async () => {
+    vi.mocked(memoriesFetch).mockClear();
+    useMemoriesStore.setState({ isAuthenticated: false });
+
+    await useMemoriesStore.getState().loadMemories();
+    expect(memoriesFetch).not.toHaveBeenCalled();
+
+    await useMemoriesStore.getState().loadMemories(false);
+    expect(memoriesFetch).not.toHaveBeenCalled();
+  });
+
+  it('loadMemories loads memories when the user is authenticated', async () => {
+    vi.mocked(memoriesFetch).mockClear();
+    vi.mocked(memoriesFetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [
+        {
+          id: 'mem-server-1',
+          spotifyUri: 'spotify:track:authed',
+          entityType: 'track',
+          note: 'Authed note',
+          createdAt: '2026-10-10T00:00:00Z',
+          updatedAt: '2026-10-10T00:00:00Z',
+        },
+      ],
+    } as any);
+
+    await useMemoriesStore.getState().loadMemories(true);
+    expect(memoriesFetch).toHaveBeenCalledWith('/api/memories');
+    expect(useMemoriesStore.getState().memories.length).toBe(1);
+    expect(useMemoriesStore.getState().memories[0].id).toBe('mem-server-1');
+  });
 });
 

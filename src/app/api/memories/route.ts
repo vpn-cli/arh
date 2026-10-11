@@ -43,6 +43,9 @@ export async function GET() {
     if (auth.reason === 'unauthenticated') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    if (auth.reason === 'rate_limited') {
+      return NextResponse.json({ error: auth.error, retryAfter: auth.retryAfter }, { status: 429 });
+    }
     return NextResponse.json({ error: 'Upstream Spotify service unavailable' }, { status: 503 });
   }
 
@@ -70,6 +73,9 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) {
     if (auth.reason === 'unauthenticated') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (auth.reason === 'rate_limited') {
+      return NextResponse.json({ error: auth.error, retryAfter: auth.retryAfter }, { status: 429 });
     }
     return NextResponse.json({ error: 'Upstream Spotify service unavailable' }, { status: 503 });
   }
@@ -139,6 +145,9 @@ export async function PATCH(req: NextRequest) {
     if (auth.reason === 'unauthenticated') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    if (auth.reason === 'rate_limited') {
+      return NextResponse.json({ error: auth.error, retryAfter: auth.retryAfter }, { status: 429 });
+    }
     return NextResponse.json({ error: 'Upstream Spotify service unavailable' }, { status: 503 });
   }
 
@@ -198,6 +207,9 @@ export async function DELETE(req: NextRequest) {
   if (!auth.ok) {
     if (auth.reason === 'unauthenticated') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (auth.reason === 'rate_limited') {
+      return NextResponse.json({ error: auth.error, retryAfter: auth.retryAfter }, { status: 429 });
     }
     return NextResponse.json({ error: 'Upstream Spotify service unavailable' }, { status: 503 });
   }

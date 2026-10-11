@@ -15,6 +15,7 @@ export const moments = {
   lyricsMissing: 'r4c1',
   loading: 'r2c3',
   error: 'r5c1',
+  notFound: 'r5c1',
   addedToQueue: 'r5c2',
   addedToPlaylist: 'r3c1',
   memorySaved: 'r3c4',

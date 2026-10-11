@@ -7,8 +7,10 @@ import gsap from "gsap";
 import SpotifyPlayerUI from "./SpotifyPlayerUI";
 import { useMusicView } from "./hooks/useMusicView";
 import { WidgetPlayer } from "./widget/WidgetPlayer";
+import { useMusicWorldMemories } from "./hooks/useMusicWorldMemories";
 
 export default function MusicWorld() {
+  useMusicWorldMemories();
   const { isWidgetView } = useMusicView();
   const { goHome } = useGameState();
   const containerRef = useRef<HTMLDivElement>(null);

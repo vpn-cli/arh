@@ -37,8 +37,14 @@ export function applyLyricsOffset(
 
 /**
  * Prefetches lyrics for a track into the module-level cache without touching React state.
+ * Accepts optional trackName and artistName so the server route /api/lyrics does not need
+ * to call the Spotify proxy to resolve track metadata.
  */
-export async function prefetchLyrics(trackId: string): Promise<LyricsData | null> {
+export async function prefetchLyrics(
+  trackId: string,
+  trackName?: string,
+  artistName?: string
+): Promise<LyricsData | null> {
   if (!trackId) return null;
   if (lyricsCache[trackId] !== undefined) {
     return lyricsCache[trackId];
@@ -50,7 +56,11 @@ export async function prefetchLyrics(trackId: string): Promise<LyricsData | null
 
   const promise = (async () => {
     try {
-      const res = await fetch(`/api/lyrics?trackId=${encodeURIComponent(trackId)}`);
+      const params = new URLSearchParams({ trackId });
+      if (trackName) params.set('title', trackName);
+      if (artistName) params.set('artist', artistName);
+
+      const res = await fetch(`/api/lyrics?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data?.synced) {
@@ -79,11 +89,25 @@ export function setCachedLyrics(trackId: string, data: LyricsData | null): void 
   lyricsCache[trackId] = data;
 }
 
+export function clearCachedLyrics(trackId?: string): void {
+  if (trackId) {
+    delete lyricsCache[trackId];
+    delete pendingRequests[trackId];
+  } else {
+    for (const key of Object.keys(lyricsCache)) delete lyricsCache[key];
+    for (const key of Object.keys(pendingRequests)) delete pendingRequests[key];
+  }
+}
+
 export function getCachedLyrics(trackId: string): LyricsData | null | undefined {
   return lyricsCache[trackId];
 }
 
-export function useLyrics(trackId: string | null | undefined) {
+export function useLyrics(
+  trackId: string | null | undefined,
+  trackName?: string,
+  artistName?: string
+) {
   const cached = trackId ? lyricsCache[trackId] : undefined;
 
   const [prevTrackId, setPrevTrackId] = useState<string | null | undefined>(trackId);
@@ -133,7 +157,7 @@ export function useLyrics(trackId: string | null | undefined) {
 
     let isCancelled = false;
 
-    prefetchLyrics(trackId).then((data) => {
+    prefetchLyrics(trackId, trackName, artistName).then((data) => {
       if (isCancelled) return;
       setBaseLyricsData(data);
       setOffsetMsState(data?.offsetMs ?? 0);
@@ -143,7 +167,7 @@ export function useLyrics(trackId: string | null | undefined) {
     return () => {
       isCancelled = true;
     };
-  }, [trackId]);
+  }, [trackId, trackName, artistName]);
 
   // Derived shifted lyrics computed when lyrics load or offset changes (never per frame)
   const lyricsData = useMemo<LyricsData | null>(() => {

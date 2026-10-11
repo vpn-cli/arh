@@ -160,12 +160,16 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
 
   // Prefetch lyrics for current and next track
   useEffect(() => {
-    if (currentTrack?.id) prefetchLyrics(currentTrack.id);
+    if (currentTrack?.id) {
+      prefetchLyrics(currentTrack.id, currentTrack.name, currentTrack.artists?.[0]?.name || currentTrack.artist);
+    }
     if (effectiveQueue && effectiveQueue.length > 0 && queueIndex < effectiveQueue.length - 1) {
       const nextTrackItem = effectiveQueue[queueIndex + 1]?.track;
-      if (nextTrackItem?.id) prefetchLyrics(nextTrackItem.id);
+      if (nextTrackItem?.id) {
+        prefetchLyrics(nextTrackItem.id, nextTrackItem.name, nextTrackItem.artists?.[0]?.name || nextTrackItem.artist);
+      }
     }
-  }, [currentTrack?.id, effectiveQueue, queueIndex]);
+  }, [currentTrack?.id, currentTrack?.name, currentTrack?.artists, currentTrack?.artist, effectiveQueue, queueIndex]);
 
   return (
     <div className="w-full h-[100dvh] flex flex-col text-[var(--color-dark)] font-sans relative overflow-hidden">

@@ -1,5 +1,8 @@
 import PQueue from 'p-queue';
 import { recoverPlaybackDevice } from './spotifyRecovery';
+import { isSpotifyLocked, setClientSpotifyLock, useSpotifyLockStore, clearClientSpotifyLock } from '@/store/spotifyLockStore';
+
+export { clearClientSpotifyLock };
 
 // Concurrency of 2, interval of 200ms between processing up to 2 items
 export const spotifyQueue = new PQueue({ concurrency: 2, interval: 200, intervalCap: 2 });
@@ -25,23 +28,27 @@ async function fetchSessionToken(silent = false): Promise<string | null> {
     });
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
-      console.error(`[${new Date().toISOString()}] [Spotify Session Token Fetch Failed] Status: ${res.status}`, errBody);
-      if (res.status === 401 && !silent) {
-        loginRequiredCallback?.();
+      if (!silent) {
+        console.error(`[${new Date().toISOString()}] [Spotify Session Token Fetch Failed] Status: ${res.status}`, errBody);
+        if (res.status === 401) {
+          loginRequiredCallback?.();
+        }
       }
       return null;
     }
     const data = await res.json();
     if (!data.accessToken) {
-      console.error(`[${new Date().toISOString()}] [Spotify Session Token Missing] Response:`, data);
       if (!silent) {
+        console.error(`[${new Date().toISOString()}] [Spotify Session Token Missing] Response:`, data);
         loginRequiredCallback?.();
       }
       return null;
     }
     return data.accessToken;
   } catch (err) {
-    console.error(`[${new Date().toISOString()}] [Spotify Session Token Fetch Error]`, err);
+    if (!silent) {
+      console.error(`[${new Date().toISOString()}] [Spotify Session Token Fetch Error]`, err);
+    }
     return null;
   }
 }
@@ -79,6 +86,11 @@ async function doFetch(
   options: RequestInit = {},
   retryAttempts: RetryAttempts = { auth: 0, device: 0, rateLimit: 0 }
 ): Promise<any> {
+  if (isSpotifyLocked()) {
+    const remaining = useSpotifyLockStore.getState().getRemainingSeconds();
+    throw { status: 429, message: 'Spotify is resting', retryAfter: remaining };
+  }
+
   // Strip leading slash if present
   const path = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   const url = `/api/spotify/proxy/${path}`;
@@ -169,6 +181,9 @@ async function doFetch(
       if (isNaN(retryAfterSeconds) || retryAfterSeconds <= 0) retryAfterSeconds = 1;
       const retryAfterMs = retryAfterSeconds * 1000;
 
+      // Notify global lock store to display banner and prevent new requests
+      setClientSpotifyLock(retryAfterSeconds);
+
       // Pause queue globally
       if (!spotifyQueue.isPaused) {
         spotifyQueue.pause();
@@ -212,5 +227,9 @@ async function doFetch(
 }
 
 export async function proxyFetch(endpoint: string, options: RequestInit = {}): Promise<any> {
+  if (isSpotifyLocked()) {
+    const remaining = useSpotifyLockStore.getState().getRemainingSeconds();
+    throw { status: 429, message: 'Spotify is resting', retryAfter: remaining };
+  }
   return spotifyQueue.add(() => doFetch(endpoint, options));
 }

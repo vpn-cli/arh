@@ -18,10 +18,12 @@ interface MemoriesState {
   memories: Memory[];
   isLoading: boolean;
   error: string | null;
+  isAuthenticated: boolean;
+  setAuthenticated: (isAuthenticated: boolean) => void;
   addMemory: (memoryData: Omit<Memory, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateMemory: (id: string, updates: Partial<Memory>) => void;
   deleteMemory: (id: string) => void;
-  loadMemories: () => Promise<void>;
+  loadMemories: (isAuthenticated?: boolean) => Promise<void>;
   clearError: () => void;
 }
 
@@ -86,10 +88,16 @@ export const useMemoriesStore = create<MemoriesState>()((set, get) => ({
   memories: [],
   isLoading: false,
   error: null,
+  isAuthenticated: false,
 
+  setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
   clearError: () => set({ error: null }),
 
-  loadMemories: async () => {
+  loadMemories: async (isAuthenticated?: boolean) => {
+    const isAuthed = isAuthenticated ?? get().isAuthenticated;
+    if (!isAuthed) {
+      return;
+    }
     try {
       set({ isLoading: true, error: null });
       const res = await memoriesFetch('/api/memories');
@@ -322,13 +330,3 @@ export const useMemoriesStore = create<MemoriesState>()((set, get) => ({
   },
 }));
 
-// Auto-load on client startup and window focus
-if (typeof window !== 'undefined') {
-  setTimeout(() => {
-    useMemoriesStore.getState().loadMemories();
-  }, 0);
-
-  window.addEventListener('focus', () => {
-    useMemoriesStore.getState().loadMemories();
-  });
-}

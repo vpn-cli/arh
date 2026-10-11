@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { getSpotifyApiLock, setSpotifyApiLock } from '@/lib/server/redis';
 
 // Diagnostic endpoint for Spotify integration
 // Only accessible when NODE_ENV === 'development'
 export async function GET() {
   if (process.env.NODE_ENV !== 'development') {
     return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
+  // Check Circuit Breaker lock before calling Spotify directly (Requirement 1)
+  const lock = await getSpotifyApiLock();
+  if (lock) {
+    return NextResponse.json(
+      { error: 'Too Many Requests (Circuit Breaker)', retryAfter: lock.retryAfter },
+      { status: 429 }
+    );
   }
 
   const cookieStore = await cookies();
@@ -23,11 +33,32 @@ export async function GET() {
   const results: Record<string, any> = { timestamp: new Date().toISOString() };
 
   async function spotifyGet(path: string) {
+    // Check lock before any step request
+    const stepLock = await getSpotifyApiLock();
+    if (stepLock) {
+      return {
+        status: 429,
+        body: { error: 'Too Many Requests (Circuit Breaker)', retryAfter: stepLock.retryAfter },
+        url: `https://api.spotify.com/v1${path}`,
+      };
+    }
+
     const url = `https://api.spotify.com/v1${path}`;
     const res = await fetch(url, {
       headers: { 'Authorization': `Bearer ${accessToken}` },
       cache: 'no-store',
     });
+
+    if (res.status === 429) {
+      const retryAfterStr = res.headers?.get ? res.headers.get('Retry-After') : null;
+      let retryAfter = retryAfterStr ? parseInt(retryAfterStr, 10) : 60;
+      if (isNaN(retryAfter)) retryAfter = 60;
+      await setSpotifyApiLock(retryAfter);
+      let parsedBody: any;
+      try { parsedBody = await res.json(); } catch { parsedBody = { error: 'Too Many Requests', retryAfter }; }
+      return { status: 429, body: { ...parsedBody, retryAfter }, url };
+    }
+
     const body = await res.text();
     let parsed;
     try { parsed = JSON.parse(body); } catch { parsed = body; }
@@ -41,6 +72,11 @@ export async function GET() {
     id: me.body?.id || 'N/A',
     display_name: me.body?.display_name || 'N/A',
   };
+
+  if (me.status === 429) {
+    results.step1_error = me.body;
+    return NextResponse.json(me.body, { status: 429 });
+  }
 
   if (me.status !== 200) {
     results.step1_error = me.body;

@@ -26,6 +26,10 @@ vi.mock("../widget/WidgetPlayer", () => ({
   WidgetPlayer: () => <div data-testid="widget-player">Widget Player</div>,
 }));
 
+vi.mock("../hooks/useMusicWorldMemories", () => ({
+  useMusicWorldMemories: vi.fn(),
+}));
+
 describe("MusicWorld view switching", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/?world=music");

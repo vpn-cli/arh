@@ -46,7 +46,7 @@ export const LyricsView = React.memo(
     ref
   ) {
     const { lyricsData, setLyricsData, isLyricsLoading, offsetMs, setOffsetMs } =
-      useLyrics(trackId);
+      useLyrics(trackId, trackDisplay?.name, trackDisplay?.artists);
     const playerDuration = useSpotifyPlayerStore((s) => s.duration);
     const [activeLyricIndex, setActiveLyricIndex] = useState<number>(-1);
     const activeLyricIndexRef = useRef<number>(-1);

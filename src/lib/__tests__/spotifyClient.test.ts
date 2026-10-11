@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { proxyFetch, spotifyQueue, registerDeviceRecoveryHandler, getFreshToken } from '../spotifyClient';
+import { proxyFetch, spotifyQueue, registerDeviceRecoveryHandler, getFreshToken, clearClientSpotifyLock } from '../spotifyClient';
 
 describe('spotifyClient (Fail-Safe API Proxy with Unified Recovery)', () => {
   beforeEach(() => {
     vi.useRealTimers();
+    clearClientSpotifyLock();
     global.fetch = vi.fn();
     spotifyQueue.clear();
     if (spotifyQueue.isPaused) {
@@ -13,6 +14,7 @@ describe('spotifyClient (Fail-Safe API Proxy with Unified Recovery)', () => {
   });
 
   afterEach(() => {
+    clearClientSpotifyLock();
     vi.restoreAllMocks();
     vi.useRealTimers();
   });
@@ -216,5 +218,46 @@ describe('spotifyClient (Fail-Safe API Proxy with Unified Recovery)', () => {
 
     // Clean up
     delete (window.navigator as any).locks;
+  });
+
+  it('sends no Spotify requests while lock is active and rejects immediately', async () => {
+    const { setClientSpotifyLock } = await import('@/store/spotifyLockStore');
+    setClientSpotifyLock(300);
+
+    let caughtError: any = null;
+    try {
+      await proxyFetch('/me/player');
+    } catch (err) {
+      caughtError = err;
+    }
+
+    expect(caughtError).toMatchObject({
+      status: 429,
+      message: 'Spotify is resting',
+    });
+    expect(caughtError.retryAfter).toBeGreaterThan(0);
+    // Verified: No network call was made!
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('fetchSessionToken called with silent: true logs nothing and does not call the login callback on failure', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const loginCb = vi.fn();
+    const { onLoginRequired } = await import('../spotifyClient');
+    onLoginRequired(loginCb);
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: 'Unauthorized' }),
+    });
+
+    const token = await getFreshToken({ silent: true });
+    expect(token).toBeNull();
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+    expect(loginCb).not.toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+    onLoginRequired(null);
   });
 });

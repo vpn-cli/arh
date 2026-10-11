@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
-import { Redis } from '@upstash/redis';
 import { cookies } from 'next/headers';
-
-const isRedisConfigured = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_URL !== 'todo';
-const redis = isRedisConfigured ? new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-}) : null;
+import { redis, hashToken, getSpotifyApiLock, setSpotifyApiLock } from '@/lib/server/redis';
 
 // Cache TTL in seconds (1 hour)
 const CACHE_TTL = 3600;
@@ -39,29 +33,28 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const tokenHash = hashToken(accessToken);
+
   try {
     // 1. Check Circuit Breaker
-    if (redis) {
-      try {
-        const isLocked = await redis.get('spotify_api_lock');
-        if (isLocked) {
-          const ttl = await redis.ttl('spotify_api_lock');
-          return NextResponse.json({ error: 'Too Many Requests (Circuit Breaker)', retryAfter: Math.max(1, ttl) }, { status: 429 });
-        }
-      } catch (e) {
-        console.error("Redis error checking circuit breaker:", e);
-      }
+    const lock = await getSpotifyApiLock();
+    if (lock) {
+      return NextResponse.json(
+        { error: 'Too Many Requests (Circuit Breaker)', retryAfter: lock.retryAfter },
+        { status: 429 }
+      );
     }
 
     // 2. Check Cache for read-heavy endpoints (GET requests)
     const isCacheable = request.method === 'GET' && 
-      (pathString.startsWith('me/playlists') || 
+      (pathString === 'me' ||
+       pathString.startsWith('me/playlists') || 
        pathString.startsWith('search') || 
        pathString.startsWith('me/tracks') ||
        pathString.startsWith('me/library') ||
        pathString.startsWith('playlists/'));
        
-    const cacheKey = `spotify_cache:${accessToken}:${spotifyUrl}`;
+    const cacheKey = `spotify_cache:${tokenHash}:${spotifyUrl}`;
     if (isCacheable && redis) {
       try {
         const cachedData = await redis.get(cacheKey);
@@ -116,13 +109,7 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
       let retryAfter = retryAfterStr ? parseInt(retryAfterStr, 10) : 60;
       if (isNaN(retryAfter)) retryAfter = 60;
       
-      if (redis) {
-        try {
-          await redis.set('spotify_api_lock', 'locked', { ex: retryAfter });
-        } catch (e) {
-          console.error("Redis error setting circuit breaker:", e);
-        }
-      }
+      await setSpotifyApiLock(retryAfter);
       
       return NextResponse.json({ error: 'Too Many Requests', retryAfter }, { status: 429 });
     }
@@ -135,7 +122,7 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
         try {
           // Delete the cached GET /me/playlists response so the next fetch gets fresh data
           const playlistCacheUrl = `https://api.spotify.com/v1/me/playlists`;
-          const playlistCacheKey = `spotify_cache:${accessToken}:${playlistCacheUrl}`;
+          const playlistCacheKey = `spotify_cache:${tokenHash}:${playlistCacheUrl}`;
           await redis.del(playlistCacheKey);
 
           // Targeted cache invalidation for specific playlist operations
@@ -153,7 +140,7 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
           }
 
           if (playlistId) {
-            const pattern = `spotify_cache:${accessToken}:https://api.spotify.com/v1/playlists/${playlistId}*`;
+            const pattern = `spotify_cache:${tokenHash}:https://api.spotify.com/v1/playlists/${playlistId}*`;
             const keys = await redis.keys(pattern);
             if (keys && keys.length > 0) {
               await redis.del(...keys);
