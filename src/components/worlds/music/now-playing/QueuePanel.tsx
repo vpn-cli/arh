@@ -82,7 +82,7 @@ export const QueuePanel = memo(function QueuePanel({
 
   const ensureQueueInitialized = () => {
     if (queue.length === 0 && effectiveQueue.length > 0) {
-      setQueue(effectiveQueue);
+      setQueue(effectiveQueue as Parameters<typeof setQueue>[0]);
       setQueueIndex(-1);
       return effectiveQueue;
     }
@@ -109,21 +109,19 @@ export const QueuePanel = memo(function QueuePanel({
         <div className="flex flex-1 gap-1">
           <button
             onClick={() => setRightPanelTab('queue')}
-            className={`flex-1 font-pixel text-meta min-h-[32px] py-1 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
-              rightPanelTab === 'queue'
+            className={`flex-1 font-pixel text-meta min-h-[32px] py-1 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${rightPanelTab === 'queue'
                 ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs'
                 : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
-            }`}
+              }`}
           >
             Queue ({upcomingQueue.length})
           </button>
           <button
             onClick={() => setRightPanelTab('recent')}
-            className={`flex-1 font-pixel text-meta min-h-[32px] py-1 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${
-              rightPanelTab === 'recent'
+            className={`flex-1 font-pixel text-meta min-h-[32px] py-1 rounded-full flex items-center justify-center gap-1 transition-all font-bold ${rightPanelTab === 'recent'
                 ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs'
                 : 'text-[var(--color-dark)] hover:text-[var(--color-dark)]'
-            }`}
+              }`}
           >
             <span>🕒</span> Recent
           </button>
@@ -216,17 +214,15 @@ export const QueuePanel = memo(function QueuePanel({
                       isDraggingRef.current = false;
                     }, 50);
                   }}
-                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl mw-row group cursor-pointer ${
-                    isCurrentlyActive
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl mw-row group cursor-pointer ${isCurrentlyActive
                       ? 'bg-[var(--color-light)] border-[var(--color-vibrant)]'
                       : ''
-                  } ${
-                    dragOverQueueIndex === storeIndex
+                    } ${dragOverQueueIndex === storeIndex
                       ? draggedQueueIndex !== null && draggedQueueIndex < storeIndex
                         ? 'border-b-[var(--color-vibrant)] border-b-2'
                         : 'border-t-[var(--color-vibrant)] border-t-2'
                       : ''
-                  } ${draggedQueueIndex === storeIndex ? 'opacity-50' : 'opacity-100'}`}
+                    } ${draggedQueueIndex === storeIndex ? 'opacity-50' : 'opacity-100'}`}
                   onClick={() => {
                     if (isDraggingRef.current) return;
                     ensureQueueInitialized();
@@ -269,9 +265,8 @@ export const QueuePanel = memo(function QueuePanel({
                       ensureQueueInitialized();
                       removeFromQueue(storeIndex);
                     }}
-                    className={`mw-btn mw-row-action text-[var(--color-dark)] hover:text-[var(--color-dark)] w-6 h-6 min-w-[24px] min-h-[24px] rounded shrink-0 flex items-center justify-center ${
-                      effectiveQueue.length > 0 ? '' : 'hidden'
-                    }`}
+                    className={`mw-btn mw-row-action text-[var(--color-dark)] hover:text-[var(--color-dark)] w-6 h-6 min-w-[24px] min-h-[24px] rounded shrink-0 flex items-center justify-center ${effectiveQueue.length > 0 ? '' : 'hidden'
+                      }`}
                     aria-label="Remove from queue"
                     title="Remove from queue"
                   >

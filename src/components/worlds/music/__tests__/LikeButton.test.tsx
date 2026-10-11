@@ -38,15 +38,16 @@ describe("LikeButton", () => {
     expect(svg?.getAttribute("stroke-width")).toBe("1");
   });
 
-  it("does not show Snoopy pop when disableSnoopyPop is true", () => {
+  it("does not show Snoopy pop when disableSnoopyPop is true", async () => {
     const toggleSpy = vi.fn();
     const { container } = render(
       <LikeButton isSaved={false} onToggle={toggleSpy} disableSnoopyPop={true} />
     );
 
     const button = screen.getByRole("button", { name: "Save to Liked Songs" });
-    act(() => {
+    await act(async () => {
       fireEvent.click(button);
+      vi.advanceTimersByTime(900);
     });
 
     expect(toggleSpy).toHaveBeenCalledTimes(1);
