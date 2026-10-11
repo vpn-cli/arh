@@ -7,6 +7,7 @@ import { usePlaylists, useBirthdayMix, useRecentlyPlayed } from "@/hooks/useSpot
 import { useLikedTracks } from "@/hooks/useLikedTracks";
 import { PlayIcon, ChevronRightIcon, MusicNoteIcon } from "../icons";
 import { HeroSlideshow } from "./HeroSlideshow";
+import { StickerIcon } from "../StickerIcon";
 
 export interface HomeTabProps {
   token?: string | null;
@@ -88,7 +89,7 @@ export const HomeTab = React.memo(function HomeTab({
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h3 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] flex items-center gap-2">
-            <span className="text-[var(--color-vibrant)]">♥</span> Continue Listening
+            <StickerIcon name="continueListening" size={32} className="inline-block object-contain shrink-0" /> Continue Listening
           </h3>
           <button onClick={() => onNavigate('playlists')} className="mw-btn font-pixel text-meta sm:text-body font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
             See all <ChevronRightIcon size={14} />

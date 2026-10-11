@@ -4,6 +4,7 @@ import React from "react";
 import { ChevronLeftIcon, SearchIcon, CloseIcon, MusicNoteIcon } from "../icons";
 import { InstallAppButton } from "./InstallAppButton";
 import { useMusicView } from "../hooks/useMusicView";
+import { StickerIcon } from "../StickerIcon";
 
 export interface PlayerHeaderProps {
   onGoHome?: () => void;
@@ -56,7 +57,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
           </button>
         )}
 
-        <img src="/hampter/hello_kitty_pin.png" alt="" className="w-7 h-7 object-contain hidden sm:block ml-2" />
+        <StickerIcon name="header" size={32} className="w-8 h-8 object-contain hidden sm:block ml-2 shrink-0" />
         <span className="font-pixel text-body font-bold text-[var(--color-dark)] hidden xl:inline-block">KAWAII_PLAYER.EXE</span>
         <span className="font-pixel text-body text-[var(--color-vibrant)] hidden xl:inline-block">♥</span>
       </div>

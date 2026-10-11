@@ -5,6 +5,7 @@ import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { useRecentlyPlayed, usePlayerQueue } from '@/hooks/useSpotify';
 import { formatTime } from '../playback/playbackHelpers';
 import { ChevronRightIcon, MusicNoteIcon, CloseIcon, PlusIcon } from '../icons';
+import { StickerIcon } from '../StickerIcon';
 
 export interface QueuePanelProps {
   onExpand: (tab: 'queue' | 'recent') => void;
@@ -103,9 +104,7 @@ export const QueuePanel = memo(function QueuePanel({
             <span>🕒</span> Recent
           </button>
         </div>
-        <span className="text-body px-2 select-none" title="Hello Kitty">
-          🎀
-        </span>
+        <StickerIcon name="queueTab" size={28} className="px-2 select-none shrink-0" />
       </div>
 
       {/* Header with Title and Clear / Expand */}

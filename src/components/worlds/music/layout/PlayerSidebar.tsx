@@ -6,6 +6,7 @@ import { logoutSpotify } from "@/lib/spotifyAuth";
 import { usePlaylists } from "@/hooks/useSpotify";
 import { MediaRow } from "../MediaRow";
 import { PlaylistCover } from "../PlaylistCover";
+import { StickerIcon } from "../StickerIcon";
 import {
   HomeIcon,
   PlaylistsIcon,
@@ -67,7 +68,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
       style={{ backgroundColor: 'color-mix(in srgb, var(--color-bg) 8%, white)' }}
     >
       <div className="h-28 border-2 border-[var(--color-muted)] bg-[var(--color-light)] flex items-center gap-3 justify-center m-4 rounded-2xl shrink-0">
-        <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
+        <StickerIcon name="kawaiiCard" size={48} className="w-12 h-12 object-contain shrink-0" />
         <div>
           <div className="font-pixel text-title font-bold text-[var(--color-dark)]">KAWAII</div>
           <div className="font-pixel text-caption text-[var(--color-dark)] font-medium">vibes • memories</div>

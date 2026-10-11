@@ -6,6 +6,7 @@ import { ProgressBar, ProgressBarHandle } from './ProgressBar';
 import { PlaybackControls } from './PlaybackControls';
 import { QueuePanel } from './QueuePanel';
 import { ChevronDownIcon, MusicNoteIcon } from '../icons';
+import { TrackActionsMenu } from '../TrackActionsMenu';
 
 export interface NowPlayingPanelProps {
   progressBarRef?: React.Ref<ProgressBarHandle>;
@@ -27,6 +28,10 @@ export interface NowPlayingPanelProps {
   playTrack: (uri: string, contextUri?: string, trackObj?: unknown) => Promise<void>;
   playContextTrack: (contextUri: string, trackUri: string) => Promise<void>;
   handleAddToQueue: (trackOrUri: unknown, contextUri?: string) => Promise<void>;
+  onAddToPlaylist?: (uri: string) => void;
+  onAddMemory?: (entity: any, type: 'track' | 'artist' | 'playlist') => void;
+  onOpenArtist?: (artistId: string) => void;
+  onOpenAlbum?: (albumId: string) => void;
 }
 
 export const NowPlayingPanel = memo(function NowPlayingPanel({
@@ -49,6 +54,10 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
   playTrack,
   playContextTrack,
   handleAddToQueue,
+  onAddToPlaylist,
+  onAddMemory,
+  onOpenArtist,
+  onOpenAlbum,
 }: NowPlayingPanelProps) {
   const currentTrack = useSpotifyPlayerStore((s) => s.currentTrack);
   const isPaused = useSpotifyPlayerStore((s) => s.isPaused);
@@ -161,12 +170,14 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
                     <span className="text-[var(--color-dark)] hover:text-[var(--color-vibrant)]">♡</span>
                   )}
                 </button>
-                <button
-                  className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-title text-[var(--color-dark)] hover:text-[var(--color-dark)] pb-1 font-bold"
-                  aria-label="Track options"
-                >
-                  ...
-                </button>
+                <TrackActionsMenu
+                  track={currentTrack}
+                  onAddToQueue={handleAddToQueue}
+                  onAddToPlaylist={onAddToPlaylist}
+                  onAddMemory={onAddMemory}
+                  onOpenArtist={onOpenArtist}
+                  onOpenAlbum={onOpenAlbum}
+                />
               </div>
             </div>
 
@@ -212,7 +223,14 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
               </div>
               <div className="flex gap-2 shrink-0 ml-2">
                 <button className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-title text-[var(--color-dark)]">♡</button>
-                <button className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-title text-[var(--color-dark)] pb-1 font-bold">...</button>
+                <button
+                  disabled
+                  className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-title text-[var(--color-dark)] pb-1 font-bold opacity-40 cursor-not-allowed"
+                  aria-label="Track options"
+                  title="No track loaded"
+                >
+                  ...
+                </button>
               </div>
             </div>
             <div className="w-full flex flex-col gap-1 mt-2">

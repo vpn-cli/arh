@@ -308,6 +308,8 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
             prevTrack={prevTrack} nextTrack={nextTrack} toggleShuffle={toggleShuffle}
             toggleRepeat={toggleRepeat} onExpandQueue={handleExpandQueue} playQueueItem={playQueueItem}
             playTrack={playTrack} playContextTrack={playContextTrack} handleAddToQueue={handleAddToQueue}
+            onAddToPlaylist={handleAddToPlaylist} onAddMemory={handleAddMemory}
+            onOpenArtist={openArtist} onOpenAlbum={openAlbum}
           />
 
           {/* Lyrics View Overlay */}
