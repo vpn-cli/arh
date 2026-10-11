@@ -9,8 +9,9 @@ export const SNOOPY_STICKERS_ENABLED = true;
 
 export const SNOOPY_STICKER_MAP = {
   header: 'r4c4',             // party hat and cake
-  kawaiiCard: 'r5c3',         // asleep on the moon
+  kawaiiCard: 'r4c2',         // detective magnifying glass
   continueListening: 'r5c2',  // scooter
+  recentlyPlayed: 'r4c1',     // eating donut
   queueTab: 'r1c4',           // big bow
   queueModal: 'r1c4',         // big bow
 } as const;

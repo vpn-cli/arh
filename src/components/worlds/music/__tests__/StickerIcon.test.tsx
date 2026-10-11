@@ -41,10 +41,11 @@ describe('Snoopy Stickers & StickerIcon', () => {
   it('renders correct sticker files for each configured slot', () => {
     const slots: Array<[config.StickerSlot, string, number]> = [
       ['header', '/stickers/snoopy-v1/r4c4.png', 32],
-      ['kawaiiCard', '/stickers/snoopy-v1/r5c3.png', 48],
-      ['continueListening', '/stickers/snoopy-v1/r5c2.png', 32],
+      ['kawaiiCard', '/stickers/snoopy-v1/r4c2.png', 80],
+      ['continueListening', '/stickers/snoopy-v1/r5c2.png', 48],
+      ['recentlyPlayed', '/stickers/snoopy-v1/r4c1.png', 48],
       ['queueTab', '/stickers/snoopy-v1/r1c4.png', 28],
-      ['queueModal', '/stickers/snoopy-v1/r1c4.png', 36],
+      ['queueModal', '/stickers/snoopy-v1/r1c4.png', 52],
     ];
 
     for (const [slot, expectedSrc, expectedSize] of slots) {
@@ -57,7 +58,7 @@ describe('Snoopy Stickers & StickerIcon', () => {
   });
 
   it('applies --icon-scale style when scale prop is provided', () => {
-    const { container } = render(<StickerIcon name="kawaiiCard" size={48} scale={1.2} />);
+    const { container } = render(<StickerIcon name="kawaiiCard" size={80} scale={1.2} />);
     const img = container.querySelector('img');
     expect(img?.style.getPropertyValue('--icon-scale')).toBe('1.2');
   });
@@ -68,8 +69,9 @@ describe('Snoopy Stickers & StickerIcon', () => {
       SNOOPY_STICKERS_ENABLED: false,
       SNOOPY_STICKER_MAP: {
         header: 'r4c4',
-        kawaiiCard: 'r5c3',
+        kawaiiCard: 'r4c2',
         continueListening: 'r5c2',
+        recentlyPlayed: 'r4c1',
         queueTab: 'r1c4',
         queueModal: 'r1c4',
       },
@@ -83,20 +85,24 @@ describe('Snoopy Stickers & StickerIcon', () => {
     expect(headerImg?.getAttribute('src')).toBe('/hampter/hello_kitty_pin.png');
 
     // KawaiiCard restores hello_kitty_pin
-    const cardRender = render(<FallbackStickerIcon name="kawaiiCard" size={48} />);
+    const cardRender = render(<FallbackStickerIcon name="kawaiiCard" size={80} />);
     const cardImg = cardRender.container.querySelector('img');
     expect(cardImg?.getAttribute('src')).toBe('/hampter/hello_kitty_pin.png');
 
     // ContinueListening restores heart
-    const heartRender = render(<FallbackStickerIcon name="continueListening" size={32} />);
+    const heartRender = render(<FallbackStickerIcon name="continueListening" size={48} />);
     expect(heartRender.container.textContent).toContain('♥');
+
+    // RecentlyPlayed restores clock symbol
+    const recentRender = render(<FallbackStickerIcon name="recentlyPlayed" size={48} />);
+    expect(recentRender.container.textContent).toContain('◷');
 
     // QueueTab restores ribbon
     const tabRender = render(<FallbackStickerIcon name="queueTab" size={28} />);
     expect(tabRender.container.textContent).toContain('🎀');
 
     // QueueModal restores ribbon
-    const modalRender = render(<FallbackStickerIcon name="queueModal" size={36} />);
+    const modalRender = render(<FallbackStickerIcon name="queueModal" size={52} />);
     expect(modalRender.container.textContent).toContain('🎀');
 
     vi.doUnmock('../stickerConfig');

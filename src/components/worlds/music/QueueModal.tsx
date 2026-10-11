@@ -157,8 +157,8 @@ export function QueueModal({
         {/* Header */}
         <div className="px-6 py-4 border-b-2 border-[var(--color-muted)] flex items-center justify-between bg-white/70 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[var(--color-light)] border border-[var(--color-muted)] flex items-center justify-center text-title shadow-xs transition-colors duration-500">
-              <StickerIcon name="queueModal" size={36} className="object-contain" />
+            <div className="w-14 h-14 rounded-2xl bg-[var(--color-light)] border border-[var(--color-muted)] flex items-center justify-center text-title shadow-xs transition-colors duration-500 shrink-0">
+              <StickerIcon name="queueModal" size={52} className="object-contain" />
             </div>
             <div>
               <h2 className="font-pixel text-title text-[var(--color-dark)] font-bold tracking-wide flex items-center gap-2">

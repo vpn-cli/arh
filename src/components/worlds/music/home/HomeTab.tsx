@@ -89,7 +89,7 @@ export const HomeTab = React.memo(function HomeTab({
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h3 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] flex items-center gap-2">
-            <StickerIcon name="continueListening" size={32} className="inline-block object-contain shrink-0" /> Continue Listening
+            <StickerIcon name="continueListening" size={48} className="inline-block object-contain shrink-0" /> Continue Listening
           </h3>
           <button onClick={() => onNavigate('playlists')} className="mw-btn font-pixel text-meta sm:text-body font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
             See all <ChevronRightIcon size={14} />
@@ -138,7 +138,7 @@ export const HomeTab = React.memo(function HomeTab({
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h3 className="font-pixel text-title sm:text-heading font-bold text-[var(--color-dark)] flex items-center gap-2">
-            <span className="text-[var(--color-vibrant)]">◷</span> Recently Played
+            <StickerIcon name="recentlyPlayed" size={48} className="inline-block object-contain shrink-0" /> Recently Played
           </h3>
           <button onClick={() => onNavigate('recent')} className="mw-btn font-pixel text-meta sm:text-body font-bold text-[var(--color-dark)] hover:text-[var(--color-dark)] inline-flex items-center gap-1">
             See all <ChevronRightIcon size={14} />

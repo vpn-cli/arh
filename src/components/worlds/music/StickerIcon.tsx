@@ -23,6 +23,14 @@ export const StickerIcon = React.memo(function StickerIcon({
   style,
   fallback,
 }: StickerIconProps) {
+  const combinedStyle: React.CSSProperties = {
+    ...(size ? { width: size, height: size } : {}),
+    ...(scale !== undefined
+      ? ({ '--icon-scale': scale, transform: 'scale(var(--icon-scale, 1))' } as React.CSSProperties)
+      : {}),
+    ...style,
+  };
+
   if (!SNOOPY_STICKERS_ENABLED) {
     if (fallback !== undefined) {
       return <>{fallback}</>;
@@ -38,7 +46,7 @@ export const StickerIcon = React.memo(function StickerIcon({
             width={size || 28}
             height={size || 28}
             className={className || 'w-7 h-7 object-contain hidden sm:block ml-2'}
-            style={style}
+            style={combinedStyle}
           />
         );
       case 'kawaiiCard':
@@ -50,7 +58,7 @@ export const StickerIcon = React.memo(function StickerIcon({
             width={size || 64}
             height={size || 64}
             className={className || 'w-16 h-16 object-contain'}
-            style={style}
+            style={combinedStyle}
           />
         );
       case 'continueListening':
@@ -58,9 +66,19 @@ export const StickerIcon = React.memo(function StickerIcon({
           <span
             aria-hidden="true"
             className={className || 'text-[var(--color-vibrant)]'}
-            style={style}
+            style={combinedStyle}
           >
             ♥
+          </span>
+        );
+      case 'recentlyPlayed':
+        return (
+          <span
+            aria-hidden="true"
+            className={className || 'text-[var(--color-vibrant)]'}
+            style={combinedStyle}
+          >
+            ◷
           </span>
         );
       case 'queueTab':
@@ -69,14 +87,14 @@ export const StickerIcon = React.memo(function StickerIcon({
             aria-hidden="true"
             className={className || 'text-body px-2 select-none'}
             title="Hello Kitty"
-            style={style}
+            style={combinedStyle}
           >
             🎀
           </span>
         );
       case 'queueModal':
         return (
-          <span aria-hidden="true" className={className} style={style}>
+          <span aria-hidden="true" className={className} style={combinedStyle}>
             🎀
           </span>
         );
@@ -84,13 +102,6 @@ export const StickerIcon = React.memo(function StickerIcon({
   }
 
   const stickerFile = SNOOPY_STICKER_MAP[name];
-  const combinedStyle: React.CSSProperties = {
-    ...(size ? { width: size, height: size } : {}),
-    ...(scale !== undefined
-      ? ({ '--icon-scale': scale, transform: 'scale(var(--icon-scale, 1))' } as React.CSSProperties)
-      : {}),
-    ...style,
-  };
 
   return (
     <img
