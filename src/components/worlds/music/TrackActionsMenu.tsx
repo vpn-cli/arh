@@ -143,15 +143,25 @@ export const TrackActionsMenu = React.memo(function TrackActionsMenu({
   }
 
   const firstArtist = track?.artists?.[0];
-  if (onOpenArtist && firstArtist?.id) {
+  const artistId = firstArtist?.id || (
+    typeof firstArtist?.uri === 'string' && firstArtist.uri.startsWith('spotify:artist:')
+      ? firstArtist.uri.split(':')[2]
+      : undefined
+  );
+  if (onOpenArtist && artistId) {
     items.push({
       id: 'artist',
       label: 'Go to artist',
-      action: () => onOpenArtist(firstArtist.id),
+      action: () => onOpenArtist(artistId),
     });
   }
 
-  const albumId = track?.album?.id;
+  const album = track?.album;
+  const albumId = album?.id || (
+    typeof album?.uri === 'string' && album.uri.startsWith('spotify:album:')
+      ? album.uri.split(':')[2]
+      : undefined
+  );
   if (onOpenAlbum && albumId) {
     items.push({
       id: 'album',

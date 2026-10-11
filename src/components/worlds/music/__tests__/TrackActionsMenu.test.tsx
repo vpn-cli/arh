@@ -175,4 +175,39 @@ describe('TrackActionsMenu component', () => {
     expect((button as HTMLButtonElement).disabled).toBe(true);
     expect(button.classList.contains('cursor-not-allowed')).toBe(true);
   });
+
+  it('derives artist and album IDs from uri when id is missing (Web Playback SDK track)', () => {
+    const sdkTrack = {
+      name: 'SDK Song',
+      uri: 'spotify:track:sdk-track-123',
+      artists: [{ name: 'SDK Artist', uri: 'spotify:artist:sdk-artist-456' }],
+      album: { name: 'SDK Album', uri: 'spotify:album:sdk-album-789' },
+    };
+
+    const onOpenArtist = vi.fn();
+    const onOpenAlbum = vi.fn();
+
+    render(
+      <TrackActionsMenu
+        track={sdkTrack}
+        onOpenArtist={onOpenArtist}
+        onOpenAlbum={onOpenAlbum}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /track options/i }));
+
+    const artistItem = screen.getByRole('menuitem', { name: 'Go to artist' });
+    const albumItem = screen.getByRole('menuitem', { name: 'Go to album' });
+
+    expect(artistItem).toBeTruthy();
+    expect(albumItem).toBeTruthy();
+
+    fireEvent.click(artistItem);
+    expect(onOpenArtist).toHaveBeenCalledWith('sdk-artist-456');
+
+    fireEvent.click(screen.getByRole('button', { name: /track options/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Go to album' }));
+    expect(onOpenAlbum).toHaveBeenCalledWith('sdk-album-789');
+  });
 });
