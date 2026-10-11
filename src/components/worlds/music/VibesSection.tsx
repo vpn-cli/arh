@@ -6,6 +6,7 @@ import { SectionHeader } from './SectionHeader';
 import { SegmentedControl } from './SegmentedControl';
 import { pickImage } from '@/lib/spotify/images';
 import { ChevronLeftIcon, PlayIcon } from './icons';
+import { PlaylistCover } from './PlaylistCover';
 
 interface VibesSectionProps {
   onPlayTrack: (uri: string, contextUri?: string, trackObj?: any) => void;
@@ -28,13 +29,7 @@ interface VibeCategory {
 }
 
 export function VibesSection({
-  onPlayTrack,
-  onPlayTracks,
-  onAddToQueue,
-  onAddToPlaylist,
-  onClickArtist,
-  onAddMemory,
-  rateLimitTimer
+  onPlayTrack, onPlayTracks, onAddToQueue, onAddToPlaylist, onClickArtist, onAddMemory, rateLimitTimer,
 }: VibesSectionProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('medium_term');
   const [selectedVibeId, setSelectedVibeId] = useState<string | null>(null);
@@ -181,6 +176,10 @@ export function VibesSection({
   );
 
   if (selectedVibe) {
+    const selectedVibeCoverUrls = selectedVibe.tracks
+      .map((t: any) => t.album?.images?.[0]?.url || t.album?.images?.[0])
+      .filter(Boolean);
+
     return (
       <div className="flex flex-col h-full min-h-0 pb-6">
         <div className="flex items-center justify-between mb-4 shrink-0">
@@ -193,24 +192,38 @@ export function VibesSection({
           </button>
         </div>
         
-        <div className="flex flex-col items-center justify-center mb-6 shrink-0 bg-gradient-to-r from-[var(--color-light)] to-[var(--color-light)] p-6 rounded-2xl border-2 border-[var(--color-muted)]">
-          <h2 className="font-pixel text-heading font-bold text-[var(--color-dark)] mb-1 text-center">{selectedVibe.label}</h2>
-          <p className="font-pixel text-caption text-[var(--color-dark)] font-medium">
-            {selectedVibe.artists.length} {selectedVibe.artists.length === 1 ? 'Top Artist' : 'Top Artists'} • {selectedVibe.tracks.length} {selectedVibe.tracks.length === 1 ? 'Top Track' : 'Top Tracks'}
-          </p>
-          <button 
-            type="button"
-            onClick={() => {
-              if (selectedVibe.tracks.length > 0) {
-                onPlayTracks(selectedVibe.tracks.map(t => t.uri), selectedVibe.tracks);
-              }
-            }}
-            disabled={selectedVibe.tracks.length === 0}
-            className="mt-4 mw-btn-primary"
-          >
-            <PlayIcon size={14} />
-            <span>Play Vibe</span>
-          </button>
+        <div className="mw-panel mb-6 shrink-0 flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-sm">
+          <div className="w-40 h-40 rounded-xl overflow-hidden shadow-lg shrink-0 border border-[var(--color-muted)]">
+            <PlaylistCover images={selectedVibeCoverUrls} size={160} />
+          </div>
+
+          <div className="flex-1 min-w-0 flex flex-col justify-center text-left w-full">
+            <span className="font-pixel text-caption font-bold tracking-wider text-[var(--color-text-muted)] uppercase mb-1">
+              VIBE
+            </span>
+            <h2
+              className="font-pixel text-heading sm:text-display font-extrabold text-[var(--color-dark)] truncate mb-1.5"
+              title={selectedVibe.label}
+            >
+              {selectedVibe.label}
+            </h2>
+            <div className="font-pixel text-caption text-[var(--color-dark)] font-medium opacity-80 flex items-center justify-start gap-1.5 flex-wrap">
+              <span>{selectedVibe.artists.length} {selectedVibe.artists.length === 1 ? 'Top Artist' : 'Top Artists'}</span>
+              <span>•</span>
+              <span>{selectedVibe.tracks.length} {selectedVibe.tracks.length === 1 ? 'Top Track' : 'Top Tracks'}</span>
+            </div>
+            <div className="flex items-center justify-start gap-3 mt-4 flex-wrap">
+              <button 
+                type="button"
+                onClick={() => selectedVibe.tracks.length > 0 && onPlayTracks(selectedVibe.tracks.map(t => t.uri), selectedVibe.tracks)}
+                disabled={selectedVibe.tracks.length === 0}
+                className="mw-btn-primary"
+              >
+                <PlayIcon size={14} />
+                <span>Play Vibe</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-2 flex flex-col gap-6">
