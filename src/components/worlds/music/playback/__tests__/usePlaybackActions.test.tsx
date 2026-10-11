@@ -53,6 +53,7 @@ vi.mock('@/store/spotifyStore', () => ({
         setQueueIndex: mockSetQueueIndex,
         setIsShuffle: mockSetIsShuffle,
         setRepeatMode: mockSetRepeatMode,
+        setCurrentTrack: vi.fn(),
         addToQueue: vi.fn(),
       }),
     }

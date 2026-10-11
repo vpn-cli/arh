@@ -102,6 +102,8 @@ export async function fetchRelevantTracks(track: any): Promise<any[]> {
   }
 }
 
+export const PLAYBACK_DEBUG = false;
+
 export async function executeContinuousPlayTrack(
   uri: string,
   track: any,
@@ -110,14 +112,25 @@ export async function executeContinuousPlayTrack(
   setStoreQueue: (queue: any[]) => void,
   setStoreQueueIndex: (index: number) => void
 ): Promise<void> {
+  const resolvedTrack = track || { uri, name: 'Playing Track' };
+  const { useSpotifyPlayerStore } = await import('@/store/spotifyStore');
+  useSpotifyPlayerStore.getState().setCurrentTrack?.(resolvedTrack);
+
   const relevant = await fetchRelevantTracks(track);
   const relevantUris = relevant.map((t: any) => t.uri).filter(Boolean);
-  await playMutation.mutateAsync({
+  const requestBody = {
     uris: [uri, ...relevantUris],
     device_id: targetDevice || undefined,
-  });
+  };
+  if (PLAYBACK_DEBUG) {
+    console.debug('[PLAYBACK_DEBUG] executeContinuousPlayTrack:', {
+      clickedUri: uri,
+      requestBody,
+    });
+  }
+  await playMutation.mutateAsync(requestBody);
   setStoreQueue([
-    { track: track || { uri, name: 'Playing Track' }, contextUri: undefined },
+    { track: resolvedTrack, contextUri: undefined },
     ...relevant.map((t: any) => ({ track: t, contextUri: undefined })),
   ]);
   setStoreQueueIndex(0);
@@ -137,11 +150,18 @@ export async function executePlayTracks(
       ? offsetPosition
       : 0;
 
-  await playMutation.mutateAsync({
+  const requestBody = {
     uris,
     offset: typeof offsetPosition === 'number' ? { position: offsetPosition } : undefined,
     device_id: targetDevice || undefined,
-  });
+  };
+  if (PLAYBACK_DEBUG) {
+    console.debug('[PLAYBACK_DEBUG] executePlayTracks:', {
+      clickedUri: uris[startIndex],
+      requestBody,
+    });
+  }
+  await playMutation.mutateAsync(requestBody);
 
   if (tracksList && tracksList.length > 0) {
     setStoreQueue(tracksList.map((t) => ({ track: t })));

@@ -7,7 +7,7 @@ import { PlaylistCard } from './PlaylistCard';
 
 interface SearchResultsProps {
   query: string;
-  onPlayTrack: (uri: string) => void;
+  onPlayTrack: (uri: string, contextUri?: string, trackObj?: any) => void;
   onAddToQueue?: (track: any) => void;
   onAddToPlaylist?: (uri: string) => void;
   onPlayPlaylist?: (uri: string) => void;

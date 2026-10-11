@@ -13,6 +13,7 @@ import {
   isValidContextUri,
   openInSpotify,
   sfx,
+  PLAYBACK_DEBUG,
 } from "./playbackHelpers";
 import { seekSharedClock } from "./playbackClock";
 
@@ -65,6 +66,13 @@ export async function playTrackGlobal(
       body.offset = { uri };
     } else {
       body.uris = [uri];
+    }
+    if (PLAYBACK_DEBUG) {
+      console.debug("[PLAYBACK_DEBUG] playTrackGlobal request:", {
+        clickedUri: uri,
+        requestBody: body,
+        targetDevice,
+      });
     }
     await proxyFetch(url, {
       method: "PUT",

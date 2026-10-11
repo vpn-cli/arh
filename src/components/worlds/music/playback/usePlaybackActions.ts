@@ -14,6 +14,7 @@ import {
   isValidContextUri,
   openInSpotify,
   sfx,
+  PLAYBACK_DEBUG,
   resolveTrackForPlayback,
   executeContinuousPlayTrack,
   executePlayTracks,
@@ -144,11 +145,18 @@ export function usePlaybackActions({
     if (targetDevice === null) return;
 
     try {
-      await mutationsRef.current.play.mutateAsync({
+      const requestBody = {
         context_uri: contextUri,
         offset: { uri: trackUri },
         device_id: targetDevice || undefined,
-      });
+      };
+      if (PLAYBACK_DEBUG) {
+        console.debug('[PLAYBACK_DEBUG] playContextTrack request:', {
+          clickedUri: trackUri,
+          requestBody,
+        });
+      }
+      await mutationsRef.current.play.mutateAsync(requestBody);
     } catch (e: any) {
       console.error(`[${new Date().toISOString()}] [Play Context Track Error]`, e);
       optionsRef.current.setRecoveryError(e.message || 'Error playing track in context');
@@ -158,6 +166,10 @@ export function usePlaybackActions({
   const playTrack = useCallback(async (uri: string, contextUri?: any, trackObj?: any) => {
     if (!tokenRef.current) return;
     sfx.select();
+
+    if (PLAYBACK_DEBUG) {
+      console.debug('[PLAYBACK_DEBUG] playTrack clicked:', { uri, contextUri, trackObj });
+    }
 
     const targetDevice = await ensurePlaybackDevice(uri);
     if (targetDevice === null) return;
@@ -230,10 +242,17 @@ export function usePlaybackActions({
     if (targetDevice === null) return;
 
     try {
-      await mutationsRef.current.play.mutateAsync({
+      const requestBody = {
         context_uri: uri,
         device_id: targetDevice || undefined,
-      });
+      };
+      if (PLAYBACK_DEBUG) {
+        console.debug('[PLAYBACK_DEBUG] playPlaylist request:', {
+          clickedUri: uri,
+          requestBody,
+        });
+      }
+      await mutationsRef.current.play.mutateAsync(requestBody);
       if (playlistTracks && playlistTracks.length > 0) {
         const store = useSpotifyPlayerStore.getState();
         store.setQueue(playlistTracks.map((t) => ({ track: t, contextUri: uri })));

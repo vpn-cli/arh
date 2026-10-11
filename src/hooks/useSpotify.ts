@@ -148,6 +148,15 @@ export function useSpotifyMutations() {
       
       const payload = Object.keys(body).length > 0 ? JSON.stringify(body) : undefined;
       
+      const { PLAYBACK_DEBUG } = await import('@/components/worlds/music/playback/playbackHelpers');
+      if (PLAYBACK_DEBUG) {
+        console.debug('[PLAYBACK_DEBUG] PUT /me/player/play request:', {
+          url,
+          body,
+          clickedUri: uris?.[0] || offset?.uri || context_uri,
+        });
+      }
+
       await proxyFetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

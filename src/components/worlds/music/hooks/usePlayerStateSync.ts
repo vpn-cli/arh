@@ -14,6 +14,7 @@ import {
   seekSharedClock,
   setSharedPaused,
 } from "../playback/playbackClock";
+import { PLAYBACK_DEBUG } from "../playback/playbackHelpers";
 
 export interface UsePlayerStateSyncOptions {
   progressBarRef: RefObject<ProgressBarHandle | null>;
@@ -55,6 +56,8 @@ export function usePlayerStateSync({
   const lastActiveTrackIdRef = useRef<string | null>(null);
   const isAutoplayingRef = useRef(false);
   const lastActiveTrackUriRef = useRef<string | null>(null);
+  const hasActuallyPlayedRef = useRef(false);
+  const prevPositionRef = useRef(0);
 
   const playerRef = useRef(player);
   playerRef.current = player;
@@ -117,7 +120,14 @@ export function usePlayerStateSync({
       const incomingTrackId = state.track_window?.current_track?.id;
       if (incomingTrackId && incomingTrackId !== lastActiveTrackIdRef.current) {
         lastActiveTrackIdRef.current = incomingTrackId;
+        hasActuallyPlayedRef.current = false;
+        prevPositionRef.current = 0;
       }
+
+      if (!state.paused && state.position > 1000) {
+        hasActuallyPlayedRef.current = true;
+      }
+
       updateSharedPlaybackState(state.position, state.paused);
 
       progressBarRef.current?.applyState({
@@ -142,10 +152,19 @@ export function usePlayerStateSync({
         }
       }
 
-      // Continuous playback: if playback ended and next_tracks is empty
+      // Continuous playback: if playback legitimately ended (track was playing and reached end)
       const nextTracks = state.track_window?.next_tracks || [];
+      const didReachEnd =
+        hasActuallyPlayedRef.current &&
+        state.duration > 0 &&
+        (prevPositionRef.current >= state.duration - 3000 ||
+          (state.position === 0 && prevPositionRef.current >= state.duration * 0.85));
+
       const isEnded =
-        state.paused && state.position === 0 && !userPausedRef.current && !!lastActiveTrackUriRef.current;
+        state.paused && didReachEnd && !userPausedRef.current && !!lastActiveTrackUriRef.current;
+
+      prevPositionRef.current = state.position;
+
       if (isEnded && nextTracks.length === 0 && !isAutoplayingRef.current) {
         isAutoplayingRef.current = true;
         try {
@@ -155,10 +174,17 @@ export function usePlayerStateSync({
             const relevant = await getRelevantTracks(trackForAutoplay, 10);
             if (relevant.length > 0) {
               const targetDevice = selectedDevice || deviceIdRef?.current || deviceId;
-              await play.mutateAsync({
+              const autoPayload = {
                 uris: relevant.map((t: any) => t.uri),
                 device_id: targetDevice || undefined,
-              });
+              };
+              if (PLAYBACK_DEBUG) {
+                console.debug("[PLAYBACK_DEBUG] auto-advance on track end request:", {
+                  triggerTrack: trackForAutoplay.name,
+                  requestBody: autoPayload,
+                });
+              }
+              await play.mutateAsync(autoPayload);
               setQueue(relevant.map((t: any) => ({ track: t })));
               setQueueIndex(0);
             }
