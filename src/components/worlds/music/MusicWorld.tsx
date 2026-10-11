@@ -14,10 +14,6 @@ export default function MusicWorld() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [notes, setNotes] = useState<any[]>([]);
 
-  if (isWidgetView) {
-    return <WidgetPlayer />;
-  }
-
   useEffect(() => {
     if (containerRef.current) {
       gsap.fromTo(
@@ -41,6 +37,10 @@ export default function MusicWorld() {
     }));
     setNotes(generatedNotes);
   }, []);
+
+  if (isWidgetView) {
+    return <WidgetPlayer />;
+  }
 
   return (
     <div className="relative w-full min-h-screen bg-[var(--color-light)] text-[var(--color-dark)] overflow-hidden selection:bg-[var(--color-muted)]/40">
