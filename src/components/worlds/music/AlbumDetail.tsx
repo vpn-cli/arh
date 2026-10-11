@@ -70,14 +70,10 @@ export function AlbumDetail({ albumId, onBack, onPlayAlbum, onPlayTrack, onAddTo
     );
   }
 
-  const albumTracksWithAlbum = React.useMemo(() => {
-    if (!itemsData?.items) return [];
-    if (!album) return itemsData.items;
-    return itemsData.items.map((t: any) => ({
-      ...t,
-      album: t.album || album,
-    }));
-  }, [itemsData?.items, album]);
+  const albumTracksWithAlbum = itemsData?.items?.map((t: any) => ({
+    ...t,
+    album: t.album || album,
+  })) || [];
 
   const handlePlay = () => {
     if (album?.uri) {
