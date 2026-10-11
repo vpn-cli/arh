@@ -79,6 +79,7 @@ describe('VinylRecord interactions', () => {
 
       act(() => {
         rerender(<VinylRecord currentTrack={mockTrack2} isPaused={false} />);
+        vi.runOnlyPendingTimers();
       });
       expect(screen.queryByTitle('Memory saved')).toBeNull();
     });
@@ -172,6 +173,7 @@ describe('VinylRecord interactions', () => {
       // Track changes to track2
       act(() => {
         rerender(<VinylRecord currentTrack={mockTrack2} isPaused={false} />);
+        vi.runOnlyPendingTimers();
       });
 
       // Flips back to front
@@ -251,6 +253,26 @@ describe('VinylRecord interactions', () => {
 
       const finishedSticker = document.querySelector('img[src="/stickers/snoopy-v1/r2c1.png"]');
       expect(finishedSticker).toBeNull();
+    });
+
+    it('renders sticker image in DOM and unconstrained by zero-width parent with max-w-none at 40px', () => {
+      const { rerender } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} likeTrigger={0} />);
+
+      act(() => {
+        rerender(<VinylRecord currentTrack={mockTrack1} isPaused={false} likeTrigger={1} />);
+      });
+
+      const stickerImg = document.querySelector('img[src="/stickers/snoopy-v1/r2c1.png"]') as HTMLImageElement;
+      expect(stickerImg).not.toBeNull();
+      // Ensure the image inside the 0-width rotator box is not constrained to 0 width by Tailwind img { max-width: 100% }
+      expect(stickerImg.classList.contains('max-w-none')).toBe(true);
+      expect(stickerImg.classList.contains('w-10')).toBe(true);
+      expect(stickerImg.getAttribute('width')).toBe('40');
+      expect(stickerImg.getAttribute('height')).toBe('40');
+
+      act(() => {
+        vi.advanceTimersByTime(1850);
+      });
     });
   });
 });

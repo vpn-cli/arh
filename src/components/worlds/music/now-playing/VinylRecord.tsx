@@ -302,7 +302,7 @@ export const VinylRecord = memo(function VinylRecord({
                 alt=""
                 width={40}
                 height={40}
-                className="w-10 h-10 object-contain drop-shadow-sm pointer-events-none select-none"
+                className="w-10 h-10 object-contain drop-shadow-sm pointer-events-none select-none max-w-none"
               />
             </div>
           </div>
