@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  env: {
+    SPOTIFY_LIVE: process.env.SPOTIFY_LIVE || '',
+  },
   /* config options here */
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
   images: {

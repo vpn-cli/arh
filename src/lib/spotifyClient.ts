@@ -81,9 +81,13 @@ export interface RetryAttempts {
   rateLimit: number;
 }
 
+export interface ProxyFetchOptions extends RequestInit {
+  isPolling?: boolean;
+}
+
 async function doFetch(
   endpoint: string,
-  options: RequestInit = {},
+  options: ProxyFetchOptions = {},
   retryAttempts: RetryAttempts = { auth: 0, device: 0, rateLimit: 0 }
 ): Promise<any> {
   if (isSpotifyLocked()) {
@@ -181,18 +185,64 @@ async function doFetch(
       if (isNaN(retryAfterSeconds) || retryAfterSeconds <= 0) retryAfterSeconds = 1;
       const retryAfterMs = retryAfterSeconds * 1000;
 
-      // Notify global lock store to display banner and prevent new requests
-      setClientSpotifyLock(retryAfterSeconds);
+      const isLocalLimiter = errorData?.source === 'local-limiter';
+
+      // Notify global lock store to display banner and prevent new requests (upstream Spotify lockout only)
+      if (!isLocalLimiter) {
+        setClientSpotifyLock(retryAfterSeconds);
+      }
 
       // Pause queue globally
       if (!spotifyQueue.isPaused) {
         spotifyQueue.pause();
-        console.warn(`[${new Date().toISOString()}] [Client Throttling] Received 429. Pausing queue for ${retryAfterMs}ms`);
+        console.warn(`[${new Date().toISOString()}] [Client Throttling] Received 429 (${isLocalLimiter ? 'local-limiter' : 'upstream'}). Pausing queue for ${retryAfterMs}ms`);
         setTimeout(() => {
           if (spotifyQueue.isPaused) spotifyQueue.start();
         }, retryAfterMs);
       }
 
+      // Point 5: Client backoff on local-limiter 429:
+      // retry GETs only, max 2 attempts;
+      // never retry PUT/POST/DELETE (player commands);
+      // drop polling requests instead of retrying them.
+      if (isLocalLimiter) {
+        const isPolling = options.isPolling === true ||
+          (typeof options.headers === 'object' && (options.headers as any)?.['X-Polling'] === 'true');
+
+        if (isPolling) {
+          console.warn(`[${new Date().toISOString()}] [Client Rate Limit] Dropping polling request for ${method} ${url}`);
+          return null;
+        }
+
+        if (method !== 'GET') {
+          console.warn(`[${new Date().toISOString()}] [Client Rate Limit] Never retrying mutation ${method} ${url} on local-limiter 429`);
+          throw {
+            status: 429,
+            message: 'Too Many Requests',
+            retryAfter: retryAfterSeconds,
+            source: 'local-limiter',
+            details: errorData,
+          };
+        }
+
+        // Retry GETs only, max 2 attempts (initial attempt + 1 retry)
+        if (retryAttempts.rateLimit < 1) {
+          retryAttempts.rateLimit++;
+          console.warn(`[${new Date().toISOString()}] [Client Rate Limit] Waiting ${retryAfterSeconds}s for Retry-After, then retrying GET (attempt 2 of 2)...`);
+          await new Promise((resolve) => setTimeout(resolve, retryAfterMs));
+          return doFetch(endpoint, options, retryAttempts);
+        }
+
+        throw {
+          status: 429,
+          message: 'Too Many Requests',
+          retryAfter: retryAfterSeconds,
+          source: 'local-limiter',
+          details: errorData,
+        };
+      }
+
+      // Upstream 429 retry logic: retry once
       if (retryAttempts.rateLimit < 1) {
         retryAttempts.rateLimit++;
         console.warn(`[${new Date().toISOString()}] [Spotify API 429 Rate Limit] Waiting ${retryAfterSeconds}s for Retry-After, then retrying once...`);
@@ -200,7 +250,13 @@ async function doFetch(
         return doFetch(endpoint, options, retryAttempts);
       }
 
-      throw { status: 429, message: 'Too Many Requests', retryAfter: retryAfterSeconds, details: errorData };
+      throw {
+        status: 429,
+        message: 'Too Many Requests',
+        retryAfter: retryAfterSeconds,
+        source: errorData?.source,
+        details: errorData,
+      };
     }
 
     // 403 Forbidden
@@ -226,7 +282,7 @@ async function doFetch(
   }
 }
 
-export async function proxyFetch(endpoint: string, options: RequestInit = {}): Promise<any> {
+export async function proxyFetch(endpoint: string, options: ProxyFetchOptions = {}): Promise<any> {
   if (isSpotifyLocked()) {
     const remaining = useSpotifyLockStore.getState().getRemainingSeconds();
     throw { status: 429, message: 'Spotify is resting', retryAfter: remaining };

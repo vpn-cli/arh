@@ -1,9 +1,231 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { redis, hashToken, getSpotifyApiLock, setSpotifyApiLock } from '@/lib/server/redis';
+import {
+  redis,
+  hashToken,
+  getSpotifyApiLock,
+  setSpotifyApiLock,
+  reserveSpotifyRateLimit,
+  deleteByPattern,
+  keyPrefix,
+} from '@/lib/server/redis';
+import { recordUpstreamSpotifyRequest } from '@/lib/server/spotifyLogger';
+import { inFlightGetRequests, InFlightResult } from '@/lib/server/spotifyInFlight';
 
 // Cache TTL in seconds (1 hour)
 const CACHE_TTL = 3600;
+
+export const _inFlightGetRequestsForTesting = inFlightGetRequests;
+
+function toNextResponse(result: InFlightResult): NextResponse {
+  if (result.isNoContent) {
+    return new NextResponse(null, { status: 204 });
+  }
+  if (result.isJson) {
+    return NextResponse.json(result.body, {
+      status: result.status,
+      headers: result.headers,
+    });
+  }
+  return new NextResponse(result.body, {
+    status: result.status,
+    statusText: result.statusText,
+    headers: result.headers,
+  });
+}
+
+async function executeUpstreamRequest(
+  request: Request,
+  spotifyUrl: string,
+  accessToken: string,
+  isCacheable: boolean,
+  cacheKey: string,
+  tokenHash: string,
+  pathString: string,
+  url: URL
+): Promise<InFlightResult> {
+  const headers = new Headers();
+  headers.set('Authorization', `Bearer ${accessToken}`);
+  const contentType = request.headers.get('content-type');
+  if (contentType) headers.set('Content-Type', contentType);
+
+  const options: RequestInit = {
+    method: request.method,
+    headers,
+  };
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    const body = await request.text();
+    if (body) options.body = body;
+  }
+
+  recordUpstreamSpotifyRequest(spotifyUrl);
+  const response = await fetch(spotifyUrl, options);
+
+  // 4. Handle 401: return 401 directly so client wrapper's single-flight getFreshToken refreshes via /api/spotify/session
+  if (response.status === 401) {
+    console.warn(`[${new Date().toISOString()}] [Spotify Proxy] Upstream 401 Unauthorized for ${request.method} ${spotifyUrl}. Returning 401 to client.`);
+    return {
+      status: 401,
+      isJson: true,
+      isNoContent: false,
+      body: { error: 'Unauthorized' },
+      headers: {},
+    };
+  }
+
+  // Log status code and response body for every failed Spotify API call
+  if (!response.ok && response.status !== 204) {
+    const cloned = typeof response.clone === 'function' ? response.clone() : null;
+    const bodyText = cloned ? await cloned.text().catch(() => '') : '';
+    console.error(`[${new Date().toISOString()}] [Spotify API Failed] ${request.method} ${spotifyUrl} - Status: ${response.status}, Body:`, bodyText);
+  }
+
+  // 5. Handle 403 (Pass directly to client, no retry)
+  if (response.status === 403) {
+    const data = await response.json().catch(() => ({}));
+    console.error(`[Spotify API 403 Forbidden] URL: ${spotifyUrl}`, JSON.stringify(data, null, 2));
+    return {
+      status: 403,
+      isJson: true,
+      isNoContent: false,
+      body: data,
+      headers: {},
+    };
+  }
+
+  // 6. Handle 429 (Set Circuit Breaker)
+  if (response.status === 429) {
+    const retryAfterStr = response.headers.get('Retry-After');
+    let retryAfter = retryAfterStr ? parseInt(retryAfterStr, 10) : 60;
+    if (isNaN(retryAfter)) retryAfter = 60;
+    
+    await setSpotifyApiLock(retryAfter);
+    
+    return {
+      status: 429,
+      isJson: true,
+      isNoContent: false,
+      body: { error: 'Too Many Requests', retryAfter },
+      headers: { 'Retry-After': String(retryAfter) },
+    };
+  }
+
+  // 6b. Bust playlist and track cache after successful write operations
+  if (response.ok && request.method !== 'GET' && request.method !== 'HEAD' && redis) {
+    const isLibraryPlaylistWrite = pathString === 'me/library' && !!url.searchParams.get('uris')?.includes('spotify:playlist:');
+    const isPlaylistWrite = pathString.startsWith('me/playlists') || pathString.startsWith('playlists/') || isLibraryPlaylistWrite;
+    if (isPlaylistWrite) {
+      try {
+        // Bust playlist caches using SCAN pattern deletes
+        await deleteByPattern(`${keyPrefix()}spotify_cache:${tokenHash}:https://api.spotify.com/v1/me/playlists*`);
+
+        // Targeted cache invalidation for specific playlist operations
+        let playlistId = null;
+        const match = pathString.match(/^playlists\/([^/]+)/);
+        if (match && match[1]) {
+          playlistId = match[1];
+        } else if (isLibraryPlaylistWrite) {
+          const uris = url.searchParams.get('uris');
+          const pMatch = uris?.match(/spotify:playlist:([^,&]+)/);
+          if (pMatch && pMatch[1]) {
+            playlistId = pMatch[1];
+          }
+        }
+
+        if (playlistId) {
+          await deleteByPattern(`${keyPrefix()}spotify_cache:${tokenHash}:https://api.spotify.com/v1/playlists/${playlistId}*`);
+        }
+      } catch (e: any) {
+        console.error("Redis error busting playlist cache:", e?.message || JSON.stringify(e));
+      }
+    }
+
+    const isTrackWrite =
+      pathString.startsWith('me/tracks') ||
+      (pathString.startsWith('me/library') && !isLibraryPlaylistWrite);
+    if (isTrackWrite) {
+      try {
+        await deleteByPattern(`${keyPrefix()}spotify_cache:${tokenHash}:https://api.spotify.com/v1/me/tracks*`);
+        await deleteByPattern(`${keyPrefix()}spotify_cache:${tokenHash}:https://api.spotify.com/v1/me/library/contains*`);
+      } catch (e: any) {
+        console.error("Redis error busting track cache:", e?.message || JSON.stringify(e));
+      }
+    }
+  }
+
+  // 7. Parse and Cache Success Responses
+  if (response.ok && isCacheable) {
+    const clonedResponse = response.clone();
+    const text = await clonedResponse.text();
+    let data;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text;
+    }
+    if (data) {
+      if (redis) {
+        redis.set(cacheKey, data, { ex: CACHE_TTL }).catch(console.error);
+        if (pathString === 'me' && data && data.id) {
+          redis.set(`${keyPrefix()}spotify_user:${tokenHash}`, data.id, { ex: CACHE_TTL }).catch(console.error);
+        }
+      }
+      return {
+        status: 200,
+        isJson: true,
+        isNoContent: false,
+        body: data,
+        headers: { 'X-Cache': 'MISS' },
+      };
+    }
+  }
+
+  if (response.status === 204) {
+    return {
+      status: 204,
+      isJson: false,
+      isNoContent: true,
+      body: null,
+      headers: {},
+    };
+  }
+
+  const responseContentType = response.headers?.get ? (response.headers.get('content-type') || '') : '';
+  if (responseContentType.includes('application/json')) {
+    const data = await response.json().catch(() => null);
+    const safeHeaders: Record<string, string> = {};
+    response.headers?.forEach?.((value, key) => {
+      if (key.toLowerCase() !== 'content-encoding' && key.toLowerCase() !== 'transfer-encoding') {
+        safeHeaders[key] = value;
+      }
+    });
+    return {
+      status: response.status,
+      isJson: true,
+      isNoContent: false,
+      body: data,
+      headers: safeHeaders,
+    };
+  }
+
+  // Forward non-JSON or uncacheable responses
+  const responseBody = await response.arrayBuffer();
+  const safeHeaders: Record<string, string> = {};
+  response.headers?.forEach?.((value, key) => {
+    if (key.toLowerCase() !== 'content-encoding' && key.toLowerCase() !== 'transfer-encoding') {
+      safeHeaders[key] = value;
+    }
+  });
+
+  return {
+    status: response.status,
+    statusText: response.statusText,
+    isJson: false,
+    isNoContent: false,
+    body: responseBody,
+    headers: safeHeaders,
+  };
+}
 
 async function handleReq(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
@@ -23,6 +245,7 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
       searchParams.delete('limit');
     }
   }
+  searchParams.sort();
   const qs = searchParams.toString();
   const spotifyUrl = `https://api.spotify.com/v1/${pathString}${qs ? '?' + qs : ''}`;
 
@@ -36,7 +259,7 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
   const tokenHash = hashToken(accessToken);
 
   try {
-    // 1. Check Circuit Breaker
+    // 1. Check Circuit Breaker Lock
     const lock = await getSpotifyApiLock();
     if (lock) {
       return NextResponse.json(
@@ -45,7 +268,8 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
       );
     }
 
-    // 2. Check Cache for read-heavy endpoints (GET requests)
+    // 2. Check Cache for read-heavy endpoints (GET requests) BEFORE Rate Limiter
+    // Cache hits must NEVER call the limiter, even when budget is exhausted.
     const isCacheable = request.method === 'GET' && 
       (pathString === 'me' ||
        pathString.startsWith('me/playlists') || 
@@ -54,7 +278,7 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
        pathString.startsWith('me/library') ||
        pathString.startsWith('playlists/'));
        
-    const cacheKey = `spotify_cache:${tokenHash}:${spotifyUrl}`;
+    const cacheKey = `${keyPrefix()}spotify_cache:${tokenHash}:${spotifyUrl}`;
     if (isCacheable && redis) {
       try {
         const cachedData = await redis.get(cacheKey);
@@ -66,128 +290,76 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
       }
     }
 
-    // 3. Make Spotify Request
-    const headers = new Headers();
-    headers.set('Authorization', `Bearer ${accessToken}`);
-    const contentType = request.headers.get('content-type');
-    if (contentType) headers.set('Content-Type', contentType);
-
-    const options: RequestInit = {
-      method: request.method,
-      headers,
-    };
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
-      const body = await request.text();
-      if (body) options.body = body;
-    }
-
-    let response = await fetch(spotifyUrl, options);
-
-    // 4. Handle 401: return 401 directly so client wrapper's single-flight getFreshToken refreshes via /api/spotify/session
-    if (response.status === 401) {
-      console.warn(`[${new Date().toISOString()}] [Spotify Proxy] Upstream 401 Unauthorized for ${request.method} ${spotifyUrl}. Returning 401 to client.`);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Log status code and response body for every failed Spotify API call
-    if (!response.ok && response.status !== 204) {
-      const cloned = response.clone();
-      const bodyText = await cloned.text().catch(() => '');
-      console.error(`[${new Date().toISOString()}] [Spotify API Failed] ${request.method} ${spotifyUrl} - Status: ${response.status}, Body:`, bodyText);
-    }
-
-    // 5. Handle 403 (Pass directly to client, no retry)
-    if (response.status === 403) {
-      const data = await response.json().catch(() => ({}));
-      console.error(`[Spotify API 403 Forbidden] URL: ${spotifyUrl}`, JSON.stringify(data, null, 2));
-      return NextResponse.json(data, { status: 403 });
-    }
-
-    // 6. Handle 429 (Set Circuit Breaker)
-    if (response.status === 429) {
-      const retryAfterStr = response.headers.get('Retry-After');
-      let retryAfter = retryAfterStr ? parseInt(retryAfterStr, 10) : 60;
-      if (isNaN(retryAfter)) retryAfter = 60;
-      
-      await setSpotifyApiLock(retryAfter);
-      
-      return NextResponse.json({ error: 'Too Many Requests', retryAfter }, { status: 429 });
-    }
-
-    // 6b. Bust playlist cache after successful write operations
-    if (response.ok && request.method !== 'GET' && request.method !== 'HEAD' && redis) {
-      const isLibraryPlaylistWrite = pathString === 'me/library' && !!url.searchParams.get('uris')?.includes('spotify:playlist:');
-      const isPlaylistWrite = pathString.startsWith('me/playlists') || pathString.startsWith('playlists/') || isLibraryPlaylistWrite;
-      if (isPlaylistWrite) {
-        try {
-          // Delete the cached GET /me/playlists response so the next fetch gets fresh data
-          const playlistCacheUrl = `https://api.spotify.com/v1/me/playlists`;
-          const playlistCacheKey = `spotify_cache:${tokenHash}:${playlistCacheUrl}`;
-          await redis.del(playlistCacheKey);
-
-          // Targeted cache invalidation for specific playlist operations
-          // Match playlists/{playlist_id} or playlists/{playlist_id}/items
-          let playlistId = null;
-          const match = pathString.match(/^playlists\/([^\/]+)/);
-          if (match && match[1]) {
-            playlistId = match[1];
-          } else if (isLibraryPlaylistWrite) {
-            const uris = url.searchParams.get('uris');
-            const pMatch = uris?.match(/spotify:playlist:([^,&]+)/);
-            if (pMatch && pMatch[1]) {
-              playlistId = pMatch[1];
+    // 3. Rate Limiter & Upstream Request Execution (with GET coalescing)
+    if (request.method === 'GET') {
+      let inFlight = inFlightGetRequests.get(cacheKey);
+      if (!inFlight) {
+        inFlight = (async () => {
+          try {
+            const limitRes = await reserveSpotifyRateLimit(tokenHash, pathString);
+            if (!limitRes.allowed) {
+              return {
+                status: 429,
+                isJson: true,
+                isNoContent: false,
+                body: {
+                  error: 'Too Many Requests (Rate Limit Exceeded)',
+                  source: 'local-limiter',
+                  retryAfter: limitRes.retryAfter,
+                },
+                headers: { 'Retry-After': String(limitRes.retryAfter) },
+              };
             }
+
+            return await executeUpstreamRequest(
+              request,
+              spotifyUrl,
+              accessToken,
+              isCacheable,
+              cacheKey,
+              tokenHash,
+              pathString,
+              url
+            );
+          } finally {
+            inFlightGetRequests.delete(cacheKey);
           }
+        })();
 
-          if (playlistId) {
-            const pattern = `spotify_cache:${tokenHash}:https://api.spotify.com/v1/playlists/${playlistId}*`;
-            const keys = await redis.keys(pattern);
-            if (keys && keys.length > 0) {
-              await redis.del(...keys);
-            }
+        inFlightGetRequests.set(cacheKey, inFlight);
+      }
+
+      const result = await inFlight;
+      return toNextResponse(result);
+    } else {
+      // Non-GET requests (PUT, POST, DELETE, etc.) - writes
+      const limitRes = await reserveSpotifyRateLimit(tokenHash, pathString);
+      if (!limitRes.allowed) {
+        return NextResponse.json(
+          {
+            error: 'Too Many Requests (Rate Limit Exceeded)',
+            source: 'local-limiter',
+            retryAfter: limitRes.retryAfter,
+          },
+          {
+            status: 429,
+            headers: { 'Retry-After': String(limitRes.retryAfter) },
           }
-        } catch (e: any) {
-          console.error("Redis error busting playlist cache:", e?.message || JSON.stringify(e));
-        }
+        );
       }
+
+      const result = await executeUpstreamRequest(
+        request,
+        spotifyUrl,
+        accessToken,
+        isCacheable,
+        cacheKey,
+        tokenHash,
+        pathString,
+        url
+      );
+      return toNextResponse(result);
     }
-
-    // 7. Parse and Cache Success Responses
-    if (response.ok && isCacheable) {
-      const clonedResponse = response.clone();
-      const text = await clonedResponse.text();
-      let data;
-      try {
-        data = text ? JSON.parse(text) : null;
-      } catch (e) {
-        data = text;
-      }
-      if (data) {
-        // Asynchronously write to Redis
-        if (redis) redis.set(cacheKey, data, { ex: CACHE_TTL }).catch(console.error);
-        return NextResponse.json(data, { status: 200, headers: { 'X-Cache': 'MISS' } });
-      }
-    }
-
-    if (response.status === 204) {
-      return new NextResponse(null, { status: 204 });
-    }
-
-    // Forward non-JSON or uncacheable responses (use the unconsumed response)
-    const responseBody = await response.arrayBuffer();
-    const proxyResponse = new NextResponse(responseBody, {
-      status: response.status,
-      statusText: response.statusText,
-    });
-    
-    // Copy safe headers
-    response.headers.forEach((value, key) => {
-      if (key.toLowerCase() !== 'content-encoding' && key.toLowerCase() !== 'transfer-encoding') {
-        proxyResponse.headers.set(key, value);
-      }
-    });
-
-    return proxyResponse;
 
   } catch (error: any) {
     console.error("Proxy error:", error);

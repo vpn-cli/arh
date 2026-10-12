@@ -1,0 +1,27 @@
+{
+  "id": "mock-user",
+  "display_name": "Mock VIPIN",
+  "email": "mock@punkrose.fm",
+  "product": "premium",
+  "country": "US",
+  "explicit_content": {
+    "filter_enabled": false,
+    "filter_locked": false
+  },
+  "external_urls": {
+    "spotify": "https://open.spotify.com/user/mock-user"
+  },
+  "followers": {
+    "href": null,
+    "total": 42
+  },
+  "images": [
+    {
+      "url": "https://i.scdn.co/image/ab67616d0000b273mockuser",
+      "height": 300,
+      "width": 300
+    }
+  ],
+  "type": "user",
+  "uri": "spotify:user:mock-user"
+}

@@ -5,12 +5,18 @@ vi.mock('next/headers', () => ({
 }));
 
 vi.mock('@/lib/server/redis', () => ({
+  hashToken: vi.fn((token: string) => `hash_${token}`),
   getSpotifyApiLock: vi.fn(),
   setSpotifyApiLock: vi.fn().mockResolvedValue(undefined),
+  reserveSpotifyRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfter: 0, appCount: 0, userCount: 0 }),
 }));
 
 import { cookies } from 'next/headers';
-import { getSpotifyApiLock, setSpotifyApiLock } from '@/lib/server/redis';
+import {
+  getSpotifyApiLock,
+  setSpotifyApiLock,
+  reserveSpotifyRateLimit,
+} from '@/lib/server/redis';
 import { GET } from '../route';
 
 describe('Diagnose API Route (/api/spotify/diagnose)', () => {
@@ -65,5 +71,30 @@ describe('Diagnose API Route (/api/spotify/diagnose)', () => {
     const json = await res.json();
     expect(setSpotifyApiLock).toHaveBeenCalledWith(500);
     expect(json.retryAfter).toBe(500);
+  });
+
+  it('returns local-limiter 429 when rate limiter trips during diagnostic step', async () => {
+    vi.mocked(cookies).mockResolvedValue({
+      get: vi.fn().mockImplementation((name: string) => {
+        if (name === 'spotify_access_token') return { value: 'test-token' };
+        return undefined;
+      }),
+    } as any);
+
+    vi.mocked(reserveSpotifyRateLimit).mockResolvedValueOnce({
+      allowed: false,
+      retryAfter: 20,
+      appCount: 30,
+      userCount: 30,
+    });
+
+    const res = await GET();
+    expect(res.status).toBe(429);
+    const json = await res.json();
+    expect(json).toMatchObject({
+      source: 'local-limiter',
+      retryAfter: 20,
+    });
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });

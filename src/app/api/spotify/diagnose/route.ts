@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getSpotifyApiLock, setSpotifyApiLock } from '@/lib/server/redis';
+import {
+  hashToken,
+  getSpotifyApiLock,
+  setSpotifyApiLock,
+  reserveSpotifyRateLimit,
+} from '@/lib/server/redis';
+import { recordUpstreamSpotifyRequest } from '@/lib/server/spotifyLogger';
 
 // Diagnostic endpoint for Spotify integration
 // Only accessible when NODE_ENV === 'development'
@@ -43,7 +49,22 @@ export async function GET() {
       };
     }
 
+    const tokenHash = typeof hashToken === 'function' ? hashToken(accessToken!) : accessToken!;
+    const limitRes = await reserveSpotifyRateLimit(tokenHash, path);
+    if (!limitRes.allowed) {
+      return {
+        status: 429,
+        body: {
+          error: 'Too Many Requests (Rate Limit Exceeded)',
+          source: 'local-limiter',
+          retryAfter: limitRes.retryAfter,
+        },
+        url: `https://api.spotify.com/v1${path}`,
+      };
+    }
+
     const url = `https://api.spotify.com/v1${path}`;
+    recordUpstreamSpotifyRequest(url);
     const res = await fetch(url, {
       headers: { 'Authorization': `Bearer ${accessToken}` },
       cache: 'no-store',

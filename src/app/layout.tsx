@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import QueryProvider from "@/providers/QueryProvider";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
+import { SpotifyModeBadge } from "@/components/SpotifyModeBadge";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function RootLayout({
         <QueryProvider>
           <ServiceWorkerRegister />
           {children}
+          <SpotifyModeBadge />
         </QueryProvider>
       </body>
     </html>

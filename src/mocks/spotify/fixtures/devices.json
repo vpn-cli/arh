@@ -1,0 +1,14 @@
+{
+  "devices": [
+    {
+      "id": "mock_device_punkrose",
+      "is_active": true,
+      "is_private_session": false,
+      "is_restricted": false,
+      "name": "punkrose.fm",
+      "type": "Computer",
+      "volume_percent": 80,
+      "supports_volume": true
+    }
+  ]
+}

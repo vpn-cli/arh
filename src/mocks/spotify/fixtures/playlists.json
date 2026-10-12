@@ -1,0 +1,71 @@
+[
+  {
+    "id": "playlist_mock_1",
+    "name": "My Favorites",
+    "description": "Hand-picked mock playlist",
+    "collaborative": false,
+    "public": true,
+    "uri": "spotify:playlist:playlist_mock_1",
+    "owner": {
+      "id": "mock-user",
+      "display_name": "Mock VIPIN"
+    },
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273mockfavs",
+        "height": 300,
+        "width": 300
+      }
+    ],
+    "tracks": {
+      "href": "https://api.spotify.com/v1/playlists/playlist_mock_1/tracks",
+      "total": 3
+    }
+  },
+  {
+    "id": "playlist_mock_2",
+    "name": "Late Night Vibes",
+    "description": "Chill sounds",
+    "collaborative": false,
+    "public": true,
+    "uri": "spotify:playlist:playlist_mock_2",
+    "owner": {
+      "id": "mock-user",
+      "display_name": "Mock VIPIN"
+    },
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273mockvibes",
+        "height": 300,
+        "width": 300
+      }
+    ],
+    "tracks": {
+      "href": "https://api.spotify.com/v1/playlists/playlist_mock_2/tracks",
+      "total": 2
+    }
+  },
+  {
+    "id": "playlist_mock_3",
+    "name": "Discover Weekly",
+    "description": "Spotify Editorial",
+    "collaborative": false,
+    "public": true,
+    "uri": "spotify:playlist:playlist_mock_3",
+    "owner": {
+      "id": "spotify",
+      "display_name": "Spotify"
+    },
+    "images": [
+      {
+        "url": "https://i.scdn.co/image/ab67616d0000b273mockdiscover",
+        "height": 300,
+        "width": 300
+      }
+    ],
+    "tracks": {
+      "href": "https://api.spotify.com/v1/playlists/playlist_mock_3/tracks",
+      "total": 5
+    }
+  }
+]

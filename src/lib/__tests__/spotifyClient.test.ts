@@ -260,4 +260,165 @@ describe('spotifyClient (Fail-Safe API Proxy with Unified Recovery)', () => {
     consoleErrorSpy.mockRestore();
     onLoginRequired(null);
   });
+
+  it('distinguishes a local 429 from a Spotify 429: does NOT set client lock store for local-limiter', async () => {
+    vi.useFakeTimers();
+    const { isSpotifyLocked } = await import('@/store/spotifyLockStore');
+    expect(isSpotifyLocked()).toBe(false);
+
+    // Mock local-limiter 429
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        json: async () => ({
+          error: 'Too Many Requests (Rate Limit Exceeded)',
+          source: 'local-limiter',
+          retryAfter: 2,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ success: true }),
+      });
+
+    const promise = proxyFetch('/me/tracks');
+
+    // Allow queue worker to process first fetch
+    await vi.advanceTimersByTimeAsync(10);
+
+    // Local 429 should NOT set isSpotifyLocked in store
+    expect(isSpotifyLocked()).toBe(false);
+
+    // Advance time for Retry-After and retry
+    await vi.advanceTimersByTimeAsync(2500);
+    const result = await promise;
+
+    expect(result).toEqual({ success: true });
+    // Still not locked
+    expect(isSpotifyLocked()).toBe(false);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+
+    vi.useRealTimers();
+  });
+
+  it('distinguishes a local 429 from a Spotify 429: DOES set client lock store for upstream Spotify 429', async () => {
+    vi.useFakeTimers();
+    const { isSpotifyLocked } = await import('@/store/spotifyLockStore');
+    clearClientSpotifyLock();
+    expect(isSpotifyLocked()).toBe(false);
+
+    // Mock upstream Spotify 429 (no source: local-limiter)
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        json: async () => ({
+          error: 'Too Many Requests',
+          retryAfter: 60,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ success: true }),
+      });
+
+    const promise = proxyFetch('/me/tracks');
+
+    // Allow queue worker to process first fetch
+    await vi.advanceTimersByTimeAsync(10);
+
+    // Upstream 429 DOES set isSpotifyLocked in store
+    expect(isSpotifyLocked()).toBe(true);
+
+    // Advance time for Retry-After and retry
+    await vi.advanceTimersByTimeAsync(65000);
+    await promise;
+
+    clearClientSpotifyLock();
+    vi.useRealTimers();
+  });
+
+  it('mutation is not retried after a local 429', async () => {
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      json: async () => ({
+        error: 'Too Many Requests (Rate Limit Exceeded)',
+        source: 'local-limiter',
+        retryAfter: 15,
+      }),
+    });
+
+    await expect(
+      proxyFetch('/me/player/play', { method: 'PUT', body: JSON.stringify({ uris: ['spotify:track:123'] }) })
+    ).rejects.toMatchObject({
+      status: 429,
+      source: 'local-limiter',
+    });
+
+    // Exactly 1 fetch attempt - PUT mutation was never retried!
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops polling requests instead of retrying them on local 429', async () => {
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      json: async () => ({
+        error: 'Too Many Requests (Rate Limit Exceeded)',
+        source: 'local-limiter',
+        retryAfter: 10,
+      }),
+    });
+
+    const result = await proxyFetch('/me/player', { method: 'GET', isPolling: true });
+
+    // Polling request dropped cleanly, returns null
+    expect(result).toBeNull();
+    // Exactly 1 fetch attempt - polling was never retried!
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('local 429 retries GET requests with max 2 attempts', async () => {
+    vi.useFakeTimers();
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        json: async () => ({
+          error: 'Too Many Requests',
+          source: 'local-limiter',
+          retryAfter: 2,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        json: async () => ({
+          error: 'Too Many Requests',
+          source: 'local-limiter',
+          retryAfter: 2,
+        }),
+      });
+
+    let caughtError: any = null;
+    const promise = proxyFetch('/me/tracks', { method: 'GET' }).catch((err) => {
+      caughtError = err;
+    });
+
+    await vi.advanceTimersByTimeAsync(2500);
+    await vi.runAllTimersAsync();
+    await promise;
+
+    expect(caughtError).toMatchObject({
+      status: 429,
+      source: 'local-limiter',
+    });
+    // Exactly 2 attempts (1 initial + 1 retry)
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
 });

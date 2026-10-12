@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { isSpotifyMockMode, MOCK_ACCESS_TOKEN, MOCK_REFRESH_TOKEN } from '@/mocks/spotify/config';
 
 const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || "";
 
@@ -15,6 +16,32 @@ function sha256(buffer: string) {
 }
 
 export async function GET(request: Request) {
+  // In mock mode: yield fake session/token without Spotify OAuth
+  if (isSpotifyMockMode()) {
+    const returnUrl = new URL('/', request.url);
+    const response = NextResponse.redirect(returnUrl);
+    const expiresAt = Date.now() + 3600 * 1000;
+    response.cookies.set('spotify_access_token', MOCK_ACCESS_TOKEN, {
+      httpOnly: true,
+      secure: false,
+      path: '/',
+      maxAge: 3600,
+    });
+    response.cookies.set('spotify_token_expires_at', String(expiresAt), {
+      httpOnly: true,
+      secure: false,
+      path: '/',
+      maxAge: 3600,
+    });
+    response.cookies.set('spotify_refresh_token', MOCK_REFRESH_TOKEN, {
+      httpOnly: true,
+      secure: false,
+      path: '/',
+      maxAge: 3600 * 24 * 30,
+    });
+    return response;
+  }
+
   if (!SPOTIFY_CLIENT_ID) {
     return NextResponse.json({ error: 'Missing SPOTIFY_CLIENT_ID' }, { status: 500 });
   }

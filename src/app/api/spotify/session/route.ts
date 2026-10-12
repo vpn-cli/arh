@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { refreshSpotifyToken } from '@/lib/server/spotifyAuthServer';
+import { isSpotifyMockMode, MOCK_ACCESS_TOKEN, MOCK_REFRESH_TOKEN } from '@/mocks/spotify/config';
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -8,6 +9,36 @@ export async function GET() {
   const refreshToken = cookieStore.get('spotify_refresh_token')?.value;
   const expiresAtStr = cookieStore.get('spotify_token_expires_at')?.value;
   const expiresAt = expiresAtStr ? parseInt(expiresAtStr, 10) : 0;
+
+  // In mock mode: yield fake session/token so app loads signed in without Spotify OAuth
+  if (isSpotifyMockMode()) {
+    const mockAccessToken = accessToken || MOCK_ACCESS_TOKEN;
+    const mockExpiresAt = expiresAt && expiresAt > Date.now() ? expiresAt : Date.now() + 3600 * 1000;
+    const res = NextResponse.json({ accessToken: mockAccessToken, expiresAt: mockExpiresAt });
+
+    if (!accessToken || !expiresAt || expiresAt <= Date.now()) {
+      res.cookies.set('spotify_access_token', mockAccessToken, {
+        httpOnly: true,
+        secure: false,
+        path: '/',
+        maxAge: 3600,
+      });
+      res.cookies.set('spotify_token_expires_at', String(mockExpiresAt), {
+        httpOnly: true,
+        secure: false,
+        path: '/',
+        maxAge: 3600,
+      });
+      res.cookies.set('spotify_refresh_token', MOCK_REFRESH_TOKEN, {
+        httpOnly: true,
+        secure: false,
+        path: '/',
+        maxAge: 3600 * 24 * 30,
+      });
+    }
+
+    return res;
+  }
 
   // Refresh if token is missing or expires within 60 seconds
   const isExpiringSoon = !expiresAt || (expiresAt - Date.now() <= 60_000);

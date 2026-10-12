@@ -24,6 +24,7 @@ import { getPersistedVolume } from "./volumeStore";
 import { MediaSessionHost } from "@/components/worlds/music/pip/MediaSessionHost";
 import { updateSharedPlaybackState } from "@/components/worlds/music/playback/playbackClock";
 import { PLAYBACK_DEBUG } from "@/components/worlds/music/playback/playbackHelpers";
+import { loadSpotifySDK } from "./spotifySdkLoader";
 
 declare global {
   interface Window {
@@ -62,9 +63,7 @@ function notifyPlayerChanged() {
 export function disconnectSpotifyPlayer() {
   if (sharedPlayer) {
     try {
-      if (typeof sharedPlayer.disconnect === "function") {
-        sharedPlayer.disconnect();
-      }
+      sharedPlayer.disconnect?.();
     } catch (e) {
       console.warn("[SpotifyPlayerProvider] disconnect error:", e);
     }
@@ -84,13 +83,9 @@ export function disconnectSpotifyPlayer() {
 }
 
 const defaultContextValue: SpotifyPlayerContextValue = {
-  player: null,
-  deviceIdRef: { current: null },
-  notReadyFiredRef: { current: false },
-  needsRecoveryRef: { current: false },
-  latestStateRef: { current: null },
-  subscribe: () => () => {},
-  disconnect: disconnectSpotifyPlayer,
+  player: null, deviceIdRef: { current: null }, notReadyFiredRef: { current: false },
+  needsRecoveryRef: { current: false }, latestStateRef: { current: null },
+  subscribe: () => () => {}, disconnect: disconnectSpotifyPlayer,
 };
 
 const SpotifyPlayerContext = createContext<SpotifyPlayerContextValue>(defaultContextValue);
@@ -362,38 +357,22 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
         });
       });
 
-      spotifyPlayer.addListener("initialization_error", ({ message }: { message: string }) => {
-        console.error(`[Spotify SDK initialization_error] ${message}`);
-        useSpotifyPlayerStore.getState().setError(message);
-      });
-      spotifyPlayer.addListener("authentication_error", ({ message }: { message: string }) => {
-        console.error(`[Spotify SDK authentication_error] ${message}`);
-        useSpotifyPlayerStore.getState().setError(message);
+      ["initialization_error", "authentication_error", "playback_error"].forEach((evt) => {
+        spotifyPlayer.addListener(evt, ({ message }: { message: string }) => {
+          console.error(`[Spotify SDK ${evt}] ${message}`);
+          useSpotifyPlayerStore.getState().setError(message);
+        });
       });
       spotifyPlayer.addListener("account_error", ({ message }: { message: string }) => {
         console.error(`[Spotify SDK account_error] ${message}`);
         useSpotifyPlayerStore.getState().setIsPremium(false);
         useSpotifyPlayerStore.getState().setError("Premium required for web playback.");
       });
-      spotifyPlayer.addListener("playback_error", ({ message }: { message: string }) => {
-        console.error(`[Spotify SDK playback_error] ${message}`);
-        useSpotifyPlayerStore.getState().setError(message);
-      });
 
       spotifyPlayer.connect();
     };
 
-    if (!window.Spotify) {
-      window.onSpotifyWebPlaybackSDKReady = initializePlayer;
-      if (!document.querySelector('script[src="https://sdk.scdn.co/spotify-player.js"]')) {
-        const script = document.createElement("script");
-        script.src = "https://sdk.scdn.co/spotify-player.js";
-        script.async = true;
-        document.body.appendChild(script);
-      }
-    } else {
-      initializePlayer();
-    }
+    loadSpotifySDK(initializePlayer);
   }, [currentWorld, token]);
 
   const value = useMemo<SpotifyPlayerContextValue>(
