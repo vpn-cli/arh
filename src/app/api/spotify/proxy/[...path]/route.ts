@@ -12,8 +12,40 @@ import {
 import { recordUpstreamSpotifyRequest } from '@/lib/server/spotifyLogger';
 import { inFlightGetRequests, InFlightResult } from '@/lib/server/spotifyInFlight';
 
-// Cache TTL in seconds (1 hour)
-const CACHE_TTL = 3600;
+export interface EndpointCacheRule {
+  exact?: string;
+  prefix?: string;
+  ttl: number | null;
+}
+
+export const ENDPOINT_CACHE_RULES: EndpointCacheRule[] = [
+  // me/player/queue: never cached in Redis
+  { exact: 'me/player/queue', ttl: null },
+  // me/top/tracks and me/top/artists: 6 hours (21600 seconds)
+  { prefix: 'me/top/tracks', ttl: 21600 },
+  { prefix: 'me/top/artists', ttl: 21600 },
+  // me/player/recently-played: 60 seconds
+  { prefix: 'me/player/recently-played', ttl: 60 },
+  // Existing cached endpoints (1 hour = 3600 seconds)
+  { exact: 'me', ttl: 3600 },
+  { prefix: 'me/playlists', ttl: 3600 },
+  { prefix: 'search', ttl: 3600 },
+  { prefix: 'me/tracks', ttl: 3600 },
+  { prefix: 'me/library', ttl: 3600 },
+  { prefix: 'playlists/', ttl: 3600 },
+];
+
+export function getEndpointTtl(pathString: string): number | null {
+  for (const rule of ENDPOINT_CACHE_RULES) {
+    if (rule.exact !== undefined && pathString === rule.exact) {
+      return rule.ttl;
+    }
+    if (rule.prefix !== undefined && pathString.startsWith(rule.prefix)) {
+      return rule.ttl;
+    }
+  }
+  return null;
+}
 
 export const _inFlightGetRequestsForTesting = inFlightGetRequests;
 
@@ -39,6 +71,7 @@ async function executeUpstreamRequest(
   spotifyUrl: string,
   accessToken: string,
   isCacheable: boolean,
+  ttl: number | null,
   cacheKey: string,
   tokenHash: string,
   pathString: string,
@@ -154,7 +187,7 @@ async function executeUpstreamRequest(
   }
 
   // 7. Parse and Cache Success Responses
-  if (response.ok && isCacheable) {
+  if (response.ok && isCacheable && ttl !== null) {
     const clonedResponse = response.clone();
     const text = await clonedResponse.text();
     let data;
@@ -165,9 +198,9 @@ async function executeUpstreamRequest(
     }
     if (data) {
       if (redis) {
-        redis.set(cacheKey, data, { ex: CACHE_TTL }).catch(console.error);
+        redis.set(cacheKey, data, { ex: ttl }).catch(console.error);
         if (pathString === 'me' && data && data.id) {
-          redis.set(`${keyPrefix()}spotify_user:${tokenHash}`, data.id, { ex: CACHE_TTL }).catch(console.error);
+          redis.set(`${keyPrefix()}spotify_user:${tokenHash}`, data.id, { ex: ttl }).catch(console.error);
         }
       }
       return {
@@ -270,13 +303,8 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
 
     // 2. Check Cache for read-heavy endpoints (GET requests) BEFORE Rate Limiter
     // Cache hits must NEVER call the limiter, even when budget is exhausted.
-    const isCacheable = request.method === 'GET' && 
-      (pathString === 'me' ||
-       pathString.startsWith('me/playlists') || 
-       pathString.startsWith('search') || 
-       pathString.startsWith('me/tracks') ||
-       pathString.startsWith('me/library') ||
-       pathString.startsWith('playlists/'));
+    const endpointTtl = request.method === 'GET' ? getEndpointTtl(pathString) : null;
+    const isCacheable = endpointTtl !== null;
        
     const cacheKey = `${keyPrefix()}spotify_cache:${tokenHash}:${spotifyUrl}`;
     if (isCacheable && redis) {
@@ -316,6 +344,7 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
               spotifyUrl,
               accessToken,
               isCacheable,
+              endpointTtl,
               cacheKey,
               tokenHash,
               pathString,
@@ -353,6 +382,7 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
         spotifyUrl,
         accessToken,
         isCacheable,
+        endpointTtl,
         cacheKey,
         tokenHash,
         pathString,

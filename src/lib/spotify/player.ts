@@ -12,9 +12,9 @@ export async function getRecentlyPlayed(limit: number = 50) {
   }
 }
 
-export async function getPlayerQueue() {
+export async function getPlayerQueue(isPolling?: boolean) {
   try {
-    const data = await proxyFetch('/me/player/queue');
+    const data = await proxyFetch('/me/player/queue', { isPolling });
     return data;
   } catch (err: any) {
     if (err?.isNoActiveDevice || err?.status === 404) {

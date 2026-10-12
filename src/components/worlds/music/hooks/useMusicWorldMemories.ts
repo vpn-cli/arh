@@ -25,7 +25,7 @@ export function useMusicWorldMemories() {
       const now = Date.now();
       if (now - lastLoadTimeRef.current >= FOCUS_THROTTLE_MS) {
         lastLoadTimeRef.current = now;
-        useMemoriesStore.getState().loadMemories(true);
+        useMemoriesStore.getState().loadMemories(true, { isPolling: true });
       }
     };
 

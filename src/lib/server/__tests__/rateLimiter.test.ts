@@ -119,7 +119,7 @@ describe('Server-Side Sliding-Window Rate Limiter (redis.ts with SPOTIFY_RATE_LI
 
     const config = getRateLimitConfig();
     expect(config.windowSec).toBe(30);
-    expect(config.appBudget).toBe(60);
+    expect(config.appBudget).toBe(50);
     expect(config.userBudget).toBe(30);
 
     process.env.SPOTIFY_RATE_LIMIT_WINDOW_SEC = '10';

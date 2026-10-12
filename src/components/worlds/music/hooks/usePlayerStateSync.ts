@@ -16,6 +16,7 @@ import {
   setSharedPaused,
 } from "../playback/playbackClock";
 import { PLAYBACK_DEBUG } from "../playback/playbackHelpers";
+import { getPlayerQueue } from "@/lib/spotify/player";
 
 export interface UsePlayerStateSyncOptions {
   progressBarRef: RefObject<ProgressBarHandle | null>;
@@ -60,6 +61,7 @@ export function usePlayerStateSync({
   const lastActiveTrackUriRef = useRef<string | null>(null);
   const hasActuallyPlayedRef = useRef(false);
   const prevPositionRef = useRef(0);
+  const queueDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const playerRef = useRef(player);
   playerRef.current = player;
@@ -89,6 +91,15 @@ export function usePlayerStateSync({
     setSharedPaused(isPaused);
   }, [isPaused]);
 
+  // Clean up debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (queueDebounceTimerRef.current) {
+        clearTimeout(queueDebounceTimerRef.current);
+      }
+    };
+  }, []);
+
   const applyPlayerState = useCallback(
     async (state: any) => {
       if (!state) return;
@@ -97,7 +108,27 @@ export function usePlayerStateSync({
 
       if (newTrack?.id !== storeState.currentTrack?.id) {
         setCurrentTrack(newTrack);
-        queryClient.invalidateQueries({ queryKey: ['spotify', 'playerQueue'] });
+        // Update queue from SDK's track_window.next_tracks instead of invalidating query
+        const nextTracks = state.track_window?.next_tracks || [];
+        queryClient.setQueryData(['spotify', 'playerQueue'], {
+          currently_playing: newTrack,
+          queue: nextTracks,
+        });
+
+        // Debounce remaining queue refresh by 1.5s after last track change (isPolling: true)
+        if (queueDebounceTimerRef.current) {
+          clearTimeout(queueDebounceTimerRef.current);
+        }
+        queueDebounceTimerRef.current = setTimeout(async () => {
+          try {
+            const freshQueue = await getPlayerQueue(true);
+            if (freshQueue) {
+              queryClient.setQueryData(['spotify', 'playerQueue'], freshQueue);
+            }
+          } catch (e) {
+            console.error('Debounced queue refresh error:', e);
+          }
+        }, 1500);
       }
       if (storeState.isPaused !== state.paused) {
         setIsPaused(state.paused);

@@ -58,7 +58,7 @@ export function usePlaybackActions({
   const { data: queryIsSaved = false } = useTrackSavedStatus(storeCurrentTrack?.id);
   const isSaved = propIsSaved !== undefined ? propIsSaved : queryIsSaved;
 
-  const { data: playerQueueData } = usePlayerQueue({ enabled: !!token });
+  const { data: playerQueueData } = usePlayerQueue({ enabled: false });
   const {
     play,
     toggleSave: toggleSaveMutation,

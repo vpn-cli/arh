@@ -1,0 +1,216 @@
+# Session Summary: 2026-10-11 (15:00 to 22:50)
+
+Project: d:/Projects/arh. Agent: Google Antigravity. Repo on GitHub, main.
+State at stop: everything committed AND pushed. `git status` shows only
+two untracked images (assets-src/snoopy.jpeg, "kitty kitty.jpeg").
+Gates at stop: `npx tsc --noEmit` clean, `npx vitest run` 355/355.
+Slideshow files are back to committed values (no temp timers).
+
+## START HERE
+
+### Send next, one at a time, commit after each
+1. PROMPT 1 below (wave bars, Snoopy footing, sleeve, controls)
+2. PROMPT 2 below (record ends on right cover, sticker states, toast)
+3. Vinyl look: grooves + centre label, tonearm that tracks progress,
+   record keeps its angle on pause / while flipped / after tab hidden
+   (Web Animations playbackRate ramp, no per-frame JS)
+4. Slideshow: FADE_MS 800 -> 2500 (its test line 32 pins 800), and
+   wall-clock catch-up on return (advance at most one slide, no timers
+   while hidden)
+5. Block a song: Neon table blocked_tracks per Spotify account (agent
+   writes SQL, I run it), /api/blocked-tracks GET/POST/DELETE like
+   /api/memories, leave blocked tracks out of every uris list,
+   auto-skip if one starts (stop after 5), message on click, item in
+   TrackActionsMenu, "Blocked songs" list in Library
+6. Read-only audit: does Up Next always match what plays? (add,
+   remove, reorder, Shuffle Queue, Spotify shuffle; who decides next
+   on song end / Next / Previous). Plus my 3 experiments.
+7. Tidy-up, no behaviour change: split QueueModal.tsx (682 lines),
+   trim SpotifyPlayerProvider.tsx (418), remove LikeButton's duplicate
+   prop (showSnoopyPop vs disableSnoopyPop)
+8. Hero long-title overflow (clamp to 2 lines)
+9. Tabular numerals on timers
+10. CI: GitHub Actions running tsc, vitest and build; no secrets
+11. Deploy prep: separate Neon branch for dev (dev still uses the
+    PRODUCTION database), Spotify redirect URI and her account, check
+    no secrets in the repo
+12. Other worlds: Home World redesign; hearts left in story, landing
+    and photo modal
+
+### By hand
+- textConfig.ts: write the header title and the two sidebar card lines
+- npm run build, npm start, read INP (was 728 ms in dev)
+
+## Done today (all committed)
+- Playback: wrong song from search (false track-end detection);
+  shuffle (requests send offset 0; shuffle button sync); queue kept in
+  sync with playback; Spotify `track: true` flag bug; Up Next shows
+  upcoming only; live-queue copy resets position
+- Search: full-size rows; only her own playlists
+- App: installed app starts in full player; widget no longer
+  stretches; hooks crash fixed in MusicWorld and AlbumDetail
+- Now Playing: TrackActionsMenu (6 items), star LikeButton,
+  VinylRecord (flip to memory, sleeve transition, like ride),
+  VolumeControl, SoundWaves
+- Stickers: extraction script, stickerConfig (slots, trackChange,
+  moments), StickerIcon, MomentSticker (7 states so far)
+- UI: header dots and window buttons removed, decorative hearts
+  removed in Music World, shared .mw-card, .mw-btn-primary/secondary,
+  SectionHeader, SegmentedControl, Pagination; Mix, Vibes and Memories
+  restyled; queue header and footer summary
+
+## Not yet checked by my eyes
+- The big UI pass: Liked Songs, Mix, Vibes, Memories, playlist and
+  album pages (clicks still work; looks in a pale/yellow theme)
+- Sound waves (known bad: overlapping; fixed by PROMPT 1)
+- Lyrics view after the heart was removed from the active line
+
+## Parked notes
+- playTrackGlobal duplicates the main play request
+- Queue is saved between sessions (old list can reappear)
+- Cards copy MediaRow markup; should wrap it
+- OriginalUI_utf8.tsx stray file in root
+- docs/desktop-app.md still says the app starts in the widget
+- Two windows = two Spotify devices; widget as remote is a feature
+- ThreeDScrapbook.tsx (1728) and GameboyLoadingScreen.tsx (507) are
+  over 400 lines, other worlds
+
+## Still open from the previous summary
+- My checks: story gate with story_complete cleared, 200% zoom,
+  memories (refresh, second browser, import), cookie audit,
+  arh_admin_secret, timestamp conversion
+- Decisions: tall slideshow images, listening history in Neon,
+  installed app and the story
+- Blocked until hosted: Pinterest sync, install on her machine,
+  Spotify dashboard, contact email
+
+## Gotchas learned today
+- npm start and the installed app serve the LAST SUCCESSFUL build. A
+  failed build means old code. Test fixes in npm run dev.
+- vitest does not type-check. Run tsc; the build fails on type errors.
+- console.debug lines need "Verbose" ticked in the console levels.
+- A hook after an early return crashes the page. Happened 3 times.
+- Spotify track objects carry `track: true`; never test for a `track`
+  key to detect a wrapper.
+- With Spotify shuffle on, a uris list starts at random unless the
+  request gives an offset.
+- Images inside a zero-width box need max-w-none.
+- Installed app: a new start page or id needs uninstall + reinstall.
+  Never change the manifest id after she installs.
+- Git Bash and PowerShell need different commands.
+- AGENTS.md: nothing new in SpotifyPlayerUI.tsx; no component over 400
+  lines; playback position never in React state; no effect depending
+  on what it updates; animate transform and opacity only; no unmeasured
+  performance claims; type tokens only.
+
+## Working notes on the agent
+- Its pasted "Full Git Diff" can be partly invented. Trust only
+  `git --no-pager diff` from my terminal.
+- It bends production code to satisfy tests. Say "fix the test, not
+  the component".
+- It invents descriptions of images it cannot see.
+- "Before editing, tell me..." and read-only audits work well.
+- Pasting two prompts together makes it merge them.
+- It pushed once unasked. Always end with "do not commit, do not push".
+- Start every prompt with "Read AGENTS.md first and follow it."
+- Commit after every prompt. Piles of mixed changes cost an hour today.
+
+----- PROMPT 1 -----
+Read AGENTS.md first and follow it.
+
+Four changes in the Now Playing panel. Do not touch playback code.
+
+1. SOUND WAVES LOOK WRONG
+   The shapes overlap and read as a messy blob. Redo the look: about
+   14 separate bars with a clear, even gap, never overlapping; each a
+   rounded pill; heights forming a gentle arch; tinted
+   var(--color-vibrant) at about 25% opacity; the row along the bottom
+   of the card behind the record. Keep the behaviour: a calm travelling
+   wave while playing (each bar loops scaleY between 0.6 and 1 over
+   about 2.8 seconds, staggered, transform-origin at the bottom),
+   settle on pause, the volume link, the dip on track change, the
+   ripple on like, and the sleeping sticker after 10 seconds paused.
+   Confirm the wave animation actually runs while a song plays, and
+   tell me if it was not running and why.
+
+2. LIKE REACTION: SIZE AND FOOTING ONLY
+   Do not change its duration or speed. Make Snoopy small enough, and
+   placed so, that his feet rest on the rim of the record's inner
+   centre label, as if standing on the label and riding around it. His
+   feet stay pointing at the centre for the whole turn. Position him
+   relative to the record's size so it is correct at every panel
+   width: feet at the label's edge, body pointing outward, never past
+   the record's outer edge. Start around 56px tall.
+
+3. TRACK-CHANGE TRANSITION
+   a. Slower: 500ms sliding in and 650ms sliding out.
+   b. The sleeve is no longer an empty box. Make it a square record
+      sleeve showing album art: the outgoing cover while the old record
+      slides in, then the incoming cover as the new record slides out.
+      Rounded corners, 1px muted border, soft shadow, a darker slot
+      line where the record enters. Use covers already loaded.
+   c. Snoopy sits on the sleeve's top edge at 64px for the whole time
+      the sleeve is on screen: rises as it appears, bobs once, lowers
+      as it leaves. Keep the cycling list.
+
+4. PLAYBACK CONTROLS: CUTER AND NEATER
+   (PlaybackControls.tsx, ProgressBar.tsx)
+   a. Five controls in one soft, rounded, lightly tinted tray.
+   b. Play/pause 56px with a soft ring; previous and next 40px;
+      shuffle and repeat 32px. Rounded icons, one stroke weight.
+   c. Shuffle and repeat show active state with a filled background
+      and a dot, not colour alone. Repeat-one shows a "1".
+   d. Gentle bouncy press, slight lift on hover, rounded focus ring.
+      The like star shows a square ring; make it round.
+   e. Progress handle: replace the Hello Kitty face with sticker r5c2
+      at 28px via a new stickerConfig slot progressThumb. The flag
+      restores the current handle. Do not change how it is positioned.
+   f. Tabular numerals for elapsed and total times.
+   g. Volume row centred at about 70% of the panel width.
+
+RULES
+Animate only transform and opacity. No per-frame React state; playback
+position never in React state. Nothing animates while the tab is
+hidden; no motion with prefers-reduced-motion. Durations are single
+constants shared by CSS and timers. No var(--color-vibrant) text on
+light backgrounds. No component file over 400 lines.
+
+Update affected tests. Run `npx tsc --noEmit` and `npx vitest run` and
+show both outputs. Report per part with `git diff --stat`, and list
+anything you changed that I did not ask for. Do not commit, do not
+push, and do not describe how it looks.
+
+----- PROMPT 2 -----
+Read AGENTS.md first and follow it.
+
+Four follow-ups. Do not touch playback code.
+
+1. VinylRecord: when the track-change animation finishes, compare the
+   record shown with the latest current track. If they differ (for
+   example a play request failed and the previous song is still
+   playing), show the latest track and treat it as the resting state.
+   Test: new then old, with old staying, ends showing old.
+
+2. Move .mw-sticker-bob and its keyframes from now-playing.css to
+   globals.css inside @layer components.
+
+3. Finish the sticker moments. Add to stickerConfig moments:
+   listEmpty: 'r5c1', notFound: 'r5c1', memoriesEmpty: 'r2c2'. Apply
+   MomentSticker (64px, text kept) to the shared TrackList loading and
+   empty states, RecentTab, PlaylistsTab, LibraryTab, PlaylistDetail,
+   ArtistDetail, AlbumDetail, the MixSection error, and
+   MemoriesSection loading and empty.
+
+4. Build a minimal toast for Music World. One host beside the player
+   provider; one toast at a time; auto-dismiss after 2.5 seconds;
+   announced politely to screen readers; a 48px sticker plus one line
+   of text; transform and opacity only; no motion under
+   prefers-reduced-motion. Use it for "Added to queue" (addedToQueue),
+   "Added to playlist" (addedToPlaylist) and "Memory saved"
+   (memorySaved). Own component and store, under 400 lines, nothing
+   new in SpotifyPlayerUI.tsx.
+
+Run `npx tsc --noEmit` and `npx vitest run` and show both outputs.
+Show `git diff --stat` and the diff per item, and list anything you
+changed that I did not ask for. Do not commit, do not push, and do not
+describe how it looks.

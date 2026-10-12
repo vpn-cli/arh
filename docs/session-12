@@ -1,0 +1,98 @@
+# Session Summary: 2026-10-12 09:05 to 15:45
+
+State at stop: limiter, cache, mock-mode and key-prefix work done and
+gated (tsc clean, vitest 447/447, 57 files). Commit: "Rate limiter, dev
+mock mode, SCAN cache busting, env-namespaced Redis keys" (commit only
+src, package.json, package-lock.json, next.config.ts). Not committed:
+videos in public/videos, deleted images in public/hampter, assets-src,
+docs. App is NOT deployed anywhere yet.
+
+## Spotify lockout
+Over since ~14:50. Cause: no rate limiter existed, hot reloads + focus
+events + uncached /me piled up requests, and the memories identity
+check bypassed the breaker after the first 429.
+
+## Done this session
+- Rate limiter: one atomic Lua script in src/lib/server/redis.ts
+  (reserveSpotifyRateLimit). App 60 / user 30 per 30 s, env-configurable
+  (SPOTIFY_RATE_LIMIT_WINDOW_SEC, _APP_BUDGET, _USER_BUDGET). Budgets are
+  placeholders until the request audit.
+- Order in proxy: lock -> cache -> reserve -> Spotify. Cache hits never
+  count. One reserve per upstream request (tested).
+- Over budget: local 429 with source "local-limiter". Client: GETs retry
+  once, polls dropped, writes never retried, no resting banner.
+- Identical in-flight GETs merged (src/lib/server/spotifyInFlight.ts).
+- Redis fails open with one warning.
+- Cache busting via SCAN (deleteByPattern): /me/playlists*, playlists/
+  <id>*, and on like/unlike me/tracks* + me/library/contains*. Query
+  params sorted before building cache keys.
+- @upstash/ratelimit removed; aliases removed.
+- Mock mode (MSW): default in npm run dev, SPOTIFY_LIVE=1 for real
+  Spotify. All 29 endpoints mocked; catch-all 501 for api.spotify.com
+  and accounts.spotify.com. Mock session refreshes locally. Mock user id
+  "mock-user". Stub player instead of the Web Playback SDK. Corner badge
+  shows the mode. Request counter logs in live mode.
+- Mock mode can never turn on in production (warns, never throws).
+- Redis keys prefixed via REDIS_KEY_PREFIX: unset -> "dev:".
+- Diagnose route returns 404 outside development.
+
+## START HERE
+1. Mock-mode checks by eye (npm run dev, badge says "mock spotify"):
+   resting banner gone, Liked Songs page 2 differs from page 1, heart
+   stays filled after reload, volume popover see-through?, memory cards
+   with 4+ memories, sidebar card.
+2. Short live session (SPOTIFY_LIVE=1, one tab, watch the counter):
+   lyrics, real playback, "punkrose.fm" device name in the Spotify app.
+3. Prompt P: read-only request-count audit (per page load, per timer,
+   anything bypassing the proxy).
+4. Prompt U: set real budgets from P + a guard test on request counts.
+5. Decide: should music keep playing outside Music World? Decides
+   whether SpotifyPlayerProvider moves inside it.
+6. Prompt L (kitty logo), original PROMPT 2, queue 3 to 12, INP, Home.
+7. Decide which video the site uses; commit only that one.
+   Check nothing still points to public/hampter/hello Kitty.jpeg.
+
+## Gotchas learned
+- Send ONE prompt at a time and wait for its report. Overlapping
+  threads edited redis.ts at once and left two limiters behind.
+- git grep skips untracked files: add --untracked.
+- PowerShell treats [...path] as a wildcard: use -LiteralPath.
+- git grep opens a pager: use git --no-pager, or press q.
+- REDIS_KEY_PREFIX must NOT be in any local .env file.
+- npm start runs with NODE_ENV=production; the key prefix does not
+  depend on NODE_ENV, so local npm start still uses "dev:".
+
+## WHEN DEPLOYING TO VERCEL
+Set everything in Vercel > Project > Settings > Environment Variables,
+never in a committed file.
+
+1. Redis key prefix
+   - Production: REDIS_KEY_PREFIX = prod:
+     (nothing is deployed yet, so there are no old keys to keep;
+     prod: avoids empty-value issues in the dashboard)
+   - Preview: REDIS_KEY_PREFIX = preview:
+   - Never leave it unset in Production, or prod shares "dev:" keys.
+2. Spotify app
+   - Production uses the CURRENT Spotify app (App A): its client id and
+     secret go in Vercel, Production scope.
+   - In the Spotify dashboard for App A, add the redirect URI
+     https://<your-vercel-domain>/<same callback path as localhost>.
+     Remove the localhost URI from App A.
+   - Make sure her account is in App A's user list.
+   - Create App B for dev: localhost redirect URI, both accounts in its
+     user list, its id + secret in .env.local. Sign out and in again
+     locally after switching.
+3. Other env vars to copy into Vercel (Production): Upstash REST URL +
+   token, DATABASE_URL, any NEXT_PUBLIC_* values (these are baked in at
+   build time, so redeploy after changing them).
+   Do NOT set SPOTIFY_LIVE in Vercel; it has no effect there.
+   Optional: give dev its own Neon branch so mock-user rows never land
+   in the production database.
+4. Videos: don't ship large mp4s from public/ if avoidable; consider
+   Vercel Blob or another host for them.
+5. After the first deploy:
+   - She signs in on the real domain and plays a song.
+   - Mock badge is not visible; /api/spotify/diagnose returns 404.
+   - Check Vercel logs for "[Rate Limiter]" lines; if they show up
+     during normal use, the budgets are too tight (see Prompt U).
+   - Optional: in Upstash, confirm new keys start with "prod:".

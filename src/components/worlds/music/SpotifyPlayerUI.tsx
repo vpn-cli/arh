@@ -116,7 +116,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   const { data: recentTracks = [], error: recentError } = useRecentlyPlayed({
     enabled: !currentTrack || activeTab === 'recent' || activeTab === 'home' || isQueueModalOpen,
   });
-  const { data: playerQueueData } = usePlayerQueue({ enabled: !!token });
+  const { data: playerQueueData } = usePlayerQueue({ enabled: !!token && isQueueModalOpen });
 
   const effectiveQueue = useMemo(() => {
     if (queue && queue.length > 0) return queue;

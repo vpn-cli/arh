@@ -66,7 +66,7 @@ export const QueuePanel = memo(function QueuePanel({
   const removeFromQueue = useSpotifyPlayerStore((s) => s.removeFromQueue);
   const currentTrack = useSpotifyPlayerStore((s) => s.currentTrack);
 
-  const { data: playerQueueData } = usePlayerQueue({ enabled: !!token });
+  const { data: playerQueueData } = usePlayerQueue({ enabled: false });
   const { data: recentTracks = [] } = useRecentlyPlayed({
     enabled: !currentTrack || rightPanelTab === 'recent',
   });

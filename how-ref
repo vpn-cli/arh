@@ -1,0 +1,146 @@
+[33mcommit 3908590b62c8fd2e6403558d5ec107a9bdfee157[m
+Author: Vipin <vipinkaushik20771041@gmail.com>
+Date:   Tue Sep 29 03:24:30 2026 +0530
+
+    Run the 7-card story straight off START NEW GAME
+    
+    The flow already existed with the wireframe's steps and copy, and
+    StoryCard already rendered one card at a time -- it was just gated behind
+    a second START on the hero and appended below the fold.
+    
+    Wire the Gameboy menu directly into it, centre the card in the viewport,
+    and hide the hero and footer while it runs so nothing invites scrolling
+    away mid-story.
+    
+    public/images/hampters/ did not exist, so all 12 referenced sprites 404'd.
+    Add placeholders at those exact filenames; dropping in the real folder
+    overwrites them with no code change.
+    
+    Co-Authored-By: [1;31mClaude[m Opus 5 <noreply@anthropic.com>
+
+[33mcommit 6709ae76458356bc7f04f96896e9da45b813a9bd[m
+Author: Vipin <vipinkaushik20771041@gmail.com>
+Date:   Tue Sep 29 03:05:40 2026 +0530
+
+    Hide every plant root below the viewport
+    
+    Only the two closest layers were sunk previously; z-[5], z-[15] and
+    z-[22] were left mid-frame with roots showing. The distant and midground
+    flowers were too small and too far up the frame to ever crop, and the
+    background art already paints flowers there, so drop those two layers
+    outright. Anchor the remaining bloom layer to the viewport, sink it, and
+    push the last grass tufts down off the bottom edge.
+    
+    33/33 roots now sit below the fold at both 1280x720 and 1600x600.
+    
+    Co-Authored-By: [1;31mClaude[m Opus 5 <noreply@anthropic.com>
+
+[33mcommit 3a66891bb9092baceacede0934d50c92f5dcd5d8[m
+Author: Vipin <vipinkaushik20771041@gmail.com>
+Date:   Tue Sep 29 02:48:19 2026 +0530
+
+    Stop re-rendering a 1700-node tree every frame
+    
+    The parallax lerp called setMouseOffset on every rAF tick, re-rendering
+    the whole loading screen 60x/sec. Write --mx/--my straight to the DOM
+    instead and have the layers read them via calc(), so React renders once.
+    The loop now also parks itself when the cursor settles rather than
+    spinning forever, and skips entirely under prefers-reduced-motion.
+    
+    Drop sub-pixel blur from the animated particles: a per-frame filter pass
+    for something invisible at 0.3px.
+    
+    Note: headless Chromium has a ~50ms frame floor regardless of content
+    (hiding all grass changed nothing), so this is structural, not measured.
+    
+    Co-Authored-By: [1;31mClaude[m Opus 5 <noreply@anthropic.com>
+
+[33mcommit 61cfdd3830abdb48093a2d27a8a424225841317a[m
+Author: Vipin <vipinkaushik20771041@gmail.com>
+Date:   Tue Sep 29 02:42:51 2026 +0530
+
+    Sink rooted flora below the frame so bases crop out of view
+    
+    Co-Authored-By: [1;31mClaude[m Opus 5 <noreply@anthropic.com>
+
+[33mcommit 42e17f3ef4293855394ef48aeb8b6aea2f3151a0[m
+Author: Vipin <vipinkaushik20771041@gmail.com>
+Date:   Tue Sep 29 02:38:46 2026 +0530
+
+    Stop the plants sliding over the ground they grow from
+    
+    The plants rest on ground painted into the background image, which drifts
+    4px, while the foreground layers drifted up to 110px -- a 27x mismatch, so
+    the contact point slid out from under them and they read as hovering.
+    
+    Recompress the ladder to 9px..36px (3.3x), cutting vertical drift hardest
+    since bobbing over the ground is the worst offender; airborne pollen and
+    petals keep their large motion because they really are in the air. Plants
+    also now lean from their own root via the standalone `rotate` property,
+    which composes with the sway animation instead of overwriting it.
+    
+    Co-Authored-By: [1;31mClaude[m Opus 5 <noreply@anthropic.com>
+
+[33mcommit f87e5b5e35fed0904836c16fbc928b0131fea926[m
+Author: Vipin <vipinkaushik20771041@gmail.com>
+Date:   Tue Sep 29 02:35:25 2026 +0530
+
+    Root the plants in grass clumps instead of mid-air
+    
+    Every sprite ended in a bare cut-off stem, and the foreground ones were
+    placed 2-12% up the viewport with open air beneath, so they read as
+    floating. Append a small grass clump to each sprite at generation time --
+    lit blade tips outside, dark root mass at the base -- and drop the
+    foreground flowers down to nest against the bottom edge.
+    
+    Co-Authored-By: [1;31mClaude[m Opus 5 <noreply@anthropic.com>
+
+[33mcommit 0e4207ac77ed577b39a2685739d977b23796fbd9[m
+Author: Vipin <vipinkaushik20771041@gmail.com>
+Date:   Tue Sep 29 02:31:54 2026 +0530
+
+    Redraw flora as real pixel art on the background's own grid
+    
+    The plants read as stickers because they were smooth vector shapes over
+    chunky pixel art. Three causes: className="pixelated" is a no-op on
+    inline SVG (image-rendering only affects rasters), the shapes were
+    perfect circles and beziers, and soft gaussian drop-shadows gave them a
+    cut-out edge pixel art never has.
+    
+    Redraw every plant as integer rects with shapeRendering="crispEdges",
+    using colours sampled straight out of loading_bg.jpg, lit dark at the
+    root to bright at the tip. Component names and props are unchanged, so
+    all existing call sites keep working.
+    
+    Co-Authored-By: [1;31mClaude[m Opus 5 <noreply@anthropic.com>
+
+[33mcommit 3adccc83da2afe53e37c1fc961c4a800e78b092d[m
+Author: Vipin <vipinkaushik20771041@gmail.com>
+Date:   Tue Sep 29 02:27:38 2026 +0530
+
+    Waving grass, viewport-anchored foreground, more blooms
+    
+    The two closest layers were anchored to the 16:9 scene box, which on a
+    wide/short window is taller than the viewport and crops its own bottom
+    away -- at 2560x900 the grass sat 64px below the fold entirely. Anchor
+    them to the viewport instead and lift them off the bottom edge.
+    
+    Grass rotated rigidly as one SVG from a single origin, which read as a
+    lean rather than a wave. Give each blade its own root pivot and stagger
+    delays/durations so a tuft ripples, with an occasional stronger gust.
+    
+    Co-Authored-By: [1;31mClaude[m Opus 5 <noreply@anthropic.com>
+
+[33mcommit b3e44f405bfc9d8623dc8ef9537498bdbc9f4e10[m
+Author: Vipin <vipinkaushik20771041@gmail.com>
+Date:   Tue Sep 29 02:21:36 2026 +0530
+
+    Cursor parallax for the Gameboy loading scene
+    
+    Base meadow image was a flat, non-parallaxing plane at z-0. Give it
+    scale(1.06) plus cursor drift so it reads as the far layer, and add a
+    closest foreground layer of tall grass hugging the screen edges.
+    
+    Reverts the earlier scroll-parallax experiment on the landing page.
+    
+    Co-Authored-By: [1;31mClaude[m Opus 5 <noreply@anthropic.com>

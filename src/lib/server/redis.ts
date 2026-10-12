@@ -85,7 +85,7 @@ export interface RateLimitConfig {
 
 export function getRateLimitConfig(): RateLimitConfig {
   const windowSec = parseInt(process.env.SPOTIFY_RATE_LIMIT_WINDOW_SEC || '30', 10) || 30;
-  const appBudget = parseInt(process.env.SPOTIFY_RATE_LIMIT_APP_BUDGET || '60', 10) || 60;
+  const appBudget = parseInt(process.env.SPOTIFY_RATE_LIMIT_APP_BUDGET || '50', 10) || 50;
   const userBudget = parseInt(process.env.SPOTIFY_RATE_LIMIT_USER_BUDGET || '30', 10) || 30;
   return { windowSec, appBudget, userBudget };
 }

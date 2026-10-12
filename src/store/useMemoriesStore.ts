@@ -23,7 +23,7 @@ interface MemoriesState {
   addMemory: (memoryData: Omit<Memory, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateMemory: (id: string, updates: Partial<Memory>) => void;
   deleteMemory: (id: string) => void;
-  loadMemories: (isAuthenticated?: boolean) => Promise<void>;
+  loadMemories: (isAuthenticated?: boolean, options?: { isPolling?: boolean }) => Promise<void>;
   clearError: () => void;
 }
 
@@ -93,14 +93,20 @@ export const useMemoriesStore = create<MemoriesState>()((set, get) => ({
   setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
   clearError: () => set({ error: null }),
 
-  loadMemories: async (isAuthenticated?: boolean) => {
+  loadMemories: async (isAuthenticated?: boolean, options?: { isPolling?: boolean }) => {
     const isAuthed = isAuthenticated ?? get().isAuthenticated;
     if (!isAuthed) {
       return;
     }
     try {
       set({ isLoading: true, error: null });
-      const res = await memoriesFetch('/api/memories');
+      const headers: Record<string, string> = {};
+      if (options?.isPolling) {
+        headers['X-Polling'] = 'true';
+      }
+      const res = options?.isPolling
+        ? await memoriesFetch('/api/memories', { headers })
+        : await memoriesFetch('/api/memories');
       if (!res) {
         set({ isLoading: false });
         return;
@@ -109,6 +115,12 @@ export const useMemoriesStore = create<MemoriesState>()((set, get) => ({
       if (res.status === 401) {
         // Not logged in; clear memories
         set({ memories: [], isLoading: false });
+        return;
+      }
+
+      if (res.status === 429 && options?.isPolling) {
+        // Background polling request dropped on rate limit
+        set({ isLoading: false });
         return;
       }
 

@@ -37,7 +37,7 @@ import {
   reserveSpotifyRateLimit,
   deleteByPattern,
 } from '@/lib/server/redis';
-import { GET, POST, PUT, DELETE, _inFlightGetRequestsForTesting } from '../route';
+import { GET, POST, PUT, DELETE, _inFlightGetRequestsForTesting, getEndpointTtl, ENDPOINT_CACHE_RULES } from '../route';
 
 describe('Spotify Proxy Route (/api/spotify/proxy/[...path])', () => {
   const originalFetch = global.fetch;
@@ -451,5 +451,90 @@ describe('Spotify Proxy Route (/api/spotify/proxy/[...path])', () => {
 
     // Spotify fetch was only called ONCE across both requests
     expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  describe('Per-endpoint TTL table (Prompt U)', () => {
+    it('returns correct TTL for each endpoint class', () => {
+      expect(getEndpointTtl('me/top/tracks')).toBe(21600);
+      expect(getEndpointTtl('me/top/artists')).toBe(21600);
+      expect(getEndpointTtl('me/player/recently-played')).toBe(60);
+      expect(getEndpointTtl('me/player/queue')).toBeNull();
+      expect(getEndpointTtl('me')).toBe(3600);
+      expect(getEndpointTtl('me/playlists')).toBe(3600);
+      expect(getEndpointTtl('search')).toBe(3600);
+      expect(getEndpointTtl('me/tracks')).toBe(3600);
+      expect(getEndpointTtl('me/library')).toBe(3600);
+      expect(getEndpointTtl('playlists/123')).toBe(3600);
+      expect(getEndpointTtl('me/player')).toBeNull();
+    });
+
+    it('caches me/top/tracks with 21600s TTL and me/player/recently-played with 60s TTL', async () => {
+      const accessToken = 'token-ttl-test';
+      vi.mocked(cookies).mockResolvedValue({
+        get: vi.fn().mockReturnValue({ value: accessToken }),
+      } as any);
+
+      // Top tracks
+      const topTracks = { items: [{ id: 'track_top_1' }] };
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        clone: () => ({ text: async () => JSON.stringify(topTracks) }),
+        text: async () => JSON.stringify(topTracks),
+      } as any);
+
+      const req1 = new Request('http://localhost:3000/api/spotify/proxy/me/top/tracks?limit=50');
+      const res1 = await GET(req1, { params: Promise.resolve({ path: ['me', 'top', 'tracks'] }) });
+      expect(res1.status).toBe(200);
+      expect(redis!.set).toHaveBeenCalledWith(
+        expect.stringContaining('me/top/tracks'),
+        topTracks,
+        { ex: 21600 }
+      );
+
+      // Recently played
+      const recentTracks = { items: [{ track: { id: 'track_rec_1' } }] };
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        clone: () => ({ text: async () => JSON.stringify(recentTracks) }),
+        text: async () => JSON.stringify(recentTracks),
+      } as any);
+
+      const req2 = new Request('http://localhost:3000/api/spotify/proxy/me/player/recently-played?limit=50');
+      const res2 = await GET(req2, { params: Promise.resolve({ path: ['me', 'player', 'recently-played'] }) });
+      expect(res2.status).toBe(200);
+      expect(redis!.set).toHaveBeenCalledWith(
+        expect.stringContaining('me/player/recently-played'),
+        recentTracks,
+        { ex: 60 }
+      );
+    });
+
+    it('me/player/queue is never cached in Redis', async () => {
+      const accessToken = 'token-queue-uncached';
+      vi.mocked(cookies).mockResolvedValue({
+        get: vi.fn().mockReturnValue({ value: accessToken }),
+      } as any);
+
+      const queueData = { currently_playing: null, queue: [] };
+      vi.mocked(global.fetch).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => queueData,
+        clone: () => ({ text: async () => JSON.stringify(queueData) }),
+        text: async () => JSON.stringify(queueData),
+      } as any);
+
+      const req = new Request('http://localhost:3000/api/spotify/proxy/me/player/queue');
+      const res = await GET(req, { params: Promise.resolve({ path: ['me', 'player', 'queue'] }) });
+      expect(res.status).toBe(200);
+      expect(redis!.set).not.toHaveBeenCalledWith(
+        expect.stringContaining('me/player/queue'),
+        expect.anything(),
+        expect.anything()
+      );
+    });
   });
 });

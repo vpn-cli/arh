@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { proxyFetch } from '@/lib/spotifyClient';
+import { fetchLikedTracks } from './useLikedTracks';
 
 export function useSpotifySession() {
   return useQuery({
@@ -49,6 +50,7 @@ export function useDevices() {
 }
 
 export function useBirthdayMix(options?: { enabled?: boolean }) {
+  const queryClient = useQueryClient();
   const { isSuccess, data: sessionData } = useSpotifySession();
   const isAuthenticated = isSuccess && !!sessionData?.accessToken;
   const isEnabled = options?.enabled !== false && isAuthenticated;
@@ -56,20 +58,27 @@ export function useBirthdayMix(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['spotify', 'birthdayMix'],
     queryFn: async () => {
-      const [shortTop, medTop, savedData, recentData] = await Promise.all([
-        proxyFetch('/me/top/tracks?limit=50&time_range=short_term').catch(() => ({ items: [] })),
+      const [likedData, recentData, medTop] = await Promise.all([
+        queryClient.ensureQueryData({
+          queryKey: ['spotify', 'likedTracks', 0, 50],
+          queryFn: () => fetchLikedTracks(0, 50),
+          staleTime: 5 * 60 * 1000,
+        }).catch(() => ({ tracks: [] })),
+        queryClient.ensureQueryData({
+          queryKey: ['spotify', 'recentlyPlayed'],
+          queryFn: () => fetchRecentlyPlayed(50),
+          staleTime: 2 * 60 * 1000,
+        }).catch(() => []),
         proxyFetch('/me/top/tracks?limit=50&time_range=medium_term').catch(() => ({ items: [] })),
-        proxyFetch('/me/tracks?limit=50').catch(() => ({ items: [] })),
-        proxyFetch('/me/player/recently-played?limit=30').catch(() => ({ items: [] })),
       ]);
 
-      const shortTracks = shortTop?.items || [];
       const medTracks = medTop?.items || [];
-      const savedTracks = (savedData?.items || []).map((i: any) => i?.track).filter(Boolean);
-      const recentTracks = (recentData?.items || []).map((i: any) => i?.track).filter(Boolean);
+      const savedTracks = likedData?.tracks || [];
+      // Birthday mix takes the first 30 of recently played (fetched with limit=50)
+      const recentTracks = (recentData || []).slice(0, 30).map((i: any) => i?.track).filter(Boolean);
 
       const seen = new Set<string>();
-      const merged = [...shortTracks, ...recentTracks, ...medTracks, ...savedTracks].filter(t => {
+      const merged = [...medTracks, ...recentTracks, ...savedTracks].filter((t: any) => {
         if (!t?.id || !t?.uri || seen.has(t.id)) return false;
         seen.add(t.id);
         return true;
@@ -91,7 +100,7 @@ export function useBirthdayMix(options?: { enabled?: boolean }) {
 export function usePlayerQueue(options?: { enabled?: boolean }) {
   const { isSuccess, data: sessionData } = useSpotifySession();
   const isAuthenticated = isSuccess && !!sessionData?.accessToken;
-  const isEnabled = options?.enabled !== false && isAuthenticated;
+  const isEnabled = options?.enabled === true && isAuthenticated;
 
   return useQuery({
     queryKey: ['spotify', 'playerQueue'],
@@ -101,7 +110,7 @@ export function usePlayerQueue(options?: { enabled?: boolean }) {
     },
     enabled: isEnabled,
     refetchInterval: false,
-    staleTime: 2000,
+    staleTime: 10_000,
   });
 }
 
@@ -126,7 +135,7 @@ export function useTrackSavedStatus(trackId?: string) {
     queryKey: ['spotify', 'saved', trackId],
     queryFn: async () => {
       if (!trackId) return false;
-      const data = await proxyFetch(`/me/library/contains?uris=spotify:track:${trackId}`);
+      const data = await proxyFetch(`/me/library/contains?uris=spotify:track:${trackId}`, { isPolling: true });
       return data && data.length > 0 ? data[0] : false;
     },
     enabled: isAuthenticated && !!trackId,
@@ -195,6 +204,12 @@ export function useSpotifyMutations() {
   return { play, toggleSave, toggleShuffle, toggleRepeat };
 }
 
+export async function fetchRecentlyPlayed(limit: number = 50) {
+  const { getRecentlyPlayed } = await import('@/lib/spotify/player');
+  const data = await getRecentlyPlayed(limit);
+  return data?.items || [];
+}
+
 export function useRecentlyPlayed(options?: { enabled?: boolean }) {
   const { isSuccess, data: sessionData } = useSpotifySession();
   const isAuthenticated = isSuccess && !!sessionData?.accessToken;
@@ -202,11 +217,7 @@ export function useRecentlyPlayed(options?: { enabled?: boolean }) {
 
   return useQuery({
     queryKey: ['spotify', 'recentlyPlayed'],
-    queryFn: async () => {
-      const { getRecentlyPlayed } = await import('@/lib/spotify/player');
-      const data = await getRecentlyPlayed(50);
-      return data?.items || [];
-    },
+    queryFn: () => fetchRecentlyPlayed(50),
     enabled: isEnabled,
     staleTime: 2 * 60 * 1000, // 2 minutes (recently played can update frequently)
   });
