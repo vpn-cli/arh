@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 type CursorMode = "default" | "pointer" | "photo" | "hamster";
 
@@ -13,10 +14,10 @@ export default function PixelCursor() {
   const [cursorMode, setCursorMode] = useState<CursorMode>("default");
   const [isVisible, setIsVisible] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     const isTouch = window.matchMedia("(pointer: coarse)").matches;
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     if (isTouch || prefersReducedMotion) {
       setIsEnabled(false);
