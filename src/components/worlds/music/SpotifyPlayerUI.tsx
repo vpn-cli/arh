@@ -179,6 +179,7 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
         <PlayerOverlays
           isReconnecting={isReconnecting} recoveryError={recoveryError}
           onDismissRecoveryError={handleDismissRecoveryError} isSessionExpired={isSessionExpired} token={token}
+          onGoHome={onGoHome}
         />
 
         <PlayerHeader

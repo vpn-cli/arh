@@ -1,10 +1,12 @@
 "use client";
 
 import React from "react";
-import { WarningIcon, CloseIcon } from "../icons";
+import { WarningIcon, CloseIcon, ChevronLeftIcon } from "../icons";
 import { redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
 import { HEADER_TITLE } from "../textConfig";
 import { SpotifyRestingBanner } from "../SpotifyRestingBanner";
+import { useGameState } from "@/lib/gameState";
+import { sfx } from "@/lib/audio";
 
 export interface PlayerOverlaysProps {
   isReconnecting: boolean;
@@ -15,6 +17,7 @@ export interface PlayerOverlaysProps {
   onReLogin?: () => void;
   onConnect?: () => void;
   onResetSession?: () => void;
+  onGoHome?: () => void;
 }
 
 export const PlayerOverlays = React.memo(function PlayerOverlays({
@@ -26,8 +29,23 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
   onReLogin = redirectToSpotifyAuth,
   onConnect = redirectToSpotifyAuth,
   onResetSession = logoutSpotify,
+  onGoHome,
 }: PlayerOverlaysProps) {
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+  const { goHome } = useGameState();
+
+  const handleGoHome = React.useCallback(() => {
+    try {
+      sfx.select();
+    } catch {
+      // ignore audio errors if any
+    }
+    if (onGoHome) {
+      onGoHome();
+    } else {
+      goHome();
+    }
+  }, [onGoHome, goHome]);
 
   return (
     <>
@@ -59,8 +77,22 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
       )}
 
       {isSessionExpired && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-light)]/80 backdrop-blur-sm">
-          <div className="bg-white rounded-none border-4 border-[var(--color-vibrant)] shadow-[8px_8px_0px_var(--color-muted)] p-8 flex flex-col items-center gap-4 max-w-xs text-center">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-light)]/80 backdrop-blur-sm p-4">
+          <div className="absolute top-4 left-4 z-10">
+            <button
+              onClick={handleGoHome}
+              className="group px-3.5 py-1.5 bg-white/90 hover:bg-white border-2 border-[var(--color-muted)] rounded-full flex items-center gap-1.5 shadow-sm hover:shadow transition-all cursor-pointer"
+              aria-label="Return to World Selection"
+              title="Return to World Selection"
+            >
+              <ChevronLeftIcon size={12} className="text-[var(--color-dark)] group-hover:-translate-x-0.5 transition-transform" />
+              <span className="font-pixel text-caption text-[var(--color-dark)] font-bold uppercase tracking-wider group-hover:text-[var(--color-vibrant)] transition-colors">
+                World Select
+              </span>
+            </button>
+          </div>
+
+          <div className="bg-white rounded-none border-4 border-[var(--color-vibrant)] shadow-[8px_8px_0px_var(--color-muted)] p-8 flex flex-col items-center gap-4 max-w-xs text-center w-full">
             <div className="text-display animate-bounce">🔑</div>
             <h3 className="font-pixel text-title font-bold text-[var(--color-dark)] leading-snug">SESSION EXPIRED</h3>
             <p className="font-pixel text-caption text-[var(--color-dark)] leading-relaxed">
@@ -68,9 +100,16 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
             </p>
             <button
               onClick={onReLogin}
-              className="w-full mt-2 bg-gradient-to-r from-[#1DB954] to-[#1ed760] text-white font-pixel text-body font-bold py-3 px-6 rounded-full shadow-[0_4px_15px_rgba(29,185,84,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+              className="w-full mt-2 bg-gradient-to-r from-[#1DB954] to-[#1ed760] text-white font-pixel text-body font-bold py-3 px-6 rounded-full shadow-[0_4px_15px_rgba(29,185,84,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               RE-LOGIN TO SPOTIFY
+            </button>
+            <button
+              onClick={handleGoHome}
+              className="w-full bg-white hover:bg-[var(--color-light)] text-[var(--color-dark)] border-2 border-[var(--color-muted)] font-pixel text-caption font-bold py-2.5 px-4 rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:border-[var(--color-vibrant)]"
+            >
+              <ChevronLeftIcon size={12} className="text-[var(--color-dark)]" />
+              <span>Back to World Select</span>
             </button>
           </div>
         </div>
@@ -78,7 +117,21 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
 
       {!token && !isSessionExpired && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-bg)]/75 backdrop-blur-sm px-4">
-          <div className="bg-white/95 rounded-3xl border-2 border-[var(--color-muted)] shadow-[0_18px_45px_var(--color-muted)] shadow-opacity-20 p-8 flex flex-col items-center gap-4 max-w-sm text-center">
+          <div className="absolute top-4 left-4 z-10">
+            <button
+              onClick={handleGoHome}
+              className="group px-3.5 py-1.5 bg-white/90 hover:bg-white border-2 border-[var(--color-muted)] rounded-full flex items-center gap-1.5 shadow-sm hover:shadow transition-all cursor-pointer"
+              aria-label="Return to World Selection"
+              title="Return to World Selection"
+            >
+              <ChevronLeftIcon size={12} className="text-[var(--color-dark)] group-hover:-translate-x-0.5 transition-transform" />
+              <span className="font-pixel text-caption text-[var(--color-dark)] font-bold uppercase tracking-wider group-hover:text-[var(--color-vibrant)] transition-colors">
+                World Select
+              </span>
+            </button>
+          </div>
+
+          <div className="bg-white/95 rounded-3xl border-2 border-[var(--color-muted)] shadow-[0_18px_45px_var(--color-muted)] shadow-opacity-20 p-8 flex flex-col items-center gap-4 max-w-sm text-center w-full">
             <img src="/hampter/hello_kitty_pin.png" alt="" className="w-16 h-16 object-contain" />
             <h3 className="font-pixel text-heading font-bold text-[var(--color-dark)] leading-snug">{HEADER_TITLE}</h3>
             <p className="font-pixel text-body text-[var(--color-dark)] leading-relaxed font-medium">
@@ -86,14 +139,21 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
             </p>
             <button
               onClick={onConnect}
-              className="w-full mt-2 bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-[var(--on-vibrant)] font-pixel text-title font-bold py-3 px-6 rounded-full shadow-[0_8px_22px_var(--color-vibrant)] hover:scale-105 active:scale-95 transition-all"
+              className="w-full mt-2 bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-[var(--on-vibrant)] font-pixel text-title font-bold py-3 px-6 rounded-full shadow-[0_8px_22px_var(--color-vibrant)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
             >
               Connect Spotify
+            </button>
+            <button
+              onClick={handleGoHome}
+              className="w-full bg-white/80 hover:bg-white text-[var(--color-dark)] border-2 border-[var(--color-muted)] font-pixel text-caption font-bold py-2.5 px-4 rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:border-[var(--color-vibrant)]"
+            >
+              <ChevronLeftIcon size={12} className="text-[var(--color-dark)]" />
+              <span>Back to World Select</span>
             </button>
             {isLocalhost && (
               <button
                 onClick={onResetSession}
-                className="font-pixel text-caption text-[var(--color-dark)] hover:text-[var(--color-dark)] font-medium"
+                className="font-pixel text-caption text-[var(--color-dark)] hover:text-[var(--color-dark)] font-medium cursor-pointer"
               >
                 Reset local session
               </button>
