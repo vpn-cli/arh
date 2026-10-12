@@ -1,0 +1,218 @@
+[
+  {
+    "id": "bouquet_wrap",
+    "title": "Tulip Bouquet Wrap",
+    "src": "/images/elements/bouquet_wrap.png",
+    "width": 166,
+    "height": 284,
+    "aspectRatio": 0.585
+  },
+  {
+    "id": "bow_top_center",
+    "title": "Pink Ribbon Bow",
+    "src": "/images/elements/bow_top_center.png",
+    "width": 211,
+    "height": 196,
+    "aspectRatio": 1.077
+  },
+  {
+    "id": "bow_top_right",
+    "title": "Pale Pink Bow",
+    "src": "/images/elements/bow_top_right.png",
+    "width": 210,
+    "height": 198,
+    "aspectRatio": 1.061
+  },
+  {
+    "id": "envelope",
+    "title": "Love Letter",
+    "src": "/images/elements/envelope.png",
+    "width": 119,
+    "height": 169,
+    "aspectRatio": 0.704
+  },
+  {
+    "id": "star_top_left",
+    "title": "Pink Star (Top Left)",
+    "src": "/images/elements/star_top_left.png",
+    "width": 76,
+    "height": 72,
+    "aspectRatio": 1.056
+  },
+  {
+    "id": "star_top_right",
+    "title": "Pink Star (Top Right)",
+    "src": "/images/elements/star_top_right.png",
+    "width": 80,
+    "height": 77,
+    "aspectRatio": 1.039
+  },
+  {
+    "id": "hearts_trio",
+    "title": "Hearts Trio",
+    "src": "/images/elements/hearts_trio.png",
+    "width": 95,
+    "height": 180,
+    "aspectRatio": 0.528
+  },
+  {
+    "id": "bouquet_tulips",
+    "title": "Tulip Bouquet Stems",
+    "src": "/images/elements/bouquet_tulips.png",
+    "width": 119,
+    "height": 220,
+    "aspectRatio": 0.541
+  },
+  {
+    "id": "flower_blossom",
+    "title": "Blossom Flower",
+    "src": "/images/elements/flower_blossom.png",
+    "width": 222,
+    "height": 233,
+    "aspectRatio": 0.953
+  },
+  {
+    "id": "bow_thin",
+    "title": "Dainty Pink Bow",
+    "src": "/images/elements/bow_thin.png",
+    "width": 195,
+    "height": 217,
+    "aspectRatio": 0.899
+  },
+  {
+    "id": "cherries",
+    "title": "Sweet Cherries",
+    "src": "/images/elements/cherries.png",
+    "width": 123,
+    "height": 147,
+    "aspectRatio": 0.837
+  },
+  {
+    "id": "books_girly",
+    "title": "Book Girly Stack",
+    "src": "/images/elements/books_girly.png",
+    "width": 165,
+    "height": 143,
+    "aspectRatio": 1.154
+  },
+  {
+    "id": "lily",
+    "title": "Pink Lily",
+    "src": "/images/elements/lily.png",
+    "width": 233,
+    "height": 193,
+    "aspectRatio": 1.207
+  },
+  {
+    "id": "butterfly",
+    "title": "Pink Butterfly",
+    "src": "/images/elements/butterfly.png",
+    "width": 251,
+    "height": 187,
+    "aspectRatio": 1.342
+  },
+  {
+    "id": "star_mid_left",
+    "title": "Pink Star (Mid Left)",
+    "src": "/images/elements/star_mid_left.png",
+    "width": 77,
+    "height": 75,
+    "aspectRatio": 1.027
+  },
+  {
+    "id": "star_mid_lower",
+    "title": "Pink Star (Mid Lower)",
+    "src": "/images/elements/star_mid_lower.png",
+    "width": 76,
+    "height": 74,
+    "aspectRatio": 1.027
+  },
+  {
+    "id": "flower_mid_1",
+    "title": "Pink Watercolor Flower",
+    "src": "/images/elements/flower_mid_1.png",
+    "width": 187,
+    "height": 179,
+    "aspectRatio": 1.045
+  },
+  {
+    "id": "flower_mid_2",
+    "title": "Pink Rose Blossom",
+    "src": "/images/elements/flower_mid_2.png",
+    "width": 194,
+    "height": 197,
+    "aspectRatio": 0.985
+  },
+  {
+    "id": "bow_satin",
+    "title": "Large Satin Ribbon",
+    "src": "/images/elements/bow_satin.png",
+    "width": 269,
+    "height": 244,
+    "aspectRatio": 1.102
+  },
+  {
+    "id": "star_lower_right",
+    "title": "Pink Star (Lower Right)",
+    "src": "/images/elements/star_lower_right.png",
+    "width": 81,
+    "height": 80,
+    "aspectRatio": 1.012
+  },
+  {
+    "id": "star_bottom_left",
+    "title": "Pink Star (Bottom Left)",
+    "src": "/images/elements/star_bottom_left.png",
+    "width": 107,
+    "height": 107,
+    "aspectRatio": 1.0
+  },
+  {
+    "id": "book_rose",
+    "title": "Vintage Book with Rose",
+    "src": "/images/elements/book_rose.png",
+    "width": 151,
+    "height": 130,
+    "aspectRatio": 1.162
+  },
+  {
+    "id": "camera",
+    "title": "Instant Camera",
+    "src": "/images/elements/camera.png",
+    "width": 144,
+    "height": 141,
+    "aspectRatio": 1.021
+  },
+  {
+    "id": "daisy",
+    "title": "Pink Daisy",
+    "src": "/images/elements/daisy.png",
+    "width": 182,
+    "height": 177,
+    "aspectRatio": 1.028
+  },
+  {
+    "id": "seashell",
+    "title": "Pearl Seashell with Bow",
+    "src": "/images/elements/seashell.png",
+    "width": 225,
+    "height": 229,
+    "aspectRatio": 0.983
+  },
+  {
+    "id": "books_stack",
+    "title": "Striped Ribbon Book Stack",
+    "src": "/images/elements/books_stack.png",
+    "width": 195,
+    "height": 175,
+    "aspectRatio": 1.114
+  },
+  {
+    "id": "moon",
+    "title": "Pink Full Moon",
+    "src": "/images/elements/moon.png",
+    "width": 216,
+    "height": 214,
+    "aspectRatio": 1.009
+  }
+]
