@@ -1,7 +1,7 @@
 Hamster Birthday Indie-Web Game
 Project Overview & Step-by-Step Implementation Plan
 Purpose: This document is the canonical implementation brief for
-building the interactive birthday project with Antigravity / Claude.
+building the interactive birthday project with Antigravity.
 Important: The workflow defined here is locked. Do not redesign
 the information architecture or navigation unless explicitly
 instructed.
@@ -472,7 +472,7 @@ richer experience.
 22. Implementation Method
 CRITICAL RULE
 Do not build the entire project in one generation.
-Antigravity / Claude should work incrementally.
+Antigravity should work incrementally.
 Each phase should:
 1. inspect the existing project
 2. implement only the requested scope
@@ -666,7 +666,7 @@ Only after all functional requirements are complete:
 - final asset optimization
 - remove debug UI
 - final build
-38. Development Rules for Antigravity / Claude
+38. Development Rules for Antigravity
 Use this project brief as the source of truth.
 Rule 1 --- Do not invent architecture
 Do not introduce additional worlds, routes, navigation systems, or major
@@ -773,7 +773,7 @@ After implementation:
 3. Report files changed.
 4. Report tests/build status.
 5. Do not proceed to the next phase without approval.
-This keeps Antigravity / Claude from turning a carefully designed
+This keeps Antigravity from turning a carefully designed
 experience into one giant uncontrolled generation.
 42. Canonical Product Statement
 A tiny interactive indie-game birthday world built around a hamster,
