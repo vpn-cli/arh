@@ -61,11 +61,11 @@ export default function LandingPage() {
   };
 
   if (!isReady) {
-    return <div className="min-h-screen w-full bg-[#0C0A15]" />;
+    return <div className="min-h-screen w-full bg-home-bg" />;
   }
 
   return (
-    <div className="relative min-h-screen w-full bg-[#0C0A15] text-[#FFEBB3] flex flex-col overflow-x-hidden selection:bg-[#FF8FB3]/40">
+    <div className="relative min-h-screen w-full bg-home-bg text-home-cream flex flex-col overflow-x-hidden selection:bg-music-pink/40">
       {/* Auth Loading Overlay */}
       {isAuthLoading && <AuthLoadingOverlay onComplete={() => setIsAuthLoading(false)} />}
       
@@ -102,7 +102,7 @@ export default function LandingPage() {
               className="object-cover"
               role="presentation"
             />
-            <div className="absolute inset-0 bg-[#0C0A15]/60 bg-[radial-gradient(ellipse_at_center,rgba(12,10,21,0.4)_0%,rgba(12,10,21,0.9)_100%)]" />
+            <div className="absolute inset-0 bg-home-bg/60 bg-[radial-gradient(ellipse_at_center,rgba(12,10,21,0.4)_0%,rgba(12,10,21,0.9)_100%)]" />
           </div>
 
           <main className="flex-1 w-full max-w-[1200px] mx-auto px-4 py-8 sm:py-12 relative z-10 flex flex-col items-center">

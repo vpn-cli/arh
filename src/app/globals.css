@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DotGothic16&family=Fredoka:wght@400;500;600;700&family=Pixelify+Sans:wght@500;700&family=Press+Start+2P&family=Quicksand:wght@500;600;700&family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Caveat:wght@600;700&family=DotGothic16&family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Pixelify+Sans:wght@500;700&family=Press+Start+2P&family=Quicksand:wght@500;600;700&family=Sniglet:wght@400;800&family=VT323&display=swap');
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════
@@ -29,9 +29,34 @@
   --color-text-muted: #595B75;
   --on-vibrant: #FFFFFF;
 
+  /* Palette — Home World */
+  --color-home-bg: #0C0A15;
+  --color-home-bg-alt: #100F1F;
+  --color-home-surface: #1C1A33;
+  --color-home-border: #2E2A52;
+  --color-home-muted: #A09AD4;
+  --color-home-gold: #E5B25D;
+  --color-home-gold-bright: #FFD166;
+  --color-home-cream: #FFEBB3;
+  --color-home-shadow: #100E1C;
+  --color-home-muted-2: #8C7A99;
+  --color-home-fg-soft: #D2CBE6;
+  --color-home-accent: #FFE27A;
+  --color-home-border-soft: #383359;
+
+  /* Destination Portal Palettes */
+  --color-music-pink: #FF8FB3;
+  --color-music-lavender: #C8B8F1;
+  --color-scrapbook-mint: #B9D7C0;
+  --color-scrapbook-sky: #A8D8EA;
+
   /* Typography — Cute Kawaii & WCAG 2.1 Compliant */
   --font-pixel: 'Fredoka', 'Quicksand', system-ui, sans-serif;
-  --font-cute: 'Fredoka', 'Quicksand', sans-serif;
+  --font-cute: 'Baloo 2', 'Fredoka', cursive, sans-serif;
+  --font-baloo: 'Baloo 2', cursive, sans-serif;
+  --font-sniglet: 'Sniglet', cursive, sans-serif;
+  --font-quicksand: 'Quicksand', system-ui, sans-serif;
+  --font-nunito: 'Nunito', system-ui, sans-serif;
   --font-dot: 'DotGothic16', monospace;
   --font-retro: 'Press Start 2P', monospace;
   --font-terminal: 'VT323', monospace;
@@ -90,6 +115,22 @@ body {
 .font-dot {
   font-family: 'DotGothic16', monospace;
   letter-spacing: 0.04em;
+}
+
+.font-baloo {
+  font-family: 'Baloo 2', cursive, sans-serif;
+}
+
+.font-sniglet {
+  font-family: 'Sniglet', cursive, sans-serif;
+}
+
+.font-quicksand {
+  font-family: 'Quicksand', system-ui, sans-serif;
+}
+
+.font-nunito {
+  font-family: 'Nunito', system-ui, sans-serif;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -452,6 +493,21 @@ body {
   }
 }
 
+@keyframes home-title-wobble {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-0.8deg);
+  }
+
+  75% {
+    transform: rotate(0.8deg);
+  }
+}
+
 @keyframes blink-cursor {
 
   0%,
@@ -585,6 +641,10 @@ body {
 
 .animate-wiggle {
   animation: wiggle 2s ease-in-out infinite;
+}
+
+.animate-title-wobble {
+  animation: home-title-wobble 4s ease-in-out infinite;
 }
 
 .animate-sparkle {

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 interface Particle {
   x: number;
@@ -16,6 +17,7 @@ interface Particle {
 
 export default function AmbientParticles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -26,13 +28,6 @@ export default function AmbientParticles() {
     let animationFrameId: number;
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
-
-    const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    };
-    window.addEventListener("resize", handleResize);
 
     // Pastel pixel dust motes — matches new palette
     const colors = ["#FFB6C1", "#FFE4A1", "#A8D8EA", "#D4B8FF", "#B8E6D0", "#FFD6DE"];
@@ -51,6 +46,34 @@ export default function AmbientParticles() {
         pulseSpeed: 0.01 + Math.random() * 0.015,
         color: colors[Math.floor(Math.random() * colors.length)],
       });
+    }
+
+    const drawFrame = () => {
+      ctx.clearRect(0, 0, width, height);
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, Math.min(1, p.opacity));
+        ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
+      }
+      ctx.globalAlpha = 1.0;
+    };
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      if (prefersReducedMotion) {
+        drawFrame();
+      }
+    };
+    window.addEventListener("resize", handleResize);
+
+    if (prefersReducedMotion) {
+      drawFrame();
+      return () => {
+        window.removeEventListener("resize", handleResize);
+      };
     }
 
     const render = () => {
@@ -86,9 +109,9 @@ export default function AmbientParticles() {
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [prefersReducedMotion]);
 
   return (
     <canvas
