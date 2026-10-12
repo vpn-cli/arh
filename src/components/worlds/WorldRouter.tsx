@@ -77,24 +77,14 @@ function WorldLoadingPlaceholder({
 const MainWorld = dynamic(() => import("./main/MainWorld"), {
   ssr: false,
   loading: () => (
-    <WorldLoadingPlaceholder
-      title="LOADING MAIN WORLD..."
-      subtitle="the birthday adventure awaits..."
-      emoji="🌟"
-      color="#FFD166"
-    />
+    <div className="min-h-screen w-full bg-[#0C0A15]" />
   ),
 });
 
 const MusicWorld = dynamic(() => import("./music/MusicWorld"), {
   ssr: false,
   loading: () => (
-    <WorldLoadingPlaceholder
-      title="LOADING MUSIC WORLD..."
-      subtitle="setting up the tunes..."
-      emoji="🎵"
-      color="#FF8FB3"
-    />
+    <div className="min-h-screen w-full bg-[#0C0A15]" />
   ),
 });
 

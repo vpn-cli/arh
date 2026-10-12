@@ -16,26 +16,23 @@ interface PlaceholderWorldProps {
   worldId: WorldId;
 }
 
-const WORLD_META: Record<string, { title: string; emoji: string; message: string; hamster: string; color: string }> = {
+const WORLD_META: Record<string, { title: string; message: string; image: string; color: string }> = {
   main: {
     title: "MAIN WORLD",
-    emoji: "🌟",
     message: "the birthday adventure awaits here...",
-    hamster: "/hampter/devious hamster doodle.jpeg",
+    image: "/images/portals/hk-main.png",
     color: "#FFD166",
   },
   music: {
     title: "MUSIC WORLD",
-    emoji: "🎵",
     message: "your personal playlist is loading...",
-    hamster: "/hampter/Hamster Stickers.jpeg",
+    image: "/images/portals/hk-music.png",
     color: "#FF8FB3",
   },
   scrapbook: {
     title: "SCRAPBOOK",
-    emoji: "📸",
     message: "memories are being developed...",
-    hamster: "/hampter/so cuteee i love it frrr.jpeg",
+    image: "/images/portals/hk-scrapbook.png",
     color: "#B9D7C0",
   },
 };
@@ -53,20 +50,19 @@ export default function PlaceholderWorld({ worldId }: PlaceholderWorldProps) {
       />
 
       <div className="relative z-10 flex flex-col items-center gap-6 text-center max-w-md">
-        {/* Hamster */}
-        <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-[#2E2A52] shadow-[0_8px_24px_rgba(0,0,0,0.6)] bg-[#1C1A33] animate-chill-breathe">
+        {/* Character sticker — frame-free */}
+        <div className="w-24 h-24 flex items-center justify-center animate-chill-breathe">
           <Image
-            src={meta.hamster}
-            alt="hamster"
-            width={80}
-            height={80}
-            className="w-full h-full object-cover"
+            src={meta.image}
+            alt={meta.title}
+            width={96}
+            height={96}
+            className="w-full h-full object-contain filter drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]"
           />
         </div>
 
         {/* Title */}
         <div>
-          <span className="text-3xl mb-2 block">{meta.emoji}</span>
           <h1
             className="font-pixel text-2xl sm:text-3xl font-bold tracking-wider drop-shadow-[0_3px_0_#100E1C] mb-2"
             style={{ color: meta.color }}
