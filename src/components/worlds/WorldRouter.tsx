@@ -131,7 +131,7 @@ export default function WorldRouter() {
       <div
         className={`
           transition-all duration-300 ease-out
-          ${isTransitioning ? "opacity-0 scale-[0.98]" : "opacity-100 scale-100"}
+          ${isTransitioning ? "opacity-0 scale-[0.98]" : "opacity-100"}
         `}
       >
         {currentWorld === "home" && <HomeWorld onPortalIntent={preloadWorld} />}

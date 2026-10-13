@@ -49,7 +49,7 @@ export default function MainWorld() {
         {/* Base cream tone */}
         <div className="absolute inset-0 bg-[#FAF5E9]" />
 
-        {/* Main World aesthetic background image (optimized WebP) */}
+        {/* Main World background filling the viewport */}
         <Image
           src="/images/main_world.webp"
           alt=""
