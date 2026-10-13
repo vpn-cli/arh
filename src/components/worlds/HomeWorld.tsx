@@ -133,7 +133,7 @@ export default function HomeWorld({ onPortalIntent }: HomeWorldProps = {}) {
       <div className="fixed inset-0 -z-10 bg-home-bg overflow-hidden pointer-events-none">
         {/* Handcrafted character line-art mat (Pucca, Kitty, Snoopy, Miffy) */}
         <Image
-          src="/main page bg.jpeg"
+          src="/main page bg.webp"
           alt=""
           fill
           priority

@@ -25,10 +25,10 @@ export default function TheLetter() {
     <div className="w-full max-w-2xl mx-auto mt-32 mb-48 px-4 relative z-10 flex flex-col items-center">
       <div className="text-center mb-16">
         <span className="text-4xl mb-4 block animate-bounce-soft">✉️</span>
-        <h2 className="font-pixel text-2xl text-[#B9D7C0] tracking-wider mb-2">
+        <h2 className="font-pixel text-2xl text-[#7A2854] tracking-wider mb-2 drop-shadow-[0_2px_0_rgba(255,255,255,0.7)]">
           ONE LAST THING
         </h2>
-        <p className="font-retro text-[9px] text-[#8C7A99] tracking-[2px]">
+        <p className="font-retro text-[9px] text-[#5C3B53] tracking-[2px] font-bold">
           a letter just for you
         </p>
       </div>

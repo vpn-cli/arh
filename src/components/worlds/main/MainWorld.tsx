@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import Image from "next/image";
 import { useGameState } from "@/lib/gameState";
 import { sfx } from "@/lib/audio";
 import gsap from "gsap";
@@ -41,27 +42,29 @@ export default function MainWorld() {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full min-h-screen bg-[#0C0A15] text-[#FFEBB3] overflow-hidden selection:bg-[#FF8FB3]/40">
+    <div ref={containerRef} className="relative w-full min-h-screen bg-[#FAF5E9] text-[#2D1B36] overflow-hidden selection:bg-[#FF8FB3]/40">
 
       {/* ═══ WORLD AMBIENCE & BACKGROUND ═══ */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Base cute dark pink/purple background */}
-        <div className="absolute inset-0 bg-[#2D1B36]" />
+        {/* Base cream tone */}
+        <div className="absolute inset-0 bg-[#FAF5E9]" />
 
-        {/* Animated gradient blobs for richness */}
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#FF82B8]/30 blur-[120px] animate-pulse" style={{ animationDuration: '7s' }} />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#FFD6E7]/30 blur-[120px] animate-pulse" style={{ animationDuration: '10s' }} />
+        {/* Main World aesthetic background image (optimized WebP) */}
+        <Image
+          src="/images/main_world.webp"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center pointer-events-none select-none"
+        />
 
-        {/* User-Uploaded ASCII Pattern Background - tinted pink */}
+        {/* Subtle soft vignette framing the content */}
         <div
-          className="absolute inset-0 opacity-[0.25] mix-blend-screen"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: `url('/ref/download (9).jpeg')`,
-            backgroundSize: "cover",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "center",
-            backgroundAttachment: "fixed",
-            filter: "invert(1) sepia(1) saturate(3) hue-rotate(290deg) opacity(0.5)",
+            background:
+              "radial-gradient(ellipse at center, transparent 40%, rgba(45, 27, 54, 0.08) 100%)",
           }}
         />
 
@@ -172,10 +175,9 @@ export default function MainWorld() {
               sfx.select();
               goHome();
             }}
-            className="group relative px-8 py-4 bg-transparent border-2 border-[#383359] text-[#8C7A99] font-retro text-[10px] tracking-[2px] overflow-hidden transition-colors hover:border-[#FFD166]"
+            className="group relative px-8 py-4 bg-[#FFF0F5] border-2 border-[#383359] text-[#383359] font-retro text-[10px] tracking-[2px] shadow-[3px_3px_0_#383359] overflow-hidden transition-all hover:bg-[#FFD166] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0_#383359] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
           >
-            <div className="absolute inset-0 bg-[#FFD166] -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-out" />
-            <span className="relative z-10 group-hover:text-[#100E1C] transition-colors duration-300 font-bold">RETURN TO HUB</span>
+            <span className="relative z-10 transition-colors duration-300 font-bold">RETURN TO HUB</span>
           </button>
         </div>
       </main>

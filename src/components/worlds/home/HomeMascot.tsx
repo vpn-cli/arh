@@ -36,7 +36,7 @@ export const HomeMascot = forwardRef<HTMLDivElement, HomeMascotProps>(
         <div ref={bobRef} className="flex items-center justify-center">
           <div className="w-20 h-20 sm:w-24 sm:h-24 select-none pointer-events-none transition-transform duration-300">
             <Image
-              src="/images/portals/hk-mascot.png"
+              src="/images/portals/hk-mascot.webp"
               alt="Hello Kitty guide"
               width={96}
               height={96}

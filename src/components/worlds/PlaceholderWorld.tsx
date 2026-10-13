@@ -20,19 +20,19 @@ const WORLD_META: Record<string, { title: string; message: string; image: string
   main: {
     title: "MAIN WORLD",
     message: "the birthday adventure awaits here...",
-    image: "/images/portals/hk-main.png",
+    image: "/images/portals/hk-main.webp",
     color: "#FFD166",
   },
   music: {
     title: "MUSIC WORLD",
     message: "your personal playlist is loading...",
-    image: "/images/portals/hk-music.png",
+    image: "/images/portals/hk-music.webp",
     color: "#FF8FB3",
   },
   scrapbook: {
     title: "SCRAPBOOK",
     message: "memories are being developed...",
-    image: "/images/portals/hk-scrapbook.png",
+    image: "/images/portals/hk-scrapbook.webp",
     color: "#B9D7C0",
   },
 };

@@ -13,6 +13,9 @@ function formatBytes(bytes) {
 }
 
 async function optimizeDirectory({ inputDir, gridDir, fullDir, label, skipDirs = new Set(["grid", "full"]) }) {
+  if (!fs.existsSync(inputDir)) {
+    return { dirInputBytes: 0, dirOutputBytes: 0, processedCount: 0, skippedCount: 0 };
+  }
   if (!fs.existsSync(gridDir)) fs.mkdirSync(gridDir, { recursive: true });
   if (!fs.existsSync(fullDir)) fs.mkdirSync(fullDir, { recursive: true });
 
@@ -85,6 +88,59 @@ async function optimizeDirectory({ inputDir, gridDir, fullDir, label, skipDirs =
       );
     } catch (err) {
       console.error(`[ERROR] Failed to optimize ${entry.name}:`, err.message);
+    }
+  }
+
+  return { dirInputBytes, dirOutputBytes, processedCount, skippedCount };
+}
+
+async function optimizeCutoutsDirectory({ dir, label, quality = 85, alphaQuality = 100 }) {
+  if (!fs.existsSync(dir)) {
+    return { dirInputBytes: 0, dirOutputBytes: 0, processedCount: 0, skippedCount: 0 };
+  }
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  let dirInputBytes = 0;
+  let dirOutputBytes = 0;
+  let processedCount = 0;
+  let skippedCount = 0;
+
+  console.log(`\n=== Optimizing Cutouts: ${label} (${dir}) ===`);
+
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    const ext = path.extname(entry.name).toLowerCase();
+    if (ext !== ".png") continue;
+
+    const baseName = path.parse(entry.name).name;
+    const inputPath = path.join(dir, entry.name);
+    const outputPath = path.join(dir, `${baseName}.webp`);
+
+    const inputStat = fs.statSync(inputPath);
+    dirInputBytes += inputStat.size;
+
+    if (fs.existsSync(outputPath)) {
+      const outStat = fs.statSync(outputPath);
+      if (outStat.mtimeMs > inputStat.mtimeMs) {
+        console.log(`[SKIP] ${entry.name} (WebP already up to date)`);
+        dirOutputBytes += outStat.size;
+        skippedCount++;
+        continue;
+      }
+    }
+
+    try {
+      await sharp(inputPath)
+        .webp({ quality, alphaQuality, effort: 4 })
+        .toFile(outputPath);
+
+      const outStat = fs.statSync(outputPath);
+      dirOutputBytes += outStat.size;
+      processedCount++;
+      console.log(
+        `[OK] ${entry.name} (${formatBytes(inputStat.size)}) -> ${baseName}.webp (${formatBytes(outStat.size)})`
+      );
+    } catch (err) {
+      console.error(`[ERROR] Failed to optimize cutout ${entry.name}:`, err.message);
     }
   }
 
@@ -212,6 +268,116 @@ async function run() {
       }
     }
   }
+
+  // 5. Compress Main World background (assets-src/main_world.jpg)
+  const mainWorldJpg = path.resolve("assets-src/main_world.jpg");
+  const mainWorldWebp = path.resolve("public/images/main_world.webp");
+  if (fs.existsSync(mainWorldJpg)) {
+    console.log("\n=== Optimizing main_world.jpg ===");
+    const mwStat = fs.statSync(mainWorldJpg);
+    totalInputBytes += mwStat.size;
+
+    let shouldProcess = true;
+    if (fs.existsSync(mainWorldWebp)) {
+      const outStat = fs.statSync(mainWorldWebp);
+      if (outStat.mtimeMs > mwStat.mtimeMs) {
+        console.log("[SKIP] main_world.jpg (main_world.webp already up to date)");
+        totalOutputBytes += outStat.size;
+        totalSkipped++;
+        shouldProcess = false;
+      }
+    }
+
+    if (shouldProcess) {
+      try {
+        await sharp(mainWorldJpg)
+          .rotate()
+          .resize({ width: 1920, withoutEnlargement: true })
+          .webp({ quality: 80 })
+          .toFile(mainWorldWebp);
+
+        const outStat = fs.statSync(mainWorldWebp);
+        totalOutputBytes += outStat.size;
+        totalProcessed++;
+        console.log(`[OK] main_world.jpg (${formatBytes(mwStat.size)}) -> main_world.webp (${formatBytes(outStat.size)}) (1472px, q80)`);
+      } catch (err) {
+        console.error("[ERROR] Failed to optimize main_world.jpg:", err.message);
+      }
+    }
+  }
+
+  // 6. Compress Home World background (public/main page bg.jpeg)
+  const homeBgJpeg = path.resolve("public/main page bg.jpeg");
+  const homeBgWebp = path.resolve("public/main page bg.webp");
+  if (fs.existsSync(homeBgJpeg)) {
+    console.log("\n=== Optimizing main page bg.jpeg ===");
+    const hStat = fs.statSync(homeBgJpeg);
+    totalInputBytes += hStat.size;
+
+    let shouldProcess = true;
+    if (fs.existsSync(homeBgWebp)) {
+      const outStat = fs.statSync(homeBgWebp);
+      if (outStat.mtimeMs > hStat.mtimeMs) {
+        console.log("[SKIP] main page bg.jpeg (main page bg.webp already up to date)");
+        totalOutputBytes += outStat.size;
+        totalSkipped++;
+        shouldProcess = false;
+      }
+    }
+
+    if (shouldProcess) {
+      try {
+        await sharp(homeBgJpeg)
+          .rotate()
+          .resize({ width: 1920, withoutEnlargement: true })
+          .webp({ quality: 75 })
+          .toFile(homeBgWebp);
+
+        const outStat = fs.statSync(homeBgWebp);
+        totalOutputBytes += outStat.size;
+        totalProcessed++;
+        console.log(`[OK] main page bg.jpeg (${formatBytes(hStat.size)}) -> main page bg.webp (${formatBytes(outStat.size)})`);
+      } catch (err) {
+        console.error("[ERROR] Failed to optimize main page bg.jpeg:", err.message);
+      }
+    }
+  }
+
+  // 7. Optimize Portals Cutouts (public/images/portals)
+  const portalsRes = await optimizeCutoutsDirectory({
+    dir: path.resolve("public/images/portals"),
+    label: "Portal Badges & Mascot",
+    quality: 85,
+    alphaQuality: 100,
+  });
+  totalInputBytes += portalsRes.dirInputBytes;
+  totalOutputBytes += portalsRes.dirOutputBytes;
+  totalProcessed += portalsRes.processedCount;
+  totalSkipped += portalsRes.skippedCount;
+
+  // 8. Optimize Elements Cutouts (public/images/elements)
+  const elementsRes = await optimizeCutoutsDirectory({
+    dir: path.resolve("public/images/elements"),
+    label: "Home Floating Element Stickers",
+    quality: 85,
+    alphaQuality: 100,
+  });
+  totalInputBytes += elementsRes.dirInputBytes;
+  totalOutputBytes += elementsRes.dirOutputBytes;
+  totalProcessed += elementsRes.processedCount;
+  totalSkipped += elementsRes.skippedCount;
+
+  // 9. Optimize Polaroid Cutouts (public/images/polaroids)
+  const polaroidsRes = await optimizeCutoutsDirectory({
+    dir: path.resolve("public/images/polaroids"),
+    label: "Polaroid Frames",
+    quality: 85,
+    alphaQuality: 100,
+  });
+  totalInputBytes += polaroidsRes.dirInputBytes;
+  totalOutputBytes += polaroidsRes.dirOutputBytes;
+  totalProcessed += polaroidsRes.processedCount;
+  totalSkipped += polaroidsRes.skippedCount;
 
   console.log("\n================ SUMMARY ================");
   console.log(`Total images processed: ${totalProcessed}`);

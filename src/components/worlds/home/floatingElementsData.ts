@@ -33,7 +33,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   // ── SCATTERED CORNERS & EDGES ──────────────────────────
   {
     id: "bouquet_wrap",
-    src: "/images/elements/bouquet_wrap.png",
+    src: "/images/elements/bouquet_wrap.webp",
     alt: "Tulip Bouquet",
     width: 166,
     height: 284,
@@ -50,7 +50,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "moon",
-    src: "/images/elements/moon.png",
+    src: "/images/elements/moon.webp",
     alt: "Pink Full Moon",
     width: 216,
     height: 214,
@@ -67,7 +67,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "bow_satin",
-    src: "/images/elements/bow_satin.png",
+    src: "/images/elements/bow_satin.webp",
     alt: "Large Satin Ribbon",
     width: 269,
     height: 244,
@@ -84,7 +84,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "bouquet_tulips",
-    src: "/images/elements/bouquet_tulips.png",
+    src: "/images/elements/bouquet_tulips.webp",
     alt: "Tulip Bouquet",
     width: 119,
     height: 220,
@@ -103,7 +103,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   // ── RANDOM EDGE-HUGGERS ────────────────────────────────
   {
     id: "butterfly",
-    src: "/images/elements/butterfly.png",
+    src: "/images/elements/butterfly.webp",
     alt: "Pink Butterfly",
     width: 251,
     height: 187,
@@ -120,7 +120,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "lily",
-    src: "/images/elements/lily.png",
+    src: "/images/elements/lily.webp",
     alt: "Pink Lily",
     width: 233,
     height: 193,
@@ -138,7 +138,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "seashell",
-    src: "/images/elements/seashell.png",
+    src: "/images/elements/seashell.webp",
     alt: "Pearl Seashell with Bow",
     width: 225,
     height: 229,
@@ -155,7 +155,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "daisy",
-    src: "/images/elements/daisy.png",
+    src: "/images/elements/daisy.webp",
     alt: "Pink Daisy",
     width: 182,
     height: 177,
@@ -174,7 +174,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   // ── SCATTERED SMALL ACCENTS ────────────────────────────
   {
     id: "star_top_left",
-    src: "/images/elements/star_top_left.png",
+    src: "/images/elements/star_top_left.webp",
     alt: "Pink Star",
     width: 76,
     height: 72,
@@ -191,7 +191,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "star_top_right",
-    src: "/images/elements/star_top_right.png",
+    src: "/images/elements/star_top_right.webp",
     alt: "Pink Star",
     width: 80,
     height: 77,
@@ -208,7 +208,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "hearts_trio",
-    src: "/images/elements/hearts_trio.png",
+    src: "/images/elements/hearts_trio.webp",
     alt: "Hearts Trio",
     width: 95,
     height: 180,
@@ -225,7 +225,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "envelope",
-    src: "/images/elements/envelope.png",
+    src: "/images/elements/envelope.webp",
     alt: "Love Letter",
     width: 119,
     height: 169,
@@ -242,7 +242,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "cherries",
-    src: "/images/elements/cherries.png",
+    src: "/images/elements/cherries.webp",
     alt: "Sweet Cherries",
     width: 123,
     height: 147,
@@ -259,7 +259,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "star_mid_left",
-    src: "/images/elements/star_mid_left.png",
+    src: "/images/elements/star_mid_left.webp",
     alt: "Pink Star",
     width: 77,
     height: 75,
@@ -277,7 +277,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "star_lower_right",
-    src: "/images/elements/star_lower_right.png",
+    src: "/images/elements/star_lower_right.webp",
     alt: "Pink Star",
     width: 81,
     height: 80,
@@ -295,7 +295,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "star_mid_lower",
-    src: "/images/elements/star_mid_lower.png",
+    src: "/images/elements/star_mid_lower.webp",
     alt: "Pink Star",
     width: 76,
     height: 74,
@@ -313,7 +313,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "star_bottom_left",
-    src: "/images/elements/star_bottom_left.png",
+    src: "/images/elements/star_bottom_left.webp",
     alt: "Pink Star",
     width: 107,
     height: 107,
@@ -333,7 +333,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   // ── MID-SCATTERED OBJECTS ──────────────────────────────
   {
     id: "camera",
-    src: "/images/elements/camera.png",
+    src: "/images/elements/camera.webp",
     alt: "Instant Camera",
     width: 144,
     height: 141,
@@ -350,7 +350,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "bow_top_center",
-    src: "/images/elements/bow_top_center.png",
+    src: "/images/elements/bow_top_center.webp",
     alt: "Pink Ribbon Bow",
     width: 211,
     height: 196,
@@ -368,7 +368,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "bow_thin",
-    src: "/images/elements/bow_thin.png",
+    src: "/images/elements/bow_thin.webp",
     alt: "Dainty Pink Bow",
     width: 195,
     height: 217,
@@ -386,7 +386,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "flower_blossom",
-    src: "/images/elements/flower_blossom.png",
+    src: "/images/elements/flower_blossom.webp",
     alt: "Blossom Flower",
     width: 222,
     height: 233,
@@ -403,7 +403,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "books_girly",
-    src: "/images/elements/books_girly.png",
+    src: "/images/elements/books_girly.webp",
     alt: "Book Girly Stack",
     width: 165,
     height: 143,
@@ -420,7 +420,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "book_rose",
-    src: "/images/elements/book_rose.png",
+    src: "/images/elements/book_rose.webp",
     alt: "Vintage Book with Rose",
     width: 151,
     height: 130,
@@ -438,7 +438,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "flower_mid_1",
-    src: "/images/elements/flower_mid_1.png",
+    src: "/images/elements/flower_mid_1.webp",
     alt: "Pink Watercolor Flower",
     width: 187,
     height: 179,
@@ -456,7 +456,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "flower_mid_2",
-    src: "/images/elements/flower_mid_2.png",
+    src: "/images/elements/flower_mid_2.webp",
     alt: "Pink Rose Blossom",
     width: 194,
     height: 197,
@@ -474,7 +474,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "bow_top_right",
-    src: "/images/elements/bow_top_right.png",
+    src: "/images/elements/bow_top_right.webp",
     alt: "Pale Pink Bow",
     width: 210,
     height: 198,
@@ -492,7 +492,7 @@ export const FLOATING_ITEMS: FloatingItem[] = [
   },
   {
     id: "books_stack",
-    src: "/images/elements/books_stack.png",
+    src: "/images/elements/books_stack.webp",
     alt: "Striped Ribbon Book Stack",
     width: 195,
     height: 175,

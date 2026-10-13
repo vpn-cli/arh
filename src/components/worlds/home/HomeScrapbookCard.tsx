@@ -46,7 +46,7 @@ export const SCRAPBOOK_PORTALS: ScrapbookPortal[] = [
     tagText: "text-[#63430A]",
     tagBorder: "border-[#E5B25D]",
     tagLabel: "EXPLORE ✦",
-    imageSrc: "/images/portals/hk-main.png",
+    imageSrc: "/images/portals/hk-main.webp",
     reaction: "let's gooo!",
   },
   {
@@ -64,7 +64,7 @@ export const SCRAPBOOK_PORTALS: ScrapbookPortal[] = [
     tagText: "text-[#7A1E42]",
     tagBorder: "border-[#FF8FB3]",
     tagLabel: "LISTEN ♫",
-    imageSrc: "/images/portals/hk-music.png",
+    imageSrc: "/images/portals/hk-music.webp",
     reaction: " A7x probs",
   },
   {
@@ -82,7 +82,7 @@ export const SCRAPBOOK_PORTALS: ScrapbookPortal[] = [
     tagText: "text-[#145240]",
     tagBorder: "border-[#7BC4A8]",
     tagLabel: "PEEK 👀",
-    imageSrc: "/images/portals/hk-scrapbook.png",
+    imageSrc: "/images/portals/hk-scrapbook.webp",
     reaction: "blackmail material",
   },
 ];
