@@ -105,11 +105,22 @@ http://localhost:3000
 ## Useful scripts
 
 ```bash
-npm run dev
-npm run build
-npm run start
-npm run lint
+npm run dev        # Start local Next.js dev server
+npm run build      # Create production build
+npm run start      # Run production server
+npm run lint       # Run ESLint checks
+npm run typecheck  # Run TypeScript compiler checks
+npm test           # Run Vitest test suite
+npm run test:watch # Run Vitest in interactive watch mode
 ```
+
+## Continuous Integration (CI)
+
+The project includes a GitHub Actions pipeline configured in `.github/workflows/ci.yml`. On every push and pull request to `main` and `master`, it executes parallel jobs for:
+- **Type Check**: `npm run typecheck` (`tsc --noEmit`)
+- **Lint**: `npm run lint` (`eslint`)
+- **Unit & Integration Tests**: `npm test` (`vitest run`)
+- **Production Build**: `npm run build` (`next build` with build cache)
 
 ## Design philosophy
 
