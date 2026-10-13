@@ -8,7 +8,7 @@ import Image from "next/image";
    
    Handcrafted scrapbook/collage cardstock with washi tape,
    polaroid photo badge, warm craft textures, and tactile
-   paper drop shadows. Replaces futuristic neon styling.
+   paper drop shadows with human, sarcastic bestie descriptions.
    ═══════════════════════════════════════════════════════ */
 
 export interface ScrapbookPortal {
@@ -26,6 +26,8 @@ export interface ScrapbookPortal {
   tagText: string;
   tagBorder: string;
   tagLabel: string;
+  buttonBg: string;
+  buttonText: string;
   imageSrc: string;
   reaction: string;
 }
@@ -34,56 +36,62 @@ export const SCRAPBOOK_PORTALS: ScrapbookPortal[] = [
   {
     id: "main",
     title: "MAIN WORLD",
-    subtitle: "THE ADVENTURE",
-    description: "a door opens, confetti falls, something's waiting on the other side",
-    bgCard: "bg-[#FFFDF5] hover:bg-[#FFF9EA]",
-    borderColor: "border-[#E8DEC5] hover:border-[#DFCFA8]",
+    subtitle: "VAULT",
+    description: "no description, pehle istemaal karein phir vishwas karein",
+    bgCard: "bg-[#FFFDF6] hover:bg-[#FFF9EA]",
+    borderColor: "border-[#EADBBA] hover:border-[#DFCFA8]",
     washiClass: "washi-tape--yellow",
-    washiPos: "-top-3 left-8 sm:left-12 -rotate-2",
-    tiltClass: "-rotate-[1.2deg]",
+    washiPos: "-top-3 left-1/2 -translate-x-1/2 -rotate-2",
+    tiltClass: "-rotate-1 md:-rotate-2",
     subtitleColor: "text-[#A66E2E]",
-    tagBg: "bg-[#FFEAA7] group-hover:bg-[#FFDF7D]",
+    tagBg: "bg-[#FFF2C2]",
     tagText: "text-[#63430A]",
-    tagBorder: "border-[#E5B25D]",
+    tagBorder: "border-[#E5B25D]/60",
     tagLabel: "EXPLORE ✦",
+    buttonBg: "bg-[#FFEAA7] hover:bg-[#FFD868]",
+    buttonText: "text-[#4A3510]",
     imageSrc: "/images/portals/hk-main.webp",
-    reaction: "let's gooo!",
+    reaction: "sabse pehle main accha ji 🌸",
   },
   {
     id: "music",
     title: "MUSIC WORLD",
-    subtitle: "THE VIBES",
-    description: "melodies folded into punkrose cranes, just press play, close your eyes",
-    bgCard: "bg-[#FFF5F8] hover:bg-[#FFEFF4]",
+    subtitle: "JAM",
+    description: "better jam than TRAPS.",
+    bgCard: "bg-[#FFF6F9] hover:bg-[#FFEFF4]",
     borderColor: "border-[#F3CDD8] hover:border-[#E8B8C6]",
     washiClass: "washi-tape--pink",
-    washiPos: "-top-3 right-8 sm:right-14 rotate-2",
-    tiltClass: "rotate-[1.4deg]",
+    washiPos: "-top-3 left-1/2 -translate-x-1/2 rotate-1",
+    tiltClass: "rotate-0 md:rotate-[0.5deg]",
     subtitleColor: "text-[#C24075]",
-    tagBg: "bg-[#FFD4E2] group-hover:bg-[#FFBFD5]",
+    tagBg: "bg-[#FFE4EE]",
     tagText: "text-[#7A1E42]",
-    tagBorder: "border-[#FF8FB3]",
+    tagBorder: "border-[#FF8FB3]/60",
     tagLabel: "LISTEN ♫",
+    buttonBg: "bg-[#FFB6C1] hover:bg-[#FF94AD]",
+    buttonText: "text-[#451828]",
     imageSrc: "/images/portals/hk-music.webp",
-    reaction: " A7x probs",
+    reaction: "remember Co-Op aux? Ofc you don't ♫",
   },
   {
     id: "scrapbook",
     title: "SCRAPBOOK",
-    subtitle: "THE MEMORIES",
-    description: "frames that whisper, bloopers to remember, pages that feel warm",
+    subtitle: "AANKHON KI TRIPTI",
+    description: "A curated unhinged well. I won't spoil.",
     bgCard: "bg-[#F3FAF6] hover:bg-[#EBF7F0]",
     borderColor: "border-[#CCE2D5] hover:border-[#B5D6C1]",
     washiClass: "washi-tape--blue",
-    washiPos: "-top-3 left-12 sm:left-20 -rotate-1",
-    tiltClass: "-rotate-[0.9deg]",
+    washiPos: "-top-3 left-1/2 -translate-x-1/2 -rotate-1",
+    tiltClass: "rotate-1 md:rotate-2",
     subtitleColor: "text-[#267C65]",
-    tagBg: "bg-[#C8EADE] group-hover:bg-[#B3E2D1]",
+    tagBg: "bg-[#D8F3E9]",
     tagText: "text-[#145240]",
-    tagBorder: "border-[#7BC4A8]",
+    tagBorder: "border-[#7BC4A8]/60",
     tagLabel: "PEEK 👀",
+    buttonBg: "bg-[#C8EADE] hover:bg-[#AEE2D0]",
+    buttonText: "text-[#123E30]",
     imageSrc: "/images/portals/hk-scrapbook.webp",
-    reaction: "blackmail material",
+    reaction: " bevkoof",
   },
 ];
 
@@ -118,15 +126,15 @@ export const HomeScrapbookCard = forwardRef<HTMLButtonElement, HomeScrapbookCard
         {/* Cute pastel washi tape strip pinning the card */}
         <div
           aria-hidden="true"
-          className={`washi-tape ${portal.washiClass} absolute ${portal.washiPos} w-24 sm:w-28 h-5 sm:h-6 border border-black/10 z-20 shadow-xs pointer-events-none`}
+          className={`washi-tape ${portal.washiClass} absolute ${portal.washiPos} w-28 sm:w-32 h-6 sm:h-7 border border-black/10 z-20 shadow-xs pointer-events-none`}
         />
 
         {/* Tactile Craft Paper Cardstock */}
         <div
-          className={`relative overflow-hidden rounded-xl sm:rounded-2xl border-2 transition-all duration-300 ${portal.bgCard
-            } ${portal.borderColor} ${portal.tiltClass} motion-safe:group-hover:rotate-0 motion-safe:group-hover:-translate-y-1.5 ${isHovered
-              ? "shadow-[0_16px_36px_rgba(0,0,0,0.45),0_4px_10px_rgba(0,0,0,0.25)] scale-[1.01]"
-              : "shadow-[0_8px_24px_rgba(0,0,0,0.32),0_2px_6px_rgba(0,0,0,0.18)]"
+          className={`relative flex flex-col items-center overflow-hidden rounded-2xl border-2 transition-all duration-300 ${portal.bgCard
+            } ${portal.borderColor} ${portal.tiltClass} motion-safe:group-hover:rotate-0 motion-safe:group-hover:-translate-y-2 p-5 sm:p-6 ${isHovered
+              ? "shadow-[0_20px_36px_rgba(58,36,64,0.18),0_4px_12px_rgba(58,36,64,0.1)] scale-[1.02]"
+              : "shadow-[0_8px_20px_rgba(58,36,64,0.1),0_2px_6px_rgba(58,36,64,0.06)]"
             }`}
         >
           {/* Paper grain noise texture */}
@@ -138,52 +146,48 @@ export const HomeScrapbookCard = forwardRef<HTMLButtonElement, HomeScrapbookCard
               backgroundSize: "150px 150px",
             }}
           />
-          {/* Warm paper sheen & vintage edge shine */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-black/[0.04] pointer-events-none" />
 
-          {/* Inner cardstock border for layered craft look */}
-          <div className="absolute inset-[3px] rounded-lg sm:rounded-xl border border-dashed border-black/[0.06] pointer-events-none" />
+          {/* Warm paper sheen & subtle vintage highlight */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/70 via-transparent to-black/[0.03] pointer-events-none" />
 
-          {/* Card Content Row */}
-          <div className="relative flex items-center gap-4 sm:gap-6 px-5 sm:px-7 py-4 sm:py-5">
-            {/* Polaroid photo / stamp badge */}
-            <div className="relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center p-1.5 sm:p-2 bg-white rounded-lg sm:rounded-xl border border-black/10 shadow-[2px_3px_6px_rgba(0,0,0,0.12)] rotate-[-3deg] motion-safe:group-hover:rotate-1 motion-safe:group-hover:scale-105 transition-transform duration-300">
+          {/* Inner dashed craft border */}
+          <div className="absolute inset-[4px] rounded-xl border border-dashed border-[#3A2440]/10 pointer-events-none" />
+
+          {/* Vertical Content Layout */}
+          <div className="relative z-10 w-full flex flex-col items-center text-center">
+            {/* 1. Polaroid Photo Stamp Badge */}
+            <div className="relative w-24 h-24 sm:w-28 sm:h-28 mb-3 flex items-center justify-center p-2.5 bg-white rounded-2xl border-2 border-[#3A2440]/10 shadow-[0_4px_12px_rgba(58,36,64,0.12)] rotate-[-2deg] motion-safe:group-hover:rotate-1 motion-safe:group-hover:scale-105 transition-transform duration-300">
               <Image
                 src={portal.imageSrc}
                 alt={portal.title}
-                width={80}
-                height={80}
+                width={90}
+                height={90}
                 className="w-full h-full object-contain pointer-events-none select-none"
               />
-              {/* Tiny tape strip on polaroid */}
-              <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-8 h-2.5 bg-[#FFEAA7]/60 rounded-sm rotate-1 border border-black/[0.06] pointer-events-none" />
+              {/* Polaroid top tape strip */}
+              <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-8 h-2.5 bg-[#FFEAA7]/80 rounded-xs rotate-1 border border-black/[0.06] pointer-events-none" />
             </div>
 
-            {/* Typography */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <h2 className="font-pixel text-xl sm:text-2xl md:text-3xl font-extrabold text-[#241B2F] tracking-wide transition-colors duration-200">
-                  {portal.title}
-                </h2>
-                <span
-                  className="text-xs opacity-0 -translate-x-1.5 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 font-baloo font-bold select-none text-[#FF8FB3]"
-                >
-                  ✦
-                </span>
-              </div>
-              <p
-                className={`font-retro text-[9px] sm:text-[10px] tracking-[2.5px] uppercase font-bold ${portal.subtitleColor}`}
-              >
-                {portal.subtitle}
-              </p>
-              <p className="font-baloo text-xs sm:text-sm text-[#5C4D6B]/80 font-semibold tracking-wide hidden sm:block mt-1 line-clamp-1 italic">
-                {portal.description}
-              </p>
-            </div>
-
-            {/* Craft Pill Badge / Action Tag */}
+            {/* 2. Subtitle Tag */}
             <div
-              className={`flex-shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border font-retro text-[9px] sm:text-[10px] tracking-wider font-bold shadow-xs transition-all duration-300 group-hover:scale-105 flex items-center gap-1.5 ${portal.tagBg} ${portal.tagText} ${portal.tagBorder}`}
+              className={`px-3 py-0.5 rounded-full border text-[9px] font-retro tracking-[2px] uppercase font-bold mb-1.5 shadow-2xs ${portal.tagBg} ${portal.tagText} ${portal.tagBorder}`}
+            >
+              {portal.subtitle}
+            </div>
+
+            {/* 3. Main Title */}
+            <h2 className="font-pixel text-lg sm:text-xl font-extrabold text-[#2D1B36] tracking-wide mb-1.5">
+              {portal.title}
+            </h2>
+
+            {/* 4. Human & Sarcastic Description */}
+            <p className="font-baloo text-xs sm:text-[13px] text-[#5C4D6B] font-medium leading-relaxed mb-4 line-clamp-3 px-1">
+              {portal.description}
+            </p>
+
+            {/* 5. Tactile Action Stamp Button */}
+            <div
+              className={`w-full py-2.5 px-4 rounded-xl border-2 border-[#3A2440] font-retro text-[10px] sm:text-[11px] font-bold tracking-[2px] uppercase text-center shadow-[3px_3px_0_#3A2440] transition-all duration-200 group-hover:translate-x-[1px] group-hover:translate-y-[1px] group-hover:shadow-[2px_2px_0_#3A2440] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none flex items-center justify-center gap-2 ${portal.buttonBg} ${portal.buttonText}`}
             >
               <span>{portal.tagLabel}</span>
             </div>
@@ -193,3 +197,5 @@ export const HomeScrapbookCard = forwardRef<HTMLButtonElement, HomeScrapbookCard
     );
   }
 );
+
+HomeScrapbookCard.displayName = "HomeScrapbookCard";

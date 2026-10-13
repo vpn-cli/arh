@@ -19,8 +19,8 @@ import {
    HOME WORLD — The Central Hub
    
    An indie-game world-selection screen styled as a warm,
-   handcrafted scrapbook collage spread. Explorable
-   destinations: Main, Music, Scrapbook.
+   handcrafted scrapbook collage spread on a cozy craft desk.
+   Explorable destinations: Main, Music, Scrapbook.
    ═══════════════════════════════════════════════════════ */
 
 interface HomeWorldProps {
@@ -127,103 +127,71 @@ export default function HomeWorld({ onPortalIntent }: HomeWorldProps = {}) {
   return (
     <div
       ref={containerRef}
-      className="relative min-h-[100dvh] h-[100dvh] w-full overflow-hidden flex flex-col"
+      className="relative min-h-[100dvh] h-[100dvh] w-full overflow-hidden flex flex-col bg-[#FAF6EE]"
     >
-      {/* Ambient scrapbook background with main page character sketches */}
-      <div className="fixed inset-0 -z-10 bg-home-bg overflow-hidden pointer-events-none">
-        {/* Handcrafted character line-art mat (Pucca, Kitty, Snoopy, Miffy) */}
-        <Image
-          src="/main page bg.webp"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className={`object-cover object-center pointer-events-none transition-opacity duration-700 ${
-            bgLoaded ? "opacity-35" : "opacity-0"
-          }`}
-          onLoad={() => setBgLoaded(true)}
-        />
-
-        {/* Cozy vignette deepening edges while keeping center art visible */}
+      {/* Ambient warm craft scrapbook background */}
+      <div className="fixed inset-0 -z-10 bg-[#FAF6EE] overflow-hidden pointer-events-none">
+        {/* Subtle warm dot grid pattern */}
         <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, transparent 20%, var(--color-home-bg) 95%)",
-          }}
-        />
-
-        {/* Subtle graph-paper grid */}
-        <div
-          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          className="absolute inset-0 opacity-[0.08] pointer-events-none"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(255,235,179,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,235,179,0.3) 1px, transparent 1px)",
-            backgroundSize: "36px 36px",
+              "radial-gradient(#3A2440 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
           }}
         />
 
-        {/* Warm ambient scrapbook glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-home-gold-bright/15 rounded-full blur-[130px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/3 w-[450px] h-[450px] bg-music-pink/15 rounded-full blur-[110px] pointer-events-none" />
-        <div className="absolute top-2/3 left-1/4 w-[350px] h-[350px] bg-scrapbook-mint/10 rounded-full blur-[90px] pointer-events-none" />
-      </div>
-
-      {/* Floating ambient sparkles */}
-      <div className="fixed inset-0 pointer-events-none -z-5 overflow-hidden">
-        {[...Array(12)].map((_, i) => (
-          <span
-            key={`sparkle-${i}`}
-            className="absolute rounded-full bg-home-cream animate-pulse"
-            style={{
-              width: `${(i % 3) + 2}px`,
-              height: `${(i % 3) + 2}px`,
-              top: `${(i * 17 + 5) % 90}%`,
-              left: `${(i * 23 + 8) % 90}%`,
-              opacity: 0.15 + (i % 4) * 0.1,
-              animationDuration: `${2 + (i % 3) * 1.2}s`,
-              animationDelay: `${i * 0.3}s`,
-            }}
+        {/* Handcrafted character lineup welcoming the user */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-48 sm:h-56 pointer-events-none opacity-85">
+          <Image
+            src="/main page bg.webp"
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 672px"
+            className={`object-contain object-bottom pointer-events-none transition-opacity duration-700 ${bgLoaded ? "opacity-100" : "opacity-0"
+              }`}
+            onLoad={() => setBgLoaded(true)}
           />
-        ))}
+        </div>
+
+        {/* Warm ambient watercolor glows */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-[#FFEAA7]/25 rounded-full blur-[130px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-[#FFB6C1]/20 rounded-full blur-[110px] pointer-events-none" />
+        <div className="absolute top-2/3 left-1/4 w-[350px] h-[350px] bg-[#C8EADE]/20 rounded-full blur-[90px] pointer-events-none" />
       </div>
 
-      {/* Floating aesthetic stickers dispersed randomly in a collage */}
+      {/* Floating aesthetic stickers framing the desk spread */}
       <HomeFloatingElements />
 
-      {/* Scrollable content container for short viewports (<680px) */}
-      <div className="relative z-10 w-full h-full overflow-y-auto flex flex-col items-center px-4 py-8 sm:py-12">
-        <div className="w-full max-w-3xl flex flex-col items-center my-auto">
-          {/* HEADER — Hamster + Title */}
+      {/* Scrollable content container */}
+      <div className="relative z-10 w-full h-full overflow-y-auto flex flex-col items-center px-4 py-6 sm:py-8">
+        <div className="w-full max-w-5xl flex flex-col items-center my-auto">
+          {/* HEADER — Mascot + Title */}
           <div
             ref={titleRef}
-            className="flex flex-col items-center gap-4 mb-7 sm:mb-10 relative z-10 opacity-0"
+            className="flex flex-col items-center gap-2 mb-6 sm:mb-8 relative z-10 opacity-0"
           >
             {/* Mascot with speech bubble */}
             <HomeMascot ref={hamsterRef} reaction={hoveredData?.reaction} />
 
             {/* Title */}
-            <div className="text-center">
+            <div className="text-center mt-1">
               <h1
-                className={`font-pixel text-2xl sm:text-3xl md:text-4xl font-bold text-home-gold-bright tracking-wider drop-shadow-[0_3px_0_var(--color-home-shadow)] leading-tight ${
-                  !prefersReducedMotion ? "animate-title-wobble" : ""
-                }`}
-                style={{
-                  textShadow:
-                    "0 0 20px color-mix(in srgb, var(--color-home-gold-bright) 35%, transparent), 0 3px 0 var(--color-home-shadow)",
-                }}
+                className={`font-pixel text-2xl sm:text-3xl md:text-4xl font-bold text-[#2D1B36] tracking-wider leading-tight drop-shadow-[0_2px_0_rgba(255,143,179,0.3)] ${!prefersReducedMotion ? "animate-title-wobble" : ""
+                  }`}
               >
-                CHOOSE YOUR WORLD
+                pick one at a time
               </h1>
-              <div className="h-[2px] w-full max-w-xs mx-auto bg-gradient-to-r from-transparent via-home-gold/50 to-transparent mt-3 mb-2" />
-              <p className="font-baloo text-base sm:text-lg text-home-muted-2 font-semibold tracking-wide mt-2">
-                explore at your own pace ✦ no rush
+              <div className="h-[2px] w-full max-w-xs mx-auto bg-gradient-to-r from-transparent via-[#FF8FB3]/40 to-transparent mt-2 mb-1.5" />
+              <p className="font-baloo text-sm sm:text-base text-[#6E5D78] font-semibold tracking-wide">
+                balle balle de shawa shawa, piyo piyo de kawa kawa
               </p>
             </div>
           </div>
 
-          {/* WORLD PORTALS — Handcrafted Scrapbook & Collage Cards */}
-          <div className="w-full max-w-3xl flex flex-col gap-4 sm:gap-5 relative z-10">
+          {/* WORLD PORTALS — Handcrafted 3-Column Postcards */}
+          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-7 relative z-10 px-2 sm:px-4">
             {SCRAPBOOK_PORTALS.map((portal, idx) => (
               <HomeScrapbookCard
                 key={portal.id}

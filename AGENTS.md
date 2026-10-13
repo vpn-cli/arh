@@ -16,3 +16,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Position or animate with transform and opacity only. No blur or will-change on elements that are off screen.
 - Never claim a performance result that was not measured on a production build.
 - No arbitrary text-[Npx] sizes in Music World. Use defined type tokens (caption, meta, body, title, heading, display).
+
+# World Rules
+- **Home World Freeze Rule**: `src/components/worlds/HomeWorld.tsx` and `src/components/worlds/home/*` are strictly FROZEN. Do NOT modify, refactor, or edit any Home World content, copy, layout, or styles ever again.

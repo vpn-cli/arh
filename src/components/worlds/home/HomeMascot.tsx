@@ -48,9 +48,8 @@ export const HomeMascot = forwardRef<HTMLDivElement, HomeMascotProps>(
 
         {/* Hamster speech bubble */}
         <div
-          className={`absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap transition-transform duration-300 ${
-            !prefersReducedMotion ? "-rotate-2" : ""
-          }`}
+          className={`absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap transition-transform duration-300 ${!prefersReducedMotion ? "-rotate-2" : ""
+            }`}
         >
           <div className="relative px-3.5 py-1.5 bg-home-surface border-2 border-home-border-soft rounded-2xl shadow-[3px_3px_0_var(--color-home-shadow)]">
             <span className="font-retro text-xs text-home-cream tracking-wider">

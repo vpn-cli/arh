@@ -36,20 +36,22 @@ export default function MainWorld() {
 
     gsap.fromTo(
       heroRef.current.children,
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.8, stagger: 0.15, ease: "back.out(1.2)" }
+      { opacity: 0, y: 24 },
+      { opacity: 1, y: 0, duration: 0.7, stagger: 0.12, ease: "back.out(1.2)" }
     );
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full min-h-screen bg-[#FAF5E9] text-[#2D1B36] overflow-hidden selection:bg-[#FF8FB3]/40">
-
-      {/* ═══ WORLD AMBIENCE & BACKGROUND ═══ */}
+    <div
+      ref={containerRef}
+      className="relative w-full min-h-screen bg-[#FAF5E9] text-[#2D1B36] overflow-x-hidden selection:bg-[#FF8FB3]/40"
+    >
+      {/* ═══ WORLD AMBIENCE & FIXED BACKGROUND ═══ */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         {/* Base cream tone */}
         <div className="absolute inset-0 bg-[#FAF5E9]" />
 
-        {/* Main World background filling the viewport */}
+        {/* Main World aesthetic background image (viewport fixed) */}
         <Image
           src="/images/main_world.webp"
           alt=""
@@ -59,129 +61,149 @@ export default function MainWorld() {
           className="object-cover object-center pointer-events-none select-none"
         />
 
-        {/* Subtle soft vignette framing the content */}
+        {/* Soft radial vignette keeping the center readable */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse at center, transparent 40%, rgba(45, 27, 54, 0.08) 100%)",
+              "radial-gradient(ellipse at center, rgba(250, 245, 233, 0.4) 30%, rgba(250, 245, 233, 0.8) 100%)",
           }}
         />
 
         {/* Ambient floating pixel motifs */}
-        <div className="absolute top-[15%] left-[5%] text-4xl opacity-20 animate-float" style={{ animationDelay: '0s' }}>🌸</div>
-        <div className="absolute top-[45%] right-[8%] text-3xl opacity-20 animate-float" style={{ animationDelay: '1s' }}>⭐</div>
-        <div className="absolute top-[75%] left-[12%] text-4xl opacity-20 animate-float" style={{ animationDelay: '2s' }}>🎀</div>
-        <div className="absolute top-[25%] right-[15%] text-2xl opacity-20 animate-float" style={{ animationDelay: '1.5s' }}>✨</div>
-        <div className="absolute top-[65%] right-[25%] text-5xl opacity-10 animate-float" style={{ animationDelay: '0.5s' }}>☁️</div>
-        <div className="absolute top-[85%] right-[10%] text-3xl opacity-20 animate-float" style={{ animationDelay: '2.5s' }}>💖</div>
+        <div
+          className="absolute top-[15%] left-[6%] text-3xl opacity-30 animate-float"
+          style={{ animationDelay: "0s" }}
+        >
+          🌸
+        </div>
+        <div
+          className="absolute top-[35%] right-[8%] text-3xl opacity-30 animate-float"
+          style={{ animationDelay: "1s" }}
+        >
+          ⭐
+        </div>
+        <div
+          className="absolute top-[60%] left-[8%] text-3xl opacity-30 animate-float"
+          style={{ animationDelay: "2s" }}
+        >
+          🎀
+        </div>
+        <div
+          className="absolute top-[80%] right-[10%] text-3xl opacity-30 animate-float"
+          style={{ animationDelay: "1.5s" }}
+        >
+          ✨
+        </div>
       </div>
 
       {/* ═══ NAVIGATION / HEADER ═══ */}
-      <div className="fixed top-0 left-0 w-full p-4 sm:p-6 z-50 flex justify-between items-start pointer-events-none">
+      <header className="fixed top-0 left-0 w-full p-4 sm:p-6 z-50 flex justify-between items-start pointer-events-none">
         <button
           onClick={() => {
             sfx.select();
             goHome();
           }}
           onMouseEnter={() => sfx.hover()}
-          className="pointer-events-auto group px-4 py-2 bg-[#FFB6C1] border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440] rounded-sm flex items-center gap-2 hover:bg-[#FF82B8] hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-[1px_1px_0_#3A2440] transition-all active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
+          className="pointer-events-auto group px-4 py-2 bg-[#FFFDF8] border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] rounded-xl flex items-center gap-2 hover:bg-[#FFEAA7] hover:translate-y-[1px] hover:translate-x-[1px] hover:shadow-[2px_2px_0_#3A2440] transition-all active:translate-y-[2px] active:translate-x-[2px] active:shadow-none cursor-pointer"
+          aria-label="Return to Home World"
         >
-          <span className="text-[#3A2440] text-xs font-pixel mt-1 group-hover:-translate-x-1 transition-transform">◀</span>
-          <span className="font-retro text-[8px] sm:text-[10px] text-[#3A2440] tracking-[2px] uppercase font-bold">
+          <span className="text-[#3A2440] text-xs font-pixel group-hover:-translate-x-1 transition-transform">
+            ◀
+          </span>
+          <span className="font-retro text-[9px] sm:text-[10px] text-[#3A2440] tracking-[2px] uppercase font-bold">
             HOME WORLD
           </span>
         </button>
 
-        <div className="px-3 py-1.5 bg-[#FFF0F5] border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440] rounded-sm">
-          <span className="font-retro text-[8px] text-[#9B2C61] tracking-[2px] font-bold">MAIN WORLD 🎀</span>
+        <div className="px-3.5 py-1.5 bg-[#FFF0F5] border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] rounded-xl flex items-center gap-1.5">
+          <span className="font-retro text-[9px] text-[#9B2C61] tracking-[2px] font-bold">
+            MAIN WORLD 🎀
+          </span>
         </div>
-      </div>
+      </header>
 
       {/* ═══ CONTENT FLOW ═══ */}
-      <main className="relative z-10 w-full flex flex-col items-center pt-32 sm:pt-48 pb-48">
-
-        {/* Floating decorative elements in the background */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[20%] left-[10%] w-8 h-8 rounded-full bg-[#FF8FB3]/20 blur-xl animate-pulse" style={{ animationDuration: '4s' }} />
-          <div className="absolute top-[40%] right-[15%] w-12 h-12 rounded-full bg-[#FFD166]/20 blur-xl animate-pulse" style={{ animationDuration: '5s' }} />
-          <div className="absolute top-[60%] left-[20%] w-16 h-16 rounded-full bg-[#B9D7C0]/20 blur-xl animate-pulse" style={{ animationDuration: '6s' }} />
-          <div className="absolute top-[80%] right-[10%] w-10 h-10 rounded-full bg-[#E5B25D]/20 blur-xl animate-pulse" style={{ animationDuration: '3s' }} />
-
-          {/* Tiny pixel stars */}
-          <div className="absolute top-[25%] right-[20%] text-[#FFD166] text-[10px] animate-firefly">✦</div>
-          <div className="absolute top-[45%] left-[25%] text-[#FF8FB3] text-[12px] animate-firefly" style={{ animationDelay: '1s' }}>✦</div>
-          <div className="absolute top-[75%] left-[15%] text-[#B9D7C0] text-[8px] animate-firefly" style={{ animationDelay: '2s' }}>✦</div>
-          
-          {/* Pixelated Aesthetic Elements */}
-          <div className="absolute top-[18%] left-[8%] font-pixel text-5xl text-[#FF8FB3]/30 -rotate-12 animate-float pointer-events-none drop-shadow-md">♥</div>
-          <div className="absolute top-[35%] right-[12%] font-pixel text-6xl text-[#FFD166]/20 rotate-12 animate-float pointer-events-none drop-shadow-md" style={{animationDelay: '1.2s'}}>★</div>
-          <div className="absolute top-[55%] left-[10%] font-pixel text-4xl text-[#B9D7C0]/30 -rotate-6 animate-float pointer-events-none drop-shadow-md" style={{animationDelay: '0.8s'}}>✿</div>
-          <div className="absolute top-[70%] right-[8%] font-pixel text-5xl text-[#FF8FB3]/30 rotate-45 animate-bounce-soft pointer-events-none drop-shadow-md" style={{animationDelay: '2.1s'}}>◆</div>
-          <div className="absolute top-[85%] left-[18%] font-pixel text-4xl text-[#FFD166]/20 rotate-12 animate-float pointer-events-none drop-shadow-md" style={{animationDelay: '0.4s'}}>✦</div>
-        </div>
-
+      <main className="relative z-10 w-full flex flex-col items-center pt-24 sm:pt-32 pb-36">
         {/* 1. HERO SECTION */}
-        <div ref={heroRef} className="w-full max-w-4xl px-4 flex flex-col items-center text-center mb-16 relative z-10">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 mb-10 rounded-full border-4 border-[#FF82B8] shadow-[0_0_30px_rgba(255,130,184,0.5)] overflow-hidden bg-[#FFF0F5] animate-float relative group">
-            <img src="/hampter/YAAAA hamster.jpeg" alt="Guide" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-            <div className="absolute inset-0 rounded-full shadow-[inset_0_0_15px_rgba(255,130,184,0.8)] pointer-events-none" />
+        <div
+          ref={heroRef}
+          className="w-full max-w-2xl px-4 flex flex-col items-center text-center mb-8 sm:mb-12 relative z-10"
+        >
+          {/* Guide Avatar in Polaroid Frame */}
+          <div className="w-20 h-20 sm:w-24 sm:h-24 mb-6 p-2 bg-[#FFFDF8] rounded-2xl border-2 border-[#3A2440] shadow-[4px_4px_0_#3A2440] relative group animate-float">
+            <Image
+              src="/images/portals/hk-main.webp"
+              alt="Guide"
+              width={80}
+              height={80}
+              className="w-full h-full object-contain select-none pointer-events-none"
+              priority
+            />
+            {/* Cute mini tape */}
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-2.5 bg-[#FFEAA7] border border-black/10 rounded-xs -rotate-2" />
           </div>
-          <h1 className="font-pixel text-4xl sm:text-6xl md:text-7xl font-bold text-[#FFF9F4] tracking-wider drop-shadow-[4px_4px_0_#3A2440,0_0_20px_rgba(255,130,184,0.6)] mb-6" style={{ WebkitTextStroke: '2px #FF4F9A' }}>
+
+          {/* Title */}
+          <h1 className="font-pixel text-3xl sm:text-5xl md:text-6xl font-extrabold text-[#2D1B36] tracking-wider mb-3 drop-shadow-[0_2px_0_rgba(255,143,179,0.3)]">
             THE ADVENTURE
           </h1>
-          <p className="font-retro text-xs sm:text-sm text-[#3A2440] font-bold tracking-[3px] max-w-xl leading-relaxed bg-[#FFF0F5] p-6 rounded-xl border-4 border-[#FF82B8] shadow-[6px_6px_0_#FF4F9A] relative">
-            welcome to the main narrative. scroll down to explore memories, memes, and a few surprises along the way.
-            <span className="absolute -top-6 -right-6 font-pixel text-4xl text-[#FF8FB3] rotate-12 drop-shadow-[2px_2px_0_#3A2440]">🎀</span>
-            <span className="absolute -bottom-4 -left-4 font-pixel text-3xl text-[#FFD166] -rotate-12 drop-shadow-[2px_2px_0_#3A2440]">⭐</span>
-          </p>
-          <div className="mt-16 animate-bounce opacity-80">
-            <span className="text-[#FFB6C1] text-3xl font-pixel drop-shadow-[0_2px_0_#3A2440]">▼</span>
+
+          {/* Subtitle Card */}
+          <div className="relative max-w-lg bg-[#FFFDF8] px-6 py-4 rounded-2xl border-2 border-[#3A2440] shadow-[4px_4px_0_#3A2440] mb-6">
+            <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-24 h-5 bg-[#FFB6C1]/80 border border-black/10 rounded-xs rotate-1 pointer-events-none" />
+            <p className="font-baloo text-sm sm:text-base text-[#4A3B52] font-semibold leading-relaxed">
+              welcome to the main storyline. scroll down to relive our questionable decisions, crack unhinged puzzles, and pretend you&apos;re surprised.
+            </p>
+          </div>
+
+          {/* Down Indicator */}
+          <div className="animate-bounce opacity-70">
+            <span className="text-[#FF8FB3] text-xl font-pixel">▼</span>
           </div>
         </div>
 
-        {/* Central dashed line connecting the worlds */}
-        <div className="absolute top-[20%] bottom-[20%] left-1/2 -translate-x-1/2 border-l-4 border-dashed border-[#FF82B8]/40 z-0 pointer-events-none" />
-
-        <div className="w-full relative flex flex-col items-center gap-16 md:gap-24 px-4 z-10 pb-16">
-          {/* 2. ASCII SECTION */}
+        {/* 2. THE STORY PHASES */}
+        <div className="w-full relative flex flex-col items-center gap-6 sm:gap-10 px-4 z-10">
+          {/* Phase 01: ASCII Kitty Terminal */}
           <div className="w-full">
             <AsciiSection />
           </div>
 
-          {/* 3. OPTIONAL BIRTHDAY VAULT */}
+          {/* Phase 02: Mystery Birthday Chest */}
           <div className="w-full relative z-[50]">
             <BirthdayVault />
           </div>
 
-          {/* 4. THE EDIT */}
+          {/* Phase 03: The Edit Cinema */}
           <div className="w-full relative z-20">
             <TheEdit />
           </div>
 
-          {/* 5. THE LETTER */}
+          {/* Phase 04: The Letter */}
           <div className="w-full">
             <TheLetter />
           </div>
         </div>
 
-        {/* BOTTOM NAVIGATION */}
-        <div className="mt-24 text-center relative z-20">
-          <p className="font-retro text-[8px] text-[#524B7A] tracking-[2px] mb-6">
-            END OF TRANSMISSION
+        {/* 3. RETURN TO HUB */}
+        <div className="mt-16 sm:mt-20 text-center relative z-20 flex flex-col items-center gap-3">
+          <p className="font-retro text-[9px] text-[#7A6388] tracking-[2px] font-bold uppercase">
+            END OF TRANSMISSION ✦ THANKS FOR VISITING
           </p>
           <button
             onClick={() => {
               sfx.select();
               goHome();
             }}
-            className="group relative px-8 py-4 bg-[#FFF0F5] border-2 border-[#383359] text-[#383359] font-retro text-[10px] tracking-[2px] shadow-[3px_3px_0_#383359] overflow-hidden transition-all hover:bg-[#FFD166] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0_#383359] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+            onMouseEnter={() => sfx.hover()}
+            className="group px-7 py-3 bg-[#FFEAA7] hover:bg-[#FFD868] border-2 border-[#3A2440] text-[#3A2440] font-retro text-[10px] tracking-[2px] font-bold rounded-xl shadow-[4px_4px_0_#3A2440] hover:shadow-[2px_2px_0_#3A2440] hover:translate-x-[2px] hover:translate-y-[2px] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all cursor-pointer flex items-center gap-2"
           >
-            <span className="relative z-10 transition-colors duration-300 font-bold">RETURN TO HUB</span>
+            <span>◀</span>
+            <span>RETURN TO HUB</span>
           </button>
         </div>
       </main>
-
     </div>
   );
 }

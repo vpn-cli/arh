@@ -68,18 +68,16 @@ export default function HomeFloatingElements() {
         return (
           <div
             key={item.id}
-            className={`transition-all duration-700 pointer-events-auto select-none cursor-pointer group ${
-              item.hideOnMobile ? "hidden md:block" : "block max-md:scale-75 max-md:opacity-40"
-            }`}
+            className={`transition-all duration-700 pointer-events-auto select-none cursor-pointer group ${item.hideOnMobile ? "hidden md:block" : "block max-md:scale-75 max-md:opacity-40"
+              }`}
             style={style}
             onClick={() => handleItemClick(item.id)}
             onMouseEnter={() => sfx.hover()}
             title={item.alt}
           >
             <div
-              className={`w-full h-full transition-transform duration-300 ease-out group-hover:scale-115 group-hover:-translate-y-1.5 ${
-                isPopped ? "scale-125 -rotate-6" : ""
-              }`}
+              className={`w-full h-full transition-transform duration-300 ease-out group-hover:scale-115 group-hover:-translate-y-1.5 ${isPopped ? "scale-125 -rotate-6" : ""
+                }`}
             >
               <Image
                 src={item.src}
