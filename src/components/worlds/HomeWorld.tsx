@@ -122,11 +122,20 @@ export default function HomeWorld({ onPortalIntent }: HomeWorldProps = {}) {
     goToWorld(portal.id);
   };
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (prefersReducedMotion || !containerRef.current) return;
+    const x = (e.clientX / window.innerWidth - 0.5) * 16;
+    const y = (e.clientY / window.innerHeight - 0.5) * 16;
+    containerRef.current.style.setProperty("--parallax-x", `${x.toFixed(2)}px`);
+    containerRef.current.style.setProperty("--parallax-y", `${y.toFixed(2)}px`);
+  };
+
   const hoveredData = SCRAPBOOK_PORTALS.find((p) => p.id === hoveredPortal);
 
   return (
     <div
       ref={containerRef}
+      onMouseMove={handleMouseMove}
       className="relative min-h-[100dvh] h-[100dvh] w-full overflow-hidden flex flex-col bg-[#FAF6EE]"
     >
       {/* Ambient warm craft scrapbook background */}
@@ -141,8 +150,8 @@ export default function HomeWorld({ onPortalIntent }: HomeWorldProps = {}) {
           }}
         />
 
-        {/* Handcrafted character lineup welcoming the user */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-48 sm:h-56 pointer-events-none opacity-85">
+        {/* Handcrafted character lineup welcoming the user with gentle breathing float */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-48 sm:h-56 pointer-events-none opacity-85 motion-safe:animate-float">
           <Image
             src="/main page bg.webp"
             alt=""
@@ -155,10 +164,63 @@ export default function HomeWorld({ onPortalIntent }: HomeWorldProps = {}) {
           />
         </div>
 
-        {/* Warm ambient watercolor glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-[#FFEAA7]/25 rounded-full blur-[130px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-[#FFB6C1]/20 rounded-full blur-[110px] pointer-events-none" />
-        <div className="absolute top-2/3 left-1/4 w-[350px] h-[350px] bg-[#C8EADE]/20 rounded-full blur-[90px] pointer-events-none" />
+        {/* Warm ambient watercolor glows with subtle cursor parallax */}
+        <div
+          className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-[#FFEAA7]/25 rounded-full blur-[130px] pointer-events-none transition-transform duration-500 ease-out"
+          style={{ transform: "translate3d(calc(-50% + var(--parallax-x, 0px)), calc(-50% + var(--parallax-y, 0px)), 0)" }}
+        />
+        <div
+          className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-[#FFB6C1]/20 rounded-full blur-[110px] pointer-events-none transition-transform duration-500 ease-out"
+          style={{ transform: "translate3d(calc(var(--parallax-x, 0px) * -1.2), calc(var(--parallax-y, 0px) * -1.2), 0)" }}
+        />
+        <div
+          className="absolute top-2/3 left-1/4 w-[350px] h-[350px] bg-[#C8EADE]/20 rounded-full blur-[90px] pointer-events-none transition-transform duration-500 ease-out"
+          style={{ transform: "translate3d(calc(var(--parallax-x, 0px) * 0.8), calc(var(--parallax-y, 0px) * 0.8), 0)" }}
+        />
+
+        {/* Dreamy ambient floating sparkles drifting in the warm craft air */}
+        <div
+          aria-hidden="true"
+          className="absolute top-[15%] left-[10%] text-xs sm:text-sm text-[#FF8FB3] opacity-65 pointer-events-none select-none motion-safe:animate-float"
+          style={{ animationDuration: "6s", animationDelay: "0.5s" }}
+        >
+          ✦
+        </div>
+        <div
+          aria-hidden="true"
+          className="absolute top-[25%] right-[12%] text-sm sm:text-base text-[#FFEAA7] opacity-65 pointer-events-none select-none motion-safe:animate-float"
+          style={{ animationDuration: "7s", animationDelay: "1.5s" }}
+        >
+          ✨
+        </div>
+        <div
+          aria-hidden="true"
+          className="absolute top-[70%] left-[8%] text-xs text-[#C8EADE] opacity-65 pointer-events-none select-none motion-safe:animate-float"
+          style={{ animationDuration: "8s", animationDelay: "2s" }}
+        >
+          ★
+        </div>
+        <div
+          aria-hidden="true"
+          className="absolute top-[68%] right-[10%] text-xs sm:text-sm text-[#FFB6C1] opacity-65 pointer-events-none select-none motion-safe:animate-float"
+          style={{ animationDuration: "6.5s", animationDelay: "1s" }}
+        >
+          💖
+        </div>
+        <div
+          aria-hidden="true"
+          className="absolute top-[42%] left-[5%] text-xs text-[#FFD166] opacity-65 pointer-events-none select-none motion-safe:animate-float"
+          style={{ animationDuration: "7.5s", animationDelay: "2.5s" }}
+        >
+          ✦
+        </div>
+        <div
+          aria-hidden="true"
+          className="absolute top-[80%] right-[6%] text-sm text-[#FF8FB3] opacity-65 pointer-events-none select-none motion-safe:animate-float"
+          style={{ animationDuration: "5.5s", animationDelay: "1.2s" }}
+        >
+          ✧
+        </div>
       </div>
 
       {/* Floating aesthetic stickers framing the desk spread */}

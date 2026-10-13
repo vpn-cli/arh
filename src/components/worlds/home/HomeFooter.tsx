@@ -36,7 +36,7 @@ export default function HomeFooter() {
       <button
         type="button"
         onClick={handleLoveClick}
-        className="group relative flex items-center gap-2.5 px-5 py-2 rounded-full bg-[#FFFDF8] hover:bg-white active:bg-[#FFFDF8] border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] hover:shadow-[2px_2px_0_#3A2440] hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF8FB3]"
+        className="group relative flex items-center gap-2.5 px-5 py-2.5 min-h-[44px] rounded-full bg-[#FFFDF8] hover:bg-white active:bg-[#FFFDF8] border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] hover:shadow-[2px_2px_0_#3A2440] hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-2"
         aria-label="Handcrafted with love"
       >
         <span className="text-sm transition-transform duration-300 group-hover:scale-125 group-hover:-rotate-12 select-none">

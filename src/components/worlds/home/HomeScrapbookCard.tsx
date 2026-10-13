@@ -119,14 +119,14 @@ export const HomeScrapbookCard = forwardRef<HTMLButtonElement, HomeScrapbookCard
         onFocus={onHover}
         onBlur={onLeave}
         disabled={isTransitioning}
-        className={`group relative w-full text-left transition-all duration-300 ease-out focus-visible:outline-none ${isTransitioning ? "pointer-events-none" : ""
+        className={`group relative w-full text-left transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#3A2440] focus-visible:ring-offset-4 rounded-2xl ${isTransitioning ? "pointer-events-none" : ""
           }`}
         aria-label={`Enter ${portal.title}`}
       >
         {/* Cute pastel washi tape strip pinning the card */}
         <div
           aria-hidden="true"
-          className={`washi-tape ${portal.washiClass} absolute ${portal.washiPos} w-28 sm:w-32 h-6 sm:h-7 border border-black/10 z-20 shadow-xs pointer-events-none`}
+          className={`washi-tape ${portal.washiClass} absolute ${portal.washiPos} w-28 sm:w-32 h-6 sm:h-7 border border-black/10 z-20 shadow-xs pointer-events-none transition-transform duration-300 group-hover:scale-105 group-hover:-translate-y-0.5`}
         />
 
         {/* Tactile Craft Paper Cardstock */}
@@ -155,17 +155,29 @@ export const HomeScrapbookCard = forwardRef<HTMLButtonElement, HomeScrapbookCard
 
           {/* Vertical Content Layout */}
           <div className="relative z-10 w-full flex flex-col items-center text-center">
-            {/* 1. Polaroid Photo Stamp Badge */}
-            <div className="relative w-24 h-24 sm:w-28 sm:h-28 mb-3 flex items-center justify-center p-2.5 bg-white rounded-2xl border-2 border-[#3A2440]/10 shadow-[0_4px_12px_rgba(58,36,64,0.12)] rotate-[-2deg] motion-safe:group-hover:rotate-1 motion-safe:group-hover:scale-105 transition-transform duration-300">
+            {/* 1. Free Character Sticker (Frame-free, enlarged, lively motion) */}
+            <div className="relative w-32 h-32 sm:w-36 sm:h-36 mb-2 flex items-center justify-center transition-transform duration-300 ease-out motion-safe:group-hover:-translate-y-2 motion-safe:group-hover:scale-110 motion-safe:group-hover:rotate-2">
               <Image
                 src={portal.imageSrc}
                 alt={portal.title}
-                width={90}
-                height={90}
-                className="w-full h-full object-contain pointer-events-none select-none"
+                width={150}
+                height={150}
+                className="w-full h-full object-contain filter drop-shadow-[0_10px_20px_rgba(58,36,64,0.16)] drop-shadow-[0_2px_8px_rgba(255,143,179,0.3)] pointer-events-none select-none transition-transform duration-300"
+                priority
               />
-              {/* Polaroid top tape strip */}
-              <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-8 h-2.5 bg-[#FFEAA7]/80 rounded-xs rotate-1 border border-black/[0.06] pointer-events-none" />
+              {/* Cute sparkle accents appearing on hover */}
+              <span
+                aria-hidden="true"
+                className="absolute -top-1 right-2 text-xs text-[#FF8FB3] opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-300 pointer-events-none"
+              >
+                ✦
+              </span>
+              <span
+                aria-hidden="true"
+                className="absolute bottom-2 -left-1 text-[10px] text-[#FFEAA7] opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-300 delay-75 pointer-events-none"
+              >
+                ✨
+              </span>
             </div>
 
             {/* 2. Subtitle Tag */}
@@ -190,6 +202,7 @@ export const HomeScrapbookCard = forwardRef<HTMLButtonElement, HomeScrapbookCard
               className={`w-full py-2.5 px-4 rounded-xl border-2 border-[#3A2440] font-retro text-[10px] sm:text-[11px] font-bold tracking-[2px] uppercase text-center shadow-[3px_3px_0_#3A2440] transition-all duration-200 group-hover:translate-x-[1px] group-hover:translate-y-[1px] group-hover:shadow-[2px_2px_0_#3A2440] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none flex items-center justify-center gap-2 ${portal.buttonBg} ${portal.buttonText}`}
             >
               <span>{portal.tagLabel}</span>
+              <span className="text-xs transition-transform duration-200 group-hover:translate-x-1">→</span>
             </div>
           </div>
         </div>
