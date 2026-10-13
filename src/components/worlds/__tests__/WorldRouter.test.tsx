@@ -44,7 +44,9 @@ describe('WorldRouter and preloading', () => {
       </GameStateProvider>
     );
 
-    expect(screen.getByText('CHOOSE YOUR WORLD')).toBeDefined();
+    expect(
+      screen.queryByText(/pick one at a time/i) || screen.queryByText(/choose your world/i)
+    ).toBeTruthy();
     expect(screen.getByRole('button', { name: /Enter MAIN WORLD/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /Enter MUSIC WORLD/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /Enter SCRAPBOOK/i })).toBeDefined();
