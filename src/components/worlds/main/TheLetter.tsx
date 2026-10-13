@@ -52,7 +52,17 @@ export default function TheLetter() {
       {/* Envelope / Letter Container */}
       <div
         ref={letterRef}
-        className={`relative w-full max-w-md mx-auto transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        role={!isOpen ? "button" : undefined}
+        tabIndex={!isOpen ? 0 : undefined}
+        aria-expanded={isOpen}
+        aria-label="Open birthday letter"
+        onKeyDown={(e) => {
+          if (!isOpen && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            handleOpen();
+          }
+        }}
+        className={`relative w-full max-w-md mx-auto transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-4 rounded-2xl ${
           !isOpen ? "h-[220px] cursor-pointer hover:scale-102 active:scale-98" : ""
         }`}
         onClick={handleOpen}
@@ -65,18 +75,19 @@ export default function TheLetter() {
         >
           {/* Envelope Flap Polygon */}
           <div
-            className="absolute top-0 left-0 w-full h-1/2 border-b-2 border-[#3A2440]/20 bg-[#FFD4E2] origin-top opacity-60"
+            className="absolute top-0 left-0 w-full h-1/2 border-b-2 border-[#3A2440]/20 bg-[#FFD4E2] origin-top opacity-60 pointer-events-none"
             style={{ clipPath: "polygon(0 0, 100% 0, 50% 100%)" }}
+            aria-hidden="true"
           />
 
           {/* Wax Ribbon Seal */}
-          <div className="w-16 h-16 rounded-full bg-[#FF6584] border-3 border-[#FFFDF8] flex items-center justify-center shadow-[0_4px_10px_rgba(58,36,64,0.2)] z-10 relative group">
+          <div className="w-16 h-16 rounded-full bg-[#FF6584] border-3 border-[#FFFDF8] flex items-center justify-center shadow-[0_4px_10px_rgba(58,36,64,0.2)] z-10 relative group" aria-hidden="true">
             <span className="text-white text-2xl group-hover:scale-120 transition-transform select-none">
               🎀
             </span>
           </div>
 
-          <p className="font-retro text-[#2D1B36] text-[9px] sm:text-[10px] tracking-widest mt-6 uppercase font-bold bg-[#FFFDF8] px-4 py-1.5 rounded-full border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440]">
+          <p className="font-retro text-[#2D1B36] text-[10px] sm:text-xs tracking-wider mt-6 uppercase font-bold bg-[#FFFDF8] px-4 py-2 rounded-full border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440]">
             BREAK THE SEAL (NO CRYING) ✦
           </p>
         </div>
@@ -123,10 +134,10 @@ export default function TheLetter() {
           </div>
 
           {/* Tiny hamster doodle sticker in the corner */}
-          <div className="absolute bottom-5 right-5 opacity-70 w-14 h-14 rotate-6 pointer-events-none">
+          <div aria-hidden="true" className="absolute bottom-5 right-5 opacity-70 w-14 h-14 rotate-6 pointer-events-none">
             <img
               src="/hampter/devious hamster doodle.jpeg"
-              alt="doodle"
+              alt=""
               className="w-full h-full object-cover mix-blend-multiply rounded-full border border-black/10"
             />
           </div>

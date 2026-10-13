@@ -48,50 +48,64 @@ export default function BirthdayVault() {
     setIsOpen(false);
   };
 
-  // Lock scroll when vault modal is open
+  // Lock scroll and handle Escape key when vault modal is open
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
+    if (!isOpen) {
       document.body.style.overflow = "";
+      return;
     }
+
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
 
   const modalContent = isOpen && mounted ? (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="vault-modal-title"
+      aria-describedby="vault-modal-desc"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-[#2D1B36]/60 backdrop-blur-sm transition-opacity"
         onClick={handleClose}
+        aria-hidden="true"
       />
 
       {/* Modal Dialog */}
       <div className="relative w-full max-w-lg bg-[#FFFDF8] border-3 border-[#3A2440] rounded-2xl shadow-[8px_8px_0_#3A2440] p-6 sm:p-8 flex flex-col items-center text-center animate-slide-up z-10">
         {/* Cute top washi tape */}
-        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#FFEAA7] border border-black/10 shadow-xs -rotate-1 pointer-events-none" />
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#FFEAA7] border border-black/10 shadow-xs -rotate-1 pointer-events-none" aria-hidden="true" />
 
-        <span className="text-6xl mb-4 animate-bounce-soft">🎂</span>
+        <span className="text-6xl mb-4 animate-bounce-soft" aria-hidden="true">🎂</span>
 
-        <span className="font-retro text-[10px] tracking-[3px] text-[#A66E2E] font-bold uppercase mb-1">
+        <span className="font-retro text-[10px] tracking-[3px] text-[#7A4B16] font-bold uppercase mb-1">
           VAULT UNLOCKED ✦
         </span>
 
-        <h2 className="font-pixel text-2xl sm:text-3xl font-extrabold text-[#2D1B36] tracking-wide mb-3">
+        <h2 id="vault-modal-title" className="font-pixel text-2xl sm:text-3xl font-extrabold text-[#2D1B36] tracking-wide mb-3">
           HAPPY BIRTHDAY!
         </h2>
 
-        <div className="h-[2px] w-32 bg-[#FF8FB3]/50 mx-auto mb-4" />
+        <div className="h-[2px] w-32 bg-[#FF8FB3]/50 mx-auto mb-4" aria-hidden="true" />
 
-        <p className="font-baloo text-sm sm:text-base text-[#5C4D6B] font-medium leading-relaxed max-w-md mb-6">
+        <p id="vault-modal-desc" className="font-baloo text-sm sm:text-base text-[#3A2440] font-medium leading-relaxed max-w-md mb-6">
           You actually cracked it! Happy birthday to someone who has witnessed all my questionable decisions and somehow hasn&apos;t disowned me yet.
         </p>
 
         <button
+          type="button"
           onClick={handleClose}
-          className="px-6 py-2.5 bg-[#FF8FB3] hover:bg-[#FF6584] text-[#2D1B36] font-retro font-bold text-xs tracking-wider rounded-xl border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer"
+          className="min-h-[44px] px-6 py-2.5 bg-[#FF8FB3] hover:bg-[#FF6584] text-[#2D1B36] font-retro font-bold text-xs tracking-wider rounded-xl border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-2 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer"
         >
           RETURN TO ADVENTURE ✦
         </button>
@@ -103,20 +117,24 @@ export default function BirthdayVault() {
     <div className="w-full max-w-xl mx-auto my-12 sm:my-16 px-4 relative z-10 flex flex-col items-center">
       {/* Milestone tag */}
       <div className="flex items-center justify-center gap-2 mb-3">
-        <span className="font-retro text-[9px] uppercase tracking-[3px] text-[#A66E2E] font-bold bg-[#FFFDF5] px-3 py-1 rounded-full border border-[#E5B25D]/40 shadow-xs">
+        <span className="font-retro text-[9px] uppercase tracking-[3px] text-[#7A4B16] font-bold bg-[#FFFDF5] px-3 py-1 rounded-full border border-[#E5B25D]/60 shadow-xs">
           PHASE 02 ✦ SECRET VAULT
         </span>
       </div>
 
       {/* The Vault Chest Box */}
-      <div
-        className="w-full cursor-pointer group relative hover:-translate-y-1.5 transition-transform duration-300"
+      <button
+        type="button"
         onClick={handleOpen}
+        aria-label="Open Mystery Birthday Vault"
+        aria-haspopup="dialog"
+        className="w-full text-left cursor-pointer group relative hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-4 rounded-2xl transition-all duration-300"
       >
         <div className="bg-[#FFFDF6] border-2 border-[#3A2440] p-6 sm:p-8 rounded-2xl shadow-[6px_6px_0_#3A2440] flex flex-col items-center text-center relative overflow-hidden">
           {/* Subtle craft pattern */}
           <div
             className="absolute inset-0 opacity-[0.04] pointer-events-none"
+            aria-hidden="true"
             style={{
               backgroundImage: "radial-gradient(#3A2440 1px, transparent 1px)",
               backgroundSize: "16px 16px",
@@ -125,6 +143,7 @@ export default function BirthdayVault() {
 
           {/* Icon */}
           <div
+            aria-hidden="true"
             className={`text-6xl mb-4 transition-transform duration-300 drop-shadow-sm ${
               isUnlocking
                 ? "animate-pixel-shake scale-110"
@@ -138,26 +157,26 @@ export default function BirthdayVault() {
             {isUnlocking ? "UNLOCKING CHEST..." : "MYSTERY VAULT"}
           </h3>
 
-          <p className="font-retro text-[9px] text-[#7A6388] font-bold tracking-[2px] mb-6">
+          <p className="font-retro text-[10px] text-[#4A3855] font-bold tracking-[2px] mb-6">
             TOP SECRET CLEARANCE (OR EXCESSIVE PATIENCE)
           </p>
 
           {!isUnlocking && (
-            <div className="px-5 py-2.5 bg-[#FFEAA7] group-hover:bg-[#FFD868] border-2 border-[#3A2440] text-[#4A3510] font-retro text-[10px] font-bold tracking-[2px] uppercase rounded-xl shadow-[3px_3px_0_#3A2440] group-hover:shadow-[2px_2px_0_#3A2440] group-hover:translate-x-[1px] group-hover:translate-y-[1px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all flex items-center gap-2">
-              <span>▶</span>
+            <div className="min-h-[44px] px-5 py-2.5 bg-[#FFEAA7] group-hover:bg-[#FFD868] border-2 border-[#3A2440] text-[#3A2440] font-retro text-[10px] font-bold tracking-[2px] uppercase rounded-xl shadow-[3px_3px_0_#3A2440] group-hover:shadow-[2px_2px_0_#3A2440] group-hover:translate-x-[1px] group-hover:translate-y-[1px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none transition-all flex items-center justify-center gap-2">
+              <span aria-hidden="true">▶</span>
               <span>OPEN THE CHEST</span>
             </div>
           )}
 
           {/* Corner ribbon decor */}
-          <div className="absolute top-3 right-3 text-xl opacity-70 pointer-events-none">
+          <div aria-hidden="true" className="absolute top-3 right-3 text-xl opacity-70 pointer-events-none">
             ⭐
           </div>
-          <div className="absolute bottom-3 left-3 text-xl opacity-70 pointer-events-none">
+          <div aria-hidden="true" className="absolute bottom-3 left-3 text-xl opacity-70 pointer-events-none">
             🎀
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Portal overlay */}
       {mounted && typeof document !== "undefined"
