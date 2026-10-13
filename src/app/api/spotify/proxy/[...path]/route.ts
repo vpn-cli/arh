@@ -10,7 +10,12 @@ import {
   keyPrefix,
 } from '@/lib/server/redis';
 import { recordUpstreamSpotifyRequest } from '@/lib/server/spotifyLogger';
-import { inFlightGetRequests, InFlightResult } from '@/lib/server/spotifyInFlight';
+import {
+  inFlightGetRequests,
+  InFlightResult,
+} from '@/lib/server/spotifyInFlight';
+import { isSpotifyMockMode, MOCK_USER_ID } from '@/mocks/spotify/config';
+import tracksFixture from '@/mocks/spotify/fixtures/tracks.json';
 
 export interface EndpointCacheRule {
   exact?: string;
@@ -75,7 +80,7 @@ async function executeUpstreamRequest(
   cacheKey: string,
   tokenHash: string,
   pathString: string,
-  url: URL
+  url: URL,
 ): Promise<InFlightResult> {
   const headers = new Headers();
   headers.set('Authorization', `Bearer ${accessToken}`);
@@ -96,7 +101,9 @@ async function executeUpstreamRequest(
 
   // 4. Handle 401: return 401 directly so client wrapper's single-flight getFreshToken refreshes via /api/spotify/session
   if (response.status === 401) {
-    console.warn(`[${new Date().toISOString()}] [Spotify Proxy] Upstream 401 Unauthorized for ${request.method} ${spotifyUrl}. Returning 401 to client.`);
+    console.warn(
+      `[${new Date().toISOString()}] [Spotify Proxy] Upstream 401 Unauthorized for ${request.method} ${spotifyUrl}. Returning 401 to client.`,
+    );
     return {
       status: 401,
       isJson: true,
@@ -108,15 +115,22 @@ async function executeUpstreamRequest(
 
   // Log status code and response body for every failed Spotify API call
   if (!response.ok && response.status !== 204) {
-    const cloned = typeof response.clone === 'function' ? response.clone() : null;
+    const cloned =
+      typeof response.clone === 'function' ? response.clone() : null;
     const bodyText = cloned ? await cloned.text().catch(() => '') : '';
-    console.error(`[${new Date().toISOString()}] [Spotify API Failed] ${request.method} ${spotifyUrl} - Status: ${response.status}, Body:`, bodyText);
+    console.error(
+      `[${new Date().toISOString()}] [Spotify API Failed] ${request.method} ${spotifyUrl} - Status: ${response.status}, Body:`,
+      bodyText,
+    );
   }
 
   // 5. Handle 403 (Pass directly to client, no retry)
   if (response.status === 403) {
     const data = await response.json().catch(() => ({}));
-    console.error(`[Spotify API 403 Forbidden] URL: ${spotifyUrl}`, JSON.stringify(data, null, 2));
+    console.error(
+      `[Spotify API 403 Forbidden] URL: ${spotifyUrl}`,
+      JSON.stringify(data, null, 2),
+    );
     return {
       status: 403,
       isJson: true,
@@ -131,9 +145,9 @@ async function executeUpstreamRequest(
     const retryAfterStr = response.headers.get('Retry-After');
     let retryAfter = retryAfterStr ? parseInt(retryAfterStr, 10) : 60;
     if (isNaN(retryAfter)) retryAfter = 60;
-    
+
     await setSpotifyApiLock(retryAfter);
-    
+
     return {
       status: 429,
       isJson: true,
@@ -144,13 +158,25 @@ async function executeUpstreamRequest(
   }
 
   // 6b. Bust playlist and track cache after successful write operations
-  if (response.ok && request.method !== 'GET' && request.method !== 'HEAD' && redis) {
-    const isLibraryPlaylistWrite = pathString === 'me/library' && !!url.searchParams.get('uris')?.includes('spotify:playlist:');
-    const isPlaylistWrite = pathString.startsWith('me/playlists') || pathString.startsWith('playlists/') || isLibraryPlaylistWrite;
+  if (
+    response.ok &&
+    request.method !== 'GET' &&
+    request.method !== 'HEAD' &&
+    redis
+  ) {
+    const isLibraryPlaylistWrite =
+      pathString === 'me/library' &&
+      !!url.searchParams.get('uris')?.includes('spotify:playlist:');
+    const isPlaylistWrite =
+      pathString.startsWith('me/playlists') ||
+      pathString.startsWith('playlists/') ||
+      isLibraryPlaylistWrite;
     if (isPlaylistWrite) {
       try {
         // Bust playlist caches using SCAN pattern deletes
-        await deleteByPattern(`${keyPrefix()}spotify_cache:${tokenHash}:https://api.spotify.com/v1/me/playlists*`);
+        await deleteByPattern(
+          `${keyPrefix()}spotify_cache:${tokenHash}:https://api.spotify.com/v1/me/playlists*`,
+        );
 
         // Targeted cache invalidation for specific playlist operations
         let playlistId = null;
@@ -166,10 +192,15 @@ async function executeUpstreamRequest(
         }
 
         if (playlistId) {
-          await deleteByPattern(`${keyPrefix()}spotify_cache:${tokenHash}:https://api.spotify.com/v1/playlists/${playlistId}*`);
+          await deleteByPattern(
+            `${keyPrefix()}spotify_cache:${tokenHash}:https://api.spotify.com/v1/playlists/${playlistId}*`,
+          );
         }
       } catch (e: any) {
-        console.error("Redis error busting playlist cache:", e?.message || JSON.stringify(e));
+        console.error(
+          'Redis error busting playlist cache:',
+          e?.message || JSON.stringify(e),
+        );
       }
     }
 
@@ -178,10 +209,17 @@ async function executeUpstreamRequest(
       (pathString.startsWith('me/library') && !isLibraryPlaylistWrite);
     if (isTrackWrite) {
       try {
-        await deleteByPattern(`${keyPrefix()}spotify_cache:${tokenHash}:https://api.spotify.com/v1/me/tracks*`);
-        await deleteByPattern(`${keyPrefix()}spotify_cache:${tokenHash}:https://api.spotify.com/v1/me/library/contains*`);
+        await deleteByPattern(
+          `${keyPrefix()}spotify_cache:${tokenHash}:https://api.spotify.com/v1/me/tracks*`,
+        );
+        await deleteByPattern(
+          `${keyPrefix()}spotify_cache:${tokenHash}:https://api.spotify.com/v1/me/library/contains*`,
+        );
       } catch (e: any) {
-        console.error("Redis error busting track cache:", e?.message || JSON.stringify(e));
+        console.error(
+          'Redis error busting track cache:',
+          e?.message || JSON.stringify(e),
+        );
       }
     }
   }
@@ -200,7 +238,11 @@ async function executeUpstreamRequest(
       if (redis) {
         redis.set(cacheKey, data, { ex: ttl }).catch(console.error);
         if (pathString === 'me' && data && data.id) {
-          redis.set(`${keyPrefix()}spotify_user:${tokenHash}`, data.id, { ex: ttl }).catch(console.error);
+          redis
+            .set(`${keyPrefix()}spotify_user:${tokenHash}`, data.id, {
+              ex: ttl,
+            })
+            .catch(console.error);
         }
       }
       return {
@@ -223,12 +265,17 @@ async function executeUpstreamRequest(
     };
   }
 
-  const responseContentType = response.headers?.get ? (response.headers.get('content-type') || '') : '';
+  const responseContentType = response.headers?.get
+    ? response.headers.get('content-type') || ''
+    : '';
   if (responseContentType.includes('application/json')) {
     const data = await response.json().catch(() => null);
     const safeHeaders: Record<string, string> = {};
     response.headers?.forEach?.((value, key) => {
-      if (key.toLowerCase() !== 'content-encoding' && key.toLowerCase() !== 'transfer-encoding') {
+      if (
+        key.toLowerCase() !== 'content-encoding' &&
+        key.toLowerCase() !== 'transfer-encoding'
+      ) {
         safeHeaders[key] = value;
       }
     });
@@ -245,7 +292,10 @@ async function executeUpstreamRequest(
   const responseBody = await response.arrayBuffer();
   const safeHeaders: Record<string, string> = {};
   response.headers?.forEach?.((value, key) => {
-    if (key.toLowerCase() !== 'content-encoding' && key.toLowerCase() !== 'transfer-encoding') {
+    if (
+      key.toLowerCase() !== 'content-encoding' &&
+      key.toLowerCase() !== 'transfer-encoding'
+    ) {
       safeHeaders[key] = value;
     }
   });
@@ -260,11 +310,145 @@ async function executeUpstreamRequest(
   };
 }
 
-async function handleReq(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
+async function handleReq(
+  request: Request,
+  { params }: { params: Promise<{ path: string[] }> },
+) {
   const { path } = await params;
   const pathString = path.join('/');
   const url = new URL(request.url);
-  
+
+  // In mock mode: short-circuit allowlisted GET endpoints. Writes (POST/PUT/DELETE)
+  // fall through to the 501 below — see handoff note re: me/player/play|pause.
+  if (isSpotifyMockMode()) {
+    if (request.method === 'GET') {
+      if (pathString === 'me') {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({
+          id: MOCK_USER_ID,
+          display_name: 'Mock User',
+          product: 'premium',
+        });
+      }
+
+      if (pathString === 'me/playlists') {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({ items: [], total: 0, limit: 50, offset: 0 });
+      }
+
+      if (pathString === 'me/player/recently-played') {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({
+          items: [],
+          total: 0,
+          limit: 50,
+          cursors: null,
+        });
+      }
+
+      if (pathString === 'me/tracks') {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({ items: [], total: 0, limit: 50, offset: 0 });
+      }
+
+      if (pathString === 'me/library/contains') {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        const urisList = url.searchParams.getAll('uris');
+        const idsList = url.searchParams.getAll('ids');
+        const combined = [...urisList, ...idsList]
+          .flatMap((s) => s.split(','))
+          .filter(Boolean);
+        const count = combined.length > 0 ? combined.length : 1;
+        return NextResponse.json(new Array(count).fill(false));
+      }
+
+      if (pathString === 'me/top/tracks' || pathString === 'me/top/artists') {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({ items: [], total: 0, limit: 20, offset: 0 });
+      }
+
+      if (pathString === 'me/player/queue') {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({ currently_playing: null, queue: [] });
+      }
+
+      if (pathString === 'me/player/devices') {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({ devices: [] });
+      }
+
+      if (pathString === 'search') {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({
+          tracks: { items: [], total: 0, limit: 20, offset: 0 },
+        });
+      }
+
+      if (pathString.startsWith('albums/') && pathString.endsWith('/tracks')) {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({ items: [], total: 0, limit: 50, offset: 0 });
+      }
+
+      if (pathString.startsWith('albums/')) {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({
+          id: null,
+          name: '',
+          tracks: { items: [], total: 0, limit: 50, offset: 0 },
+        });
+      }
+
+      if (pathString.startsWith('artists/') && pathString.endsWith('/albums')) {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({ items: [], total: 0, limit: 10, offset: 0 });
+      }
+
+      if (pathString.startsWith('artists/')) {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({ id: null, name: '', images: [] });
+      }
+
+      if (
+        pathString.startsWith('playlists/') &&
+        pathString.endsWith('/items')
+      ) {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({
+          items: [],
+          total: 0,
+          limit: 100,
+          offset: 0,
+        });
+      }
+
+      if (pathString.startsWith('playlists/')) {
+        console.info('[Spotify Proxy] Mock served:', pathString);
+        return NextResponse.json({
+          id: null,
+          name: '',
+          tracks: { items: [], total: 0 },
+        });
+      }
+
+      if (pathString.startsWith('tracks/')) {
+        const trackId = pathString.slice('tracks/'.length);
+        const track = (tracksFixture as Array<{ id: string }>).find(
+          (t) => t.id === trackId,
+        );
+        if (track) {
+          console.info('[Spotify Proxy] Mock served:', pathString);
+          return NextResponse.json(track);
+        }
+        return NextResponse.json({ error: 'not found' }, { status: 404 });
+      }
+    }
+
+    return NextResponse.json(
+      { error: 'mock endpoint not implemented' },
+      { status: 501 },
+    );
+  }
+
   const searchParams = new URLSearchParams(url.search);
   if (searchParams.has('limit')) {
     let limit = parseInt(searchParams.get('limit') || '', 10);
@@ -296,25 +480,32 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
     const lock = await getSpotifyApiLock();
     if (lock) {
       return NextResponse.json(
-        { error: 'Too Many Requests (Circuit Breaker)', retryAfter: lock.retryAfter },
-        { status: 429 }
+        {
+          error: 'Too Many Requests (Circuit Breaker)',
+          retryAfter: lock.retryAfter,
+        },
+        { status: 429 },
       );
     }
 
     // 2. Check Cache for read-heavy endpoints (GET requests) BEFORE Rate Limiter
     // Cache hits must NEVER call the limiter, even when budget is exhausted.
-    const endpointTtl = request.method === 'GET' ? getEndpointTtl(pathString) : null;
+    const endpointTtl =
+      request.method === 'GET' ? getEndpointTtl(pathString) : null;
     const isCacheable = endpointTtl !== null;
-       
+
     const cacheKey = `${keyPrefix()}spotify_cache:${tokenHash}:${spotifyUrl}`;
     if (isCacheable && redis) {
       try {
         const cachedData = await redis.get(cacheKey);
         if (cachedData) {
-          return NextResponse.json(cachedData, { status: 200, headers: { 'X-Cache': 'HIT' } });
+          return NextResponse.json(cachedData, {
+            status: 200,
+            headers: { 'X-Cache': 'HIT' },
+          });
         }
       } catch (e) {
-        console.error("Redis error checking cache:", e);
+        console.error('Redis error checking cache:', e);
       }
     }
 
@@ -324,7 +515,10 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
       if (!inFlight) {
         inFlight = (async () => {
           try {
-            const limitRes = await reserveSpotifyRateLimit(tokenHash, pathString);
+            const limitRes = await reserveSpotifyRateLimit(
+              tokenHash,
+              pathString,
+            );
             if (!limitRes.allowed) {
               return {
                 status: 429,
@@ -348,7 +542,7 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
               cacheKey,
               tokenHash,
               pathString,
-              url
+              url,
             );
           } finally {
             inFlightGetRequests.delete(cacheKey);
@@ -373,7 +567,7 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
           {
             status: 429,
             headers: { 'Retry-After': String(limitRes.retryAfter) },
-          }
+          },
         );
       }
 
@@ -386,15 +580,20 @@ async function handleReq(request: Request, { params }: { params: Promise<{ path:
         cacheKey,
         tokenHash,
         pathString,
-        url
+        url,
       );
       return toNextResponse(result);
     }
-
   } catch (error: any) {
-    console.error("Proxy error:", error);
+    console.error('Proxy error:', error);
     // TODO: Sentry.captureException(error)
-    return NextResponse.json({ error: 'Internal Server Error', details: error?.message || String(error) }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Internal Server Error',
+        details: error?.message || String(error),
+      },
+      { status: 500 },
+    );
   }
 }
 

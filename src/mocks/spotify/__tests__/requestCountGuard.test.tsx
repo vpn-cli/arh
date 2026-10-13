@@ -104,8 +104,11 @@ describe('Prompt U: Request Count Guards (MSW)', () => {
     server.close();
   });
 
+  const originalSpotifyLive = process.env.SPOTIFY_LIVE;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.SPOTIFY_LIVE = '1';
     redisCache.clear();
     mockSpotifyState.reset();
     interceptedSpotifyRequests.length = 0;
@@ -152,6 +155,11 @@ describe('Prompt U: Request Count Guards (MSW)', () => {
     server.events.removeAllListeners('request:start');
     server.resetHandlers();
     useSpotifyPlayerStore.getState().setCurrentTrack(null);
+    if (originalSpotifyLive === undefined) {
+      delete process.env.SPOTIFY_LIVE;
+    } else {
+      process.env.SPOTIFY_LIVE = originalSpotifyLive;
+    }
   });
 
   it('Render Home: 0 Spotify requests (MAX_COLD_HOME_SPOTIFY_REQUESTS = 0)', async () => {

@@ -41,9 +41,11 @@ import { GET, POST, PUT, DELETE, _inFlightGetRequestsForTesting, getEndpointTtl,
 
 describe('Spotify Proxy Route (/api/spotify/proxy/[...path])', () => {
   const originalFetch = global.fetch;
+  const originalSpotifyLive = process.env.SPOTIFY_LIVE;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.SPOTIFY_LIVE = '1';
     _inFlightGetRequestsForTesting.clear();
     global.fetch = vi.fn();
     vi.mocked(getSpotifyApiLock).mockResolvedValue(null);
@@ -53,6 +55,11 @@ describe('Spotify Proxy Route (/api/spotify/proxy/[...path])', () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
+    if (originalSpotifyLive === undefined) {
+      delete process.env.SPOTIFY_LIVE;
+    } else {
+      process.env.SPOTIFY_LIVE = originalSpotifyLive;
+    }
   });
 
   it('Part 1: blocks request when spotify_api_lock is active and returns 429 without calling Spotify (lock wins over limiter)', async () => {
@@ -535,6 +542,82 @@ describe('Spotify Proxy Route (/api/spotify/proxy/[...path])', () => {
         expect.anything(),
         expect.anything()
       );
+    });
+  });
+
+  describe('Mock Mode (isSpotifyMockMode = true)', () => {
+    beforeEach(() => {
+      delete process.env.SPOTIFY_LIVE;
+    });
+
+    it('returns allowlisted mock fixture for /me', async () => {
+      const req = new Request('http://localhost:3000/api/spotify/proxy/me');
+      const res = await GET(req, { params: Promise.resolve({ path: ['me'] }) });
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({
+        id: 'mock-user',
+        display_name: 'Mock User',
+        product: 'premium',
+      });
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('returns allowlisted mock fixture for /me/playlists', async () => {
+      const req = new Request('http://localhost:3000/api/spotify/proxy/me/playlists');
+      const res = await GET(req, { params: Promise.resolve({ path: ['me', 'playlists'] }) });
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({ items: [], total: 0, limit: 50, offset: 0 });
+    });
+
+    it('returns allowlisted mock fixture for /me/player/recently-played', async () => {
+      const req = new Request('http://localhost:3000/api/spotify/proxy/me/player/recently-played');
+      const res = await GET(req, { params: Promise.resolve({ path: ['me', 'player', 'recently-played'] }) });
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({ items: [], total: 0, limit: 50, cursors: null });
+    });
+
+    it('returns allowlisted mock fixture for /me/tracks', async () => {
+      const req = new Request('http://localhost:3000/api/spotify/proxy/me/tracks');
+      const res = await GET(req, { params: Promise.resolve({ path: ['me', 'tracks'] }) });
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({ items: [], total: 0, limit: 50, offset: 0 });
+    });
+
+    it('returns boolean array matching uris length for /me/library/contains', async () => {
+      const req = new Request('http://localhost:3000/api/spotify/proxy/me/library/contains?uris=spotify:track:1,spotify:track:2,spotify:track:3');
+      const res = await GET(req, { params: Promise.resolve({ path: ['me', 'library', 'contains'] }) });
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual([false, false, false]);
+    });
+
+    it('returns track fixture for existing track under /tracks/*', async () => {
+      const req = new Request('http://localhost:3000/api/spotify/proxy/tracks/track_mock_1');
+      const res = await GET(req, { params: Promise.resolve({ path: ['tracks', 'track_mock_1'] }) });
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.id).toBe('track_mock_1');
+      expect(json.name).toBe('Karma Police');
+    });
+
+    it('returns 404 for non-existent track under /tracks/*', async () => {
+      const req = new Request('http://localhost:3000/api/spotify/proxy/tracks/non_existent');
+      const res = await GET(req, { params: Promise.resolve({ path: ['tracks', 'non_existent'] }) });
+      expect(res.status).toBe(404);
+      const json = await res.json();
+      expect(json).toEqual({ error: 'not found' });
+    });
+
+    it('returns 501 for unhandled path in mock mode', async () => {
+      const req = new Request('http://localhost:3000/api/spotify/proxy/unknown/route');
+      const res = await GET(req, { params: Promise.resolve({ path: ['unknown', 'route'] }) });
+      expect(res.status).toBe(501);
+      const json = await res.json();
+      expect(json).toEqual({ error: 'mock endpoint not implemented' });
     });
   });
 });

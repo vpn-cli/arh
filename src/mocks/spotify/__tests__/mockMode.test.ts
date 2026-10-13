@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isSpotifyMockMode, assertMockModeAllowed, resetProductionGuardWarningForTesting, MOCK_USER_ID } from '../config';
-import { setupSpotifyMockServer, teardownSpotifyMockServer, server } from '../server';
+import {
+  isSpotifyMockMode,
+  assertMockModeAllowed,
+  resetProductionGuardWarningForTesting,
+  MOCK_USER_ID,
+} from '../config';
+import {
+  setupSpotifyMockServer,
+  teardownSpotifyMockServer,
+  server,
+} from '../server';
 import { mockSpotifyState } from '../state';
 
 vi.mock('next/headers', () => ({
@@ -9,11 +18,20 @@ vi.mock('next/headers', () => ({
 
 vi.mock('@/lib/server/redis', () => {
   const cache = new Map<string, any>();
-  const mockLimitFn = vi.fn().mockResolvedValue({ allowed: true, retryAfter: 0, appCount: 0, userCount: 0 });
+  const mockLimitFn = vi
+    .fn()
+    .mockResolvedValue({
+      allowed: true,
+      retryAfter: 0,
+      appCount: 0,
+      userCount: 0,
+    });
   const keyPrefix = () =>
     process.env.REDIS_KEY_PREFIX !== undefined
       ? process.env.REDIS_KEY_PREFIX
-      : (process.env.NODE_ENV === 'production' ? '' : 'dev:');
+      : process.env.NODE_ENV === 'production'
+        ? ''
+        : 'dev:';
   return {
     redis: {
       get: vi.fn(async (key: string) => cache.get(key) || null),
@@ -32,7 +50,8 @@ vi.mock('@/lib/server/redis', () => {
       })),
       scan: vi.fn(async () => [0, []]),
     },
-    hashToken: (token: string) => require('crypto').createHash('sha256').update(token).digest('hex'),
+    hashToken: (token: string) =>
+      require('crypto').createHash('sha256').update(token).digest('hex'),
     keyPrefix,
     getSpotifyLockKey: () => `${keyPrefix()}spotify_api_lock`,
     getSpotifyApiLock: vi.fn().mockResolvedValue(null),
@@ -43,8 +62,13 @@ vi.mock('@/lib/server/redis', () => {
 });
 
 import { cookies } from 'next/headers';
-import { reserveSpotifyRateLimit, getSpotifyApiLock, keyPrefix, getSpotifyLockKey } from '@/lib/server/redis';
-import { GET } from '@/app/api/spotify/proxy/[...path]/route';
+import {
+  reserveSpotifyRateLimit,
+  getSpotifyApiLock,
+  keyPrefix,
+  getSpotifyLockKey,
+} from '@/lib/server/redis';
+import { GET, PUT } from '@/app/api/spotify/proxy/[...path]/route';
 import { GET as getSession } from '@/app/api/spotify/session/route';
 
 describe('Spotify Mock Mode & MSW Integration', () => {
@@ -72,7 +96,9 @@ describe('Spotify Mock Mode & MSW Integration', () => {
       expect(isSpotifyMockMode()).toBe(false);
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[Spotify Mock] Production mode active: mock mode is strictly off.')
+        expect.stringContaining(
+          '[Spotify Mock] Production mode active: mock mode is strictly off.',
+        ),
       );
 
       // Subsequent call does not spam warnings
@@ -179,11 +205,15 @@ describe('Spotify Mock Mode & MSW Integration', () => {
       const targetTrackId = 'track_mock_4';
 
       // 1. Initially not liked
-      expect(mockSpotifyState.checkSavedTracks([targetTrackId])).toEqual([false]);
+      expect(mockSpotifyState.checkSavedTracks([targetTrackId])).toEqual([
+        false,
+      ]);
 
       // 2. Save track (like)
       mockSpotifyState.saveTracks([targetTrackId]);
-      expect(mockSpotifyState.checkSavedTracks([targetTrackId])).toEqual([true]);
+      expect(mockSpotifyState.checkSavedTracks([targetTrackId])).toEqual([
+        true,
+      ]);
 
       // Verify track appears in saved tracks
       const saved = mockSpotifyState.getSavedTracks(0, 50);
@@ -192,10 +222,14 @@ describe('Spotify Mock Mode & MSW Integration', () => {
 
       // 3. Remove track (unlike)
       mockSpotifyState.removeSavedTracks([targetTrackId]);
-      expect(mockSpotifyState.checkSavedTracks([targetTrackId])).toEqual([false]);
+      expect(mockSpotifyState.checkSavedTracks([targetTrackId])).toEqual([
+        false,
+      ]);
 
       const savedAfter = mockSpotifyState.getSavedTracks(0, 50);
-      const foundAfter = savedAfter.items.some((item) => item.track.id === targetTrackId);
+      const foundAfter = savedAfter.items.some(
+        (item) => item.track.id === targetTrackId,
+      );
       expect(foundAfter).toBe(false);
     });
   });
@@ -211,44 +245,118 @@ describe('Spotify Mock Mode & MSW Integration', () => {
       server.close();
     });
 
-    it('proxy executes lock, limiter, and cache paths while MSW fakes upstream fetch with fake user id', async () => {
-      vi.mocked(cookies).mockResolvedValue({
-        get: vi.fn().mockReturnValue({ value: 'dev-mock-access-token' }),
-      } as any);
-
+    it('proxy short-circuits in mock mode and returns allowlisted mock fixtures without upstream fetch or limiter', async () => {
       expect(MOCK_USER_ID).toBe('mock-user');
 
       const req1 = new Request('http://localhost:3000/api/spotify/proxy/me');
-      const res1 = await GET(req1, { params: Promise.resolve({ path: ['me'] }) });
-
-      // Circuit breaker lock was checked
-      expect(getSpotifyApiLock).toHaveBeenCalled();
-      // Rate limiter was called on cache miss
-      expect(reserveSpotifyRateLimit).toHaveBeenCalledTimes(1);
-
-      // Returns mock fixture data from MSW with fake user id
-      expect(res1.status).toBe(200);
-      expect(res1.headers.get('X-Cache')).toBe('MISS');
-      const body1 = await res1.json();
-      expect(body1).toMatchObject({
-        id: 'mock-user',
-        display_name: 'Mock VIPIN',
+      const res1 = await GET(req1, {
+        params: Promise.resolve({ path: ['me'] }),
       });
 
-      // 2nd identical GET: hits cache, rate limiter is NOT called again
-      const req2 = new Request('http://localhost:3000/api/spotify/proxy/me');
-      const res2 = await GET(req2, { params: Promise.resolve({ path: ['me'] }) });
-      expect(res2.status).toBe(200);
-      expect(res2.headers.get('X-Cache')).toBe('HIT');
-      const body2 = await res2.json();
-      expect(body2).toEqual(body1);
+      // In mock mode, proxy short-circuits before circuit breaker lock or rate limiter
+      expect(getSpotifyApiLock).not.toHaveBeenCalled();
+      expect(reserveSpotifyRateLimit).not.toHaveBeenCalled();
 
-      // Limiter was NOT called on cache hit
-      expect(reserveSpotifyRateLimit).toHaveBeenCalledTimes(1);
+      // Returns allowlisted mock fixture data directly
+      expect(res1.status).toBe(200);
+      const body1 = await res1.json();
+      expect(body1).toEqual({
+        id: 'mock-user',
+        display_name: 'Mock User',
+        product: 'premium',
+      });
+    });
+    it.each([
+      {
+        name: 'me/top/tracks',
+        path: ['me', 'top', 'tracks'],
+        expected: { items: [], total: 0, limit: 20, offset: 0 },
+      },
+      {
+        name: 'me/top/artists',
+        path: ['me', 'top', 'artists'],
+        expected: { items: [], total: 0, limit: 20, offset: 0 },
+      },
+      {
+        name: 'me/player/queue',
+        path: ['me', 'player', 'queue'],
+        expected: { currently_playing: null, queue: [] },
+      },
+      {
+        name: 'me/player/devices',
+        path: ['me', 'player', 'devices'],
+        expected: { devices: [] },
+      },
+      {
+        name: 'search',
+        path: ['search'],
+        expected: { tracks: { items: [], total: 0, limit: 20, offset: 0 } },
+      },
+      {
+        name: 'albums/*/tracks',
+        path: ['albums', 'test_album', 'tracks'],
+        expected: { items: [], total: 0, limit: 50, offset: 0 },
+      },
+      {
+        name: 'albums/*',
+        path: ['albums', 'test_album'],
+        expected: {
+          id: null,
+          name: '',
+          tracks: { items: [], total: 0, limit: 50, offset: 0 },
+        },
+      },
+      {
+        name: 'artists/*/albums',
+        path: ['artists', 'test_artist', 'albums'],
+        expected: { items: [], total: 0, limit: 10, offset: 0 },
+      },
+      {
+        name: 'artists/*',
+        path: ['artists', 'test_artist'],
+        expected: { id: null, name: '', images: [] },
+      },
+      {
+        name: 'playlists/*/items',
+        path: ['playlists', 'test_playlist', 'items'],
+        expected: { items: [], total: 0, limit: 100, offset: 0 },
+      },
+      {
+        name: 'playlists/*',
+        path: ['playlists', 'test_playlist'],
+        expected: { id: null, name: '', tracks: { items: [], total: 0 } },
+      },
+    ])(
+      'mock GET proxy /api/spotify/proxy/$name returns 200 with fixture',
+      async ({ path, expected }) => {
+        const pathStr = path.join('/');
+        const req = new Request(
+          `http://localhost:3000/api/spotify/proxy/${pathStr}`,
+        );
+        const res = await GET(req, { params: Promise.resolve({ path }) });
+        expect(res.status).toBe(200);
+        const json = await res.json();
+        expect(json).toEqual(expected);
+      },
+    );
+
+    it('PUT /api/spotify/proxy/me/player/pause returns 501 in mock mode', async () => {
+      const req = new Request(
+        'http://localhost:3000/api/spotify/proxy/me/player/pause',
+        {
+          method: 'PUT',
+        },
+      );
+      const res = await PUT(req, {
+        params: Promise.resolve({ path: ['me', 'player', 'pause'] }),
+      });
+      expect(res.status).toBe(501);
     });
 
     it('unhandled Spotify request in mock mode returns 501 and never reaches the network', async () => {
-      const res = await fetch('https://api.spotify.com/v1/some-unhandled-endpoint');
+      const res = await fetch(
+        'https://api.spotify.com/v1/some-unhandled-endpoint',
+      );
       expect(res.status).toBe(501);
       const json = await res.json();
       expect(json).toEqual({
@@ -257,9 +365,12 @@ describe('Spotify Mock Mode & MSW Integration', () => {
     });
 
     it('unhandled Spotify POST request in mock mode returns 501 and never reaches the network', async () => {
-      const res = await fetch('https://api.spotify.com/v1/some-unhandled-post-endpoint', {
-        method: 'POST',
-      });
+      const res = await fetch(
+        'https://api.spotify.com/v1/some-unhandled-post-endpoint',
+        {
+          method: 'POST',
+        },
+      );
       expect(res.status).toBe(501);
       const json = await res.json();
       expect(json).toEqual({
@@ -289,9 +400,12 @@ describe('Spotify Mock Mode & MSW Integration', () => {
       // Simulate expired cookie in mock mode
       vi.mocked(cookies).mockResolvedValue({
         get: vi.fn((name: string) => {
-          if (name === 'spotify_access_token') return { value: 'old-mock-token' };
-          if (name === 'spotify_token_expires_at') return { value: String(Date.now() - 10000) }; // expired
-          if (name === 'spotify_refresh_token') return { value: 'mock_spotify_refresh_token' };
+          if (name === 'spotify_access_token')
+            return { value: 'old-mock-token' };
+          if (name === 'spotify_token_expires_at')
+            return { value: String(Date.now() - 10000) }; // expired
+          if (name === 'spotify_refresh_token')
+            return { value: 'mock_spotify_refresh_token' };
           return undefined;
         }),
       } as any);
@@ -301,6 +415,58 @@ describe('Spotify Mock Mode & MSW Integration', () => {
       const data = await res.json();
       expect(data.accessToken).toBe('old-mock-token');
       expect(data.expiresAt).toBeGreaterThan(Date.now());
+    });
+  });
+
+  describe('6. Live Mode (SPOTIFY_LIVE=1) Proxy Cache/Limiter Path with MSW', () => {
+    beforeEach(() => {
+      (process.env as any).NODE_ENV = 'development';
+      process.env.SPOTIFY_LIVE = '1';
+      server.listen({ onUnhandledFrame: 'error' });
+    });
+
+    afterEach(() => {
+      server.close();
+    });
+
+    it('proxy executes lock, limiter, and cache paths while MSW fakes upstream fetch with fake user id', async () => {
+      vi.mocked(cookies).mockResolvedValue({
+        get: vi.fn().mockReturnValue({ value: 'dev-mock-access-token' }),
+      } as any);
+
+      expect(MOCK_USER_ID).toBe('mock-user');
+
+      const req1 = new Request('http://localhost:3000/api/spotify/proxy/me');
+      const res1 = await GET(req1, {
+        params: Promise.resolve({ path: ['me'] }),
+      });
+
+      // Circuit breaker lock was checked
+      expect(getSpotifyApiLock).toHaveBeenCalled();
+      // Rate limiter was called on cache miss
+      expect(reserveSpotifyRateLimit).toHaveBeenCalledTimes(1);
+
+      // Returns mock fixture data from MSW with fake user id
+      expect(res1.status).toBe(200);
+      expect(res1.headers.get('X-Cache')).toBe('MISS');
+      const body1 = await res1.json();
+      expect(body1).toMatchObject({
+        id: 'mock-user',
+        display_name: 'Mock VIPIN',
+      });
+
+      // 2nd identical GET: hits cache, rate limiter is NOT called again
+      const req2 = new Request('http://localhost:3000/api/spotify/proxy/me');
+      const res2 = await GET(req2, {
+        params: Promise.resolve({ path: ['me'] }),
+      });
+      expect(res2.status).toBe(200);
+      expect(res2.headers.get('X-Cache')).toBe('HIT');
+      const body2 = await res2.json();
+      expect(body2).toEqual(body1);
+
+      // Limiter was NOT called on cache hit
+      expect(reserveSpotifyRateLimit).toHaveBeenCalledTimes(1);
     });
   });
 });

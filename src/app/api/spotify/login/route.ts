@@ -18,25 +18,28 @@ function sha256(buffer: string) {
 export async function GET(request: Request) {
   // In mock mode: yield fake session/token without Spotify OAuth
   if (isSpotifyMockMode()) {
-    const returnUrl = new URL('/', request.url);
+    const url = new URL(request.url);
+    const host = request.headers.get('host') || url.host;
+    const protocol = request.headers.get('x-forwarded-proto')
+      ? `${request.headers.get('x-forwarded-proto')}:`
+      : url.protocol;
+    const returnUrl = `${protocol}//${host}/?spotify_auth=success`;
     const response = NextResponse.redirect(returnUrl);
     const expiresAt = Date.now() + 3600 * 1000;
-    response.cookies.set('spotify_access_token', MOCK_ACCESS_TOKEN, {
+    const cookieDomain = (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
+      ? undefined
+      : url.hostname;
+    const cookieOptions = {
       httpOnly: true,
       secure: false,
       path: '/',
       maxAge: 3600,
-    });
-    response.cookies.set('spotify_token_expires_at', String(expiresAt), {
-      httpOnly: true,
-      secure: false,
-      path: '/',
-      maxAge: 3600,
-    });
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
+    };
+    response.cookies.set('spotify_access_token', MOCK_ACCESS_TOKEN, cookieOptions);
+    response.cookies.set('spotify_token_expires_at', String(expiresAt), cookieOptions);
     response.cookies.set('spotify_refresh_token', MOCK_REFRESH_TOKEN, {
-      httpOnly: true,
-      secure: false,
-      path: '/',
+      ...cookieOptions,
       maxAge: 3600 * 24 * 30,
     });
     return response;
@@ -47,11 +50,10 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  let host = url.host;
-  if (host.includes('localhost') || host.includes('127.0.0.1')) {
-    host = '127.0.0.1:3000'; // Force exactly this for dev
-  }
-  const protocol = url.protocol;
+  const host = request.headers.get('host') || url.host;
+  const protocol = request.headers.get('x-forwarded-proto')
+    ? `${request.headers.get('x-forwarded-proto')}:`
+    : url.protocol;
   const redirectUri = `${protocol}//${host}/api/spotify/callback`;
 
   const codeVerifier = base64URLEncode(crypto.randomBytes(32));
@@ -73,12 +75,16 @@ export async function GET(request: Request) {
   authUrl.search = new URLSearchParams(params).toString();
 
   const response = NextResponse.redirect(authUrl.toString());
+  const cookieDomain = (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
+    ? undefined
+    : url.hostname;
   response.cookies.set('spotify_code_verifier', codeVerifier, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: 60 * 10, // 10 minutes
     sameSite: 'lax',
+    ...(cookieDomain ? { domain: cookieDomain } : {}),
   });
 
   return response;
