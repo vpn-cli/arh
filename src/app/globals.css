@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Caveat:wght@600;700&family=DotGothic16&family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Pixelify+Sans:wght@500;700&family=Press+Start+2P&family=Quicksand:wght@500;600;700&family=Sniglet:wght@400;800&family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Caveat:wght@600;700&family=DotGothic16&family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&family=Pixelify+Sans:wght@500;700&family=Press+Start+2P&family=Quicksand:wght@500;600;700&family=Sniglet:wght@400;800&family=VT323&display=swap');
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════
@@ -59,7 +59,7 @@
   --font-nunito: 'Nunito', system-ui, sans-serif;
   --font-dot: 'DotGothic16', monospace;
   --font-retro: 'Press Start 2P', monospace;
-  --font-terminal: 'VT323', monospace;
+  --font-terminal: 'JetBrains Mono', 'DotGothic16', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --font-handwriting: 'Caveat', cursive;
 
   /* Type Tokens — Music World */
@@ -78,7 +78,7 @@
 }
 
 .font-terminal {
-  font-family: var(--font-terminal, 'VT323', monospace);
+  font-family: var(--font-terminal, 'JetBrains Mono', monospace);
 }
 
 /* ═══════════════════════════════════════════════════════

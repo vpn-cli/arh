@@ -123,6 +123,6 @@ export function getInitialLogs(q: NumericalQuestion): LogLine[] {
 }
 
 export const ASCII_FRAMES = [
-  ` /\\_/\\ \n( o.o )\n > ^ < \n(__|__)`,
-  ` /\\_/\\ \n( -.- )\n > ^ < \n(__|__)`,
+  `     /\\_____/\\   🎀\n   //  o   o  \\\\\n ==(     .     )==\n   \\\\  _____  //\n     /|     |\\\n    ( |  ♥  | )\n     (__) (__)`,
+  `     /\\_____/\\   🎀\n   //  ^   ^  \\\\\n ==(     v     )==\n   \\\\  _____  //\n     /|     |\\\n    ( |  ♥  | )\n     (__) (__)`,
 ];

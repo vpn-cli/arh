@@ -5,6 +5,7 @@ import {
   fetchOutsourcedQuestion,
   getInitialLogs,
   INITIAL_NUMERICAL_QUESTIONS,
+  ASCII_FRAMES,
 } from "../terminalQuestions";
 
 describe("terminalQuestions", () => {
@@ -74,5 +75,15 @@ describe("terminalQuestions", () => {
     expect(result).toBeDefined();
     expect(typeof result.answer).toBe("number");
     expect(Number.isInteger(result.answer)).toBe(true);
+  });
+
+  it("exports valid Hello Kitty ASCII frames with blinking animation and bow", () => {
+    expect(ASCII_FRAMES).toHaveLength(2);
+    expect(ASCII_FRAMES[0]).toContain("🎀");
+    expect(ASCII_FRAMES[1]).toContain("🎀");
+    // Check ears and whiskers
+    expect(ASCII_FRAMES[0]).toContain("/\\_____/\\");
+    expect(ASCII_FRAMES[0]).toContain("o   o");
+    expect(ASCII_FRAMES[1]).toContain("^   ^");
   });
 });

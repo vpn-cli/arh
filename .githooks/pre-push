@@ -1,0 +1,21 @@
+#!/bin/sh
+# Pre-push hook: ensures types, tests, and build checks pass before pushing to remote
+
+echo "=== Running pre-push checks ==="
+
+echo "1/2 Running TypeScript check (npm run typecheck)..."
+npm run typecheck
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript type check failed! Fix type errors before pushing."
+  exit 1
+fi
+
+echo "2/2 Running Vitest test suite (npm test)..."
+npm test
+if [ $? -ne 0 ]; then
+  echo "❌ Vitest test suite failed! Fix failing tests before pushing."
+  exit 1
+fi
+
+echo "✓ All pre-push checks passed successfully!"
+exit 0
