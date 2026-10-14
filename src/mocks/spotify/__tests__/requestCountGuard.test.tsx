@@ -111,6 +111,8 @@ describe('Prompt U: Request Count Guards (MSW)', () => {
     process.env.SPOTIFY_LIVE = '1';
     redisCache.clear();
     mockSpotifyState.reset();
+    localStorage.clear();
+    useSpotifyPlayerStore.getState().setCurrentTrack(null);
     interceptedSpotifyRequests.length = 0;
 
     vi.mocked(cookies).mockResolvedValue({
