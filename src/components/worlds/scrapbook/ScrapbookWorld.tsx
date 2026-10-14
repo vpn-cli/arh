@@ -135,13 +135,6 @@ export default function ScrapbookWorld() {
       <main className="relative z-10 w-full flex-1 flex items-center justify-center">
         <ThreeDScrapbook />
       </main>
-
-      {/* Bottom Subtle Navigation Tips */}
-      <footer className="relative z-30 pb-3 text-center pointer-events-none">
-        <p className="font-retro text-[7px] sm:text-[8px] text-[#FF8FB3] tracking-[2px]">
-          [CLICK ANYWHERE ON PAGE TO FLIP ✦ CLICK PHOTO TO EXPAND]
-        </p>
-      </footer>
     </div>
   );
 }

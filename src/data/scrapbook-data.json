@@ -744,6 +744,40 @@
       ]
     },
     "right": {
+      "pageTitle": "MOO",
+      "items": [
+        {
+          "src": "/arh/moo.jpeg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 3,
+          "rowSpan": 3,
+          "tapeColor": "#FFD0DC",
+          "tapeAngle": -3,
+          "sticker": "sparkle",
+          "pos": "50% 20%"
+        }
+      ]
+    }
+  },
+  {
+    "left": {
+      "pageTitle": "MOOMOO",
+      "items": [
+        {
+          "src": "/arh/moomoo.jpeg",
+          "col": 0,
+          "row": 0,
+          "colSpan": 3,
+          "rowSpan": 3,
+          "tapeColor": "#FFE4A1",
+          "tapeAngle": 3,
+          "sticker": "flower",
+          "pos": "50% 20%"
+        }
+      ]
+    },
+    "right": {
       "pageTitle": "THE END ✦",
       "items": [
         {
