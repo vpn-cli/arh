@@ -52,6 +52,14 @@ export default function HomeWorld({ onPortalIntent }: HomeWorldProps = {}) {
   const titleRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
+  // Enable smooth scrolling strictly while on the Home World page
+  useEffect(() => {
+    document.documentElement.classList.add("scroll-smooth");
+    return () => {
+      document.documentElement.classList.remove("scroll-smooth");
+    };
+  }, []);
+
   // Entrance animation sequence
   useEffect(() => {
     if (prefersReducedMotion) {
@@ -136,7 +144,7 @@ export default function HomeWorld({ onPortalIntent }: HomeWorldProps = {}) {
     <div
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className="relative min-h-[100dvh] h-[100dvh] w-full overflow-hidden flex flex-col bg-[#FAF6EE]"
+      className="relative min-h-[100dvh] h-[100dvh] w-full overflow-hidden flex flex-col bg-[#FAF6EE] scroll-smooth"
     >
       {/* Ambient warm craft scrapbook background */}
       <div className="fixed inset-0 -z-10 bg-[#FAF6EE] overflow-hidden pointer-events-none">
@@ -226,8 +234,8 @@ export default function HomeWorld({ onPortalIntent }: HomeWorldProps = {}) {
       {/* Floating aesthetic stickers framing the desk spread */}
       <HomeFloatingElements />
 
-      {/* Scrollable content container */}
-      <div className="relative z-10 w-full h-full overflow-y-auto flex flex-col items-center px-4 py-6 sm:py-8">
+      {/* Scrollable content container with smooth scrolling */}
+      <div className="relative z-10 w-full h-full overflow-y-auto flex flex-col items-center px-4 py-6 sm:py-8 scroll-smooth">
         <div className="w-full max-w-5xl flex flex-col items-center my-auto">
           {/* HEADER — Mascot + Title */}
           <div

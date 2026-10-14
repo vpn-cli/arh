@@ -18,6 +18,7 @@ gsap.registerPlugin(ScrollTrigger);
 export default function MainWorld() {
   const { goHome, mainWorldScrollY, setMainWorldScrollY } = useGameState();
   const heroRef = useRef<HTMLDivElement>(null);
+  const catRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isUnlocked, setIsUnlocked] = React.useState(false);
   const [avatarBooped, setAvatarBooped] = React.useState(false);
@@ -45,16 +46,19 @@ export default function MainWorld() {
     } catch {}
   };
 
-  // Restore scroll position on mount, save on unmount
+  // Ensure on page load we smoothly transition to the cat mascot at the top, not the terminal
   useEffect(() => {
-    if (mainWorldScrollY > 0) {
-      window.scrollTo({ top: mainWorldScrollY, behavior: "instant" });
+    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
     }
+
+    // Smoothly scroll to the top hero cat on mount
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
     return () => {
       setMainWorldScrollY(window.scrollY);
     };
-  }, [mainWorldScrollY, setMainWorldScrollY]);
+  }, [setMainWorldScrollY]);
 
   // Entrance animations for hero respecting reduced motion
   useEffect(() => {
@@ -65,17 +69,30 @@ export default function MainWorld() {
       return;
     }
 
+    // Smooth entrance transition for the guide cat mascot
+    if (catRef.current) {
+      gsap.fromTo(
+        catRef.current,
+        { opacity: 0, scale: 0.85, y: -16 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.75, ease: "back.out(1.4)" }
+      );
+    }
+
+    const otherChildren = Array.from(heroRef.current.children).filter(
+      (el) => el !== catRef.current
+    );
+
     gsap.fromTo(
-      heroRef.current.children,
-      { opacity: 0, y: 24 },
-      { opacity: 1, y: 0, duration: 0.7, stagger: 0.12, ease: "back.out(1.2)" }
+      otherChildren,
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, delay: 0.15, ease: "power2.out" }
     );
   }, [prefersReducedMotion]);
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full min-h-screen bg-[#FAF5E9] text-[#2D1B36] overflow-x-hidden selection:bg-[#FF8FB3]/40 scroll-smooth"
+      className="relative w-full min-h-screen bg-[#FAF5E9] text-[#2D1B36] overflow-x-hidden selection:bg-[#FF8FB3]/40"
     >
       {/* ═══ WORLD AMBIENCE & FIXED BACKGROUND ═══ */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
@@ -167,6 +184,8 @@ export default function MainWorld() {
         >
           {/* Guide Avatar — Enlarge sticker, frame-free with cute interactive boop */}
           <button
+            ref={catRef}
+            id="guide-cat-avatar"
             type="button"
             onClick={() => {
               sfx.pop();
