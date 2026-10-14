@@ -87,7 +87,7 @@ export const SCRAPBOOK_PORTALS: ScrapbookPortal[] = [
     tagBg: "bg-[#D8F3E9]",
     tagText: "text-[#145240]",
     tagBorder: "border-[#7BC4A8]/60",
-    tagLabel: "PEEK 👀",
+    tagLabel: "PEEK ✦",
     buttonBg: "bg-[#C8EADE] hover:bg-[#AEE2D0]",
     buttonText: "text-[#123E30]",
     imageSrc: "/images/portals/hk-scrapbook.webp",
@@ -119,7 +119,7 @@ export const HomeScrapbookCard = forwardRef<HTMLButtonElement, HomeScrapbookCard
         onFocus={onHover}
         onBlur={onLeave}
         disabled={isTransitioning}
-        className={`group relative w-full text-left transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#3A2440] focus-visible:ring-offset-4 rounded-2xl ${isTransitioning ? "pointer-events-none" : ""
+        className={`group relative w-full text-left transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#3A2440] focus-visible:ring-offset-4 rounded-2xl cursor-pointer ${isTransitioning ? "pointer-events-none" : ""
           }`}
         aria-label={`Enter ${portal.title}`}
       >
@@ -199,10 +199,10 @@ export const HomeScrapbookCard = forwardRef<HTMLButtonElement, HomeScrapbookCard
 
             {/* 5. Tactile Action Stamp Button */}
             <div
-              className={`w-full py-2.5 px-4 rounded-xl border-2 border-[#3A2440] font-retro text-[10px] sm:text-[11px] font-bold tracking-[2px] uppercase text-center shadow-[3px_3px_0_#3A2440] transition-all duration-200 group-hover:translate-x-[1px] group-hover:translate-y-[1px] group-hover:shadow-[2px_2px_0_#3A2440] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none flex items-center justify-center gap-2 ${portal.buttonBg} ${portal.buttonText}`}
+              className={`w-full py-3 px-4 min-h-[46px] rounded-xl border-2 border-[#3A2440] font-retro text-xs sm:text-[13px] font-bold tracking-[2px] uppercase text-center shadow-[3px_3px_0_#3A2440] transition-all duration-200 group-hover:translate-x-[1px] group-hover:translate-y-[1px] group-hover:shadow-[2px_2px_0_#3A2440] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none flex items-center justify-center gap-2 cursor-pointer ${portal.buttonBg} ${portal.buttonText}`}
             >
               <span>{portal.tagLabel}</span>
-              <span className="text-xs transition-transform duration-200 group-hover:translate-x-1">→</span>
+              <span className="text-sm font-bold transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
             </div>
           </div>
         </div>

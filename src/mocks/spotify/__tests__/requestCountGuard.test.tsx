@@ -6,8 +6,8 @@ import { mockSpotifyState } from '../state';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GameStateProvider } from '@/lib/gameState';
 
-// Named limit constants per Prompt U specification
-export const MAX_COLD_MUSIC_WORLD_SPOTIFY_REQUESTS = 5;
+// Named limit constants per Prompt U specification (5 initial page queries + 1 initial track saved-check)
+export const MAX_COLD_MUSIC_WORLD_SPOTIFY_REQUESTS = 6;
 export const MAX_COLD_HOME_SPOTIFY_REQUESTS = 0;
 export const MAX_TRACK_CHANGES_QUEUE_REQUESTS = 1;
 
@@ -218,8 +218,8 @@ describe('Prompt U: Request Count Guards (MSW)', () => {
     // Ensure queue endpoint was NOT called on cold load (since modal is closed)
     expect(uniqueEndpoints.some((ep) => ep.includes('/me/player/queue'))).toBe(false);
 
-    // Ensure no more than 5 requests
-    expect(uniqueEndpoints.length).toBeLessThanOrEqual(5);
+    // Ensure no more than MAX_COLD_MUSIC_WORLD_SPOTIFY_REQUESTS requests
+    expect(uniqueEndpoints.length).toBeLessThanOrEqual(MAX_COLD_MUSIC_WORLD_SPOTIFY_REQUESTS);
   });
 
   it('Simulate 5 track changes within 3 seconds: at most 1 queue request (MAX_TRACK_CHANGES_QUEUE_REQUESTS = 1)', async () => {
