@@ -4,13 +4,13 @@ import React, { useEffect, useState, useRef } from "react";
 import confetti from "canvas-confetti";
 import { sfx } from "@/lib/audio";
 import {
-  ASCII_FRAMES,
   CalculusQuestion,
   getRandomCalculusQuestion,
   fetchOutsourcedQuestion,
   getInitialLogs,
   LogLine,
 } from "./terminalQuestions";
+import KittyMascot from "@/components/kitty/KittyMascot";
 
 interface AsciiSectionProps {
   onUnlock?: () => void;
@@ -27,7 +27,6 @@ export default function AsciiSection({
   const [logs, setLogs] = useState<LogLine[]>(() => getInitialLogs(calculusQ));
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
   const [inputVal, setInputVal] = useState("");
-  const [frameIndex, setFrameIndex] = useState(0);
   const [internalUnlocked, setInternalUnlocked] = useState(false);
 
   const isUnlocked = externalUnlocked ?? internalUnlocked;
@@ -50,16 +49,6 @@ export default function AsciiSection({
       active = false;
     };
   }, []);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isUnlocked) {
-      interval = setInterval(() => {
-        setFrameIndex((prev) => (prev === 0 ? 1 : 0));
-      }, 500);
-    }
-    return () => clearInterval(interval);
-  }, [isUnlocked]);
 
   useEffect(() => {
     if (logsContainerRef.current) {
@@ -89,7 +78,7 @@ export default function AsciiSection({
     setInputVal("");
     setInternalUnlocked(false);
     onReset?.();
-    setTimeout(() => inputRef.current?.focus(), 100);
+    setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 100);
   };
 
   const handleSkip = () => {
@@ -236,7 +225,7 @@ export default function AsciiSection({
     }
 
     setInputVal("");
-    setTimeout(() => inputRef.current?.focus(), 50);
+    setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -324,14 +313,10 @@ export default function AsciiSection({
 
             {isUnlocked && (
               <div className="mt-4 flex flex-col items-center animate-slide-up text-center w-full">
-                <span className="sr-only">Hello Kitty clearance granted ASCII illustration</span>
-                <div className="relative inline-block my-2" aria-hidden="true">
-                  <pre
-                    className="leading-tight text-xl sm:text-2xl md:text-3xl font-bold select-none text-[#FF8FB3] drop-shadow-[0_0_12px_rgba(255,143,179,0.5)] m-0 p-0 text-center font-terminal"
-                  >
-                    {ASCII_FRAMES[frameIndex]}
-                  </pre>
-                </div>
+                <KittyMascot
+                  size={180}
+                  className="mx-auto"
+                />
 
                 <div className="mt-2 text-[#FFE27A] font-pixel text-xl sm:text-2xl tracking-wider font-extrabold animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                   ✦ HAPPY BIRTHDAY! ✦
@@ -366,7 +351,6 @@ export default function AsciiSection({
                 placeholder={getPlaceholder()}
                 aria-label="kittyOS terminal command input"
                 className="flex-1 bg-transparent text-[#FFE27A] font-terminal text-[15px] sm:text-base md:text-[17px] outline-none border-none p-0 focus:ring-0 placeholder:text-[#FFE27A]/40 caret-[#FF8FB3]"
-                autoFocus
                 autoComplete="off"
                 spellCheck={false}
               />
