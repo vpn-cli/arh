@@ -1,5 +1,5 @@
 import { proxyFetch } from '@/lib/spotifyClient';
-import { normalizeSavedTrack, normalizePlaylistItem } from './library';
+import { normalizePlaylistItem } from './library';
 
 export async function getPlaylist(id: string) {
   const data = await proxyFetch(`/playlists/${id}`);

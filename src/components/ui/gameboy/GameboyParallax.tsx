@@ -69,21 +69,3 @@ export function useGameboyParallax(rootRef: React.RefObject<HTMLElement | null>)
     };
   }, [reduced, rootRef]);
 }
-
-export default function GameboyParallax({
-  children,
-  rootRef,
-}: {
-  children?: React.ReactNode;
-  rootRef?: React.RefObject<HTMLDivElement | null>;
-}) {
-  const localRef = useRef<HTMLDivElement>(null);
-  const activeRef = rootRef || localRef;
-  useGameboyParallax(activeRef);
-
-  return (
-    <div ref={activeRef as React.RefObject<HTMLDivElement>} className="contents">
-      {children}
-    </div>
-  );
-}

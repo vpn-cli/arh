@@ -38,17 +38,6 @@ export function usePlaylists(options?: { enabled?: boolean }) {
   });
 }
 
-export function useDevices() {
-  return useQuery({
-    queryKey: ['spotify', 'devices'],
-    queryFn: async () => {
-      const data = await proxyFetch('/me/player/devices');
-      return data?.devices || [];
-    },
-    enabled: false, // Only fetch when user explicitly clicks LOAD DEVICES
-  });
-}
-
 export function useBirthdayMix(options?: { enabled?: boolean }) {
   const queryClient = useQueryClient();
   const { isSuccess, data: sessionData } = useSpotifySession();
@@ -111,19 +100,6 @@ export function usePlayerQueue(options?: { enabled?: boolean }) {
     enabled: isEnabled,
     refetchInterval: false,
     staleTime: 10_000,
-  });
-}
-
-export function useAddToSpotifyQueue() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ uri, deviceId }: { uri: string; deviceId?: string }) => {
-      const { addTrackToPlayerQueue } = await import('@/lib/spotify/player');
-      return await addTrackToPlayerQueue(uri, deviceId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['spotify', 'playerQueue'] });
-    }
   });
 }
 

@@ -16,7 +16,6 @@ vi.mock('../redis', () => ({
   setSpotifyApiLock: vi.fn().mockResolvedValue(undefined),
   reserveSpotifyRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfter: 0, appCount: 0, userCount: 0 }),
   keyPrefix: vi.fn(() => ''),
-  SPOTIFY_LOCK_KEY: 'spotify_api_lock',
 }));
 
 import { cookies } from 'next/headers';

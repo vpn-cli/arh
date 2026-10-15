@@ -26,8 +26,6 @@ export function keyPrefix(): string {
   return 'dev:';
 }
 
-export const SPOTIFY_LOCK_KEY = 'spotify_api_lock';
-
 export function getSpotifyLockKey(): string {
   return `${keyPrefix()}spotify_api_lock`;
 }

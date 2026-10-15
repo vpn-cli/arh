@@ -16,7 +16,3 @@ export function recordUpstreamSpotifyRequest(urlOrEndpoint: string): void {
   const countPerMinute = requestTimestamps.length;
   console.log(`[SPOTIFY LIVE] ${urlOrEndpoint} | ${countPerMinute} req/min`);
 }
-
-export function resetRequestTimestampsForTesting(): void {
-  requestTimestamps = [];
-}
