@@ -47,8 +47,12 @@ media-originals/
 assets-src/slideshow/*
 !assets-src/slideshow/.gitkeep
 
-# temporary and incomplete downloads
+# scratch and temporary files
+*.backup.tsx
+scratch/
+scratch_*
 *.crdownload
+debug_*.txt
 public/hampter/Unconfirmed*
 .neon
 
