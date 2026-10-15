@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   getRandomNumericalQuestion,
   getRandomCalculusQuestion,
+  getQuestionsForDifficulty,
+  PERSONAL_QUESTIONS,
   fetchOutsourcedQuestion,
   getInitialLogs,
   INITIAL_NUMERICAL_QUESTIONS,
@@ -31,6 +33,18 @@ describe("terminalQuestions", () => {
     const q = getRandomCalculusQuestion();
     expect(q).toBeDefined();
     expect(typeof q.answer).toBe("number");
+  });
+
+  it("returns 1 math question followed by 2 personal lore questions for chosen difficulty", () => {
+    const questions = getQuestionsForDifficulty("easy");
+    expect(questions).toHaveLength(3);
+    // Q1 is math/calculus
+    expect(questions[0].topic).not.toBe("OUR LORE");
+    // Q2 & Q3 are personal questions related to the user and their friendship
+    expect(questions[1].id).toBe(PERSONAL_QUESTIONS[0].id);
+    expect(questions[1].answer).toBe(2);
+    expect(questions[2].id).toBe(PERSONAL_QUESTIONS[1].id);
+    expect(questions[2].answer).toBe(3);
   });
 
   it("formats initial logs with clearance boot sequence and question prompt", () => {
