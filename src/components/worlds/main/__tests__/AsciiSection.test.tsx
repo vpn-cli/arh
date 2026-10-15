@@ -1,6 +1,6 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent, act } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import AsciiSection from "../AsciiSection";
 
 // Mock sfx and canvas-confetti
@@ -69,4 +69,79 @@ describe("AsciiSection", () => {
     ).toBeDefined();
     expect(screen.getByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeDefined();
   });
+
+  describe("Terminal log overflow measurements (Prompt M2)", () => {
+    let resizeCallback: ResizeObserverCallback | null = null;
+
+    beforeEach(() => {
+      class MockResizeObserver {
+        constructor(cb: ResizeObserverCallback) {
+          resizeCallback = cb;
+        }
+        observe = vi.fn();
+        unobserve = vi.fn();
+        disconnect = vi.fn();
+      }
+      window.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+    });
+
+    it("content shorter than the container results in overflow-y-visible", () => {
+      const { container } = render(<AsciiSection />);
+      const logsContainer = container.querySelector('[data-testid="terminal-logs-container"]') as HTMLElement;
+      expect(logsContainer).toBeDefined();
+
+      // Shorter content: scrollHeight (200) <= clientHeight (360)
+      Object.defineProperty(logsContainer, "scrollHeight", { configurable: true, value: 200 });
+      Object.defineProperty(logsContainer, "clientHeight", { configurable: true, value: 360 });
+
+      act(() => {
+        resizeCallback?.([], {} as ResizeObserver);
+      });
+
+      expect(logsContainer.className).toContain("overflow-y-visible");
+      expect(logsContainer.className).not.toContain("overflow-y-auto");
+    });
+
+    it("content taller than the container results in overflow-y-auto, even with fewer than 7 log entries", () => {
+      const { container } = render(<AsciiSection />);
+      const logsContainer = container.querySelector('[data-testid="terminal-logs-container"]') as HTMLElement;
+      expect(logsContainer).toBeDefined();
+
+      // Taller content: scrollHeight (450) > clientHeight (360), with fewer than 7 log lines
+      Object.defineProperty(logsContainer, "scrollHeight", { configurable: true, value: 450 });
+      Object.defineProperty(logsContainer, "clientHeight", { configurable: true, value: 360 });
+
+      act(() => {
+        resizeCallback?.([], {} as ResizeObserver);
+      });
+
+      expect(logsContainer.className).toContain("overflow-y-auto");
+      expect(logsContainer.className).not.toContain("overflow-y-visible");
+    });
+
+    it("the flag does not cause a re-render when the measurement doesn't change", () => {
+      const { container } = render(<AsciiSection />);
+      const logsContainer = container.querySelector('[data-testid="terminal-logs-container"]') as HTMLElement;
+
+      // Mock taller content
+      Object.defineProperty(logsContainer, "scrollHeight", { configurable: true, value: 500 });
+      Object.defineProperty(logsContainer, "clientHeight", { configurable: true, value: 360 });
+
+      act(() => {
+        resizeCallback?.([], {} as ResizeObserver);
+      });
+      expect(logsContainer.className).toContain("overflow-y-auto");
+
+      const domBefore = logsContainer.outerHTML;
+
+      act(() => {
+        // Trigger observer multiple times with same measurement
+        resizeCallback?.([], {} as ResizeObserver);
+        resizeCallback?.([], {} as ResizeObserver);
+      });
+
+      expect(logsContainer.outerHTML).toBe(domBefore);
+    });
+  });
 });
+

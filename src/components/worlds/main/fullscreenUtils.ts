@@ -7,94 +7,112 @@ export function formatTime(seconds: number): string {
 
 export function requestNativeFullscreen(
   el: HTMLElement | null,
-  fallbackEl?: HTMLElement | null,
+  videoEl?: HTMLVideoElement | null,
   onSuccess?: () => void,
   onError?: () => void
-) {
-  // Target the requested element (specifically the HTMLVideoElement) first for native OS media fullscreen,
-  // falling back to fallbackEl or documentElement.
-  const target =
-    el ||
-    fallbackEl ||
-    (typeof document !== "undefined" ? document.documentElement : null);
-  if (!target) {
-    onError?.();
-    return;
-  }
-
+): boolean {
   type FsElement = HTMLElement & {
-    webkitRequestFullscreen?: () => Promise<void>;
+    webkitRequestFullscreen?: () => Promise<void> | void;
+    mozRequestFullScreen?: () => Promise<void> | void;
+    msRequestFullscreen?: () => Promise<void> | void;
+  };
+  type FsVideo = HTMLVideoElement & {
     webkitEnterFullscreen?: () => void;
-    mozRequestFullScreen?: () => Promise<void>;
-    msRequestFullscreen?: () => Promise<void>;
   };
 
-  const fsTarget = target as FsElement;
+  const target = el as FsElement | null;
+  const video = videoEl as FsVideo | null;
 
   try {
-    if (fsTarget.requestFullscreen) {
-      const promise = fsTarget.requestFullscreen();
-      if (promise && typeof promise.then === "function") {
-        promise
-          .then(() => {
-            onSuccess?.();
-          })
-          .catch((err: unknown) => {
-            console.warn("Native fullscreen request on target rejected:", err);
-            const fallback = fallbackEl || (typeof document !== "undefined" ? document.documentElement : null);
-            if (fallback && fallback !== fsTarget && (fallback as FsElement).requestFullscreen) {
-              try {
-                (fallback as FsElement).requestFullscreen?.()
-                  .then(() => onSuccess?.())
-                  .catch(() => onError?.());
-              } catch {
-                onError?.();
-              }
-            } else {
+    // 1. Synchronously call real Fullscreen API on the wrapper element (no await or async tick before it)
+    if (target?.requestFullscreen) {
+      const p = target.requestFullscreen();
+      if (p && typeof p.then === "function") {
+        p.then(() => onSuccess?.()).catch(() => {
+          if (video?.webkitEnterFullscreen) {
+            try {
+              video.webkitEnterFullscreen();
+              onSuccess?.();
+            } catch {
               onError?.();
             }
-          });
+          } else {
+            onError?.();
+          }
+        });
       } else {
         onSuccess?.();
       }
-    } else if (fsTarget.webkitRequestFullscreen) {
-      fsTarget.webkitRequestFullscreen();
-      onSuccess?.();
-    } else if (fsTarget.webkitEnterFullscreen) {
-      fsTarget.webkitEnterFullscreen();
-      onSuccess?.();
-    } else if (fsTarget.mozRequestFullScreen) {
-      fsTarget.mozRequestFullScreen();
-      onSuccess?.();
-    } else if (fsTarget.msRequestFullscreen) {
-      fsTarget.msRequestFullscreen();
-      onSuccess?.();
-    } else {
-      onError?.();
+      return true;
     }
-  } catch (err: unknown) {
-    console.warn("Synchronous fullscreen request threw:", err);
+
+    // 2. WebKit prefixed element fullscreen
+    if (target?.webkitRequestFullscreen) {
+      target.webkitRequestFullscreen();
+      onSuccess?.();
+      return true;
+    }
+
+    // 3. Mozilla / MS prefixed element fullscreen
+    if (target?.mozRequestFullScreen) {
+      target.mozRequestFullScreen();
+      onSuccess?.();
+      return true;
+    }
+    if (target?.msRequestFullscreen) {
+      target.msRequestFullscreen();
+      onSuccess?.();
+      return true;
+    }
+
+    // 4. On iPhone Safari where element fullscreen is not supported, fall back to video.webkitEnterFullscreen()
+    if (video?.webkitEnterFullscreen) {
+      video.webkitEnterFullscreen();
+      onSuccess?.();
+      return true;
+    }
+
     onError?.();
+    return false;
+  } catch (err) {
+    if (video?.webkitEnterFullscreen) {
+      try {
+        video.webkitEnterFullscreen();
+        onSuccess?.();
+        return true;
+      } catch {
+        onError?.();
+        return false;
+      }
+    }
+    onError?.();
+    return false;
   }
 }
 
 export function exitNativeFullscreen() {
   type FsDoc = Document & {
-    webkitExitFullscreen?: () => Promise<void>;
-    mozCancelFullScreen?: () => Promise<void>;
-    msExitFullscreen?: () => Promise<void>;
+    webkitExitFullscreen?: () => Promise<void> | void;
+    mozCancelFullScreen?: () => Promise<void> | void;
+    msExitFullscreen?: () => Promise<void> | void;
     webkitFullscreenElement?: Element;
   };
   const anyDoc = document as FsDoc;
-  if (document.fullscreenElement || anyDoc.webkitFullscreenElement) {
-    if (anyDoc.exitFullscreen) {
-      anyDoc.exitFullscreen().catch(() => {});
-    } else if (anyDoc.webkitExitFullscreen) {
-      anyDoc.webkitExitFullscreen();
-    } else if (anyDoc.mozCancelFullScreen) {
-      anyDoc.mozCancelFullScreen();
-    } else if (anyDoc.msExitFullscreen) {
-      anyDoc.msExitFullscreen();
+  if (typeof document === "undefined") return;
+
+  try {
+    if (document.fullscreenElement || anyDoc.webkitFullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (anyDoc.webkitExitFullscreen) {
+        anyDoc.webkitExitFullscreen();
+      } else if (anyDoc.mozCancelFullScreen) {
+        anyDoc.mozCancelFullScreen();
+      } else if (anyDoc.msExitFullscreen) {
+        anyDoc.msExitFullscreen();
+      }
     }
+  } catch {
+    // Ignore errors on exit fullscreen
   }
 }

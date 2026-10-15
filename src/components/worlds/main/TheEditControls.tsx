@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 
 interface TheEditControlsProps {
   isFullscreen: boolean;
@@ -12,7 +12,7 @@ interface TheEditControlsProps {
   onTogglePlay: () => void;
   onToggleFullscreen: () => void;
   onToggleMute: () => void;
-  onSeek: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onSeekFraction: (fraction: number) => void;
   onReplay: () => void;
 }
 
@@ -26,9 +26,57 @@ export default function TheEditControls({
   onTogglePlay,
   onToggleFullscreen,
   onToggleMute,
-  onSeek,
+  onSeekFraction,
   onReplay,
 }: TheEditControlsProps) {
+  const [isDragging, setIsDragging] = useState(false);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+
+  const seekFromPointer = useCallback(
+    (clientX: number) => {
+      const track = trackRef.current;
+      if (!track) return;
+      const rect = track.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+      onSeekFraction(x / rect.width);
+    },
+    [onSeekFraction]
+  );
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    seekFromPointer(e.clientX);
+    trackRef.current?.setPointerCapture?.(e.pointerId);
+  };
+
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDraggingRef.current) return;
+      seekFromPointer(e.clientX);
+    };
+
+    const onPointerUp = () => {
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        setIsDragging(false);
+      }
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+    };
+  }, [seekFromPointer]);
+
   return (
     <div
       className={`absolute bottom-0 inset-x-0 z-40 transition-all duration-300 select-none ${
@@ -37,19 +85,32 @@ export default function TheEditControls({
           : "px-2.5 sm:px-3 pb-2 pt-6 bg-gradient-to-t from-black/80 via-black/30 to-transparent"
       } ${showControls ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"}`}
     >
-      {/* Sleek, Low-Profile Scrubber with Cute Heart Thumb */}
+      {/* Interactive Sliding Scrubber with Heart Pin */}
       <div
-        className="w-full h-1 hover:h-1.5 bg-white/25 hover:bg-white/35 rounded-full cursor-pointer relative transition-all group/scrubber mb-1.5 backdrop-blur-xs"
-        onClick={onSeek}
-        title="Seek video"
+        ref={trackRef}
+        onPointerDown={handlePointerDown}
+        className="relative w-full py-2.5 -my-1.5 cursor-pointer group/scrubber select-none touch-none mb-1"
+        title="Slide or click to seek video"
+        role="slider"
+        aria-label="Video scrubber"
       >
-        <div
-          ref={progressBarRef}
-          className="h-full bg-gradient-to-r from-[#FF8FB3] via-[#FF6584] to-[#FF4F9A] rounded-full transition-all relative w-0 shadow-[0_0_8px_#FF8FB3]"
-        >
-          {/* Cute Little Heart Scrubber Thumb */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3.5 h-3.5 bg-white border border-[#FF4F9A] rounded-full shadow-md flex items-center justify-center scale-0 group-hover/scrubber:scale-100 transition-transform">
-            <span className="text-[6px] text-[#FF4F9A] leading-none select-none">♥</span>
+        <div className="w-full h-1.5 group-hover/scrubber:h-2 bg-white/25 group-hover/scrubber:bg-white/35 rounded-full relative transition-all backdrop-blur-xs">
+          <div
+            ref={progressBarRef}
+            className={`h-full bg-gradient-to-r from-[#FF8FB3] via-[#FF6584] to-[#FF4F9A] rounded-full relative w-0 shadow-[0_0_8px_#FF8FB3] ${
+              isDragging ? "transition-none" : "transition-all duration-100 ease-linear"
+            }`}
+          >
+            {/* Cute Heart Scrubber Thumb */}
+            <div
+              className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-4 h-4 bg-white border-2 border-[#FF4F9A] rounded-full shadow-[0_2px_6px_rgba(255,79,154,0.4)] flex items-center justify-center transition-transform ${
+                isDragging
+                  ? "scale-125 shadow-[0_0_10px_#FF4F9A]"
+                  : "scale-0 group-hover/scrubber:scale-100"
+              }`}
+            >
+              <span className="text-[7px] text-[#FF4F9A] leading-none select-none font-bold">♥</span>
+            </div>
           </div>
         </div>
       </div>

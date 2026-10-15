@@ -87,13 +87,85 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-snap-type: y proximity;
   overflow-x: clip;
   background-color: #FFFFFF;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOM HELLO KITTY CURSOR SYSTEM
+   ═══════════════════════════════════════════════════════ */
+
+html.custom-cursor-active,
+html.custom-cursor-active * {
+  cursor: none !important;
+}
+
+@keyframes kitty-idle-bob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes kitty-head-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20%, 60% {
+    transform: translateX(-3.5px) rotate(-4deg);
+  }
+  40%, 80% {
+    transform: translateX(3.5px) rotate(4deg);
+  }
+}
+
+@keyframes kitty-glow-pulse {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.95;
+  }
+}
+
+@keyframes kitty-caret-blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+.animate-kitty-bob {
+  animation: kitty-idle-bob 2.8s ease-in-out infinite;
+}
+
+.animate-kitty-shake {
+  animation: kitty-head-shake 0.35s ease-in-out;
+}
+
+.animate-kitty-glow {
+  animation: kitty-glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-kitty-caret {
+  animation: kitty-caret-blink 0.9s step-end infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto !important;
+  }
+  .animate-kitty-bob,
+  .animate-kitty-shake,
+  .animate-kitty-glow {
+    animation: none !important;
   }
 }
 

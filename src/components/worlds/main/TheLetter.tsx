@@ -1,12 +1,53 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { sfx } from "@/lib/audio";
 import confetti from "canvas-confetti";
+import PhaseHeader from "./PhaseHeader";
+import TheLetterEnvelope from "./TheLetterEnvelope";
+import TheLetterStationery from "./TheLetterStationery";
+import TheLetterAmbientFloaters from "./TheLetterAmbientFloaters";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 export default function TheLetter() {
   const [isOpen, setIsOpen] = useState(false);
   const letterRef = useRef<HTMLDivElement>(null);
+  const trailContainerRef = useRef<HTMLDivElement>(null);
+  const lastTrailPos = useRef<{ x: number; y: number; time: number }>({ x: 0, y: 0, time: 0 });
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  // Heart cursor trail over the letter card section
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (prefersReducedMotion || !trailContainerRef.current) return;
+
+      const now = performance.now();
+      const dist = Math.hypot(e.clientX - lastTrailPos.current.x, e.clientY - lastTrailPos.current.y);
+
+      // Throttle: minimum 45ms and 14px movement
+      if (now - lastTrailPos.current.time < 45 || dist < 14) return;
+      lastTrailPos.current = { x: e.clientX, y: e.clientY, time: now };
+
+      const rect = trailContainerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const hearts = ["♡", "💖", "🌸", "✨", "🎀"];
+      const char = hearts[Math.floor(Math.random() * hearts.length)];
+      const heartEl = document.createElement("span");
+      heartEl.className = "letter-cursor-heart";
+      heartEl.textContent = char;
+      heartEl.style.left = `${x}px`;
+      heartEl.style.top = `${y}px`;
+      heartEl.style.color = Math.random() > 0.5 ? "#FF7597" : "#FF8FB3";
+
+      trailContainerRef.current.appendChild(heartEl);
+      setTimeout(() => {
+        heartEl.remove();
+      }, 700);
+    },
+    [prefersReducedMotion]
+  );
 
   const handleOpen = () => {
     if (isOpen) return;
@@ -15,10 +56,10 @@ export default function TheLetter() {
 
     try {
       confetti({
-        particleCount: 50,
-        spread: 70,
+        particleCount: 65,
+        spread: 80,
         origin: { y: 0.65 },
-        colors: ["#FF8FB3", "#FFEAA7", "#FFB6C1", "#FFF0F5", "#C8EADE"],
+        colors: ["#FF7597", "#FFEAA7", "#FFB6C1", "#FFF0F5", "#B8E6D0", "#C8B8F1"],
       });
     } catch {
       // safe fallback
@@ -26,9 +67,11 @@ export default function TheLetter() {
 
     setTimeout(() => {
       if (letterRef.current) {
-        letterRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        const yOffset = -30;
+        const y = letterRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: Math.max(0, y), behavior: prefersReducedMotion ? "auto" : "smooth" });
       }
-    }, 450);
+    }, 380);
   };
 
   const handleClose = (e: React.MouseEvent) => {
@@ -38,41 +81,208 @@ export default function TheLetter() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto my-12 sm:my-16 px-4 relative z-10 flex flex-col items-center">
+    <div
+      onMouseMove={handleMouseMove}
+      className="w-full relative z-10 flex flex-col items-center py-8 sm:py-12 px-3 sm:px-4"
+    >
+      {/* ═══ KAWAII GOOGLE FONTS & SCRAPBOOK CSS SYSTEM ═══ */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
-        .font-letter-script {
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Fredoka:wght@400;500;600;700&family=Pacifico&display=swap');
+
+        .font-letter-title {
+          font-family: 'Pacifico', cursive;
+        }
+        .font-letter-ui {
+          font-family: 'Fredoka', cursive, system-ui, sans-serif;
+        }
+        .font-letter-handwritten {
           font-family: 'Caveat', cursive;
         }
-        .font-letter-serif {
-          font-family: 'Playfair Display', Georgia, serif;
-        }
-        .parchment-lines {
+
+        /* Faint pink ruled paper lines */
+        .stationery-vintage-lines {
           background-image: repeating-linear-gradient(
             transparent,
-            transparent 31px,
-            rgba(255, 143, 179, 0.18) 31px,
-            rgba(255, 143, 179, 0.18) 32px
+            transparent 37px,
+            rgba(255, 182, 193, 0.35) 37px,
+            rgba(255, 182, 193, 0.35) 38px
           );
+        }
+
+        /* Pink Gingham Pattern & Melted Edge Fading Masks */
+        .kawaii-gingham-bg {
+          background-image: 
+            linear-gradient(90deg, rgba(255, 182, 193, 0.25) 50%, transparent 50%),
+            linear-gradient(rgba(255, 182, 193, 0.25) 50%, transparent 50%);
+          background-size: 28px 28px;
+        }
+
+        .kawaii-gingham-fade-y {
+          -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+        }
+
+        .kawaii-gingham-fade-x {
+          -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+        }
+
+        .kawaii-gingham-bg-layer {
+          position: absolute;
+          inset: 0;
+          background-color: #FFFDF8;
+          background-image: 
+            linear-gradient(90deg, rgba(255, 182, 193, 0.20) 50%, transparent 50%),
+            linear-gradient(rgba(255, 182, 193, 0.20) 50%, transparent 50%);
+          background-size: 28px 28px;
+          pointer-events: none;
+        }
+
+        /* Washi tape accents */
+        .washi-tape--yellow {
+          background: rgba(255, 234, 167, 0.92);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .washi-tape--pink {
+          background: rgba(255, 182, 193, 0.92);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .washi-tape--mint {
+          background: rgba(184, 230, 208, 0.92);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        /* Bobbing envelope */
+        @keyframes envelopeBob {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-9px);
+          }
+        }
+        .animate-envelope-bob {
+          animation: envelopeBob 3.6s ease-in-out infinite;
+        }
+
+        /* Floating kawaii particles */
+        @keyframes kawaiiFloat {
+          0% {
+            transform: translateY(110%) rotate(0deg);
+            opacity: 0;
+          }
+          15% {
+            opacity: 0.75;
+          }
+          85% {
+            opacity: 0.75;
+          }
+          100% {
+            transform: translateY(-110%) rotate(20deg);
+            opacity: 0;
+          }
+        }
+        .animate-kawaii-float {
+          animation: kawaiiFloat 16s linear infinite;
+        }
+
+        /* Bouncy spring in for stationery card */
+        @keyframes stationerySpringIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.92) translateY(24px);
+          }
+          65% {
+            opacity: 1;
+            transform: scale(1.02) translateY(-4px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        .stationery-spring-in {
+          animation: stationerySpringIn 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Staggered poem line slide-in */
+        @keyframes poemLineSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(14px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .poem-line-enter {
+          animation: poemLineSlideIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        /* Heart cursor trail */
+        .letter-cursor-heart {
+          position: absolute;
+          pointer-events: none;
+          user-select: none;
+          font-size: 15px;
+          animation: cursorHeartFade 0.7s ease-out forwards;
+          transform: translate(-50%, -50%);
+          z-index: 50;
+        }
+        @keyframes cursorHeartFade {
+          0% {
+            opacity: 0.9;
+            transform: translate(-50%, -50%) scale(0.8);
+          }
+          50% {
+            opacity: 1;
+            transform: translate(-50%, -70%) scale(1.2);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(-50%, -100%) scale(0.5);
+          }
+        }
+
+        /* Prefers-reduced-motion overrides */
+        @media (prefers-reduced-motion: reduce) {
+          .animate-envelope-bob,
+          .animate-kawaii-float,
+          .stationery-spring-in,
+          .poem-line-enter,
+          .floating-particles-layer {
+            animation: none !important;
+            transform: none !important;
+            opacity: 1 !important;
+          }
+          .letter-cursor-heart {
+            display: none !important;
+          }
         }
       `}</style>
 
-      {/* Milestone tag */}
-      <div className="flex items-center justify-center gap-2 mb-3">
-        <span className="font-retro text-[9px] uppercase tracking-[3px] text-[#9B2C61] font-bold bg-[#FFF0F5] px-3.5 py-1 rounded-full border border-[#FF8FB3]/50 shadow-xs flex items-center gap-1.5">
-          <span>💌</span>
-          <span>PHASE 04 ✦ THE LETTER</span>
-        </span>
+      {/* ═══ PINK GINGHAM MELTED FADED BACKGROUND LAYER ═══ */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none -z-10 overflow-hidden kawaii-gingham-fade-y"
+      >
+        <div className="absolute inset-0 kawaii-gingham-fade-x kawaii-gingham-bg-layer" />
       </div>
 
-      <div className="text-center mb-8">
-        <h2 className="font-pixel text-2xl sm:text-3xl text-[#2D1B36] tracking-wider mb-1.5 drop-shadow-[0_2px_0_rgba(255,143,179,0.25)]">
-          ONE LAST THING
-        </h2>
-        <p className="font-baloo text-xs sm:text-sm text-[#6E5D78] font-semibold tracking-wide">
-          the obligatory sentimental section (no roasting allowed 🌸)
-        </p>
-      </div>
+      {/* Floating Kawaii Upward Particles (Hearts, Flowers, Sparkles, Bows) */}
+      <TheLetterAmbientFloaters />
+
+      {/* Heart Cursor Trail Mount */}
+      <div ref={trailContainerRef} className="absolute inset-0 pointer-events-none overflow-hidden z-40" />
+
+      {/* Phase 04 Header */}
+      <PhaseHeader
+        icon={<span>💌</span>}
+        phase="PHASE 04 ✦ THE LETTER"
+        title="ONE LAST THING"
+        subtitle="airmail to Japan • the obligatory sentimental section"
+      />
 
       {/* Envelope / Letter Container */}
       <div
@@ -87,174 +297,17 @@ export default function TheLetter() {
             handleOpen();
           }
         }}
-        className={`relative w-full max-w-lg mx-auto transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#3A2440] focus-visible:ring-offset-4 rounded-3xl ${
-          !isOpen
-            ? "h-[250px] sm:h-[270px] cursor-pointer hover:scale-[1.02] active:scale-[0.99]"
-            : "min-h-[500px]"
-        }`}
+        className={`relative w-full max-w-[740px] md:max-w-[780px] mx-auto transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#881337] focus-visible:ring-offset-4 rounded-[36px] ${!isOpen
+            ? "h-[310px] sm:h-[350px] cursor-pointer hover:scale-[1.015] active:scale-[0.99]"
+            : "min-h-[550px]"
+          }`}
         onClick={handleOpen}
       >
-        {/* ═══ UNOPENED LUXURY ENVELOPE ═══ */}
-        <div
-          className={`absolute inset-0 bg-gradient-to-b from-[#FFF5F8] via-[#FFEBF2] to-[#FFDDE8] border-3 border-[#3A2440] shadow-[8px_8px_0_#3A2440] rounded-3xl transition-all duration-600 z-20 flex flex-col items-center justify-between p-5 overflow-hidden group select-none ${
-            isOpen
-              ? "opacity-0 pointer-events-none scale-90 translate-y-8"
-              : "opacity-100 scale-100 translate-y-0"
-          }`}
-        >
-          {/* Subtle paper grain */}
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#3A2440_1px,transparent_1px)] [background-size:16px_16px]" />
+        {/* ═══ UNOPENED CUTE BOBBING AIRMAIL ENVELOPE ═══ */}
+        <TheLetterEnvelope isOpen={isOpen} />
 
-          {/* Top Decorative Fold / Flap Visual */}
-          <div
-            className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-[#FFD1DF] to-[#FFBFD3] border-b-2 border-[#3A2440]/25 origin-top transition-transform duration-300 group-hover:brightness-105"
-            style={{ clipPath: "polygon(0 0, 100% 0, 50% 100%)" }}
-            aria-hidden="true"
-          />
-
-          {/* Airmail / Stamp Header Line */}
-          <div className="w-full flex justify-between items-start z-10 pointer-events-none">
-            {/* Vintage Postmark Stamp */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/70 border border-[#FF8FB3]/50 text-[9px] font-retro text-[#9B2C61] tracking-wider">
-              <span>✈ PAR AVION</span>
-              <span>•</span>
-              <span>SPECIAL DELIVERY</span>
-            </div>
-
-            {/* Postage Stamp Sticker */}
-            <div className="w-12 h-14 bg-white p-1 rounded-md border-2 border-dashed border-[#FF8FB3] shadow-xs rotate-3 flex flex-col items-center justify-center text-center">
-              <span className="text-base">🎀</span>
-              <span className="font-pixel text-[7px] text-[#9B2C61] font-bold mt-0.5">2026</span>
-            </div>
-          </div>
-
-          {/* Center: Deluxe 3D Wax Seal with Ribbon & Glow */}
-          <div className="relative my-auto flex flex-col items-center z-10">
-            {/* Silk ribbon tails */}
-            <div
-              className="absolute -top-4 w-6 h-14 bg-[#FF6584] opacity-80 -rotate-12 rounded-b-sm shadow-sm"
-              aria-hidden="true"
-            />
-            <div
-              className="absolute -top-4 w-6 h-14 bg-[#FF7B98] opacity-80 rotate-12 rounded-b-sm shadow-sm"
-              aria-hidden="true"
-            />
-
-            {/* Ornate Wax Seal Medallion */}
-            <div
-              className="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gradient-to-br from-[#FF6B8B] via-[#E83562] to-[#B01740] border-3 border-[#FFFDF8] flex items-center justify-center shadow-[0_8px_22px_rgba(176,23,64,0.4),0_2px_4px_rgba(0,0,0,0.2)] group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 relative cursor-pointer"
-              aria-hidden="true"
-            >
-              <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/40 flex items-center justify-center">
-                <span className="text-white text-2xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
-                  💌
-                </span>
-              </div>
-            </div>
-
-            {/* Recipient calligraphy label */}
-            <p className="font-letter-serif italic text-[#3A2440] text-sm sm:text-base font-semibold mt-2.5 tracking-wide">
-              For: Arhana ✦
-            </p>
-          </div>
-
-          {/* Bottom Action Pill */}
-          <div className="z-10 w-full flex justify-center">
-            <span className="font-pixel text-[#3A2440] text-[10px] sm:text-xs tracking-wider font-bold bg-[#FFFDF8] px-5 py-2 rounded-full border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] group-hover:translate-y-[-1px] group-hover:shadow-[4px_4px_0_#3A2440] group-active:translate-y-[2px] group-active:shadow-none transition-all flex items-center gap-2">
-              <span>BREAK THE SEAL</span>
-              <span className="text-[#FF4F9A]">✦</span>
-            </span>
-          </div>
-        </div>
-
-        {/* ═══ OPENED DELUXE STATIONERY LETTER ═══ */}
-        <div
-          className={`bg-[#FFFDF8] border-3 border-[#3A2440] shadow-[10px_10px_0_#3A2440] p-6 sm:p-10 transition-all duration-700 origin-top z-10 relative rounded-3xl overflow-hidden ${
-            isOpen
-              ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
-              : "absolute inset-x-0 top-0 opacity-0 scale-95 pointer-events-none"
-          }`}
-        >
-          {/* Lined stationery paper texture */}
-          <div className="absolute inset-0 parchment-lines opacity-75 pointer-events-none" />
-
-          {/* Delicate corner floral decorations */}
-          <div aria-hidden="true" className="absolute top-2 left-3 text-lg opacity-40 select-none pointer-events-none">✿</div>
-          <div aria-hidden="true" className="absolute top-2 right-3 text-lg opacity-40 select-none pointer-events-none">✿</div>
-          <div aria-hidden="true" className="absolute bottom-3 left-4 text-sm opacity-35 select-none pointer-events-none">✦</div>
-
-          {/* Washi tape pinning the letter to the desk */}
-          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-32 h-7 bg-[#FFEAA7] border border-black/15 -rotate-1 shadow-xs pointer-events-none flex items-center justify-center">
-            <div className="w-full h-full border-x-4 border-dotted border-white/70 opacity-60" />
-          </div>
-
-          {/* Letter Body Header */}
-          <div className="relative z-10 mt-3 mb-6">
-            <div className="flex items-center justify-between border-b-2 border-[#FFD0DC]/60 pb-3">
-              <div>
-                <p className="font-letter-serif italic text-xs text-[#9B2C61] tracking-wider uppercase font-semibold">
-                  A Birthday Note ✦ October 2026
-                </p>
-                <h3 className="font-letter-script text-4xl sm:text-5xl font-bold text-[#881337] mt-1 tracking-wide leading-tight">
-                  Dear Arhana,
-                </h3>
-              </div>
-              <div className="text-3xl select-none animate-bounce-soft" aria-hidden="true">
-                🎂
-              </div>
-            </div>
-          </div>
-
-          {/* Letter Prose / Poetry */}
-          <div className="font-letter-script text-[#2D1B36] space-y-4 text-2xl sm:text-3xl leading-relaxed relative z-10 pl-1">
-            <p className="leading-snug">
-              Happy birthday! I wanted to make something special that could capture all the chaos, the memes, and the late-night conversations we&apos;ve shared.
-            </p>
-            <p className="leading-snug">
-              This little corner of the internet is for you. A place where the hamsters run free, the music is always exactly your vibe, and the memories are safely stored.
-            </p>
-            <p className="leading-snug">
-              Thank you for being the incredible, unique, and wonderful person that you are. Here&apos;s to surviving another year and making the next one even better.
-            </p>
-
-            {/* Sign-off */}
-            <div className="pt-6 font-bold text-[#881337] flex items-end justify-between">
-              <div>
-                <span className="block text-2xl sm:text-3xl">Love,</span>
-                <span className="block text-3xl sm:text-4xl text-[#9B2C61] mt-1 tracking-wide">
-                  Your Bestie 🎀
-                </span>
-              </div>
-
-              {/* Tiny Hamster Doodle Sticker */}
-              <div
-                aria-hidden="true"
-                className="relative w-16 h-16 sm:w-20 sm:h-20 rotate-6 select-none group/doodle"
-              >
-                <div className="absolute inset-0 bg-[#FFFDF8] rounded-2xl border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] overflow-hidden p-1">
-                  <img
-                    src="/hampter/devious hamster doodle.jpeg"
-                    alt="Cute hamster doodle"
-                    className="w-full h-full object-cover rounded-xl"
-                  />
-                </div>
-                <span className="absolute -top-2 -right-2 text-xs opacity-0 group-hover/doodle:opacity-100 transition-opacity">✨</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Re-fold Button */}
-          <div className="mt-8 pt-4 border-t border-[#FFD0DC]/60 flex justify-center relative z-10">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="px-4 py-1.5 bg-[#FFF0F5] hover:bg-[#FFE4EE] text-[#881337] border-2 border-[#3A2440] rounded-full font-retro text-[9px] sm:text-[10px] font-bold tracking-widest shadow-[2px_2px_0_#3A2440] hover:shadow-[1px_1px_0_#3A2440] hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <span>↺</span>
-              <span>FOLD LETTER BACK</span>
-            </button>
-          </div>
-        </div>
+        {/* ═══ OPENED JAPANESE PASTEL STATIONERY LETTER ═══ */}
+        <TheLetterStationery isOpen={isOpen} onClose={handleClose} />
       </div>
     </div>
   );

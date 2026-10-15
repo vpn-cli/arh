@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { sfx } from "@/lib/audio";
 import confetti from "canvas-confetti";
+import PhaseHeader from "./PhaseHeader";
 
 export default function BirthdayVault() {
   const [isOpen, setIsOpen] = useState(false);
@@ -99,7 +100,7 @@ export default function BirthdayVault() {
         <div className="h-[2px] w-32 bg-[#FF8FB3]/50 mx-auto mb-4" aria-hidden="true" />
 
         <p id="vault-modal-desc" className="font-baloo text-sm sm:text-base text-[#3A2440] font-medium leading-relaxed max-w-md mb-6">
-          You actually cracked it! Happy birthday to someone who has witnessed all my questionable decisions and somehow hasn&apos;t disowned me yet.
+          You actually cracked it! Happy birthday to someone who has witnessed all my questionable decisions and somehow hasn&apos;t disowned me yet. 😂💖
         </p>
 
         <button
@@ -114,13 +115,12 @@ export default function BirthdayVault() {
   ) : null;
 
   return (
-    <div className="w-full max-w-xl mx-auto my-12 sm:my-16 px-4 relative z-10 flex flex-col items-center">
-      {/* Milestone tag */}
-      <div className="flex items-center justify-center gap-2 mb-3">
-        <span className="font-retro text-[9px] uppercase tracking-[3px] text-[#7A4B16] font-bold bg-[#FFFDF5] px-3 py-1 rounded-full border border-[#E5B25D]/60 shadow-xs">
-          PHASE 02 ✦ SECRET VAULT
-        </span>
-      </div>
+    <div className="w-full max-w-xl mx-auto px-4 relative z-10 flex flex-col items-center">
+      <PhaseHeader
+        phase="PHASE 02"
+        title="THE VAULT"
+        subtitle="something's locked in here. you earned it."
+      />
 
       {/* The Vault Chest Box */}
       <button

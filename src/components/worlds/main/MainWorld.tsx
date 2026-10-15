@@ -11,6 +11,9 @@ import AsciiSection from "./AsciiSection";
 import BirthdayVault from "./BirthdayVault";
 import TheEdit from "./TheEdit";
 import TheLetter from "./TheLetter";
+import ScrollRibbon from "./ScrollRibbon";
+import PhaseTracker from "./PhaseTracker";
+import PhaseSection from "./PhaseSection";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -20,15 +23,16 @@ export default function MainWorld() {
   const heroRef = useRef<HTMLDivElement>(null);
   const catRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
   const [isUnlocked, setIsUnlocked] = React.useState(false);
   const [avatarBooped, setAvatarBooped] = React.useState(false);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
+    // Always reboot terminal fresh whenever user lands on the page
+    setIsUnlocked(false);
     try {
-      if (sessionStorage.getItem("kitty_terminal_unlocked") === "true") {
-        setIsUnlocked(true);
-      }
+      sessionStorage.removeItem("kitty_terminal_unlocked");
     } catch {}
   }, []);
 
@@ -52,8 +56,8 @@ export default function MainWorld() {
       window.history.scrollRestoration = "manual";
     }
 
-    // Smoothly scroll to the top hero cat on mount
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Ensure on page load we are positioned at the top hero cat without fighting scroll
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
 
     return () => {
       setMainWorldScrollY(window.scrollY);
@@ -92,7 +96,7 @@ export default function MainWorld() {
   return (
     <div
       ref={containerRef}
-      className="relative w-full min-h-screen bg-[#FAF5E9] text-[#2D1B36] overflow-x-hidden selection:bg-[#FF8FB3]/40"
+      className="relative w-full min-h-screen bg-[#FAF5E9] text-[#2D1B36] overflow-x-clip selection:bg-[#FF8FB3]/40"
     >
       {/* ═══ WORLD AMBIENCE & FIXED BACKGROUND ═══ */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
@@ -115,6 +119,16 @@ export default function MainWorld() {
           style={{
             background:
               "radial-gradient(ellipse at center, rgba(250, 245, 233, 0.4) 30%, rgba(250, 245, 233, 0.8) 100%)",
+          }}
+        />
+
+        {/* Calmer soft radial cream glow behind center content column (no blur filter for performance) */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-5xl pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 100% at 50% 50%, rgba(250, 245, 233, 0.82) 0%, rgba(250, 245, 233, 0.45) 55%, transparent 95%)",
           }}
         />
 
@@ -175,12 +189,26 @@ export default function MainWorld() {
         </div>
       </header>
 
+      {/* ═══ PHASE NAVIGATION TRACKER (Fixed on Right Edge, Hidden on Mobile < 768px) ═══ */}
+      <PhaseTracker isUnlocked={isUnlocked} />
+
       {/* ═══ CONTENT FLOW ═══ */}
-      <main className="relative z-10 w-full flex flex-col items-center pt-24 sm:pt-32 pb-36">
+      <main
+        ref={mainRef}
+        className="relative z-10 w-full flex flex-col items-center pt-24 sm:pt-32 pb-36"
+      >
+        {/* Ribbon Thread Connecting Phases (Hidden on Mobile < 768px) */}
+        <ScrollRibbon
+          containerRef={mainRef}
+          startElementId="hero-down-indicator"
+          endElementId="end-of-transmission"
+          className="hidden md:block"
+        />
+
         {/* 1. HERO SECTION */}
         <div
           ref={heroRef}
-          className="w-full max-w-2xl px-4 flex flex-col items-center text-center mb-8 sm:mb-12 relative z-10"
+          className="w-full max-w-2xl min-h-[70vh] px-4 flex flex-col items-center justify-center text-center mb-4 sm:mb-8 relative z-10 snap-start scroll-mt-28 sm:scroll-mt-32"
         >
           {/* Guide Avatar — Enlarge sticker, frame-free with cute interactive boop */}
           <button
@@ -237,8 +265,13 @@ export default function MainWorld() {
 
           {/* Down Indicator with Smooth Scroll Navigation */}
           <button
+            id="hero-down-indicator"
             type="button"
-            onClick={() => document.getElementById("kitty-terminal")?.scrollIntoView({ behavior: "smooth" })}
+            onClick={() =>
+              document
+                .getElementById("phase-01-terminal")
+                ?.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth" })
+            }
             aria-label="Scroll down to storyline phases"
             className="min-h-[44px] min-w-[44px] p-2 rounded-full motion-safe:animate-bounce opacity-80 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-2 transition-all cursor-pointer flex items-center justify-center"
           >
@@ -247,15 +280,18 @@ export default function MainWorld() {
         </div>
 
         {/* 2. THE STORY PHASES */}
-        <div id="kitty-terminal" className="w-full relative flex flex-col items-center gap-6 sm:gap-10 px-4 z-10 scroll-mt-24">
+        <div id="kitty-terminal" className="w-full relative flex flex-col items-center z-10">
           {/* Phase 01: ASCII Kitty Terminal */}
-          <div className="w-full">
+          <PhaseSection id="phase-01-terminal">
             <AsciiSection onUnlock={handleUnlock} onReset={handleReset} isUnlocked={isUnlocked} />
-          </div>
+          </PhaseSection>
 
           {!isUnlocked ? (
             /* Locked Storyline Gate */
-            <div className="w-full max-w-xl mx-auto my-6 p-6 sm:p-8 bg-[#FFFDF8] border-2 border-dashed border-[#3A2440]/35 rounded-2xl text-center flex flex-col items-center gap-3 animate-fade-in shadow-[4px_4px_0_#3A2440]/15">
+            <div
+              id="end-of-transmission"
+              className="w-full max-w-xl mx-auto my-6 p-6 sm:p-8 bg-[#FFFDF8] border-2 border-dashed border-[#3A2440]/35 rounded-2xl text-center flex flex-col items-center gap-3 animate-fade-in shadow-[4px_4px_0_#3A2440]/15 relative z-10"
+            >
               <span className="text-4xl animate-bounce-soft" aria-hidden="true">🔒</span>
               <h2 className="font-pixel text-lg sm:text-xl text-[#3A2440] font-bold tracking-wide">
                 STORYLINE LOCKED ✦ CLEARANCE REQUIRED
@@ -278,26 +314,29 @@ export default function MainWorld() {
           ) : (
             <>
               {/* Phase 02: Mystery Birthday Chest */}
-              <div id="phase-02-vault" className="w-full relative z-[50]">
+              <PhaseSection id="phase-02-vault" className="z-[50]">
                 <BirthdayVault />
-              </div>
+              </PhaseSection>
 
               {/* Phase 03: The Edit Cinema */}
-              <div className="w-full relative z-20">
+              <PhaseSection id="phase-03-edit" className="z-20">
                 <TheEdit />
-              </div>
+              </PhaseSection>
 
               {/* Phase 04: The Letter */}
-              <div className="w-full">
+              <PhaseSection id="phase-04-letter" className="z-10">
                 <TheLetter />
-              </div>
+              </PhaseSection>
             </>
           )}
         </div>
 
         {/* 3. RETURN TO HUB */}
         {isUnlocked && (
-          <div className="mt-16 sm:mt-20 text-center relative z-20 flex flex-col items-center gap-3">
+          <div
+            id="end-of-transmission"
+            className="mt-16 sm:mt-20 text-center relative z-20 flex flex-col items-center gap-3"
+          >
             <p className="font-retro text-[10px] sm:text-xs text-[#4A3855] tracking-[2px] font-bold uppercase">
               END OF TRANSMISSION ✦ THANKS FOR VISITING
             </p>

@@ -6,10 +6,11 @@ import TheEditHelloKitty from "./TheEditHelloKitty";
 import TheEditEndCard from "./TheEditEndCard";
 import TheEditControls from "./TheEditControls";
 import TheEditTvHardware from "./TheEditTvHardware";
+import PhaseHeader from "./PhaseHeader";
 import { formatTime, requestNativeFullscreen, exitNativeFullscreen } from "./fullscreenUtils";
 
 const VIDEO_SOURCES = ["/videos/arh_vid_final.mp4", "/videos/real_vid.mp4", "/Arh.mp4"];
-const POSTER_SRC = "/images/loading_bg_pixel.jpg";
+const POSTER_SRC = "/images/ar.jpeg";
 
 export default function TheEdit() {
   const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -44,7 +45,9 @@ export default function TheEdit() {
         (document as unknown as { webkitFullscreenElement?: Element }).webkitFullscreenElement
       );
       setIsFullscreen(isNativeFs);
-      if (!isNativeFs) setShowControls(true);
+      if (!isNativeFs) {
+        setShowControls(true);
+      }
     };
     document.addEventListener("fullscreenchange", onFsChange);
     document.addEventListener("webkitfullscreenchange", onFsChange);
@@ -55,17 +58,12 @@ export default function TheEdit() {
   }, []);
 
   useEffect(() => {
-    if (isFullscreen) {
-      document.body.setAttribute("data-cinema-fullscreen", "true");
-    } else {
-      document.body.removeAttribute("data-cinema-fullscreen");
-    }
-    return () => {
-      document.body.removeAttribute("data-cinema-fullscreen");
-    };
+    if (isFullscreen) document.body.setAttribute("data-cinema-fullscreen", "true");
+    else document.body.removeAttribute("data-cinema-fullscreen");
+    return () => document.body.removeAttribute("data-cinema-fullscreen");
   }, [isFullscreen]);
 
-  // Launch initial playback & attempt fullscreen
+  // Launch initial playback & attempt true native fullscreen
   const handleStartPlay = () => {
     // Synchronously request native fullscreen FIRST before any audio or state updates consume the transient user activation
     requestNativeFullscreen(
@@ -82,7 +80,6 @@ export default function TheEdit() {
 
     sfx.select();
     setHasStarted(true);
-
     if (videoRef.current) {
       if (isEnded || videoRef.current.currentTime >= (videoRef.current.duration || 1)) {
         videoRef.current.currentTime = 0;
@@ -112,10 +109,6 @@ export default function TheEdit() {
         () => {
           setIsFullscreen(true);
           setShowControls(true);
-        },
-        () => {
-          setIsFullscreen(true);
-          setShowControls(true);
         }
       );
       sfx.select();
@@ -137,6 +130,11 @@ export default function TheEdit() {
     exitNativeFullscreen();
     setIsFullscreen(false);
     setShowControls(true);
+    if (isEnded) {
+      setHasStarted(false);
+      setIsEnded(false);
+      if (videoRef.current) videoRef.current.currentTime = 0;
+    }
   };
 
   const togglePlay = () => {
@@ -202,21 +200,22 @@ export default function TheEdit() {
     sfx.select();
   };
 
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleSeekFraction = useCallback((fraction: number) => {
     const video = videoRef.current;
     if (!video || !video.duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-    video.currentTime = (clickX / rect.width) * video.duration;
-    handleTimeUpdate();
-  };
+    const clamped = Math.max(0, Math.min(1, fraction));
+    video.currentTime = clamped * video.duration;
+    const cur = video.currentTime;
+    const dur = video.duration || 1;
+    if (progressBarRef.current) progressBarRef.current.style.width = `${clamped * 100}%`;
+    if (timeDisplayRef.current) timeDisplayRef.current.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
+    if (cur < dur - 0.5 && isEnded) setIsEnded(false);
+  }, [isEnded]);
 
   // Keyboard navigation
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing in an input
       if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) return;
-
       if (e.key === "Escape" && isFullscreen) {
         e.preventDefault();
         handleExitFullscreen();
@@ -237,23 +236,119 @@ export default function TheEdit() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isFullscreen, isPlaying, hasStarted]);
 
-  return (
-    <div className="w-full max-w-4xl mx-auto my-12 sm:my-16 px-4 relative z-10">
-      {/* Milestone tag */}
-      <div className="flex items-center justify-center gap-2 mb-3">
-        <span className="font-retro text-[9px] uppercase tracking-[3px] text-[#C24075] font-bold bg-[#FFF5F8] px-3 py-1 rounded-full border border-[#FF8FB3]/40 shadow-xs">
-          PHASE 03 ✦ THE EDIT
-        </span>
-      </div>
+  const playerContent = (
+    <div
+      ref={playerContainerRef}
+      data-cinema-player="true"
+      data-cinema-fullscreen={isFullscreen ? "true" : undefined}
+      onMouseMove={resetControlsTimeout}
+      className={
+        isFullscreen
+          ? `w-full h-full bg-black flex items-center justify-center overflow-hidden select-none transition-all duration-300 ease-out ${
+              !showControls && isPlaying ? "cursor-none" : "cursor-default"
+            }`
+          : "w-full h-full relative bg-black flex items-center justify-center overflow-hidden group select-none transition-all duration-300 ease-out cursor-pointer"
+      }
+      onClick={isFullscreen ? togglePlay : (!hasStarted ? handleStartPlay : togglePlay)}
+      onDoubleClick={handleToggleFullscreen}
+    >
+      {/* The Video Element */}
+      <video
+        ref={videoRef}
+        preload="auto"
+        className="w-full h-full object-contain bg-black transition-all duration-300 ease-out"
+        playsInline
+        poster={POSTER_SRC}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={handleEnded}
+      >
+        {VIDEO_SOURCES.map((src) => (
+          <source key={src} src={src} type="video/mp4" />
+        ))}
+      </video>
+      {/* CRT Scanline & Glass Overlays */}
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px] opacity-20 z-20" />
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/[0.03] to-white/[0.08] z-25" />
+      {/* CRT OSD Badge in top-left */}
+      {hasStarted && !isEnded && (
+        <div className="absolute top-3 left-3 z-30 pointer-events-none select-none flex items-center gap-1.5 font-pixel text-[9px] text-[#A6FF96] bg-black/60 px-2.5 py-1 rounded-md border border-[#A6FF96]/30 backdrop-blur-xs">
+          <span className={`inline-block w-2 h-2 rounded-full ${isPlaying ? "bg-red-500 animate-pulse" : "bg-amber-400"}`} />
+          <span>{isPlaying ? "REC ●" : "PAUSE ❚❚"}</span>
+        </div>
+      )}
 
-      <div className="text-center mb-8">
-        <h2 className="font-pixel text-2xl sm:text-3xl font-bold text-[#2D1B36] tracking-wider mb-1">
-          THE EDIT
-        </h2>
-        <p className="font-baloo text-xs sm:text-sm text-[#6E5D78] font-semibold tracking-wide">
-          proof that we actually hang out outside the internet
-        </p>
-      </div>
+      {/* 1. INITIAL UNSTARTED STATE: Custom Thumbnail & Play Trigger */}
+      {!hasStarted && (
+        <>
+          <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+            <img
+              src={POSTER_SRC}
+              alt="The Edit video thumbnail"
+              className="w-full h-full object-cover object-center"
+            />
+          </div>
+          <div className="absolute inset-0 z-30 bg-[#2D1B36]/25 backdrop-blur-[0.5px] flex items-center justify-center transition-all p-4">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStartPlay();
+              }}
+              className="group relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#FFF5F8] to-[#FFE0EC] border-3 border-[#3A2440] flex items-center justify-center text-[#FF4F9A] hover:text-[#FF2A85] hover:scale-110 active:scale-95 transition-all shadow-[0_8px_20px_rgba(45,27,54,0.35),_4px_4px_0_#3A2440] cursor-pointer"
+              aria-label="Play video"
+              title="Play Video"
+            >
+              <svg className="w-7 h-7 sm:w-8 sm:h-8 fill-current ml-1 group-hover:scale-105 transition-transform" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* 2. PAUSED STATE (Centered Play Indicator, subtle & non-blocking) */}
+      {hasStarted && !isPlaying && !isEnded && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/60 border-2 border-white/80 text-white flex items-center justify-center shadow-2xl backdrop-blur-xs animate-scale-in">
+            <svg className="w-6 h-6 sm:w-7 sm:h-7 fill-[#FFEAA7] ml-0.5" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {/* 3. END OF VIDEO OVERLAY */}
+      {hasStarted && isEnded && (
+        <TheEditEndCard onPlayAgain={handlePlayAgain} onExit={handleExitFullscreen} />
+      )}
+
+      {/* 4. PLAYBACK CONTROLS (Both Inline and Fullscreen) */}
+      {hasStarted && !isEnded && (
+        <TheEditControls
+          isFullscreen={isFullscreen}
+          isPlaying={isPlaying}
+          isMuted={isMuted}
+          showControls={showControls || !isPlaying}
+          progressBarRef={progressBarRef}
+          timeDisplayRef={timeDisplayRef}
+          onTogglePlay={togglePlay}
+          onToggleFullscreen={handleToggleFullscreen}
+          onToggleMute={toggleMute}
+          onSeekFraction={handleSeekFraction}
+          onReplay={handlePlayAgain}
+        />
+      )}
+    </div>
+  );
+
+  return (
+    <div className="w-full max-w-4xl mx-auto px-4 relative z-10">
+      <PhaseHeader
+        phase="PHASE 03 ✦ THE EDIT"
+        title="THE EDIT"
+        subtitle="proof that we actually hang out outside the internet"
+      />
 
       {/* Inline Section Container */}
       <div className="relative mx-auto max-w-3xl mt-20 sm:mt-24">
@@ -265,105 +360,7 @@ export default function TheEdit() {
           <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch">
             {/* Stable Aspect-Ratio Screen Enclosure — never collapses or shifts */}
             <div className="relative aspect-video flex-1 bg-[#191020] rounded-xl sm:rounded-2xl overflow-hidden border-2 border-[#3A2440] shadow-inner select-none">
-              {/* Unified Player Container */}
-              <div
-                ref={playerContainerRef}
-                data-cinema-player="true"
-                data-cinema-fullscreen={isFullscreen ? "true" : undefined}
-                onMouseMove={resetControlsTimeout}
-                className={
-                  isFullscreen
-                    ? `fixed inset-0 z-[2147483646] w-screen h-screen bg-black flex items-center justify-center overflow-hidden select-none transition-all duration-300 ease-out ${
-                        !showControls && isPlaying ? "cursor-none" : "cursor-default"
-                      }`
-                    : "w-full h-full relative bg-black flex items-center justify-center overflow-hidden group select-none transition-all duration-300 ease-out cursor-pointer"
-                }
-                onClick={isFullscreen ? togglePlay : (!hasStarted ? handleStartPlay : togglePlay)}
-                onDoubleClick={handleToggleFullscreen}
-              >
-                {/* The Video Element */}
-                <video
-                  ref={videoRef}
-                  preload="auto"
-                  className="w-full h-full object-contain bg-black transition-all duration-300 ease-out"
-                  playsInline
-                  poster={POSTER_SRC}
-                  onTimeUpdate={handleTimeUpdate}
-                  onLoadedMetadata={handleLoadedMetadata}
-                  onEnded={handleEnded}
-                >
-                  {VIDEO_SOURCES.map((src) => (
-                    <source key={src} src={src} type="video/mp4" />
-                  ))}
-                </video>
-
-                {/* CRT Scanline Overlay Effect */}
-                <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px] opacity-20 z-20" />
-
-                {/* Subtle CRT Glass Curve Highlight */}
-                <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/[0.03] to-white/[0.08] z-25" />
-
-                {/* CRT OSD Badge in top-left */}
-                {hasStarted && !isEnded && (
-                  <div className="absolute top-3 left-3 z-30 pointer-events-none select-none flex items-center gap-1.5 font-pixel text-[9px] text-[#A6FF96] bg-black/60 px-2.5 py-1 rounded-md border border-[#A6FF96]/30 backdrop-blur-xs">
-                    <span className={`inline-block w-2 h-2 rounded-full ${isPlaying ? "bg-red-500 animate-pulse" : "bg-amber-400"}`} />
-                    <span>{isPlaying ? "REC ●" : "PAUSE ❚❚"}</span>
-                  </div>
-                )}
-
-                {/* 1. INITIAL UNSTARTED STATE: Beautiful Play Trigger */}
-                {!hasStarted && (
-                  <div className="absolute inset-0 z-30 bg-[#2D1B36]/35 backdrop-blur-[1px] flex items-center justify-center transition-all p-4">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStartPlay();
-                      }}
-                      className="group relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#FFF5F8] to-[#FFE0EC] border-3 border-[#3A2440] flex items-center justify-center text-[#FF4F9A] hover:text-[#FF2A85] hover:scale-110 active:scale-95 transition-all shadow-[0_8px_20px_rgba(45,27,54,0.35),_4px_4px_0_#3A2440] cursor-pointer"
-                      aria-label="Play video"
-                      title="Play Video"
-                    >
-                      <svg className="w-7 h-7 sm:w-8 sm:h-8 fill-current ml-1 group-hover:scale-105 transition-transform" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
-
-                {/* 2. PAUSED STATE (Centered Play Indicator, subtle & non-blocking) */}
-                {hasStarted && !isPlaying && !isEnded && (
-                  <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-black/60 border-2 border-white/80 text-white flex items-center justify-center shadow-2xl backdrop-blur-xs animate-scale-in">
-                      <svg className="w-6 h-6 sm:w-7 sm:h-7 fill-[#FFEAA7] ml-0.5" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </div>
-                  </div>
-                )}
-
-                {/* 3. END OF VIDEO OVERLAY */}
-                {hasStarted && isEnded && (
-                  <TheEditEndCard onPlayAgain={handlePlayAgain} onExit={handleExitFullscreen} />
-                )}
-
-                {/* 4. PLAYBACK CONTROLS (Both Inline and Fullscreen) */}
-                {hasStarted && !isEnded && (
-                  <TheEditControls
-                    isFullscreen={isFullscreen}
-                    isPlaying={isPlaying}
-                    isMuted={isMuted}
-                    showControls={showControls || !isPlaying}
-                    progressBarRef={progressBarRef}
-                    timeDisplayRef={timeDisplayRef}
-                    onTogglePlay={togglePlay}
-                    onToggleFullscreen={handleToggleFullscreen}
-                    onToggleMute={toggleMute}
-                    onSeek={handleSeek}
-                    onReplay={handlePlayAgain}
-                  />
-                )}
-              </div>
+              {playerContent}
             </div>
 
             {/* Vintage TV Right Bezel Control Strip (hidden in fullscreen) */}
@@ -374,7 +371,7 @@ export default function TheEdit() {
                 isMuted={isMuted}
                 onToggleFullscreen={handleToggleFullscreen}
                 onToggleMute={toggleMute}
-                onTogglePlay={togglePlay}
+                onTogglePlay={!hasStarted ? handleStartPlay : togglePlay}
                 onReplay={handlePlayAgain}
               />
             )}
