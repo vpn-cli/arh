@@ -18,6 +18,39 @@ export interface LyricsData {
 const lyricsCache: Record<string, LyricsData | null> = {};
 const pendingRequests: Record<string, Promise<LyricsData | null> | undefined> = {};
 
+export const CLIENT_ERROR_COOLDOWN_MS = 60 * 1000;
+
+export function getValidCachedLyrics(trackId: string): LyricsData | null | undefined {
+  if (!trackId) return undefined;
+  const cached = lyricsCache[trackId];
+  if (cached === undefined) return undefined;
+  if (cached?.status === 'error') {
+    // If errorTimestamp was not set (e.g. in test fixtures), default to now
+    const timestamp = cached.errorTimestamp ?? Date.now();
+    const errorAge = Date.now() - timestamp;
+    if (errorAge < CLIENT_ERROR_COOLDOWN_MS) {
+      return cached;
+    }
+    delete lyricsCache[trackId];
+    return undefined;
+  }
+  return cached;
+}
+
+export function isLyricsInErrorCooldown(trackId: string): boolean {
+  if (!trackId) return false;
+  const cached = lyricsCache[trackId];
+  if (cached?.status === 'error') {
+    const timestamp = cached.errorTimestamp ?? Date.now();
+    const errorAge = Date.now() - timestamp;
+    if (errorAge < CLIENT_ERROR_COOLDOWN_MS) {
+      return true;
+    }
+    delete lyricsCache[trackId];
+  }
+  return false;
+}
+
 /**
  * Shifts line time and all word start and end times by offsetMs.
  * A positive offsetMs makes the lyrics appear later.
@@ -53,15 +86,9 @@ export async function prefetchLyrics(
 ): Promise<LyricsData | null> {
   if (!trackId) return null;
 
-  if (!forceRefresh && lyricsCache[trackId] !== undefined) {
-    const cached = lyricsCache[trackId];
-    if (cached?.status === 'error') {
-      const errorAge = Date.now() - (cached.errorTimestamp || 0);
-      if (errorAge < 60000) {
-        return cached;
-      }
-      delete lyricsCache[trackId];
-    } else {
+  if (!forceRefresh) {
+    const cached = getValidCachedLyrics(trackId);
+    if (cached !== undefined) {
       return cached;
     }
   }
@@ -152,7 +179,7 @@ export function useLyrics(
   trackName?: string,
   artistName?: string
 ) {
-  const cached = trackId ? lyricsCache[trackId] : undefined;
+  const cached = trackId ? getValidCachedLyrics(trackId) : undefined;
 
   const [prevTrackId, setPrevTrackId] = useState<string | null | undefined>(trackId);
   const [baseLyricsData, setBaseLyricsData] = useState<LyricsData | null>(() => {
@@ -164,13 +191,13 @@ export function useLyrics(
   });
 
   const [isLyricsLoading, setIsLyricsLoading] = useState<boolean>(() => {
-    return !!trackId && lyricsCache[trackId] === undefined;
+    return !!trackId && cached === undefined;
   });
 
   // Adjust state during render when trackId changes
   if (trackId !== prevTrackId) {
     setPrevTrackId(trackId);
-    const newCached = trackId ? lyricsCache[trackId] : undefined;
+    const newCached = trackId ? getValidCachedLyrics(trackId) : undefined;
     setBaseLyricsData(newCached !== undefined ? newCached : null);
     setOffsetMsState(newCached?.offsetMs ?? 0);
     setIsLyricsLoading(Boolean(trackId && newCached === undefined));
@@ -205,7 +232,9 @@ export function useLyrics(
   }, [trackId, trackName, artistName]);
 
   useEffect(() => {
-    if (!trackId || lyricsCache[trackId] !== undefined) {
+    if (!trackId) return;
+    const cachedEntry = getValidCachedLyrics(trackId);
+    if (cachedEntry !== undefined) {
       return;
     }
 

@@ -49,9 +49,9 @@ function getPaperStyle(paper: PaperType): React.CSSProperties {
 }
 
 function getCornerPosition(_corner?: StickerCorner): string {
-  // Move all Snoopy stickers to the right edge, peeking slightly outside the card,
-  // clear of edit/delete buttons (top right) and date/POST stamps (bottom right).
-  return '-right-3.5 top-[38%]';
+  // On mobile (390px), position sticker at right-1 to prevent card overflow or clipping.
+  // On desktop / sm screens, peek slightly outside (-right-3.5).
+  return 'right-1 sm:-right-3.5 top-[38%]';
 }
 
 function renderFastener(fastener: FastenerType) {

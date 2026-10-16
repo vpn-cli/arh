@@ -43,7 +43,21 @@ export async function GET(request: Request) {
       },
     });
   } catch (error: any) {
-    console.error('Palette extraction error:', error);
-    return NextResponse.json({ error: 'Failed to extract palette' }, { status: 500 });
+    console.warn(`[Album Palette] Failed to fetch or extract palette for "${url}": ${error?.message || error}. Falling back to default palette.`);
+    const fallbackComputed = generatePalette('#C2185B');
+    return NextResponse.json({
+      vibrant: fallbackComputed.vibrant,
+      muted: null,
+      darkVibrant: null,
+      darkMuted: null,
+      lightVibrant: null,
+      lightMuted: null,
+      computed: fallbackComputed,
+    }, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'public, max-age=60',
+      },
+    });
   }
 }

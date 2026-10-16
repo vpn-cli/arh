@@ -313,7 +313,7 @@ export function processCandidateLyrics(
   };
 }
 
-const LRCLIB_USER_AGENT = 'punkrose.fm/1.0 (+https://github.com/vipin/arh)';
+const LRCLIB_USER_AGENT = 'punkrose.fm/1.0 (+https://punkrose.fm; https://github.com/vpn-cli/arh)';
 const TOTAL_LOOKUP_BUDGET_MS = 8000;
 
 export type UpstreamErrorKind = 'timeout' | 'rate_limited' | 'server_error' | 'network_error';

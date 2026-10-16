@@ -43,6 +43,21 @@ describe('Lyrics Modules & Extraction', () => {
       expect(result?.status).toBe('error');
       expect(result?.notFound).toBe(false);
     });
+
+    it('caches error and prevents repeated fetches for the same errored track within 60s', async () => {
+      const fetchMock = vi.fn().mockRejectedValue(new Error('503 Upstream Failure'));
+      global.fetch = fetchMock;
+
+      // First attempt triggers fetch and caches error
+      const first = await prefetchLyrics('flaky-track');
+      expect(first?.status).toBe('error');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      // Second attempt within 60s cooldown returns cached error without re-fetching
+      const second = await prefetchLyrics('flaky-track');
+      expect(second?.status).toBe('error');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('useLyricsScroll helpers', () => {

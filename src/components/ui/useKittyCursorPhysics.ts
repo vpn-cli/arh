@@ -93,10 +93,12 @@ export function useKittyCursorPhysics({
   const shrugAngleRef = useRef<number>(0);
   const isHoveringPrecisionRef = useRef<boolean>(false);
 
-  // Throttled particle spawn refs
+  // Throttled particle spawn & element check refs
   const lastHoverMode = useRef<CursorMode>("default");
   const lastParticleSpawn = useRef<number>(0);
   const lastParticlePos = useRef({ x: -100, y: -100 });
+  const pointerMovedRef = useRef<boolean>(false);
+  const lastElementCheckTime = useRef<number>(0);
 
   // 1. Resolve Active Expression
   const activeExpression = resolveKittyExpression({
@@ -112,14 +114,6 @@ export function useKittyCursorPhysics({
   const activeExpressionRef = useRef(activeExpression);
   activeExpressionRef.current = activeExpression;
 
-  // Development logger for expression transitions
-  useEffect(() => {
-    if (process.env.NODE_ENV !== "production") {
-      console.log(
-        `[HelloKittyCursor] activeExpression: "${activeExpression}" | coreFrame: "${activeCoreFrame}" | mode: "${activeMode}" | blinking: ${isBlinking} | sleep: ${isIdleSleep}`
-      );
-    }
-  }, [activeExpression, activeCoreFrame, activeMode, isBlinking, isIdleSleep]);
 
   // 2. Clean up timers and puzzle-solve event listener
   useEffect(() => {
@@ -218,6 +212,7 @@ export function useKittyCursorPhysics({
 
       coords.current.x = clientX;
       coords.current.y = clientY;
+      pointerMovedRef.current = true;
 
       // Zero-latency position write directly to DOM (NO RAF, NO spring, NO lerp)
       if (kittyRef.current) {
@@ -339,6 +334,25 @@ export function useKittyCursorPhysics({
       if (!isIdleSleepRef.current && now - lastPointerMoveTime.current > 8000) {
         isIdleSleepRef.current = true;
         setIsIdleSleep(true);
+      }
+
+      // Throttled elementFromPoint check (~100ms, only when pointer moved) to detect disabled/locked elements
+      if (pointerMovedRef.current && now - lastElementCheckTime.current >= 100) {
+        pointerMovedRef.current = false;
+        lastElementCheckTime.current = now;
+        if (typeof document !== "undefined") {
+          const el = document.elementFromPoint(coords.current.x, coords.current.y);
+          if (el) {
+            isHoveringPrecisionRef.current = !!el.closest(
+              "[data-precision='true'], .volume-slider, [role='slider'], .mw-volume-control button, .mw-volume-control input"
+            );
+            const resolved = resolveCursorState(el);
+            if (resolved !== lastHoverMode.current) {
+              setCursorMode(resolved);
+              lastHoverMode.current = resolved;
+            }
+          }
+        }
       }
 
       // 2. Velocity calculations for springs & glow snap

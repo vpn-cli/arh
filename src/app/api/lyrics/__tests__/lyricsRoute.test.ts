@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { GET, POST, PATCH } from '../route';
+import { GET, POST, PATCH, clearUpstreamErrorCooldown } from '../route';
 
 // Mock DB
 const mockInsert = vi.fn();
@@ -41,6 +41,7 @@ describe('Lyrics API Route (/api/lyrics)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    clearUpstreamErrorCooldown();
     process.env = { ...originalEnv, SCRAPBOOK_ADMIN_SECRET: 'test-admin-secret' };
   });
 
@@ -179,6 +180,42 @@ describe('Lyrics API Route (/api/lyrics)', () => {
       expect(json.error).toContain('server_error');
       // DB insert must never be called on upstream error
       expect(mockInsert).not.toHaveBeenCalled();
+    });
+
+    it('returns 503 from in-memory cooldown on subsequent requests within cooldown period without re-calling lookupLyrics', async () => {
+      mockSelect.mockReturnValue({
+        from: () => ({
+          where: () => ({
+            limit: () => [],
+          }),
+        }),
+      });
+
+      const { lookupLyrics } = await import('@/lib/lyricsLookup');
+      (lookupLyrics as any).mockResolvedValue({
+        result: null,
+        matchedStep: 'none',
+        hasUpstreamError: true,
+        upstreamError: 'timeout',
+      });
+
+      // First call hits lookupLyrics and fails
+      const req1 = new NextRequest(
+        'http://localhost:3000/api/lyrics?trackId=track-cooldown-1&title=TimeoutSong&artist=Artist'
+      );
+      const res1 = await GET(req1);
+      expect(res1.status).toBe(503);
+      expect(lookupLyrics).toHaveBeenCalledTimes(1);
+
+      // Second call within 60s cooldown returns 503 immediately without calling lookupLyrics again
+      const req2 = new NextRequest(
+        'http://localhost:3000/api/lyrics?trackId=track-cooldown-1&title=TimeoutSong&artist=Artist'
+      );
+      const res2 = await GET(req2);
+      const json2 = await res2.json();
+      expect(res2.status).toBe(503);
+      expect(json2.error).toContain('LRCLIB upstream cooldown: timeout');
+      expect(lookupLyrics).toHaveBeenCalledTimes(1);
     });
 
     it('rate-limits ?refresh=true if not_found entry was fetched within last 10 minutes', async () => {

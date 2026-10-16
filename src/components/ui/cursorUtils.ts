@@ -72,7 +72,7 @@ export function resolveCursorState(target: Element | null): CursorMode {
 
   // 1. PRIORITY 1: Disabled or locked elements (ALWAYS wins, even with data-cursor)
   const disabled = target.closest<HTMLElement>(
-    "button[disabled], input[disabled], select[disabled], textarea[disabled], [aria-disabled='true'], .cursor-not-allowed, [data-disabled='true'], [data-cursor='locked'], [data-cursor='disabled']"
+    "button[disabled], input[disabled], select[disabled], textarea[disabled], [disabled], :disabled, [aria-disabled='true'], .cursor-not-allowed, [data-disabled='true'], [data-cursor='locked'], [data-cursor='disabled']"
   );
   if (disabled) {
     return "disabled";

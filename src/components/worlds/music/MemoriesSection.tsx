@@ -168,7 +168,7 @@ export function MemoriesSection({
       )}
 
       {/* Scrapbook Grid: one column when narrow, two when wide */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-3 px-2 sm:px-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-3 px-3 sm:px-4">
         {memoriesWithDecor.map(({ memory, decor }) => {
           const entity = entityMap.get(memory.spotifyUri);
           return (

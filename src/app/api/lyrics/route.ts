@@ -7,6 +7,12 @@ import { cookies } from 'next/headers';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const TEN_MINUTES_MS = 10 * 60 * 1000;
+export const SERVER_UPSTREAM_COOLDOWN_MS = 60 * 1000;
+const upstreamErrorCooldown = new Map<string, { timestamp: number; error: string }>();
+
+export function clearUpstreamErrorCooldown() {
+  upstreamErrorCooldown.clear();
+}
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -90,6 +96,25 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Lyrics Cache] MISS for track "${trackId}"`);
 
+    // Check server-side in-memory cooldown for upstream errors (e.g. LRCLIB 5xx, 429, timeouts)
+    const cooldownEntry = upstreamErrorCooldown.get(trackId);
+    if (!isRefresh && cooldownEntry) {
+      if (Date.now() - cooldownEntry.timestamp < SERVER_UPSTREAM_COOLDOWN_MS) {
+        console.warn(`[Lyrics Upstream Cooldown] Track "${trackId}" is in server cooldown (${Math.round((SERVER_UPSTREAM_COOLDOWN_MS - (Date.now() - cooldownEntry.timestamp)) / 1000)}s remaining). Skipping LRCLIB.`);
+        return NextResponse.json({
+          status: 'upstream_error',
+          synced: null,
+          plain: null,
+          instrumental: false,
+          source: null,
+          notFound: false,
+          step: 'none',
+          error: `LRCLIB upstream cooldown: ${cooldownEntry.error}`,
+        }, { status: 503 });
+      }
+      upstreamErrorCooldown.delete(trackId);
+    }
+
     // 2. Fetch Track details (from query params if provided, or from Spotify API via proxy)
     let trackName = searchParams.get('title') || searchParams.get('track_name');
     let artistName = searchParams.get('artist') || searchParams.get('artist_name');
@@ -132,6 +157,7 @@ export async function GET(request: NextRequest) {
 
     // 4. Cache results in Neon
     if (result) {
+      upstreamErrorCooldown.delete(trackId);
       console.log(`[Lyrics Lookup] Track "${trackName}" (${trackId}) by "${artistName}": matched step ${matchedStep} (LRCLIB record id: ${lrclibRecordId ?? 'none'})`);
       const [savedRow] = await db
         .insert(lyricsCache)
@@ -171,6 +197,10 @@ export async function GET(request: NextRequest) {
     // If an upstream error occurred (timeout, 429, 5xx), NEVER cache as not_found!
     if (hasUpstreamError) {
       console.warn(`[Lyrics Lookup] Track "${trackName}" (${trackId}): upstream error (${upstreamError}). NOT caching as not_found.`);
+      upstreamErrorCooldown.set(trackId, {
+        timestamp: Date.now(),
+        error: upstreamError || 'upstream_error',
+      });
       const statusCode = upstreamError === 'rate_limited' ? 429 : 503;
       return NextResponse.json({
         status: 'upstream_error',
@@ -183,6 +213,8 @@ export async function GET(request: NextRequest) {
         error: `LRCLIB upstream failure: ${upstreamError}`,
       }, { status: statusCode });
     }
+
+    upstreamErrorCooldown.delete(trackId);
 
     // Clean "no results" response: safe to negative cache for 7 days
     console.log(`[Lyrics Lookup] Track "${trackName}" (${trackId}) by "${artistName}": matched step none (clean not found, LRCLIB record id: none) -> caching as not_found`);
@@ -299,6 +331,7 @@ export async function POST(req: NextRequest) {
       .returning({ offsetMs: lyricsCache.offsetMs });
 
     console.log(`[Lyrics Manual] Saved manual lyrics for track ${trackId} (synced: ${Boolean(synced)}, warning: ${warning || 'none'})`);
+    upstreamErrorCooldown.delete(trackId);
 
     return NextResponse.json({
       success: true,
