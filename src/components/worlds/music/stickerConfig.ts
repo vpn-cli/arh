@@ -13,6 +13,7 @@ export const moments = {
   queueEmpty: 'r5c3',
   searchEmpty: 'r5c1',
   lyricsMissing: 'r4c1',
+  lyricsNap: 'r5c3',
   loading: 'r2c3',
   error: 'r5c1',
   notFound: 'r5c1',

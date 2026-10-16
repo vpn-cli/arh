@@ -6,10 +6,12 @@ import { eq, sql } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const TEN_MINUTES_MS = 10 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const trackId = searchParams.get('trackId');
+  const isRefresh = searchParams.get('refresh') === 'true';
 
   if (!trackId) {
     return NextResponse.json({ error: 'Missing trackId' }, { status: 400 });
@@ -30,6 +32,7 @@ export async function GET(request: NextRequest) {
       if (row.source === 'manual') {
         console.log(`[Lyrics Cache] HIT for track "${trackId}" (source: manual)`);
         return NextResponse.json({
+          status: row.instrumental ? 'instrumental' : 'found',
           synced: row.synced ? parseLrc(row.synced) : null,
           plain: row.plain || null,
           instrumental: row.instrumental,
@@ -42,22 +45,39 @@ export async function GET(request: NextRequest) {
       // Check if negative (not_found) cache is still valid (< 7 days)
       if (row.source === 'not_found') {
         const age = Date.now() - new Date(row.fetchedAt).getTime();
-        if (age < SEVEN_DAYS_MS) {
-          console.log(`[Lyrics Cache] HIT for track "${trackId}" (source: not_found, cached)`);
+        // If refresh requested, enforce a 10-minute rate limit per track
+        if (isRefresh && age < TEN_MINUTES_MS) {
+          console.log(`[Lyrics Cache] RATE-LIMITED refresh for track "${trackId}" (last checked ${Math.round(age / 1000)}s ago)`);
           return NextResponse.json({
+            status: 'not_found',
             synced: null,
             plain: null,
             instrumental: false,
             source: 'not_found',
             notFound: true,
+            step: 'none',
             offsetMs: row.offsetMs ?? 0,
           });
         }
-        console.log(`[Lyrics Cache] EXPIRED negative cache for track "${trackId}" (> 7 days) -> retrying lookup`);
-        // If older than 7 days, proceed to re-query LRCLIB
+
+        if (!isRefresh && age < SEVEN_DAYS_MS) {
+          console.log(`[Lyrics Cache] HIT for track "${trackId}" (source: not_found, cached)`);
+          return NextResponse.json({
+            status: 'not_found',
+            synced: null,
+            plain: null,
+            instrumental: false,
+            source: 'not_found',
+            notFound: true,
+            step: 'none',
+            offsetMs: row.offsetMs ?? 0,
+          });
+        }
+        console.log(`[Lyrics Cache] ${isRefresh ? 'FORCED REFRESH' : 'EXPIRED negative cache'} for track "${trackId}" -> retrying lookup`);
       } else if (row.source === 'lrclib') {
         console.log(`[Lyrics Cache] HIT for track "${trackId}" (source: lrclib)`);
         return NextResponse.json({
+          status: row.instrumental ? 'instrumental' : 'found',
           synced: row.synced ? parseLrc(row.synced) : null,
           plain: row.plain || null,
           instrumental: row.instrumental,
@@ -137,6 +157,7 @@ export async function GET(request: NextRequest) {
         .returning({ offsetMs: lyricsCache.offsetMs });
 
       return NextResponse.json({
+        status: result.instrumental ? 'instrumental' : 'found',
         synced: result.syncedLyrics ? parseLrc(result.syncedLyrics) : null,
         plain: result.plainLyrics,
         instrumental: result.instrumental,
@@ -150,15 +171,17 @@ export async function GET(request: NextRequest) {
     // If an upstream error occurred (timeout, 429, 5xx), NEVER cache as not_found!
     if (hasUpstreamError) {
       console.warn(`[Lyrics Lookup] Track "${trackName}" (${trackId}): upstream error (${upstreamError}). NOT caching as not_found.`);
+      const statusCode = upstreamError === 'rate_limited' ? 429 : 503;
       return NextResponse.json({
+        status: 'upstream_error',
         synced: null,
         plain: null,
         instrumental: false,
         source: null,
-        notFound: true,
+        notFound: false,
         step: 'none',
         error: `LRCLIB upstream failure: ${upstreamError}`,
-      }, { status: 503 });
+      }, { status: statusCode });
     }
 
     // Clean "no results" response: safe to negative cache for 7 days
@@ -187,6 +210,7 @@ export async function GET(request: NextRequest) {
       .returning({ offsetMs: lyricsCache.offsetMs });
 
     return NextResponse.json({
+      status: 'not_found',
       synced: null,
       plain: null,
       instrumental: false,

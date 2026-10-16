@@ -257,5 +257,100 @@ describe('lyricsLookup error handling and failure detection', () => {
       global.fetch = originalFetch;
     }
   });
+
+  it('does NOT latch upstream error if search cleanly completes with 200 OK empty array', async () => {
+    const originalFetch = global.fetch;
+    // Step a/b /api/get fails with 500, but /api/search succeeds with 200 []
+    global.fetch = async (url: any) => {
+      if (String(url).includes('/api/get')) {
+        return new Response('Server Busy', { status: 503 }) as any;
+      }
+      return new Response(JSON.stringify([]), { status: 200, headers: { 'Content-Type': 'application/json' } }) as any;
+    };
+
+    try {
+      const outcome = await (await import('../lyricsLookup')).lookupLyrics({
+        trackId: 'test_unlatch',
+        title: 'Rare Track',
+        artist: 'Indie Artist',
+        durationSec: 180,
+      });
+
+      expect(outcome.hasUpstreamError).toBe(false);
+      expect(outcome.matchedStep).toBe('none');
+      expect(outcome.result).toBeNull();
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  it('retries transient 503 and succeeds on attempt 2', async () => {
+    const originalFetch = global.fetch;
+    let calls = 0;
+    global.fetch = async () => {
+      calls++;
+      if (calls === 1) {
+        return new Response('Overloaded', { status: 503 }) as any;
+      }
+      return new Response(
+        JSON.stringify({
+          id: 1234,
+          trackName: 'Track One',
+          artistName: 'Artist One',
+          plainLyrics: 'La la la',
+          duration: 180,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      ) as any;
+    };
+
+    try {
+      const outcome = await (await import('../lyricsLookup')).lookupLyrics({
+        trackId: 'test_retry_success',
+        title: 'Track One',
+        artist: 'Artist One',
+        durationSec: 180,
+      });
+
+      expect(outcome.hasUpstreamError).toBe(false);
+      expect(outcome.matchedStep).toBe('b');
+      expect(outcome.result?.plainLyrics).toBe('La la la');
+      expect(calls).toBe(2);
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+});
+
+describe('lyricsLookup suffix stripping and tempo modified titles', () => {
+  it('strips verses and remixes correctly', async () => {
+    const { cleanTrackTitle } = await import('../lyricsLookup');
+    expect(cleanTrackTitle('Duniya - Talwiinder Verse')).toBe('Duniya');
+    expect(cleanTrackTitle('Kesariya (Arijit Singh Verse)')).toBe('Kesariya');
+    expect(cleanTrackTitle('Starboy - Kygo Remix')).toBe('Starboy');
+    expect(cleanTrackTitle('Shape of You (Club Remix)')).toBe('Shape of You');
+  });
+
+  it('detects tempo modified titles and only returns plain lyrics', async () => {
+    const { isTempoModifiedTitle, processCandidateLyrics, cleanTrackTitle } = await import('../lyricsLookup');
+    expect(isTempoModifiedTitle('After Hours - Slowed + Reverb')).toBe(true);
+    expect(isTempoModifiedTitle('Starboy (Nightcore)')).toBe(true);
+    expect(isTempoModifiedTitle('Blinding Lights (Sped Up)')).toBe(true);
+    expect(isTempoModifiedTitle('Yellow')).toBe(false);
+
+    expect(cleanTrackTitle('After Hours - Slowed + Reverb')).toBe('After Hours');
+
+    const candidate = {
+      trackName: 'After Hours',
+      artistName: 'The Weeknd',
+      duration: 360,
+      syncedLyrics: '[00:10.00] Thought I almost died',
+      plainLyrics: 'Thought I almost died',
+    };
+
+    const processed = processCandidateLyrics(candidate, 360, true);
+    expect(processed.syncedLyrics).toBeNull();
+    expect(processed.plainLyrics).toBe('Thought I almost died');
+  });
 });
 

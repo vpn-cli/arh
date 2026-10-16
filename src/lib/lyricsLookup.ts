@@ -34,7 +34,7 @@ export type ChainStep = 'a' | 'b' | 'c' | 'd' | 'none';
 
 /**
  * Strips featuring artists, remasters, radio edits, single versions,
- * live recordings, and edition suffixes from a track title.
+ * live recordings, edition, verse, remix, and tempo modification suffixes from a track title.
  */
 export function cleanTrackTitle(title: string): string {
   if (!title) return '';
@@ -61,10 +61,31 @@ export function cleanTrackTitle(title: string): string {
   // 5. Strip bonus track / deluxe / anniversary edition markers
   cleaned = cleaned.replace(/\s*[\(\[].*?\b(?:bonus track|deluxe edition|anniversary edition|mono|stereo)\b.*?[\)\]]/gi, '');
 
-  // 6. Clean up trailing dashes, symbols, or excessive whitespace
+  // 6. Strip verse markers: "- Talwiinder Verse", "- ... Verse", "(... Verse)"
+  cleaned = cleaned.replace(/\s*-\s*.*?\bverse\b.*$/gi, '');
+  cleaned = cleaned.replace(/\s*[\(\[].*?\bverse\b.*?[\)\]]/gi, '');
+
+  // 7. Strip remix markers: "- ... Remix", "(... Remix)"
+  cleaned = cleaned.replace(/\s*-\s*.*?\bremix\b.*$/gi, '');
+  cleaned = cleaned.replace(/\s*[\(\[].*?\bremix\b.*?[\)\]]/gi, '');
+
+  // 8. Strip acoustic / slowed / reverb / sped up markers
+  cleaned = cleaned.replace(/\s*-\s*.*?\b(?:slowed(?:\s*\+\s*reverb)?|reverb|sped\s*up|speed(?:\s*ed)?\s*up|nightcore|daycore|acoustic)\b.*$/gi, '');
+  cleaned = cleaned.replace(/\s*[\(\[].*?\b(?:slowed(?:\s*\+\s*reverb)?|reverb|sped\s*up|speed(?:\s*ed)?\s*up|nightcore|daycore|acoustic)\b.*?[\)\]]/gi, '');
+
+  // 9. Clean up trailing dashes, symbols, or excessive whitespace
   cleaned = cleaned.replace(/\s*-\s*$/, '').replace(/\s+/g, ' ').trim();
 
   return cleaned || title.trim();
+}
+
+/**
+ * Checks if the title indicates tempo modifications (slowed, reverb, sped up, nightcore).
+ * When true, synced lyrics must never be used because the audio timestamps will not align.
+ */
+export function isTempoModifiedTitle(title: string): boolean {
+  if (!title) return false;
+  return /\b(?:slowed|reverb|sped\s*up|speed(?:\s*ed)?\s*up|nightcore|daycore)\b/i.test(title);
 }
 
 /**
@@ -245,18 +266,30 @@ export function pickBestSearchResult(
 }
 
 /**
- * Applies the 3-second duration threshold:
- * If duration difference > 3 seconds, discard syncedLyrics and keep only plainLyrics.
+ * Applies duration threshold and tempo check:
+ * - If isTempoModified is true: drop syncedLyrics (keep plain).
+ * - If duration difference > 3 seconds, discard syncedLyrics and keep only plainLyrics.
  */
 export function processCandidateLyrics(
   candidate: LrclibTrack,
-  spotifyDurationSec: number
+  spotifyDurationSec: number,
+  isTempoModified: boolean = false
 ): ProcessedLyrics {
   if (candidate.instrumental) {
     return {
       syncedLyrics: null,
       plainLyrics: null,
       instrumental: true,
+    };
+  }
+
+  // Tempo modified songs (slowed/reverb/sped up) must never use synced lyrics
+  if (isTempoModified) {
+    const plain = candidate.plainLyrics || (candidate.syncedLyrics ? extractPlainFromLrc(candidate.syncedLyrics) : null);
+    return {
+      syncedLyrics: null,
+      plainLyrics: plain,
+      instrumental: false,
     };
   }
 
@@ -280,7 +313,8 @@ export function processCandidateLyrics(
   };
 }
 
-const LRCLIB_USER_AGENT = 'Arh-Music-Player (https://github.com/vipin/arh)';
+const LRCLIB_USER_AGENT = 'punkrose.fm/1.0 (+https://github.com/vipin/arh)';
+const TOTAL_LOOKUP_BUDGET_MS = 8000;
 
 export type UpstreamErrorKind = 'timeout' | 'rate_limited' | 'server_error' | 'network_error';
 
@@ -292,102 +326,133 @@ export interface LookupOutcome {
   lrclibRecordId?: number;
 }
 
+interface FetchResult<T> {
+  status: 'hit' | 'not_found' | 'error';
+  data?: T;
+  error?: UpstreamErrorKind;
+}
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
- * Executes the 4-step LRCLIB lookup chain:
- * a. /api/get with track, artist, album, duration
- * b. /api/get again without album
- * c. /api/search with cleaned track_name and primary artist_name
- * d. /api/search with q = cleaned title + primary artist
- *
- * Tracks upstream failures (timeout, 429, 5xx) so they are NEVER cached as negative not_found.
+ * Makes an HTTP request to LRCLIB with:
+ * - Deadline enforcement (skips if remaining budget < 600ms)
+ * - Individual timeout capped at Math.min(3000ms, remainingBudget)
+ * - At most 1 retry with jittered backoff for 5xx and timeouts only
+ * - Immediate handling of 429 Retry-After header
  */
-export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
-  const { title, artist, album, durationSec } = query;
-  const cleanedTitle = cleanTrackTitle(title);
-  const primaryArtist = getPrimaryArtist(artist);
+async function fetchLrclibWithRetry<T>(
+  url: string,
+  deadline: number,
+  isSearch: boolean = false
+): Promise<FetchResult<T>> {
+  for (let attempt = 0; attempt <= 1; attempt++) {
+    const remaining = deadline - Date.now();
+    if (remaining < 600) {
+      return { status: 'error', error: 'timeout' };
+    }
 
-  let encounteredError: UpstreamErrorKind | undefined = undefined;
+    const timeoutMs = Math.min(3000, remaining);
 
-  // Helper for /api/get
-  const fetchGet = async (
-    params: Record<string, string>
-  ): Promise<{ status: 'hit' | 'not_found' | 'error'; data?: LrclibTrack; error?: UpstreamErrorKind }> => {
     try {
-      const url = `https://lrclib.net/api/get?${new URLSearchParams(params).toString()}`;
       const res = await fetch(url, {
         headers: { 'User-Agent': LRCLIB_USER_AGENT },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(timeoutMs),
       });
 
       if (res.status === 200) {
-        const data: LrclibTrack = await res.json();
+        const json = await res.json();
+        if (isSearch) {
+          return { status: 'hit', data: Array.isArray(json) ? (json as any) : [] };
+        }
         if (
-          data &&
-          (data.instrumental ||
-            (data.syncedLyrics && data.syncedLyrics.trim().length > 0) ||
-            (data.plainLyrics && data.plainLyrics.trim().length > 0))
+          json &&
+          (json.instrumental ||
+            (json.syncedLyrics && json.syncedLyrics.trim().length > 0) ||
+            (json.plainLyrics && json.plainLyrics.trim().length > 0))
         ) {
-          return { status: 'hit', data };
+          return { status: 'hit', data: json as any };
         }
         return { status: 'not_found' };
       }
 
       if (res.status === 404) {
-        return { status: 'not_found' };
+        return isSearch ? { status: 'hit', data: [] as any } : { status: 'not_found' };
       }
 
       if (res.status === 429) {
-        return { status: 'error', error: 'rate_limited' };
+        const retryAfterHeader = res.headers.get('Retry-After');
+        const retryAfterSec = retryAfterHeader ? parseInt(retryAfterHeader, 10) : 2;
+        const retryAfterMs = (isNaN(retryAfterSec) ? 2 : retryAfterSec) * 1000;
+
+        if (attempt >= 1 || Date.now() + retryAfterMs > deadline) {
+          return { status: 'error', error: 'rate_limited' };
+        }
+        await sleep(retryAfterMs);
+        continue;
       }
 
+      // 5xx server error
       if (res.status >= 500) {
+        if (attempt === 0) {
+          const remainingAfter = deadline - Date.now();
+          if (remainingAfter > 1200) {
+            const jitter = 400 + Math.floor(Math.random() * 200);
+            await sleep(jitter);
+            continue;
+          }
+        }
         return { status: 'error', error: 'server_error' };
       }
 
       return { status: 'error', error: 'server_error' };
     } catch (e: any) {
-      if (e?.name === 'TimeoutError' || e?.name === 'AbortError') {
-        return { status: 'error', error: 'timeout' };
+      const isTimeout = e?.name === 'TimeoutError' || e?.name === 'AbortError';
+      if (attempt === 0) {
+        const remainingAfter = deadline - Date.now();
+        if (remainingAfter > 1200) {
+          const jitter = 400 + Math.floor(Math.random() * 200);
+          await sleep(jitter);
+          continue;
+        }
       }
-      return { status: 'error', error: 'network_error' };
+      return { status: 'error', error: isTimeout ? 'timeout' : 'network_error' };
     }
+  }
+
+  return { status: 'error', error: 'timeout' };
+}
+
+/**
+ * Executes the 4-step LRCLIB lookup chain:
+ * a. /api/get with track, artist, album, duration (with primary artist fallback)
+ * b. /api/get without album (with primary artist fallback)
+ * c. /api/search with cleaned track_name and primary artist_name
+ * d. /api/search with q = cleaned title + primary artist
+ *
+ * Enforces an overall 8s budget deadline and tracks upstream failures so they are NEVER cached as negative not_found.
+ */
+export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
+  const { title, artist, album, durationSec } = query;
+  const cleanedTitle = cleanTrackTitle(title);
+  const primaryArtist = getPrimaryArtist(artist);
+  const isTempoModified = isTempoModifiedTitle(title);
+
+  const deadline = Date.now() + TOTAL_LOOKUP_BUDGET_MS;
+  let encounteredError: UpstreamErrorKind | undefined = undefined;
+
+  // Helper for /api/get
+  const fetchGet = async (params: Record<string, string>): Promise<FetchResult<LrclibTrack>> => {
+    const url = `https://lrclib.net/api/get?${new URLSearchParams(params).toString()}`;
+    return fetchLrclibWithRetry<LrclibTrack>(url, deadline, false);
   };
 
   // Helper for /api/search
-  const fetchSearch = async (
-    params: Record<string, string>
-  ): Promise<{ status: 'hit' | 'not_found' | 'error'; data?: LrclibTrack[]; error?: UpstreamErrorKind }> => {
-    try {
-      const url = `https://lrclib.net/api/search?${new URLSearchParams(params).toString()}`;
-      const res = await fetch(url, {
-        headers: { 'User-Agent': LRCLIB_USER_AGENT },
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (res.status === 200) {
-        const data = await res.json();
-        return { status: 'hit', data: Array.isArray(data) ? data : [] };
-      }
-
-      if (res.status === 404) {
-        return { status: 'not_found', data: [] };
-      }
-
-      if (res.status === 429) {
-        return { status: 'error', error: 'rate_limited' };
-      }
-
-      if (res.status >= 500) {
-        return { status: 'error', error: 'server_error' };
-      }
-
-      return { status: 'error', error: 'server_error' };
-    } catch (e: any) {
-      if (e?.name === 'TimeoutError' || e?.name === 'AbortError') {
-        return { status: 'error', error: 'timeout' };
-      }
-      return { status: 'error', error: 'network_error' };
-    }
+  const fetchSearch = async (params: Record<string, string>): Promise<FetchResult<LrclibTrack[]>> => {
+    const url = `https://lrclib.net/api/search?${new URLSearchParams(params).toString()}`;
+    return fetchLrclibWithRetry<LrclibTrack[]>(url, deadline, true);
   };
 
   // Step a: /api/get with track, artist, album, duration
@@ -400,13 +465,31 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
     });
     if (resA.status === 'hit' && resA.data) {
       return {
-        result: processCandidateLyrics(resA.data, durationSec),
+        result: processCandidateLyrics(resA.data, durationSec, isTempoModified),
         matchedStep: 'a',
         hasUpstreamError: false,
         lrclibRecordId: resA.data.id,
       };
     } else if (resA.status === 'error') {
       encounteredError = resA.error;
+    } else if (resA.status === 'not_found' && primaryArtist && primaryArtist !== artist) {
+      // Primary artist fallback for step a
+      const resAFallback = await fetchGet({
+        track_name: cleanedTitle,
+        artist_name: primaryArtist,
+        album_name: album,
+        duration: durationSec.toString(),
+      });
+      if (resAFallback.status === 'hit' && resAFallback.data) {
+        return {
+          result: processCandidateLyrics(resAFallback.data, durationSec, isTempoModified),
+          matchedStep: 'a',
+          hasUpstreamError: false,
+          lrclibRecordId: resAFallback.data.id,
+        };
+      } else if (resAFallback.status === 'error') {
+        encounteredError = resAFallback.error;
+      }
     }
   }
 
@@ -418,14 +501,34 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
   });
   if (resB.status === 'hit' && resB.data) {
     return {
-      result: processCandidateLyrics(resB.data, durationSec),
+      result: processCandidateLyrics(resB.data, durationSec, isTempoModified),
       matchedStep: 'b',
       hasUpstreamError: false,
       lrclibRecordId: resB.data.id,
     };
   } else if (resB.status === 'error') {
     encounteredError = resB.error;
+  } else if (resB.status === 'not_found' && primaryArtist && primaryArtist !== artist) {
+    // Primary artist fallback for step b
+    const resBFallback = await fetchGet({
+      track_name: cleanedTitle,
+      artist_name: primaryArtist,
+      duration: durationSec.toString(),
+    });
+    if (resBFallback.status === 'hit' && resBFallback.data) {
+      return {
+        result: processCandidateLyrics(resBFallback.data, durationSec, isTempoModified),
+        matchedStep: 'b',
+        hasUpstreamError: false,
+        lrclibRecordId: resBFallback.data.id,
+      };
+    } else if (resBFallback.status === 'error') {
+      encounteredError = resBFallback.error;
+    }
   }
+
+  // Search steps: track whether at least one search query ran and succeeded cleanly
+  let searchCleanHitOrMiss = false;
 
   // Step c: /api/search with track_name and artist_name
   const resC = await fetchSearch({
@@ -433,6 +536,7 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
     artist_name: primaryArtist,
   });
   if (resC.status === 'hit' && resC.data) {
+    searchCleanHitOrMiss = true;
     const bestC = pickBestSearchResult(resC.data, {
       title: cleanedTitle,
       artist: primaryArtist,
@@ -440,7 +544,7 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
     });
     if (bestC) {
       return {
-        result: processCandidateLyrics(bestC, durationSec),
+        result: processCandidateLyrics(bestC, durationSec, isTempoModified),
         matchedStep: 'c',
         hasUpstreamError: false,
         lrclibRecordId: bestC.id,
@@ -455,6 +559,7 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
     q: `${cleanedTitle} ${primaryArtist}`.trim(),
   });
   if (resD.status === 'hit' && resD.data) {
+    searchCleanHitOrMiss = true;
     const bestD = pickBestSearchResult(resD.data, {
       title: cleanedTitle,
       artist: primaryArtist,
@@ -462,7 +567,7 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
     });
     if (bestD) {
       return {
-        result: processCandidateLyrics(bestD, durationSec),
+        result: processCandidateLyrics(bestD, durationSec, isTempoModified),
         matchedStep: 'd',
         hasUpstreamError: false,
         lrclibRecordId: bestD.id,
@@ -472,13 +577,23 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
     encounteredError = resD.error;
   }
 
-  // If no hit was found, check whether an upstream error occurred during lookup
-  if (encounteredError) {
+  // If a search step cleanly succeeded (200 OK array with no matches),
+  // then the song is truly not found, regardless of any earlier transient /api/get 5xx.
+  if (searchCleanHitOrMiss) {
+    return {
+      result: null,
+      matchedStep: 'none',
+      hasUpstreamError: false,
+    };
+  }
+
+  // If no hit was found and search couldn't cleanly run (all errored or budget ran out), report upstream error
+  if (encounteredError || Date.now() >= deadline) {
     return {
       result: null,
       matchedStep: 'none',
       hasUpstreamError: true,
-      upstreamError: encounteredError,
+      upstreamError: encounteredError || 'timeout',
     };
   }
 

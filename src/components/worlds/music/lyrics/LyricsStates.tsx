@@ -158,12 +158,16 @@ export function LyricsNotFoundView({
   albumArt,
   editMode,
   onAddLyrics,
+  onRecheck,
+  isRechecking,
 }: {
   trackName?: string;
   artistName?: string;
   albumArt?: string | null;
   editMode: boolean;
   onAddLyrics: () => void;
+  onRecheck?: () => void;
+  isRechecking?: boolean;
 }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center py-12 px-4 select-none min-h-[300px]">
@@ -201,6 +205,71 @@ export function LyricsNotFoundView({
           + ADD LYRICS
         </button>
       )}
+      {onRecheck && (
+        <button
+          onClick={onRecheck}
+          disabled={isRechecking}
+          className="mt-3 font-pixel text-caption text-[var(--color-text-muted)] hover:text-[var(--color-dark)] underline transition-colors disabled:opacity-50"
+        >
+          {isRechecking ? 'Checking LRCLIB...' : 'Re-check LRCLIB'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function LyricsErrorView({
+  trackName,
+  artistName,
+  albumArt,
+  onRetry,
+  isRetrying,
+}: {
+  trackName?: string;
+  artistName?: string;
+  albumArt?: string | null;
+  onRetry: () => void;
+  isRetrying?: boolean;
+}) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center text-center py-12 px-4 select-none min-h-[300px]">
+      <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-2xl overflow-hidden border-3 border-[var(--color-dark)] shadow-[4px_4px_0_var(--color-dark)] mb-4 bg-[var(--color-light)]">
+        <img
+          src={albumArt || '/soundscape_ref/finalui.png'}
+          alt={trackName || 'Album Art'}
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <h4
+        className="font-pixel text-body sm:text-title font-bold text-[var(--color-dark)] mb-0.5 max-w-xs truncate"
+        title={trackName}
+      >
+        {trackName || 'Unknown Track'}
+      </h4>
+      <p className="font-pixel text-caption text-[var(--color-text-muted)] mb-3 max-w-xs truncate">
+        {artistName || 'Unknown Artist'}
+      </p>
+      <div className="flex flex-col items-center gap-2 mb-5">
+        <MomentSticker
+          moment="lyricsNap"
+          size={64}
+          fallback={<div className="text-heading text-[var(--color-dark)]">(ᴗ˳ᴗ) zzZ</div>}
+        />
+        <span className="font-pixel text-body text-[var(--color-dark)] font-bold">
+          Lyrics are taking a nap
+        </span>
+        <span className="font-pixel text-caption text-[var(--color-text-muted)] max-w-xs">
+          LRCLIB is taking a quick breather. Give it another moment.
+        </span>
+      </div>
+      <button
+        data-cursor="music"
+        onClick={onRetry}
+        disabled={isRetrying}
+        className="border-3 border-[var(--color-dark)] px-5 py-2.5 font-pixel text-caption font-bold shadow-[3px_3px_0_var(--color-dark)] hover:-translate-y-0.5 hover:shadow-[3px_5px_0_var(--color-dark)] transition-all bg-[var(--color-light)] text-[var(--color-dark)] active:scale-95 disabled:opacity-50"
+      >
+        {isRetrying ? 'RETRIEVING...' : 'TRY AGAIN'}
+      </button>
     </div>
   );
 }

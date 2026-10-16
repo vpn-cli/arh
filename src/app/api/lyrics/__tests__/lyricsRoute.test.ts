@@ -149,6 +149,119 @@ describe('Lyrics API Route (/api/lyrics)', () => {
         expect.stringContaining('LRCLIB record id: 98765')
       );
     });
+
+    it('returns 503 with status: upstream_error and notFound: false on upstream error', async () => {
+      mockSelect.mockReturnValue({
+        from: () => ({
+          where: () => ({
+            limit: () => [],
+          }),
+        }),
+      });
+
+      const { lookupLyrics } = await import('@/lib/lyricsLookup');
+      (lookupLyrics as any).mockResolvedValue({
+        result: null,
+        matchedStep: 'none',
+        hasUpstreamError: true,
+        upstreamError: 'server_error',
+      });
+
+      const req = new NextRequest(
+        'http://localhost:3000/api/lyrics?trackId=track-error-1&title=ErrorSong&artist=ErrorArtist'
+      );
+      const res = await GET(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(503);
+      expect(json.status).toBe('upstream_error');
+      expect(json.notFound).toBe(false);
+      expect(json.error).toContain('server_error');
+      // DB insert must never be called on upstream error
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
+
+    it('rate-limits ?refresh=true if not_found entry was fetched within last 10 minutes', async () => {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      mockSelect.mockReturnValue({
+        from: () => ({
+          where: () => ({
+            limit: () => [
+              {
+                spotifyId: 'track-nf-recent',
+                source: 'not_found',
+                synced: null,
+                plain: null,
+                instrumental: false,
+                fetchedAt: fiveMinutesAgo,
+                offsetMs: 0,
+              },
+            ],
+          }),
+        }),
+      });
+
+      const { lookupLyrics } = await import('@/lib/lyricsLookup');
+
+      const req = new NextRequest(
+        'http://localhost:3000/api/lyrics?trackId=track-nf-recent&title=Song&artist=Artist&refresh=true'
+      );
+      const res = await GET(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json.notFound).toBe(true);
+      expect(json.status).toBe('not_found');
+      // lookupLyrics should not be called because refresh is rate-limited (< 10 min)
+      expect(lookupLyrics).not.toHaveBeenCalled();
+    });
+
+    it('allows ?refresh=true if not_found entry is older than 10 minutes', async () => {
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+      mockSelect.mockReturnValue({
+        from: () => ({
+          where: () => ({
+            limit: () => [
+              {
+                spotifyId: 'track-nf-old',
+                source: 'not_found',
+                synced: null,
+                plain: null,
+                instrumental: false,
+                fetchedAt: fifteenMinutesAgo,
+                offsetMs: 0,
+              },
+            ],
+          }),
+        }),
+      });
+
+      const { lookupLyrics } = await import('@/lib/lyricsLookup');
+      (lookupLyrics as any).mockResolvedValue({
+        result: null,
+        matchedStep: 'none',
+        hasUpstreamError: false,
+      });
+
+      mockInsert.mockReturnValue({
+        values: () => ({
+          onConflictDoUpdate: () => ({
+            returning: () => [{ offsetMs: 0 }],
+          }),
+        }),
+      });
+
+      const req = new NextRequest(
+        'http://localhost:3000/api/lyrics?trackId=track-nf-old&title=Song&artist=Artist&refresh=true'
+      );
+      const res = await GET(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json.notFound).toBe(true);
+      // lookupLyrics was called because age > 10 min
+      expect(lookupLyrics).toHaveBeenCalled();
+    });
   });
 
   describe('PATCH /api/lyrics', () => {

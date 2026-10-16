@@ -1,13 +1,18 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { attachEstimatedWordTimings, LyricLine } from '@/lib/lyrics';
 
+export type LyricsStatus = 'loading' | 'found' | 'instrumental' | 'not_found' | 'error';
+
 export interface LyricsData {
+  status?: LyricsStatus;
   synced: LyricLine[] | null;
   plain: string | null;
   instrumental?: boolean;
   notFound?: boolean;
   source?: string;
   offsetMs?: number;
+  error?: string;
+  errorTimestamp?: number;
 }
 
 const lyricsCache: Record<string, LyricsData | null> = {};
@@ -43,14 +48,26 @@ export function applyLyricsOffset(
 export async function prefetchLyrics(
   trackId: string,
   trackName?: string,
-  artistName?: string
+  artistName?: string,
+  forceRefresh: boolean = false
 ): Promise<LyricsData | null> {
   if (!trackId) return null;
-  if (lyricsCache[trackId] !== undefined) {
-    return lyricsCache[trackId];
+
+  if (!forceRefresh && lyricsCache[trackId] !== undefined) {
+    const cached = lyricsCache[trackId];
+    if (cached?.status === 'error') {
+      const errorAge = Date.now() - (cached.errorTimestamp || 0);
+      if (errorAge < 60000) {
+        return cached;
+      }
+      delete lyricsCache[trackId];
+    } else {
+      return cached;
+    }
   }
+
   const pending = pendingRequests[trackId];
-  if (pending) {
+  if (pending && !forceRefresh) {
     return pending;
   }
 
@@ -59,6 +76,7 @@ export async function prefetchLyrics(
       const params = new URLSearchParams({ trackId });
       if (trackName) params.set('title', trackName);
       if (artistName) params.set('artist', artistName);
+      if (forceRefresh) params.set('refresh', 'true');
 
       const res = await fetch(`/api/lyrics?${params.toString()}`);
       if (res.ok) {
@@ -72,12 +90,38 @@ export async function prefetchLyrics(
         lyricsCache[trackId] = data;
         return data;
       }
+
+      // Upstream or HTTP error (e.g. 503, 429, 500)
+      const errBody = await res.json().catch(() => ({}));
+      const errData: LyricsData = {
+        status: 'error',
+        synced: null,
+        plain: null,
+        instrumental: false,
+        notFound: false,
+        error: errBody?.error || `Failed to fetch lyrics (${res.status})`,
+        errorTimestamp: Date.now(),
+        offsetMs: 0,
+      };
+      lyricsCache[trackId] = errData;
+      return errData;
     } catch (e) {
       console.error(e);
+      const errData: LyricsData = {
+        status: 'error',
+        synced: null,
+        plain: null,
+        instrumental: false,
+        notFound: false,
+        error: 'Network connection error',
+        errorTimestamp: Date.now(),
+        offsetMs: 0,
+      };
+      lyricsCache[trackId] = errData;
+      return errData;
     } finally {
       delete pendingRequests[trackId];
     }
-    return null;
   })();
 
   pendingRequests[trackId] = promise;
@@ -150,6 +194,16 @@ export function useLyrics(
     }
   }, []);
 
+  const retryLyrics = useCallback(async () => {
+    if (!trackId) return;
+    clearCachedLyrics(trackId);
+    setIsLyricsLoading(true);
+    const data = await prefetchLyrics(trackId, trackName, artistName, true);
+    setBaseLyricsData(data);
+    setOffsetMsState(data?.offsetMs ?? 0);
+    setIsLyricsLoading(false);
+  }, [trackId, trackName, artistName]);
+
   useEffect(() => {
     if (!trackId || lyricsCache[trackId] !== undefined) {
       return;
@@ -185,5 +239,6 @@ export function useLyrics(
     isLyricsLoading,
     offsetMs,
     setOffsetMs,
+    retryLyrics,
   };
 }

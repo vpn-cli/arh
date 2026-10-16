@@ -4,7 +4,7 @@ import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { useLyrics } from './useLyrics';
 import { useLyricsScroll, findActiveLyricIndex, syncActiveLineWordDelays } from './useLyricsScroll';
 import { LyricLines } from './LyricLines';
-import { LyricsLoadingView, LyricsInstrumentalView, LyricsPlainView, LyricsNotFoundView } from './LyricsStates';
+import { LyricsLoadingView, LyricsInstrumentalView, LyricsPlainView, LyricsNotFoundView, LyricsErrorView } from './LyricsStates';
 import { AddLyricsModal } from './AddLyricsModal';
 import { SyncOffsetControl } from './SyncOffsetControl';
 import { CloseIcon, ChevronDownIcon } from '../icons';
@@ -29,9 +29,7 @@ export interface LyricsViewHandle {
 }
 
 /**
- * Breakpoint where LyricsView shifts from covering the right player panel
- * (max-lg:w-[380px] max-lg:right-0) to covering the center main content area
- * (lg:left-[var(--sidebar-width)] lg:right-[400px]). Matches the `lg:` Tailwind classes below.
+ * Breakpoint where LyricsView shifts from covering right player panel to center main content.
  */
 export const LYRICS_OVERLAY_COVERS_CONTENT_MIN_WIDTH = 1024;
 
@@ -45,7 +43,7 @@ export const LyricsView = React.memo(
     { trackId, trackDisplay, isPaused, getPositionMs, onSeek, onClose },
     ref
   ) {
-    const { lyricsData, setLyricsData, isLyricsLoading, offsetMs, setOffsetMs } =
+    const { lyricsData, setLyricsData, isLyricsLoading, offsetMs, setOffsetMs, retryLyrics } =
       useLyrics(trackId, trackDisplay?.name, trackDisplay?.artists);
     const playerDuration = useSpotifyPlayerStore((s) => s.duration);
     const [activeLyricIndex, setActiveLyricIndex] = useState<number>(-1);
@@ -314,6 +312,14 @@ export const LyricsView = React.memo(
         >
           {isLyricsLoading ? (
             <LyricsLoadingView />
+          ) : lyricsData?.status === 'error' ? (
+            <LyricsErrorView
+              trackName={trackDisplay.name}
+              artistName={trackDisplay.artists}
+              albumArt={trackDisplay.art}
+              onRetry={retryLyrics}
+              isRetrying={isLyricsLoading}
+            />
           ) : lyricsData?.synced && lyricsData.synced.length > 0 ? (
             <LyricLines
               lines={lyricsData.synced}
@@ -346,6 +352,8 @@ export const LyricsView = React.memo(
               albumArt={trackDisplay.art}
               editMode={editMode}
               onAddLyrics={() => openAddLyrics('')}
+              onRecheck={retryLyrics}
+              isRechecking={isLyricsLoading}
             />
           )}
         </div>

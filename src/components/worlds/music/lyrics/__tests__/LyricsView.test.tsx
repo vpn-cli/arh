@@ -36,10 +36,12 @@ describe('Lyrics Modules & Extraction', () => {
       expect(cached).toEqual(result);
     });
 
-    it('returns null and does not throw if fetch fails', async () => {
+    it('returns error status and does not throw if fetch fails', async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
       const result = await prefetchLyrics('failed-track');
-      expect(result).toBeNull();
+      expect(result).toBeDefined();
+      expect(result?.status).toBe('error');
+      expect(result?.notFound).toBe(false);
     });
   });
 
@@ -197,6 +199,31 @@ describe('Lyrics Modules & Extraction', () => {
 
       expect(screen.getByText('No lyrics found for this track')).toBeDefined();
       expect(screen.getByText('Song Title')).toBeDefined();
+    });
+
+    it('renders error view when lyrics status is error', async () => {
+      const trackId = 'error-track';
+      setCachedLyrics(trackId, {
+        status: 'error',
+        synced: null,
+        plain: null,
+        error: 'LRCLIB upstream failure: server_error',
+        notFound: false,
+      });
+
+      render(
+        <LyricsView
+          trackId={trackId}
+          trackDisplay={mockTrackDisplay}
+          isPaused={false}
+          getPositionMs={() => 0}
+          onSeek={vi.fn()}
+          onClose={vi.fn()}
+        />
+      );
+
+      expect(screen.getByText('Lyrics are taking a nap')).toBeDefined();
+      expect(screen.getByText('TRY AGAIN')).toBeDefined();
     });
   });
 });
