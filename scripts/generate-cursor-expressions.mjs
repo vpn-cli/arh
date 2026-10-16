@@ -40,12 +40,12 @@ const SOURCE_PIN = "public/hampter/hello_kitty_pin.png";
 const CUSTOM_SOURCE_DIR = "public/hampter/cursor/source";
 const OUTPUT_DIR = "public/hampter/cursor";
 
-// Target width = 96. Target height = Math.round(96 * 358 / 502) = 69.
-// Export at 96x69 px (tight crop to head, zero transparent padding).
-const TARGET_W = 96;
-const TARGET_H = 69;
+// Target width = 192 (2x source of 96px, 4.8x of 40px display).
+// Target height = Math.round(192 * 358 / 502) = 137.
+const TARGET_W = 192;
+const TARGET_H = Math.round(TARGET_W * (358 / 502)); // 137
 
-// Scaled eye centers on 96x69 canvas for programmatic fallback:
+// Scaled eye centers on 96x69 coordinate space (scaled via viewBox="0 0 96 69"):
 // Left eye: cx = 27.2, cy = 43.8
 // Right eye: cx = 68.4, cy = 44.0
 const whiteEyelidPatch = `
@@ -54,7 +54,7 @@ const whiteEyelidPatch = `
 `;
 
 const FALLBACK_EXPRESSIONS = {
-  default: "", // standard open eyes from base image
+  default: "", // standard open eyes from base image (original Kitty image, cropped & resized ONLY, NO overlays)
   blink: `
     ${whiteEyelidPatch}
     <line x1="22.5" y1="43.8" x2="32.0" y2="43.8" stroke="#20233F" stroke-width="2.6" stroke-linecap="round" />
@@ -126,7 +126,7 @@ async function generate() {
       pipeline = sharp(baseBuffer);
       if (svgContent) {
         const svgOverlay = Buffer.from(`
-          <svg width="${TARGET_W}" height="${TARGET_H}" viewBox="0 0 ${TARGET_W} ${TARGET_H}" xmlns="http://www.w3.org/2000/svg">
+          <svg width="${TARGET_W}" height="${TARGET_H}" viewBox="0 0 96 69" xmlns="http://www.w3.org/2000/svg">
             ${svgContent}
           </svg>
         `);

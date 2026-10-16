@@ -101,6 +101,12 @@ html.custom-cursor-active * {
   cursor: none !important;
 }
 
+.kitty-cursor-img,
+img[src*="/hampter/cursor/"] {
+  image-rendering: auto !important;
+}
+
+
 @keyframes kitty-idle-bob {
   0%, 100% {
     transform: translateY(0);

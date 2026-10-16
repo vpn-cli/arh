@@ -48,16 +48,10 @@ function getPaperStyle(paper: PaperType): React.CSSProperties {
   }
 }
 
-function getCornerPosition(corner: StickerCorner): string {
-  switch (corner) {
-    case 'top-left':
-      return 'top-1.5 left-2';
-    case 'bottom-left':
-      return 'bottom-2 left-2';
-    case 'top-right':
-    default:
-      return 'top-1.5 right-2';
-  }
+function getCornerPosition(_corner?: StickerCorner): string {
+  // Move all Snoopy stickers to the right edge, peeking slightly outside the card,
+  // clear of edit/delete buttons (top right) and date/POST stamps (bottom right).
+  return '-right-3.5 top-[38%]';
 }
 
 function renderFastener(fastener: FastenerType) {
@@ -173,12 +167,15 @@ export function MemoryCard({
       {/* Fastener: tape, clip, or push pin */}
       {renderFastener(decor.fastener)}
 
-      {/* Fully visible sticker playing .mw-sticker-bob once on hover and focus-within */}
+      {/* Fully visible sticker playing .mw-sticker-bob once on hover and focus-within, tilted with sticker drop shadow */}
       <div
-        className={`absolute ${getCornerPosition(decor.stickerCorner)} z-10 pointer-events-none drop-shadow-xs`}
+        className={`absolute ${getCornerPosition(decor.stickerCorner)} z-20 pointer-events-none drop-shadow-[0_3px_6px_rgba(0,0,0,0.18)]`}
+        style={{
+          transform: `translateY(-50%) rotate(${decor.tilt > 0 ? -6 : 6}deg)`,
+        }}
       >
         <div className="mw-sticker-bob inline-block">
-          <StickerIcon name={decor.sticker} size={40} />
+          <StickerIcon name={decor.sticker} size={42} />
         </div>
       </div>
 
@@ -215,8 +212,8 @@ export function MemoryCard({
         </div>
       </div>
 
-      {/* Note text large with note accent */}
-      <div className="my-2 relative z-10">
+      {/* Note text large with note accent (pr-9 sm:pr-10 guarantees no collision with right-edge sticker) */}
+      <div className="my-2 relative z-10 pr-9 sm:pr-10">
         <blockquote
           className={`font-pixel text-title font-bold text-[var(--color-dark)] leading-snug select-text ${
             decor.noteAccent === 'highlighter'

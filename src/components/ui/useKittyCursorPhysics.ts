@@ -13,7 +13,7 @@ import {
   canBlink,
 } from "./cursorUtils";
 import { sfx } from "@/lib/audio";
-import { Particle, ParticleType } from "./CursorParticles";
+import { ParticleType, spawnCursorParticle } from "./CursorParticles";
 
 const PARTICLE_COLORS = ["#FF7597", "#FF8FB3", "#FFEAA7", "#B9D7C0", "#C8B8F1"];
 const DEFAULT_PARTICLE_TYPES: ParticleType[] = ["heart", "star", "sakura", "bow"];
@@ -37,10 +37,8 @@ export function useKittyCursorPhysics({
   const {
     cursorMode: contextMode,
     setCursorMode,
-    soundEnabled,
     isFinePointer,
     prefersReducedMotion,
-    hasInteracted,
   } = useCursor();
 
   const kittyRef = useRef<HTMLDivElement>(null);
@@ -48,14 +46,15 @@ export function useKittyCursorPhysics({
   const innerImgRef = useRef<HTMLDivElement>(null);
 
   const [isVisible, setIsVisible] = useState(false);
+  const isVisibleRef = useRef(false);
   const [isPressed, setIsPressed] = useState(false);
   const [isClickPopping, setIsClickPopping] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
   const [isIdleSleep, setIsIdleSleep] = useState(false);
+  const isIdleSleepRef = useRef(false);
   const [isWaking, setIsWaking] = useState(false);
   const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
   const [isShrugging, setIsShrugging] = useState(false);
-  const [particles, setParticles] = useState<Particle[]>([]);
 
   // Coordinate tracking refs
   const coords = useRef({ x: -100, y: -100 });
@@ -69,6 +68,20 @@ export function useKittyCursorPhysics({
   const puzzleSolvedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shrugTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Refs for state accessed inside event listeners without re-subscribing
+  const activeModeRef = useRef(activeMode);
+  activeModeRef.current = activeMode;
+  const isMusicWorldRef = useRef(isMusicWorld);
+  isMusicWorldRef.current = isMusicWorld;
+  const isMusicPlayingRef = useRef(isMusicPlaying);
+  isMusicPlayingRef.current = isMusicPlaying;
+  const isScrapbookWorldRef = useRef(isScrapbookWorld);
+  isScrapbookWorldRef.current = isScrapbookWorld;
+  const isWarpingRef = useRef(isWarping);
+  isWarpingRef.current = isWarping;
+  const isPressedRef = useRef(isPressed);
+  isPressedRef.current = isPressed;
+
   // RAF Spring state refs for velocity lean & squash/stretch
   const currentLean = useRef(0);
   const leanSpringVel = useRef(0);
@@ -80,12 +93,10 @@ export function useKittyCursorPhysics({
   const shrugAngleRef = useRef<number>(0);
   const isHoveringPrecisionRef = useRef<boolean>(false);
 
-  // Throttled element check & particle spawn refs
-  const lastElementCheck = useRef<number>(0);
+  // Throttled particle spawn refs
   const lastHoverMode = useRef<CursorMode>("default");
   const lastParticleSpawn = useRef<number>(0);
   const lastParticlePos = useRef({ x: -100, y: -100 });
-  const nextParticleId = useRef<number>(0);
 
   // 1. Resolve Active Expression
   const activeExpression = resolveKittyExpression({
@@ -98,6 +109,17 @@ export function useKittyCursorPhysics({
     isPuzzleSolved,
   });
   const activeCoreFrame = mapExpressionToCoreFrame(activeExpression);
+  const activeExpressionRef = useRef(activeExpression);
+  activeExpressionRef.current = activeExpression;
+
+  // Development logger for expression transitions
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        `[HelloKittyCursor] activeExpression: "${activeExpression}" | coreFrame: "${activeCoreFrame}" | mode: "${activeMode}" | blinking: ${isBlinking} | sleep: ${isIdleSleep}`
+      );
+    }
+  }, [activeExpression, activeCoreFrame, activeMode, isBlinking, isIdleSleep]);
 
   // 2. Clean up timers and puzzle-solve event listener
   useEffect(() => {
@@ -108,24 +130,21 @@ export function useKittyCursorPhysics({
         setIsPuzzleSolved(false);
       }, 2500);
 
-      // Burst ~12 confetti particles from cursor position if reduced motion is disabled
+      // Burst ~12 confetti particles from cursor position directly to DOM (0 React re-renders)
       if (!prefersReducedMotion) {
-        const now = performance.now();
-        const burst: Particle[] = Array.from({ length: 12 }).map(() => ({
-          id: nextParticleId.current++,
-          x: coords.current.x + (Math.random() - 0.5) * 80,
-          y: coords.current.y + (Math.random() - 0.5) * 80,
-          type: DEFAULT_PARTICLE_TYPES[Math.floor(Math.random() * DEFAULT_PARTICLE_TYPES.length)],
-          color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
-          rotation: (Math.random() - 0.5) * 60,
-          bornAt: now,
-        }));
-        setParticles((prev) => [...prev.slice(-16), ...burst]);
+        for (let i = 0; i < 12; i++) {
+          spawnCursorParticle({
+            x: coords.current.x + (Math.random() - 0.5) * 80,
+            y: coords.current.y + (Math.random() - 0.5) * 80,
+            type: DEFAULT_PARTICLE_TYPES[Math.floor(Math.random() * DEFAULT_PARTICLE_TYPES.length)],
+            color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
+            rotation: (Math.random() - 0.5) * 60,
+          });
+        }
       }
     };
 
     const handlePuzzleSkipped = () => {
-      // Quick cute shrug / head tilt reaction on quiz skip (no confetti)
       setIsShrugging(true);
       if (shrugTimer.current) clearTimeout(shrugTimer.current);
       shrugTimer.current = setTimeout(() => {
@@ -146,19 +165,23 @@ export function useKittyCursorPhysics({
     };
   }, [prefersReducedMotion]);
 
-  // 3. Blinking Timer (Only while eyes open, paused on press/drag)
+  // 3. Blinking Timer: Uses refs to prevent re-triggering cleanup and locking on blink
   useEffect(() => {
     if (prefersReducedMotion) return;
 
     let blinkTimeout: ReturnType<typeof setTimeout>;
     let closeTimeout: ReturnType<typeof setTimeout>;
+    let isCancelled = false;
 
     const scheduleNextBlink = () => {
-      const delay = Math.random() * 2500 + 2500; // 2.5s - 5.0s
+      if (isCancelled) return;
+      const delay = Math.random() * 3000 + 2500; // 2.5s - 5.5s
       blinkTimeout = setTimeout(() => {
-        if (canBlink(activeExpression, isPressed, activeMode === "drag")) {
+        if (isCancelled) return;
+        if (canBlink(activeExpressionRef.current, isPressedRef.current, activeModeRef.current === "drag")) {
           setIsBlinking(true);
           closeTimeout = setTimeout(() => {
+            if (isCancelled) return;
             setIsBlinking(false);
             scheduleNextBlink();
           }, 120);
@@ -170,10 +193,11 @@ export function useKittyCursorPhysics({
 
     scheduleNextBlink();
     return () => {
+      isCancelled = true;
       clearTimeout(blinkTimeout);
       clearTimeout(closeTimeout);
     };
-  }, [activeExpression, isPressed, activeMode, prefersReducedMotion]);
+  }, [prefersReducedMotion]);
 
   // 4. Core Pointer Listeners and RAF Spring Loop
   useEffect(() => {
@@ -186,19 +210,31 @@ export function useKittyCursorPhysics({
     let animationFrameId: number;
 
     const handlePointerMove = (e: PointerEvent) => {
-      coords.current = { x: e.clientX, y: e.clientY };
-      if (!isVisible) setIsVisible(true);
+      // Coalesced hardware events for latest sub-millisecond coordinates
+      const events = typeof e.getCoalescedEvents === "function" ? e.getCoalescedEvents() : [];
+      const latest = events.length > 0 ? events[events.length - 1] : e;
+      const clientX = latest.clientX;
+      const clientY = latest.clientY;
 
-      // Instant hardware-accelerated follow
+      coords.current.x = clientX;
+      coords.current.y = clientY;
+
+      // Zero-latency position write directly to DOM (NO RAF, NO spring, NO lerp)
       if (kittyRef.current) {
-        kittyRef.current.style.transform = `translate3d(${e.clientX - KITTY_CURSOR_HOTSPOT.x}px, ${
-          e.clientY - KITTY_CURSOR_HOTSPOT.y
+        kittyRef.current.style.transform = `translate3d(${clientX - KITTY_CURSOR_HOTSPOT.x}px, ${
+          clientY - KITTY_CURSOR_HOTSPOT.y
         }px, 0)`;
+      }
+
+      if (!isVisibleRef.current) {
+        isVisibleRef.current = true;
+        setIsVisible(true);
       }
 
       // Idle sleep wake-up startle
       lastPointerMoveTime.current = performance.now();
-      if (isIdleSleep) {
+      if (isIdleSleepRef.current) {
+        isIdleSleepRef.current = false;
         setIsIdleSleep(false);
         if (!prefersReducedMotion) {
           setIsWaking(true);
@@ -206,44 +242,35 @@ export function useKittyCursorPhysics({
         }
       }
 
+      // Direct DOM particle spawn (zero React re-renders)
+      const now = performance.now();
+      const isDrag = activeModeRef.current === "drag";
+      const spawnInterval = isScrapbookWorldRef.current ? 70 : 45;
+
       const sel = typeof window !== "undefined" && window.getSelection ? window.getSelection() : null;
       const hasRealSelection = !!(sel && !sel.isCollapsed && sel.toString().trim().length > 0);
-      const now = performance.now();
 
-      // Throttled elementFromPoint (every 65ms) for disabled elements
-      if (now - lastElementCheck.current > 65) {
-        lastElementCheck.current = now;
-        const topEl = document.elementFromPoint(e.clientX, e.clientY);
-        if (topEl && resolveCursorState(topEl) === "disabled" && contextMode !== "disabled") {
-          setCursorMode("disabled");
-        }
-      }
-
-      // Spawn light particle trail (throttled to 70ms and capped at 8 on Scrapbook page)
-      const isDrag = activeMode === "drag";
-      const spawnInterval = isScrapbookWorld ? 70 : 45;
-      const maxTrailCap = isScrapbookWorld ? 8 : 13;
-
-      if (!prefersReducedMotion && !hasRealSelection && !isDrag && !isWarping && now - lastParticleSpawn.current >= spawnInterval) {
-        const dist = Math.hypot(e.clientX - lastParticlePos.current.x, e.clientY - lastParticlePos.current.y);
+      if (
+        !prefersReducedMotion &&
+        !hasRealSelection &&
+        !isDrag &&
+        !isWarpingRef.current &&
+        now - lastParticleSpawn.current >= spawnInterval
+      ) {
+        const dist = Math.hypot(clientX - lastParticlePos.current.x, clientY - lastParticlePos.current.y);
         if (dist >= 15) {
           lastParticleSpawn.current = now;
-          lastParticlePos.current = { x: e.clientX, y: e.clientY };
-          const typePool = isMusicWorld ? MUSIC_PARTICLE_TYPES : DEFAULT_PARTICLE_TYPES;
+          lastParticlePos.current = { x: clientX, y: clientY };
+          const typePool = isMusicWorldRef.current ? MUSIC_PARTICLE_TYPES : DEFAULT_PARTICLE_TYPES;
           const chosenType = typePool[Math.floor(Math.random() * typePool.length)];
 
-          setParticles((prev) => [
-            ...prev.slice(-(maxTrailCap - 1)),
-            {
-              id: nextParticleId.current++,
-              x: e.clientX,
-              y: e.clientY,
-              type: chosenType,
-              color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
-              rotation: (Math.random() - 0.5) * 40,
-              bornAt: now,
-            },
-          ]);
+          spawnCursorParticle({
+            x: clientX,
+            y: clientY,
+            type: chosenType,
+            color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
+            rotation: (Math.random() - 0.5) * 40,
+          });
         }
       }
     };
@@ -255,17 +282,10 @@ export function useKittyCursorPhysics({
         "[data-precision='true'], .volume-slider, [role='slider'], .mw-volume-control button, .mw-volume-control input"
       );
       const resolved = resolveCursorState(target);
-      setCursorMode(resolved);
-
-      if (
-        (resolved === "hover" || resolved === "puzzle" || resolved === "music") &&
-        lastHoverMode.current !== resolved &&
-        soundEnabled &&
-        hasInteracted
-      ) {
-        sfx.hover();
+      if (resolved !== lastHoverMode.current) {
+        setCursorMode(resolved);
+        lastHoverMode.current = resolved;
       }
-      lastHoverMode.current = resolved;
     };
 
     const handlePointerOut = (e: PointerEvent) => {
@@ -274,8 +294,10 @@ export function useKittyCursorPhysics({
         "[data-precision='true'], .volume-slider, [role='slider'], .mw-volume-control button, .mw-volume-control input"
       );
       const nextMode = resolveCursorState(related);
-      setCursorMode(nextMode);
-      lastHoverMode.current = nextMode;
+      if (nextMode !== lastHoverMode.current) {
+        setCursorMode(nextMode);
+        lastHoverMode.current = nextMode;
+      }
     };
 
     const handlePointerDown = (e: PointerEvent) => {
@@ -285,7 +307,6 @@ export function useKittyCursorPhysics({
         if (popTimer.current) clearTimeout(popTimer.current);
         setIsPressed(true);
         setIsClickPopping(false);
-        if (soundEnabled && hasInteracted) sfx.pop();
       }
     };
 
@@ -308,60 +329,62 @@ export function useKittyCursorPhysics({
       }
     };
 
-    let lastCullTime = 0;
     const renderLoop = (time: number) => {
       const now = performance.now();
-      // Delta time in seconds, clamped between 1ms and 1/30s (approx 33.3ms) to prevent tab switch jumps
       const dtSeconds = Math.min(Math.max((now - lastRafTime.current) / 1000, 0.001), 1 / 30);
       lastRafTime.current = now;
-      // Step ratio normalized to standard 60Hz frame (1.0 at 60Hz, 0.5 at 120Hz, 0.4167 at 144Hz)
       const step = dtSeconds * 60;
 
       // 1. Idle sleep check (8s+)
-      if (!isIdleSleep && now - lastPointerMoveTime.current > 8000) {
+      if (!isIdleSleepRef.current && now - lastPointerMoveTime.current > 8000) {
+        isIdleSleepRef.current = true;
         setIsIdleSleep(true);
       }
 
-      // 2. Glow lerp follow (frame-rate independent exponential interpolation)
+      // 2. Velocity calculations for springs & glow snap
+      const dx = coords.current.x - prevCoords.current.x;
+      const dy = coords.current.y - prevCoords.current.y;
+      prevCoords.current = { x: coords.current.x, y: coords.current.y };
+
+      const vx = dx / step;
+      const vy = dy / step;
+      const moveSpeed = Math.hypot(vx, vy);
+
+      // 3. Fast snappy glow follow (lerp ~0.52; snaps during fast flick so it NEVER drifts visibly behind)
       if (!prefersReducedMotion) {
-        const glowLerpFactor = 1 - Math.pow(1 - 0.22, step);
-        glowCoords.current.x += (coords.current.x - glowCoords.current.x) * glowLerpFactor;
-        glowCoords.current.y += (coords.current.y - glowCoords.current.y) * glowLerpFactor;
+        const glowLerpFactor = 1 - Math.pow(1 - 0.52, step);
+        if (moveSpeed > 18) {
+          glowCoords.current.x = coords.current.x;
+          glowCoords.current.y = coords.current.y;
+        } else {
+          glowCoords.current.x += (coords.current.x - glowCoords.current.x) * glowLerpFactor;
+          glowCoords.current.y += (coords.current.y - glowCoords.current.y) * glowLerpFactor;
+        }
       } else {
         glowCoords.current.x = coords.current.x;
         glowCoords.current.y = coords.current.y;
       }
+
       if (glowRef.current) {
         glowRef.current.style.transform = `translate3d(${
           glowCoords.current.x - KITTY_CURSOR_HOTSPOT.x
         }px, ${glowCoords.current.y - KITTY_CURSOR_HOTSPOT.y}px, 0)`;
       }
 
-      // 3. Velocity Lean & Squash/Stretch Springs
-      const dx = coords.current.x - prevCoords.current.x;
-      const dy = coords.current.y - prevCoords.current.y;
-      prevCoords.current = { x: coords.current.x, y: coords.current.y };
-
-      // Velocity in pixels per 60Hz frame
-      const vx = dx / step;
-      const vy = dy / step;
-
+      // 4. Velocity Lean & Squash/Stretch Springs (inner image wrapper only)
       let targetLean = 0;
       let targetScaleX = 1.0;
       let targetScaleY = 1.0;
 
-      // Rule 9: Cap at ±6°, squash/stretch at 0.97/1.03, disable during press & drag
-      const isDrag = activeMode === "drag";
-      if (!prefersReducedMotion && !isPressed && !isDrag && !isWarping) {
-        const speed = Math.hypot(vx, vy);
-        if (speed > 0.5) {
+      const isDrag = activeModeRef.current === "drag";
+      if (!prefersReducedMotion && !isPressedRef.current && !isDrag && !isWarpingRef.current) {
+        if (moveSpeed > 0.5) {
           targetLean = Math.max(-6, Math.min(6, vx * 0.35));
           targetScaleX = Math.max(0.97, Math.min(1.03, 1.0 + (Math.abs(vx) * 0.003 - Math.abs(vy) * 0.002)));
           targetScaleY = Math.max(0.97, Math.min(1.03, 1.0 + (Math.abs(vy) * 0.003 - Math.abs(vx) * 0.002)));
         }
       }
 
-      // Integrate RAF springs with dt-scaled stiffness and exponential decay damping
       const leanStiffness = 0.22;
       const leanDamping = 0.72;
       leanSpringVel.current += (targetLean - currentLean.current) * (leanStiffness * step);
@@ -378,9 +401,9 @@ export function useKittyCursorPhysics({
       currentScaleY.current += scaleYSpringVel.current * step;
       scaleYSpringVel.current *= Math.pow(scaleDamping, step);
 
-      // 4. Music World 115 BPM simulated sway (frame-rate independent, pauses over precision controls)
+      // Music World simulated sway
       const isPrecisionHover = isHoveringPrecisionRef.current;
-      if (isMusicWorld && isMusicPlaying && !prefersReducedMotion && !isPrecisionHover) {
+      if (isMusicWorldRef.current && isMusicPlayingRef.current && !prefersReducedMotion && !isPrecisionHover) {
         const targetSway = Math.sin((time / 1000) * ((115 / 60) * Math.PI)) * 6.5;
         const swayFactor = 1 - Math.pow(1 - 0.15, step);
         swayAngleRef.current += (targetSway - swayAngleRef.current) * swayFactor;
@@ -390,7 +413,7 @@ export function useKittyCursorPhysics({
         if (Math.abs(swayAngleRef.current) < 0.05) swayAngleRef.current = 0;
       }
 
-      // Shrug tilt on quiz skip (eases to 11° then smoothly returns to 0°)
+      // Shrug tilt on quiz skip
       const targetShrug = isShrugging ? 11 : 0;
       const shrugFactor = 1 - Math.pow(1 - 0.18, step);
       shrugAngleRef.current += (targetShrug - shrugAngleRef.current) * shrugFactor;
@@ -401,15 +424,6 @@ export function useKittyCursorPhysics({
         innerImgRef.current.style.transform = `rotate(${totalRotate.toFixed(2)}deg) scale(${currentScaleX.current.toFixed(
           3
         )}, ${currentScaleY.current.toFixed(3)})`;
-      }
-
-      // Cull expired particles
-      if (time - lastCullTime > 80) {
-        lastCullTime = time;
-        setParticles((prev) => {
-          const fresh = prev.filter((p) => time - p.bornAt < 650);
-          return fresh.length === prev.length ? prev : fresh;
-        });
       }
 
       animationFrameId = requestAnimationFrame(renderLoop);
@@ -439,16 +453,7 @@ export function useKittyCursorPhysics({
   }, [
     isFinePointer,
     prefersReducedMotion,
-    contextMode,
-    activeMode,
     setCursorMode,
-    soundEnabled,
-    hasInteracted,
-    isVisible,
-    isWarping,
-    isMusicWorld,
-    isMusicPlaying,
-    isIdleSleep,
   ]);
 
   return {
@@ -460,7 +465,6 @@ export function useKittyCursorPhysics({
     isClickPopping,
     isIdleSleep,
     isWaking,
-    particles,
     activeExpression,
     activeCoreFrame,
     isFinePointer,

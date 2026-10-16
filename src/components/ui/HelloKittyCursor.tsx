@@ -35,7 +35,6 @@ export default function HelloKittyCursor() {
     isClickPopping,
     isIdleSleep,
     isWaking,
-    particles,
     activeExpression,
     activeCoreFrame,
     isFinePointer,
@@ -94,17 +93,17 @@ export default function HelloKittyCursor() {
         isVisible ? "opacity-100" : "opacity-0"
       }`}
     >
-      {/* 1. LIGHT PARTICLES TRAIL */}
-      {!prefersReducedMotion && <CursorParticles particles={particles} />}
+      {/* 1. LIGHT PARTICLES TRAIL (Direct DOM acceleration, zero React re-renders) */}
+      {!prefersReducedMotion && <CursorParticles />}
 
-      {/* 2. LERP GLOW RING */}
+      {/* 2. LERP GLOW RING (Snappy ~0.52 lerp, zero transform transitions) */}
       <div
         ref={glowRef}
         className="fixed top-0 left-0 pointer-events-none will-change-transform"
-        style={{ transform: "translate3d(-100px, -100px, 0)" }}
+        style={{ transform: "translate3d(-100px, -100px, 0)", transition: "none" }}
       >
         <div
-          className={`w-9 h-9 -ml-1 -mt-1 rounded-full transition-all duration-300 pointer-events-none ${
+          className={`w-9 h-9 -ml-1 -mt-1 rounded-full transition-colors duration-200 pointer-events-none ${
             isWarping
               ? "bg-[#FFEAA7]/40 shadow-[0_0_24px_8px_rgba(255,234,167,0.7)] scale-150 border-2 border-[#FFD98A]"
               : isHover || isPuzzle || isPolaroid || isPeel || isMusic
@@ -118,11 +117,11 @@ export default function HelloKittyCursor() {
         />
       </div>
 
-      {/* 3. ZERO-LATENCY HELLO KITTY HEAD (HOTSPOT LOCKED) */}
+      {/* 3. ZERO-LATENCY HELLO KITTY HEAD (HOTSPOT LOCKED, NO TRANSITION ON OUTER WRAPPER) */}
       <div
         ref={kittyRef}
         className="fixed top-0 left-0 pointer-events-none will-change-transform"
-        style={{ transform: "translate3d(-100px, -100px, 0)" }}
+        style={{ transform: "translate3d(-100px, -100px, 0)", transition: "none" }}
       >
         {/* Transform Layer 1: Anchored at ear hotspot for hover scaling & flavor tilts */}
         <div

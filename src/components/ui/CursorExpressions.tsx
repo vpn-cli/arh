@@ -78,7 +78,8 @@ export function CursorExpressions({
               alt=""
               width={CURSOR_DISPLAY_WIDTH}
               height={CURSOR_DISPLAY_HEIGHT}
-              className="w-full h-full object-contain pointer-events-none"
+              className="w-full h-full object-contain pointer-events-none kitty-cursor-img"
+              style={{ imageRendering: "auto" }}
               loading="eager"
               decoding="async"
             />
