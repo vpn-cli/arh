@@ -115,6 +115,7 @@ export default function ScrapbookWorld() {
             sfx.select();
             goHome();
           }}
+          data-cursor="pointer"
           onMouseEnter={() => sfx.hover()}
           className="pointer-events-auto group px-4 py-2 bg-[#FFFFFF] rounded-2xl border-3 border-[#FFB6C1] shadow-[4px_4px_0_#FFB6C1] flex items-center gap-2 hover:bg-[#FFF3D8] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[2px_2px_0_#FFB6C1] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none cursor-pointer"
         >

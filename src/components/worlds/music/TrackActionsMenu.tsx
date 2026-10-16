@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { openInSpotify } from './playback/playbackHelpers';
 
 export interface TrackActionsMenuProps {
@@ -115,10 +116,13 @@ export const TrackActionsMenu = React.memo(function TrackActionsMenu({
 
   const trackUri = track?.uri || (track?.id ? `spotify:track:${track.id}` : '');
 
+  const accountTier = useSpotifyPlayerStore((s) => s.accountTier);
+  const isFree = accountTier === 'free';
+
   // Build list of valid actions for the given track
   const items: { id: string; label: string; action: () => void }[] = [];
 
-  if (onAddToQueue && track) {
+  if (onAddToQueue && track && !isFree) {
     items.push({
       id: 'queue',
       label: 'Add to queue',

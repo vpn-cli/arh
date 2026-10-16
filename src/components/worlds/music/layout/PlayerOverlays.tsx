@@ -5,6 +5,7 @@ import { WarningIcon, CloseIcon, ChevronLeftIcon } from "../icons";
 import { redirectToSpotifyAuth, logoutSpotify } from "@/lib/spotifyAuth";
 import { HEADER_TITLE } from "../textConfig";
 import { SpotifyRestingBanner } from "../SpotifyRestingBanner";
+import { FreeTierNotice } from "../FreeTierNotice";
 import { useGameState } from "@/lib/gameState";
 import { sfx } from "@/lib/audio";
 
@@ -50,6 +51,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
   return (
     <>
       <SpotifyRestingBanner />
+      <FreeTierNotice />
 
       {/* Inline Reconnecting Notice / Recovery Error Banner */}
       {(isReconnecting || recoveryError) && (

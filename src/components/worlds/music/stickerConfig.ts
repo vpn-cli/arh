@@ -26,7 +26,7 @@ export type MomentSlot = keyof typeof moments;
 export const SNOOPY_STICKER_MAP = {
   header: 'r4c4',             // party hat and cake
   kawaiiCard: 'r4c2',         // strawberry costume
-  continueListening: 'r5c2',  // scooter
+  continueListening: 'r2c4',  // dinosaur snoopy
   recentlyPlayed: 'r4c1',     // reading a book
   queueTab: 'r1c4',           // big bow
   queueModal: 'r1c4',         // big bow

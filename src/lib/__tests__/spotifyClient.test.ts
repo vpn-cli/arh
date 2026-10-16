@@ -421,4 +421,60 @@ describe('spotifyClient (Fail-Safe API Proxy with Unified Recovery)', () => {
     expect(global.fetch).toHaveBeenCalledTimes(2);
     vi.useRealTimers();
   });
+
+  it('maps 403 with reason PREMIUM_REQUIRED to distinct error and does not retry', async () => {
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      statusText: 'Forbidden',
+      json: async () => ({
+        error: {
+          status: 403,
+          message: 'Player command failed: Premium required',
+          reason: 'PREMIUM_REQUIRED',
+        },
+      }),
+    });
+
+    let caughtError: any = null;
+    try {
+      await proxyFetch('/me/player/play', { method: 'PUT' });
+    } catch (err) {
+      caughtError = err;
+    }
+
+    expect(caughtError).toBeDefined();
+    expect(caughtError.status).toBe(403);
+    expect(caughtError.reason).toBe('PREMIUM_REQUIRED');
+    expect(caughtError.isPremiumRequired).toBe(true);
+    expect(caughtError.message).toBe('Spotify Premium required for playback');
+    expect(global.fetch).toHaveBeenCalledTimes(1); // Never retried
+  });
+
+  it('maps generic 403 to Forbidden without Missing Scopes wording and does not retry', async () => {
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      statusText: 'Forbidden',
+      json: async () => ({
+        error: {
+          status: 403,
+          message: 'Access denied',
+        },
+      }),
+    });
+
+    let caughtError: any = null;
+    try {
+      await proxyFetch('/me/player/pause', { method: 'PUT' });
+    } catch (err) {
+      caughtError = err;
+    }
+
+    expect(caughtError).toBeDefined();
+    expect(caughtError.status).toBe(403);
+    expect(caughtError.message).toBe('Forbidden');
+    expect(caughtError.message).not.toContain('Missing Scopes');
+    expect(global.fetch).toHaveBeenCalledTimes(1); // Never retried
+  });
 });

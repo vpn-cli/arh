@@ -1,5 +1,22 @@
 import { http, HttpResponse } from 'msw';
 import { mockSpotifyState } from './state';
+import { getMockSpotifyProduct } from './config';
+
+function mockPlayer403IfFree() {
+  if (getMockSpotifyProduct() === 'free') {
+    return HttpResponse.json(
+      {
+        error: {
+          status: 403,
+          message: 'Player command failed: Premium required',
+          reason: 'PREMIUM_REQUIRED',
+        },
+      },
+      { status: 403 }
+    );
+  }
+  return null;
+}
 
 export const handlers = [
   // --- GET /me ---
@@ -185,25 +202,35 @@ export const handlers = [
 
   // --- /me/player ---
   http.get('https://api.spotify.com/v1/me/player', () => {
+    const blocked = mockPlayer403IfFree();
+    if (blocked) return blocked;
     return HttpResponse.json(mockSpotifyState.getPlayerState());
   }),
 
   http.get('https://api.spotify.com/v1/me/player/devices', () => {
+    const blocked = mockPlayer403IfFree();
+    if (blocked) return blocked;
     return HttpResponse.json(mockSpotifyState.getDevices());
   }),
 
   http.put('https://api.spotify.com/v1/me/player/play', async ({ request }) => {
+    const blocked = mockPlayer403IfFree();
+    if (blocked) return blocked;
     const body = (await request.json().catch(() => ({}))) as any;
     mockSpotifyState.play(body);
     return new HttpResponse(null, { status: 204 });
   }),
 
   http.put('https://api.spotify.com/v1/me/player/pause', () => {
+    const blocked = mockPlayer403IfFree();
+    if (blocked) return blocked;
     mockSpotifyState.pause();
     return new HttpResponse(null, { status: 204 });
   }),
 
   http.put('https://api.spotify.com/v1/me/player/seek', ({ request }) => {
+    const blocked = mockPlayer403IfFree();
+    if (blocked) return blocked;
     const url = new URL(request.url);
     const pos = parseInt(url.searchParams.get('position_ms') || '0', 10);
     mockSpotifyState.seek(pos);
@@ -211,6 +238,8 @@ export const handlers = [
   }),
 
   http.put('https://api.spotify.com/v1/me/player/volume', ({ request }) => {
+    const blocked = mockPlayer403IfFree();
+    if (blocked) return blocked;
     const url = new URL(request.url);
     const vol = parseInt(url.searchParams.get('volume_percent') || '50', 10);
     mockSpotifyState.setVolume(vol);
@@ -218,16 +247,22 @@ export const handlers = [
   }),
 
   http.post('https://api.spotify.com/v1/me/player/next', () => {
+    const blocked = mockPlayer403IfFree();
+    if (blocked) return blocked;
     mockSpotifyState.next();
     return new HttpResponse(null, { status: 204 });
   }),
 
   http.post('https://api.spotify.com/v1/me/player/previous', () => {
+    const blocked = mockPlayer403IfFree();
+    if (blocked) return blocked;
     mockSpotifyState.previous();
     return new HttpResponse(null, { status: 204 });
   }),
 
   http.put('https://api.spotify.com/v1/me/player/shuffle', ({ request }) => {
+    const blocked = mockPlayer403IfFree();
+    if (blocked) return blocked;
     const url = new URL(request.url);
     const state = url.searchParams.get('state') === 'true';
     mockSpotifyState.setShuffle(state);
@@ -235,6 +270,8 @@ export const handlers = [
   }),
 
   http.put('https://api.spotify.com/v1/me/player/repeat', ({ request }) => {
+    const blocked = mockPlayer403IfFree();
+    if (blocked) return blocked;
     const url = new URL(request.url);
     const state = (url.searchParams.get('state') || 'off') as 'off' | 'context' | 'track';
     mockSpotifyState.setRepeat(state);
@@ -242,10 +279,14 @@ export const handlers = [
   }),
 
   http.get('https://api.spotify.com/v1/me/player/queue', () => {
+    const blocked = mockPlayer403IfFree();
+    if (blocked) return blocked;
     return HttpResponse.json(mockSpotifyState.getQueue());
   }),
 
   http.post('https://api.spotify.com/v1/me/player/queue', ({ request }) => {
+    const blocked = mockPlayer403IfFree();
+    if (blocked) return blocked;
     const url = new URL(request.url);
     const uri = url.searchParams.get('uri') || '';
     mockSpotifyState.addToQueue(uri);

@@ -23,6 +23,10 @@ export function WidgetPlayer() {
   const currentTrack = useSpotifyPlayerStore((s) => s.currentTrack);
   const isPaused = useSpotifyPlayerStore((s) => s.isPaused);
   const duration = useSpotifyPlayerStore((s) => s.duration);
+  const accountTier = useSpotifyPlayerStore((s) => s.accountTier);
+
+  const isLoading = accountTier === 'unknown';
+  const isFree = accountTier === 'free';
 
   const { data: isSaved = false } = useTrackSavedStatus(currentTrack?.id);
   const { toggleSave } = useSpotifyMutations();
@@ -88,6 +92,8 @@ export function WidgetPlayer() {
   // Dual loop: RAF + setInterval fallback (250ms) ensures progress updates keep running
   // even when window is small, partly covered, or backgrounded.
   useEffect(() => {
+    if (isFree || isLoading) return;
+
     let animId: number | null = null;
     let intervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -109,7 +115,7 @@ export function WidgetPlayer() {
       if (animId !== null) cancelAnimationFrame(animId);
       if (intervalId !== null) clearInterval(intervalId);
     };
-  }, [renderProgress]);
+  }, [renderProgress, isFree, isLoading]);
 
   // Handle click or drag seek on progress bar
   const seekToClientX = useCallback(
@@ -265,11 +271,38 @@ export function WidgetPlayer() {
 
                 <button
                   onClick={togglePlayGlobal}
-                  className="mw-btn app-region-no-drag w-10 h-10 min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center text-[var(--on-vibrant)] bg-[var(--color-vibrant)] hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
-                  aria-label={isPaused ? "Play" : "Pause"}
-                  title={isPaused ? "Play" : "Pause"}
+                  disabled={isLoading}
+                  className={`mw-btn app-region-no-drag w-10 h-10 min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center text-[var(--on-vibrant)] ${
+                    isFree ? "bg-[#1DB954]" : "bg-[var(--color-vibrant)]"
+                  } hover:scale-105 active:scale-95 transition-all shadow-md ${
+                    isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                  }`}
+                  aria-label={
+                    isLoading
+                      ? "Loading player"
+                      : isFree
+                      ? "Open in Spotify"
+                      : isPaused
+                      ? "Play"
+                      : "Pause"
+                  }
+                  title={
+                    isLoading
+                      ? "Loading player"
+                      : isFree
+                      ? "Open in Spotify"
+                      : isPaused
+                      ? "Play"
+                      : "Pause"
+                  }
                 >
-                  {isPaused ? (
+                  {isLoading ? (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : isFree ? (
+                    <svg className="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  ) : isPaused ? (
                     <svg className="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
                     </svg>
@@ -299,28 +332,30 @@ export function WidgetPlayer() {
               </div>
 
               {/* Bottom: Slim Progress Bar with Elapsed and Total Time */}
-              <div
-                ref={barTrackRef}
-                onMouseDown={handleMouseDown}
-                className="app-region-no-drag w-full flex flex-col gap-1 cursor-pointer select-none group py-1"
-                role="slider"
-                aria-label="Playback progress"
-                aria-valuemin={0}
-                aria-valuemax={durationRef.current}
-                tabIndex={0}
-              >
-                <div className="w-full h-1.5 bg-[var(--color-muted)] rounded-full overflow-hidden relative">
-                  <div
-                    ref={fillRef}
-                    className="h-full bg-[var(--color-vibrant)] origin-left rounded-full will-change-transform"
-                    style={{ transform: "scaleX(0)" }}
-                  />
+              {!isFree && (
+                <div
+                  ref={barTrackRef}
+                  onMouseDown={handleMouseDown}
+                  className="app-region-no-drag w-full flex flex-col gap-1 cursor-pointer select-none group py-1"
+                  role="slider"
+                  aria-label="Playback progress"
+                  aria-valuemin={0}
+                  aria-valuemax={durationRef.current}
+                  tabIndex={0}
+                >
+                  <div className="w-full h-1.5 bg-[var(--color-muted)] rounded-full overflow-hidden relative">
+                    <div
+                      ref={fillRef}
+                      className="h-full bg-[var(--color-vibrant)] origin-left rounded-full will-change-transform"
+                      style={{ transform: "scaleX(0)" }}
+                    />
+                  </div>
+                  <div className="flex justify-between w-full font-pixel text-caption text-[var(--color-dark)] px-0.5 leading-none">
+                    <span ref={timeLabelRef}>0:00</span>
+                    <span>{formatTime(duration)}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between w-full font-pixel text-caption text-[var(--color-dark)] px-0.5 leading-none">
-                  <span ref={timeLabelRef}>0:00</span>
-                  <span>{formatTime(duration)}</span>
-                </div>
-              </div>
+              )}
             </>
           )}
         </div>

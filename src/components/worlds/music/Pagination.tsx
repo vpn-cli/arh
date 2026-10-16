@@ -27,6 +27,7 @@ export const Pagination = React.memo(function Pagination({
     >
       <button
         type="button"
+        data-cursor="music"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={isFirstPage}
         aria-label="Previous page"
@@ -41,6 +42,7 @@ export const Pagination = React.memo(function Pagination({
 
       <button
         type="button"
+        data-cursor="music"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={isLastPage}
         aria-label="Next page"

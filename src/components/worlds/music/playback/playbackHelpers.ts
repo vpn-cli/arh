@@ -242,13 +242,21 @@ export async function executeQueueTrackAddition(
   if (!resolved) return;
 
   const validContext = isValidContextUri(contextUri) ? contextUri : undefined;
-  addToStoreQueue(resolved.track, validContext);
 
   try {
     const { addTrackToPlayerQueue } = await import('@/lib/spotify/player');
     await addTrackToPlayerQueue(resolved.uri, targetDevice || undefined);
-  } catch (err) {
+    addToStoreQueue(resolved.track, validContext);
+  } catch (err: any) {
     console.warn('Could not add to Spotify queue:', err);
+    try {
+      const { notifyRecoveryError } = await import('@/lib/spotifyRecovery');
+      const msg = err?.message || 'Could not add to Spotify queue';
+      notifyRecoveryError(msg);
+      setTimeout(() => {
+        notifyRecoveryError(null);
+      }, 4000);
+    } catch {}
   }
 }
 

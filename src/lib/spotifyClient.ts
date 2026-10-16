@@ -261,7 +261,22 @@ async function doFetch(
 
     // 403 Forbidden
     if (response.status === 403) {
-      throw { status: 403, message: 'Forbidden (Missing Scopes)', details: errorData };
+      const isPremiumRequired =
+        errorReason === 'PREMIUM_REQUIRED' ||
+        /PREMIUM_REQUIRED/i.test(rawErrorText) ||
+        /premium required/i.test(errorMsg);
+
+      if (isPremiumRequired) {
+        throw {
+          status: 403,
+          message: 'Spotify Premium required for playback',
+          reason: 'PREMIUM_REQUIRED',
+          isPremiumRequired: true,
+          details: errorData,
+        };
+      }
+
+      throw { status: 403, message: 'Forbidden', details: errorData };
     }
 
     // Other non-ok responses

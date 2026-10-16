@@ -1,4 +1,5 @@
 import { mockSpotifyState } from './state';
+import { getMockSpotifyProduct } from './config';
 
 export interface SpotifyPlayerOptions {
   name: string;
@@ -105,6 +106,13 @@ export class MockSpotifyPlayer {
   }
 
   public async connect(): Promise<boolean> {
+    if (getMockSpotifyProduct() === 'free') {
+      setTimeout(() => {
+        this.emit('account_error', { message: 'Spotify Premium required' });
+      }, 50);
+      return false;
+    }
+
     this.isConnected = true;
     this.startTicker();
 

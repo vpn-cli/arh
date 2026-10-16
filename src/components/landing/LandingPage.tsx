@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import AmbientParticles from "./AmbientParticles";
-import PixelCursor from "../ui/PixelCursor";
 import GameboyLoadingScreen from "../ui/GameboyLoadingScreen";
 import ClickToEnterScreen from "../ui/ClickToEnterScreen";
 import AuthLoadingOverlay from "../ui/AuthLoadingOverlay";
@@ -71,9 +70,6 @@ export default function LandingPage() {
       
       {/* Ambient particle layer (always present) */}
       <AmbientParticles />
-
-      {/* Custom pixel cursor (desktop only, after loading) */}
-      {introFinished && <PixelCursor />}
 
       {/* ═══ PHASE 1: Click to Enter gate ═══ */}
       {!hasEntered && (

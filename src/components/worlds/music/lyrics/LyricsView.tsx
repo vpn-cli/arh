@@ -261,6 +261,7 @@ export const LyricsView = React.memo(
               />
             )}
             <button
+              data-cursor="music"
               onClick={() => {
                 const next = !editMode;
                 setEditMode(next);
@@ -278,6 +279,7 @@ export const LyricsView = React.memo(
               {editMode ? 'EDIT MODE: ON' : 'EDIT MODE'}
             </button>
             <button
+              data-cursor="music"
               onClick={onClose}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-[var(--on-vibrant)] border border-[var(--color-muted)] transition-colors shadow-xs active:scale-95"
               aria-label="Close Lyrics"
@@ -357,6 +359,7 @@ export const LyricsView = React.memo(
           }`}
         >
           <button
+            data-cursor="music"
             onClick={resumeToActive}
             className="bg-[var(--color-dark)] text-[var(--on-vibrant)] font-pixel text-caption font-bold px-4 py-2 rounded-full shadow-lg hover:bg-[var(--color-vibrant)] transition-colors active:scale-95 flex items-center gap-1.5"
           >

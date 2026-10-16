@@ -52,7 +52,9 @@ export function QueueModal({
     reorderQueue,
     addToQueue,
     setQueue,
+    accountTier,
   } = useSpotifyPlayerStore();
+  const isFree = accountTier === 'free';
 
   const { data: recentTracks = [], isLoading: isRecentLoading } = useRecentlyPlayed({
     enabled: isOpen,
@@ -620,13 +622,15 @@ export function QueueModal({
                         >
                           <PlayIcon size={13} />
                         </button>
-                        <button
-                          onClick={() => addToQueue(track, item.context?.uri)}
-                          className="mw-btn min-h-[30px] px-3 py-1 rounded-full bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-meta font-bold shadow-2xs flex items-center gap-1"
-                          title="Add to Up Next Queue"
-                        >
-                          <PlusIcon size={11} /> Queue
-                        </button>
+                        {!isFree && (
+                          <button
+                            onClick={() => addToQueue(track, item.context?.uri)}
+                            className="mw-btn min-h-[30px] px-3 py-1 rounded-full bg-white hover:bg-[var(--color-light)] border border-[var(--color-muted)] text-[var(--color-dark)] font-pixel text-meta font-bold shadow-2xs flex items-center gap-1"
+                            title="Add to Up Next Queue"
+                          >
+                            <PlusIcon size={11} /> Queue
+                          </button>
+                        )}
                         {onAddToPlaylist && (
                           <button
                             onClick={() => onAddToPlaylist(track.uri)}

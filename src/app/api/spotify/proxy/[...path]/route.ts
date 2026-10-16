@@ -14,7 +14,7 @@ import {
   inFlightGetRequests,
   InFlightResult,
 } from '@/lib/server/spotifyInFlight';
-import { isSpotifyMockMode, MOCK_USER_ID } from '@/mocks/spotify/config';
+import { isSpotifyMockMode, MOCK_USER_ID, getMockSpotifyProduct } from '@/mocks/spotify/config';
 import tracksFixture from '@/mocks/spotify/fixtures/tracks.json';
 
 export interface EndpointCacheRule {
@@ -321,13 +321,28 @@ async function handleReq(
   // In mock mode: short-circuit allowlisted GET endpoints. Writes (POST/PUT/DELETE)
   // fall through to the 501 below — see handoff note re: me/player/play|pause.
   if (isSpotifyMockMode()) {
+    if (getMockSpotifyProduct() === 'free') {
+      if (pathString === 'me/player' || pathString.startsWith('me/player/')) {
+        return NextResponse.json(
+          {
+            error: {
+              status: 403,
+              message: 'Player command failed: Premium required',
+              reason: 'PREMIUM_REQUIRED',
+            },
+          },
+          { status: 403 },
+        );
+      }
+    }
+
     if (request.method === 'GET') {
       if (pathString === 'me') {
         console.info('[Spotify Proxy] Mock served:', pathString);
         return NextResponse.json({
           id: MOCK_USER_ID,
           display_name: 'Mock User',
-          product: 'premium',
+          product: getMockSpotifyProduct(),
         });
       }
 

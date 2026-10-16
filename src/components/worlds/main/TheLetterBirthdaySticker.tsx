@@ -6,6 +6,7 @@ import { LETTER_CLIMAX, LETTER_OUTRO_LINES } from "./theLetterContent";
 export default function TheLetterBirthdaySticker() {
   return (
     <div
+      data-cursor="peel"
       className="mt-9 p-6 sm:p-8 bg-gradient-to-br from-[#FFF0F5] via-[#FFE8F2] to-[#FFF9E6] border-2 sm:border-3 border-dashed border-[#FF7597] text-center shadow-[0_10px_30px_rgba(255,117,151,0.28),0_4px_12px_rgba(136,19,55,0.08)] relative group rotate-[-0.3deg] rounded-3xl"
     >
       {/* Washi tapes on top corners of the sticker */}

@@ -40,6 +40,16 @@ export function assertMockModeAllowed(): boolean {
   return true;
 }
 
+export function getMockSpotifyProduct(): 'premium' | 'free' {
+  if (process.env.NODE_ENV === 'production') {
+    return 'premium';
+  }
+  const isFree =
+    process.env.NEXT_PUBLIC_MOCK_SPOTIFY_PRODUCT === 'free' ||
+    process.env.MOCK_SPOTIFY_PRODUCT === 'free';
+  return isFree ? 'free' : 'premium';
+}
+
 export const MOCK_ACCESS_TOKEN = 'mock_spotify_access_token';
 export const MOCK_REFRESH_TOKEN = 'mock_spotify_refresh_token';
 export const MOCK_USER_ID = 'mock-user';

@@ -619,5 +619,25 @@ describe('Spotify Proxy Route (/api/spotify/proxy/[...path])', () => {
       const json = await res.json();
       expect(json).toEqual({ error: 'mock endpoint not implemented' });
     });
+
+    it('returns product: "free" for /me when MOCK_SPOTIFY_PRODUCT is free', async () => {
+      process.env.MOCK_SPOTIFY_PRODUCT = 'free';
+      const req = new Request('http://localhost:3000/api/spotify/proxy/me');
+      const res = await GET(req, { params: Promise.resolve({ path: ['me'] }) });
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.product).toBe('free');
+      delete process.env.MOCK_SPOTIFY_PRODUCT;
+    });
+
+    it('returns 403 PREMIUM_REQUIRED for player endpoints when MOCK_SPOTIFY_PRODUCT is free', async () => {
+      process.env.MOCK_SPOTIFY_PRODUCT = 'free';
+      const req = new Request('http://localhost:3000/api/spotify/proxy/me/player/play', { method: 'PUT' });
+      const res = await PUT(req, { params: Promise.resolve({ path: ['me', 'player', 'play'] }) });
+      expect(res.status).toBe(403);
+      const json = await res.json();
+      expect(json.error.reason).toBe('PREMIUM_REQUIRED');
+      delete process.env.MOCK_SPOTIFY_PRODUCT;
+    });
   });
 });

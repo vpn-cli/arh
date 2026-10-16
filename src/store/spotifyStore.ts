@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type RepeatMode = 'off' | 'context' | 'track';
+export type AccountTier = 'premium' | 'free' | 'unknown';
 
 export interface QueueItem {
   track: any;
@@ -20,7 +21,7 @@ interface SpotifyPlayerState {
   position: number;
   duration: number;
   error: string | null;
-  isPremium: boolean;
+  accountTier: AccountTier;
   
   queue: QueueItem[];
   queueIndex: number;
@@ -44,7 +45,7 @@ interface SpotifyPlayerState {
   setQueueIndex: (index: number) => void;
   setQueue: (queue: QueueItem[]) => void;
   reorderQueue: (startIndex: number, endIndex: number) => void;
-  setIsPremium: (isPremium: boolean) => void;
+  setAccountTier: (tier: AccountTier) => void;
 }
 
 export const useSpotifyPlayerStore = create<SpotifyPlayerState>()(
@@ -61,7 +62,7 @@ export const useSpotifyPlayerStore = create<SpotifyPlayerState>()(
       position: 0,
       duration: 0,
       error: null,
-      isPremium: true,
+      accountTier: 'unknown',
       
       queue: [],
       queueIndex: -1,
@@ -80,7 +81,10 @@ export const useSpotifyPlayerStore = create<SpotifyPlayerState>()(
       setPosition: (position) => set({ position }),
       setDuration: (duration) => set({ duration }),
       setError: (error) => set({ error }),
-      setIsPremium: (isPremium) => set({ isPremium }),
+      setAccountTier: (tier) => {
+        const normalized: AccountTier = tier === 'premium' ? 'premium' : tier === 'unknown' ? 'unknown' : 'free';
+        set({ accountTier: normalized });
+      },
 
       addToQueue: (track, contextUri) => set((state) => ({ queue: [...state.queue, { track, contextUri }] })),
       addTracksToQueue: (items) => set((state) => ({ queue: [...state.queue, ...items] })),

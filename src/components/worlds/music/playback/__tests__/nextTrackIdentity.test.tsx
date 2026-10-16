@@ -17,7 +17,7 @@ describe("Next track single source of truth", () => {
     };
     useSpotifyPlayerStore.setState({
       isReady: true,
-      isPremium: true,
+      accountTier: 'premium',
       isPaused: false,
       currentTrack: { id: "track-1", name: "Track One" } as any,
     });

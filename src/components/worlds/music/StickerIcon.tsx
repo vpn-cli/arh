@@ -40,7 +40,7 @@ export const StickerIcon = React.memo(function StickerIcon({
       case 'header':
         return (
           <img
-            src="/hampter/hello_kitty_pin.png"
+            src="/images/hello-kitty-header.png"
             alt=""
             aria-hidden="true"
             width={size || 28}
@@ -118,6 +118,20 @@ export const StickerIcon = React.memo(function StickerIcon({
           />
         );
     }
+  }
+
+  if (name === 'header') {
+    return (
+      <img
+        src="/images/hello-kitty-header.png"
+        alt=""
+        aria-hidden="true"
+        width={size}
+        height={size}
+        className={`object-contain ${className}`}
+        style={combinedStyle}
+      />
+    );
   }
 
   const stickerFile = SNOOPY_STICKER_MAP[name];

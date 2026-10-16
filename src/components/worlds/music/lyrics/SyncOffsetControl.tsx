@@ -92,9 +92,13 @@ export function SyncOffsetControl({
 
   return (
     <>
-      <div className="flex items-center gap-1.5 bg-white/90 border border-[var(--color-dark)]/40 rounded-full px-2.5 py-1 min-h-[36px] shadow-xs">
+      <div
+        data-precision="true"
+        className="flex items-center gap-1.5 bg-white/90 border border-[var(--color-dark)]/40 rounded-full px-2.5 py-1 min-h-[36px] shadow-xs"
+      >
         <button
           type="button"
+          data-cursor="music"
           onClick={handleDecrease}
           disabled={offsetMs <= -5000}
           className="font-pixel text-meta font-bold min-h-[28px] py-1 px-2.5 flex items-center justify-center rounded hover:bg-[var(--color-light)] text-[var(--color-dark)] transition-colors active:scale-95 disabled:opacity-40"
@@ -110,6 +114,7 @@ export function SyncOffsetControl({
         </span>
         <button
           type="button"
+          data-cursor="music"
           onClick={handleIncrease}
           disabled={offsetMs >= 5000}
           className="font-pixel text-meta font-bold min-h-[28px] py-1 px-2.5 flex items-center justify-center rounded hover:bg-[var(--color-light)] text-[var(--color-dark)] transition-colors active:scale-95 disabled:opacity-40"
@@ -119,6 +124,7 @@ export function SyncOffsetControl({
         </button>
         <button
           type="button"
+          data-cursor="music"
           onClick={handleSaveClick}
           disabled={isSaving}
           className="font-pixel text-meta font-bold min-h-[28px] py-1 px-3 ml-1 rounded-full border border-[var(--color-dark)] bg-[var(--color-light)] text-[var(--color-dark)] hover:bg-[var(--color-muted)]/40 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center"

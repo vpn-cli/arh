@@ -52,7 +52,7 @@ describe('Queue bugs and playback matching tests', () => {
       queue: [],
       queueIndex: 0,
       deviceId: 'test_device_123',
-      isPremium: true,
+      accountTier: 'premium',
       currentTrack: null,
     });
   });
@@ -96,7 +96,7 @@ describe('Queue bugs and playback matching tests', () => {
       queue: initialQueue,
       queueIndex: 0,
       deviceId: 'test_device_123',
-      isPremium: true,
+      accountTier: 'premium',
     });
 
     const { result } = renderHook(() =>
@@ -142,7 +142,7 @@ describe('Queue bugs and playback matching tests', () => {
       queue: initialQueue,
       queueIndex: 0,
       deviceId: 'test_device_123',
-      isPremium: true,
+      accountTier: 'premium',
     });
 
     const { result } = renderHook(() =>
@@ -171,7 +171,7 @@ describe('Queue bugs and playback matching tests', () => {
       queue: initialQueue,
       queueIndex: 0,
       deviceId: 'test_device_123',
-      isPremium: true,
+      accountTier: 'premium',
     });
 
     const { result } = renderHook(() =>

@@ -175,6 +175,7 @@ export default function TheLetterStationery({
         <div className="mt-8 pt-5 border-t-2 border-dashed border-[#FFD0DC] flex justify-center relative z-10">
           <button
             type="button"
+            data-cursor="peel"
             onClick={onClose}
             className="px-7 sm:px-8 py-3 bg-gradient-to-r from-[#FFF0F5] to-[#FFE4EE] hover:from-[#FFE4EE] hover:to-[#FFD5E5] text-[#881337] border-2 border-[#881337] rounded-full font-letter-ui text-xs sm:text-sm font-bold tracking-wider shadow-[0_5px_0_#C48B22] hover:-translate-y-0.5 hover:shadow-[0_6px_0_#C48B22] active:translate-y-1 active:shadow-[0_1px_0_#C48B22] transition-all cursor-pointer flex items-center gap-2"
           >

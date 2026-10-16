@@ -170,7 +170,7 @@ export function MixSection({
       <section className="mw-panel flex flex-col">
         <SectionHeader
           title="Continue listening"
-          sticker="r5c2"
+          sticker="continueListening"
         />
         <div className="border-b border-[var(--color-muted)] my-3" />
         {isRecentError ? renderError(recentError, 'RECENTLY PLAYED') :

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import confetti from "canvas-confetti";
 import { sfx } from "@/lib/audio";
+import { dispatchPuzzleSolved, dispatchPuzzleSkipped } from "@/components/ui/cursorUtils";
 import {
   CalculusQuestion,
   Difficulty,
@@ -35,6 +36,11 @@ export function useKittyTerminalEngine({
 
   const triggerConfetti = () => {
     try {
+      const prefersReducedMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (prefersReducedMotion) return;
+
       confetti({
         particleCount: 80,
         spread: 90,
@@ -59,11 +65,11 @@ export function useKittyTerminalEngine({
 
   const handleSkip = () => {
     sfx.select();
-    triggerConfetti();
+    dispatchPuzzleSkipped();
     setLogs((prev) => [
       ...prev,
       { id: `skip-${Date.now()}`, type: "system", text: "> [!] BYPASS PROTOCOL ENGAGED: Terminal clearance skipped." },
-      { id: `skip-ok-${Date.now()}`, type: "success", text: "> [✓] ACCESS GRANTED! Security protocol bypassed... Unlocking all phases 🎀" },
+      { id: `skip-ok-${Date.now()}`, type: "system", text: "> [~] Access granted via bypass protocol (quiz skipped)." },
     ]);
     setInternalUnlocked(true);
     setStage("cleared");
@@ -98,6 +104,7 @@ export function useKittyTerminalEngine({
     } else {
       sfx.select();
       triggerConfetti();
+      dispatchPuzzleSolved();
       setLogs((prev) => [
         ...prev,
         userLine,
@@ -259,6 +266,7 @@ export function useKittyTerminalEngine({
         } else {
           sfx.select();
           triggerConfetti();
+          dispatchPuzzleSolved();
           setLogs((prev) => [
             ...prev,
             userLine,

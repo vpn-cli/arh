@@ -252,6 +252,7 @@ export const VinylRecord = memo(function VinylRecord({
             inert={isFlipped ? true : undefined}
             aria-hidden={isFlipped ? true : undefined}
             onClick={() => setIsFlipped(true)}
+            data-cursor="music"
             aria-label={
               currentMemory
                 ? 'Flip record to side B to view memory'
@@ -306,6 +307,7 @@ export const VinylRecord = memo(function VinylRecord({
             <button
               type="button"
               onClick={() => setIsFlipped(false)}
+              data-cursor="music"
               aria-label="Flip record to front (side A)"
               title="Flip record to front (side A)"
               className="absolute inset-0 w-full h-full rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)]"

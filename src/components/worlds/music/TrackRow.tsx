@@ -1,6 +1,7 @@
 import React from 'react';
 import { MediaRow } from './MediaRow';
 import { pickImage } from '@/lib/spotify/images';
+import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 
 export interface TrackRowProps {
   index?: number;
@@ -28,7 +29,10 @@ export const TrackRow = React.memo(function TrackRow({
   const imageUrl = pickImage(track?.album?.images, imageSize);
   const artistNames = track?.artists?.map((a: any) => a.name).join(', ') || 'Unknown artist';
 
-  const hasActions = Boolean(onAddToPlaylist || onRemoveFromPlaylist || onAddToQueue || onAddMemory);
+  const accountTier = useSpotifyPlayerStore((s) => s.accountTier);
+  const isFree = accountTier === 'free';
+
+  const hasActions = Boolean(onAddToPlaylist || onRemoveFromPlaylist || (onAddToQueue && !isFree) || onAddMemory);
 
   const actions = hasActions ? (
     <>
@@ -60,7 +64,7 @@ export const TrackRow = React.memo(function TrackRow({
         </button>
       )}
 
-      {onAddToQueue && (
+      {onAddToQueue && !isFree && (
         <button
           type="button"
           onClick={() => onAddToQueue(track)}

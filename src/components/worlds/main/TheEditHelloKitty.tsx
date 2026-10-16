@@ -4,7 +4,10 @@ import React from "react";
 
 export default function TheEditHelloKitty() {
   return (
-    <div className="absolute -top-[70px] sm:-top-[84px] left-1/2 -translate-x-1/2 flex flex-col items-center z-0 pointer-events-none drop-shadow-[0_4px_8px_rgba(58,36,64,0.15)]">
+    <div
+      data-cursor="puzzle"
+      className="absolute -top-[70px] sm:-top-[84px] left-1/2 -translate-x-1/2 flex flex-col items-center z-0 pointer-events-auto cursor-pointer drop-shadow-[0_4px_8px_rgba(58,36,64,0.15)]"
+    >
       <svg
         width="120"
         height="80"

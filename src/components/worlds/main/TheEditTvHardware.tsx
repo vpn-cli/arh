@@ -42,6 +42,7 @@ export default function TheEditTvHardware({
       {/* Tactile Fullscreen Push-Button */}
       <button
         type="button"
+        data-cursor="pointer"
         onClick={(e) => {
           e.stopPropagation();
           onToggleFullscreen();
@@ -62,6 +63,7 @@ export default function TheEditTvHardware({
       {onReplay && (
         <button
           type="button"
+          data-cursor="pointer"
           onClick={(e) => {
             e.stopPropagation();
             onReplay();
@@ -80,6 +82,7 @@ export default function TheEditTvHardware({
       {onToggleMute && (
         <button
           type="button"
+          data-cursor="pointer"
           onClick={(e) => {
             e.stopPropagation();
             onToggleMute();
@@ -104,6 +107,7 @@ export default function TheEditTvHardware({
       {onTogglePlay && (
         <button
           type="button"
+          data-cursor="pointer"
           onClick={(e) => {
             e.stopPropagation();
             onTogglePlay();

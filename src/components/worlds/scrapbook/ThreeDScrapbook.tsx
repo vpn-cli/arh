@@ -119,7 +119,7 @@ const fullSrc = (src: string) => {
 
 
 const SvgWrap = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <div className={className}>
+  <div data-cursor="peel" className={`pointer-events-auto cursor-pointer ${className}`}>
     <svg width="36" height="36" viewBox="-1 -1 9 9" shapeRendering="crispEdges">
       {children}
     </svg>
@@ -131,7 +131,7 @@ const Sticker = React.memo(({ type, active = true }: { type: string; active?: bo
   if (type === "note") return <SvgWrap className={active ? "animate-bounce" : ""}><rect x="4" y="0" width="3" height="1" fill="#A1C4FD" /><rect x="3" y="1" width="1" height="4" fill="#A1C4FD" /><rect x="6" y="1" width="1" height="2" fill="#A1C4FD" /><rect x="1" y="4" width="3" height="1" fill="#A1C4FD" /><rect x="0" y="5" width="4" height="2" fill="#A1C4FD" /></SvgWrap>;
   if (type === "sparkle") return <SvgWrap className={active ? "animate-pulse" : ""}><rect x="3" y="0" width="1" height="2" fill="#DFD5F5" /><rect x="3" y="5" width="1" height="2" fill="#DFD5F5" /><rect x="0" y="3" width="2" height="1" fill="#DFD5F5" /><rect x="5" y="3" width="2" height="1" fill="#DFD5F5" /><rect x="2" y="2" width="3" height="3" fill="#DFD5F5" /></SvgWrap>;
   if (type === "flower") return <SvgWrap className={`${active ? "animate-[spin_6s_linear_infinite_reverse]" : ""} origin-center`}><rect x="2" y="0" width="3" height="2" fill="#FF8FB3" /><rect x="0" y="2" width="2" height="3" fill="#FF8FB3" /><rect x="5" y="2" width="2" height="3" fill="#FF8FB3" /><rect x="2" y="5" width="3" height="2" fill="#FF8FB3" /><rect x="2" y="2" width="3" height="3" fill="#FFE4A1" /></SvgWrap>;
-  if (type === "banana") return <div className="text-4xl font-sans select-none origin-center mt-2">🍌</div>;
+  if (type === "banana") return <div data-cursor="peel" className="text-4xl font-sans select-none origin-center mt-2 pointer-events-auto cursor-pointer">🍌</div>;
   return null;
 });
 Sticker.displayName = "Sticker";
@@ -217,6 +217,7 @@ const DraggableCropImage = React.memo(function DraggableCropImage({ item, onImag
 
   return (
     <div
+      data-cursor={editMode ? "grab" : "polaroid"}
       className={`relative w-full h-full bg-white overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 ease-out ${isSelected ? 'ring-4 ring-[#FF8FB3] scale-95 opacity-80' : ''}`}
       onPointerDown={handlePointerDown}
       onPointerMove={editMode ? handlePointerMove : undefined}
@@ -483,6 +484,7 @@ const PageContent = React.memo(function PageContent({
   if (data.pageTitle === "COVER") {
     return (
       <div
+        data-cursor="peel"
         className="absolute inset-0 bg-[#FFB6C1] flex flex-col items-center justify-between p-2 sm:p-3 pb-2 overflow-hidden border-4 border-[#FFD0DC] select-none cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
@@ -553,7 +555,7 @@ const PageContent = React.memo(function PageContent({
             {/* Polaroid Chin Label */}
             <div className="mt-1.5 sm:mt-2 text-center flex items-center justify-center gap-1.5 px-3 py-0.5 bg-[#FFF0F5] border border-[#FFB6C1] rounded-full shadow-sm">
               <span className="font-pixel text-[9px] sm:text-[11px] text-[#881337] font-bold tracking-widest uppercase">
-                {"✦ MAAHIVEY -> THIS WAY ✦"}
+                {"✦ MAAHIVEY → THIS WAY ✦"}
               </span>
             </div>
           </div>
@@ -604,6 +606,7 @@ const PageContent = React.memo(function PageContent({
         <div className={`absolute bottom-3 sm:bottom-4 ${side === 'left' ? 'left-3 sm:left-4' : 'right-3 sm:right-4'} z-50 pointer-events-none`}>
           {side === 'left' && spreadIdx > 0 && onTurnPage && (
             <button
+              data-cursor="pointer"
               onClick={(e) => { e.stopPropagation(); onTurnPage(-1); }}
               className="px-3 py-1.5 bg-white/90 rounded-full shadow-[2px_2px_0_rgba(255,182,193,0.8)] font-pixel text-xs text-[#20233F] hover:bg-[#FFD0DC] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:-rotate-2 transition-all border-2 border-white pointer-events-auto cursor-pointer"
             >
@@ -691,6 +694,7 @@ const PageContent = React.memo(function PageContent({
       <div className={`absolute bottom-4 sm:bottom-6 ${side === 'left' ? 'left-4 sm:left-6' : 'right-4 sm:right-6'} z-50 pointer-events-none`}>
         {side === 'left' && spreadIdx > 0 && onTurnPage && (
           <button
+            data-cursor="pointer"
             onClick={(e) => { e.stopPropagation(); onTurnPage(-1); }}
             className="px-3 py-1.5 bg-white/90 rounded-full shadow-[2px_2px_0_rgba(255,182,193,0.8)] font-pixel text-xs text-[#20233F] hover:bg-[#FFD0DC] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:-rotate-2 transition-all border-2 border-white pointer-events-auto cursor-pointer"
           >
@@ -699,6 +703,7 @@ const PageContent = React.memo(function PageContent({
         )}
         {side === 'right' && totalSpreads && spreadIdx < totalSpreads - 1 && data.pageTitle !== "COVER" && onTurnPage && (
           <button
+            data-cursor="pointer"
             onClick={(e) => { e.stopPropagation(); onTurnPage(1); }}
             className="px-3 py-1.5 bg-white/90 rounded-full shadow-[2px_2px_0_rgba(255,182,193,0.8)] font-pixel text-xs text-[#20233F] hover:bg-[#FFD0DC] [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:rotate-2 transition-all border-2 border-white pointer-events-auto cursor-pointer"
           >
@@ -1386,12 +1391,14 @@ export default function ThreeDScrapbook() {
       {inspectVisible && inspectImage && typeof document !== 'undefined' && createPortal(
         <div
           ref={overlayRef}
+          data-cursor="zoom-out"
           className={`fixed inset-0 z-[99999] bg-[#101223]/95 flex items-center justify-center cursor-zoom-out transition-all duration-300 ${carouselReady ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
           onClick={() => { closeInspect(); }}
           style={{ overscrollBehaviorX: 'none', overscrollBehaviorY: 'none' }}
         >
           {/* Close Button */}
           <button
+            data-cursor="pointer"
             className="absolute top-4 right-4 sm:top-8 sm:right-8 w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-[999999] cursor-pointer"
             onClick={(e) => { e.stopPropagation(); closeInspect(); }}
           >
@@ -1401,6 +1408,7 @@ export default function ThreeDScrapbook() {
 
           <div
             ref={carouselRef}
+            data-cursor="grab"
             className={`w-full h-full flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory items-center px-[50vw] gap-2 sm:gap-4 ${carouselReady ? 'scroll-smooth' : ''} cursor-grab active:cursor-grabbing`}
             style={{ overscrollBehaviorX: 'none', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             onWheel={handleCarouselWheel}
@@ -1445,6 +1453,7 @@ export default function ThreeDScrapbook() {
                 className="flex-none snap-center flex items-center justify-center pointer-events-none"
               >
                 <div
+                  data-cursor="zoom-out"
                   className={`relative max-w-[90vw] sm:max-w-[75vw] max-h-[90vh] p-1.5 sm:p-2 bg-white/95 shadow-[0_10px_40px_rgba(255,190,210,0.4)] rounded-2xl border-2 border-white/60 pointer-events-auto transition-all duration-300 [@media(hover:hover)]:hover:scale-[1.02] cursor-zoom-out flex flex-col items-center group ${i % 2 === 0 ? 'rotate-1' : '-rotate-1'}`}
                   onClick={() => { closeInspect(); }}
                 >

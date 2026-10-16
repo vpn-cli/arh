@@ -5,6 +5,7 @@ import ReactDOM from "react-dom";
 import { sfx } from "@/lib/audio";
 import confetti from "canvas-confetti";
 import PhaseHeader from "./PhaseHeader";
+import { dispatchPuzzleSolved } from "@/components/ui/cursorUtils";
 
 export default function BirthdayVault() {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,6 +18,11 @@ export default function BirthdayVault() {
 
   const triggerConfetti = () => {
     try {
+      const prefersReducedMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (prefersReducedMotion) return;
+
       confetti({
         particleCount: 60,
         spread: 80,
@@ -41,6 +47,7 @@ export default function BirthdayVault() {
       setIsOpen(true);
       setIsUnlocking(false);
       triggerConfetti();
+      dispatchPuzzleSolved();
     }, 1000);
   };
 
@@ -79,6 +86,7 @@ export default function BirthdayVault() {
       <div
         className="absolute inset-0 bg-[#2D1B36]/60 backdrop-blur-sm transition-opacity"
         onClick={handleClose}
+        data-cursor="zoom-out"
         aria-hidden="true"
       />
 
@@ -106,6 +114,7 @@ export default function BirthdayVault() {
         <button
           type="button"
           onClick={handleClose}
+          data-cursor="pointer"
           className="min-h-[44px] px-6 py-2.5 bg-[#FF8FB3] hover:bg-[#FF6584] text-[#2D1B36] font-retro font-bold text-xs tracking-wider rounded-xl border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-2 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer"
         >
           RETURN TO ADVENTURE ✦
@@ -126,6 +135,7 @@ export default function BirthdayVault() {
       <button
         type="button"
         onClick={handleOpen}
+        data-cursor="puzzle"
         aria-label="Open Mystery Birthday Vault"
         aria-haspopup="dialog"
         className="w-full text-left cursor-pointer group relative hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-4 rounded-2xl transition-all duration-300"

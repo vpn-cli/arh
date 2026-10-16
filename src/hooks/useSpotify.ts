@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { proxyFetch } from '@/lib/spotifyClient';
+import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { fetchLikedTracks } from './useLikedTracks';
 
 export function useSpotifySession() {
@@ -15,7 +16,41 @@ export function useSpotifySession() {
   });
 }
 
+export async function fetchSpotifyMe() {
+  try {
+    const data = await proxyFetch('/me');
+    const tier = data?.product === 'premium' ? 'premium' : 'free';
+    useSpotifyPlayerStore.getState().setAccountTier(tier);
+    return data;
+  } catch (err) {
+    // On failure, keep 'unknown'. Only a successful /me or SDK account_error may set 'free'.
+    throw err;
+  }
+}
+
+export function useSpotifyMe(options?: {
+  enabled?: boolean;
+  refetchInterval?: number | false | ((query: any) => number | false | undefined);
+  refetchIntervalInBackground?: boolean;
+  retry?: boolean | number | ((failureCount: number, error: any) => boolean);
+}) {
+  const { isSuccess, data: sessionData } = useSpotifySession();
+  const isAuthenticated = isSuccess && !!sessionData?.accessToken;
+  const isEnabled = options?.enabled !== false && isAuthenticated;
+
+  return useQuery({
+    queryKey: ['spotify', 'me'],
+    queryFn: fetchSpotifyMe,
+    enabled: isEnabled,
+    staleTime: 5 * 60 * 1000,
+    retry: options?.retry ?? false,
+    refetchInterval: options?.refetchInterval,
+    refetchIntervalInBackground: options?.refetchIntervalInBackground ?? true,
+  });
+}
+
 export function usePlaylists(options?: { enabled?: boolean }) {
+  const queryClient = useQueryClient();
   const { isSuccess, data: sessionData } = useSpotifySession();
   const isAuthenticated = isSuccess && !!sessionData?.accessToken;
   const isEnabled = options?.enabled !== false && isAuthenticated;
@@ -24,7 +59,11 @@ export function usePlaylists(options?: { enabled?: boolean }) {
     queryKey: ['spotify', 'playlists'],
     queryFn: async () => {
       const [meData, playlistsData] = await Promise.all([
-        proxyFetch('/me').catch(() => null),
+        queryClient.ensureQueryData({
+          queryKey: ['spotify', 'me'],
+          queryFn: fetchSpotifyMe,
+          staleTime: 5 * 60 * 1000,
+        }).catch(() => null),
         proxyFetch('/me/playlists?limit=50').catch(() => null)
       ]);
       const currentUserId = meData?.id;

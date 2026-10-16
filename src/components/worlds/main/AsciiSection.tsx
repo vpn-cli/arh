@@ -106,6 +106,7 @@ export default function AsciiSection({
               <button
                 type="button"
                 onClick={handleSkip}
+                data-cursor="pointer"
                 aria-label="Skip Terminal Questions"
                 className="text-xs font-terminal uppercase text-[#3A2440] hover:text-[#2D1B36] px-2.5 py-1 min-h-[32px] rounded border border-[#3A2440]/35 hover:bg-[#FFEAA7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] transition-colors cursor-pointer"
               >
@@ -115,6 +116,7 @@ export default function AsciiSection({
             <button
               type="button"
               onClick={handleReset}
+              data-cursor="pointer"
               aria-label="Reboot Terminal"
               className="text-xs font-terminal uppercase text-[#3A2440] hover:text-[#2D1B36] px-2.5 py-1 min-h-[32px] rounded border border-[#3A2440]/35 hover:bg-[#FFEAA7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] transition-colors cursor-pointer"
             >
@@ -125,6 +127,7 @@ export default function AsciiSection({
 
         <div
           onClick={() => inputRef.current?.focus()}
+          data-cursor="puzzle"
           className="bg-[#1C1221] rounded-xl p-4 sm:p-6 border-2 border-[#3A2440] shadow-[inset_0_4px_16px_rgba(0,0,0,0.6)] relative overflow-hidden min-h-[320px] max-h-[480px] flex flex-col justify-between cursor-text select-text"
         >
           <div className="absolute inset-0 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQIW2NkYGD4z8DAwMgAI0AMDA4wBBE/wDAAAAAASUVORK5CYII=')] opacity-15 pointer-events-none" aria-hidden="true" />
@@ -155,13 +158,20 @@ export default function AsciiSection({
 
               {isUnlocked && (
                 <div className="mt-4 flex flex-col items-center animate-slide-up text-center w-full">
-                  <KittyMascot size={180} className="mx-auto" />
+                  <div
+                    data-cursor="puzzle"
+                    className="inline-block pointer-events-auto cursor-pointer"
+                    aria-label="Kitty Mascot"
+                  >
+                    <KittyMascot size={180} className="mx-auto" />
+                  </div>
                   <div className="mt-2 text-[#FFE27A] font-pixel text-xl sm:text-2xl tracking-wider font-extrabold animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                     ✦ HAPPY BIRTHDAY! ✦
                   </div>
                   <button
                     type="button"
                     onClick={scrollToVault}
+                    data-cursor="pointer"
                     className="mt-3 min-h-[44px] px-5 py-2.5 bg-[#FF8FB3] hover:bg-[#FF7396] text-[#2D1B36] font-retro text-xs sm:text-[13px] tracking-wider font-bold rounded-xl border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] hover:shadow-[1px_1px_0_#3A2440] hover:translate-x-[2px] hover:translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-2 transition-all cursor-pointer flex items-center gap-2"
                   >
                     <span aria-hidden="true">🎁</span>
@@ -184,6 +194,7 @@ export default function AsciiSection({
               <input
                 ref={inputRef}
                 type="text"
+                data-cursor="text"
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
                 placeholder={getPlaceholder()}
@@ -194,6 +205,7 @@ export default function AsciiSection({
               />
               <button
                 type="submit"
+                data-cursor="pointer"
                 aria-label="Submit command"
                 className="min-h-[36px] px-3.5 py-1 bg-[#FF8FB3]/25 hover:bg-[#FF8FB3]/45 border border-[#FF8FB3]/70 text-[#FF8FB3] rounded font-terminal text-sm sm:text-base shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF8FB3] transition-colors cursor-pointer font-bold"
               >

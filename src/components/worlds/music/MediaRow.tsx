@@ -127,6 +127,7 @@ export const MediaRow = React.memo(function MediaRow({
 
   return (
     <div
+      data-cursor="music"
       className={`group relative w-full flex items-center gap-3 p-2 rounded-xl mw-row text-left shrink-0 select-none ${
         isActive ? 'bg-[var(--color-light)] border-[var(--color-vibrant)]' : ''
       } ${className}`}

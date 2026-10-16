@@ -82,7 +82,7 @@ describe("Search track click playback", () => {
     vi.clearAllMocks();
     useSpotifyPlayerStore.setState({
       deviceId: "dev_123",
-      isPremium: true,
+      accountTier: "premium",
       currentTrack: {
         id: "mashooqa_001",
         uri: "spotify:track:mashooqa_uri",

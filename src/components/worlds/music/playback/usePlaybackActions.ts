@@ -109,16 +109,19 @@ export function usePlaybackActions({
       activePlayer.activateElement().catch(() => {});
     }
 
-    const { isPremium, deviceId } = useSpotifyPlayerStore.getState();
-    if (!isPremium) {
+    const { accountTier, deviceId } = useSpotifyPlayerStore.getState();
+    if (accountTier === 'free') {
       openInSpotify(fallbackUri);
+      return null;
+    }
+    if (accountTier !== 'premium') {
       return null;
     }
 
     userPausedRef.current = false;
     let targetDevice = optionsRef.current.selectedDevice || currentDeviceIdRef.current || deviceId;
 
-    if (currentNeedsRecoveryRef.current || (!targetDevice && isPremium)) {
+    if (currentNeedsRecoveryRef.current || (!targetDevice && accountTier === 'premium')) {
       try {
         const reason = currentNeedsRecoveryRef.current
           ? "ensurePlaybackDevice: needsRecovery"
@@ -377,18 +380,8 @@ export function usePlaybackActions({
   });
 
   return {
-    playTrack,
-    playTracks,
-    playPlaylist,
-    playContextTrack,
-    playQueueItem,
-    togglePlay,
-    nextTrack,
-    prevTrack,
-    toggleShuffle,
-    toggleRepeat,
-    toggleSaveTrack,
-    handleAddToQueue,
-    userPausedRef,
+    playTrack, playTracks, playPlaylist, playContextTrack, playQueueItem,
+    togglePlay, nextTrack, prevTrack, toggleShuffle, toggleRepeat,
+    toggleSaveTrack, handleAddToQueue, userPausedRef,
   };
 }

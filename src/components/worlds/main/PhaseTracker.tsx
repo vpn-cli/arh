@@ -176,6 +176,7 @@ export default function PhaseTracker({ className = "", isUnlocked = false }: Pha
             data-testid={`phase-tracker-dot-${phase.number}`}
             type="button"
             onClick={() => handleScrollToPhase(phase.id)}
+            data-cursor="pointer"
             aria-label={phase.ariaLabel}
             aria-current={isActive ? "step" : undefined}
             className="group relative flex flex-col items-center justify-center p-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-2 rounded-full transition-transform"

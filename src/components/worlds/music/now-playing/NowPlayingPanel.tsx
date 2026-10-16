@@ -66,6 +66,8 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
 }: NowPlayingPanelProps) {
   const currentTrack = useSpotifyPlayerStore((s) => s.currentTrack);
   const isPaused = useSpotifyPlayerStore((s) => s.isPaused);
+  const accountTier = useSpotifyPlayerStore((s) => s.accountTier);
+  const isFree = accountTier === 'free';
   const [likeTrigger, setLikeTrigger] = React.useState(0);
 
   const handleToggleLike = React.useCallback(async () => {
@@ -84,7 +86,7 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
             <span className="font-pixel text-[var(--color-dark)] text-body font-bold">Now Playing</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <VolumeButton />
+            {!isFree && <VolumeButton />}
             {currentTrack && (
               <button
                 onClick={onToggleLyrics}
@@ -173,12 +175,14 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
             </div>
 
             {/* Progress Bar */}
-            <ProgressBar
-              ref={progressBarRef}
-              getPositionMs={getPositionMs}
-              onSeek={onSeek}
-              onDragSeek={onDragSeek}
-            />
+            {!isFree && (
+              <ProgressBar
+                ref={progressBarRef}
+                getPositionMs={getPositionMs}
+                onSeek={onSeek}
+                onDragSeek={onDragSeek}
+              />
+            )}
 
             {/* Controls */}
             <PlaybackControls
@@ -230,13 +234,15 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
                 </button>
               </div>
             </div>
-            <div className="w-full flex flex-col gap-1 mt-2">
-              <div className="w-full h-2.5 bg-[var(--color-muted)] rounded-full"></div>
-              <div className="flex justify-between w-full">
-                <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tabular-nums">0:00</span>
-                <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tabular-nums">0:00</span>
+            {!isFree && (
+              <div className="w-full flex flex-col gap-1 mt-2">
+                <div className="w-full h-2.5 bg-[var(--color-muted)] rounded-full"></div>
+                <div className="flex justify-between w-full">
+                  <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tabular-nums">0:00</span>
+                  <span className="font-pixel text-caption text-[var(--color-dark)] font-bold tabular-nums">0:00</span>
+                </div>
               </div>
-            </div>
+            )}
             <div className="flex items-center justify-between mt-4 px-2">
               <button className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-[var(--color-dark)]" aria-label="Shuffle disabled">
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">

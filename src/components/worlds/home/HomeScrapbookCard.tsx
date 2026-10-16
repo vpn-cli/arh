@@ -202,7 +202,17 @@ export const HomeScrapbookCard = forwardRef<HTMLButtonElement, HomeScrapbookCard
               className={`w-full py-3 px-4 min-h-[46px] rounded-xl border-2 border-[#3A2440] font-retro text-xs sm:text-[13px] font-bold tracking-[2px] uppercase text-center shadow-[3px_3px_0_#3A2440] transition-all duration-200 group-hover:translate-x-[1px] group-hover:translate-y-[1px] group-hover:shadow-[2px_2px_0_#3A2440] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none flex items-center justify-center gap-2 cursor-pointer ${portal.buttonBg} ${portal.buttonText}`}
             >
               <span>{portal.tagLabel}</span>
-              <span className="text-sm font-bold transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">→</span>
+              <svg
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current transition-transform duration-200 group-hover:translate-x-1 shrink-0"
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
             </div>
           </div>
         </div>

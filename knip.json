@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/knip@5/resources/knip-schema.json",
+  "entry": [
+    "src/app/**/{page,layout,route,manifest,loading,error,not-found}.{ts,tsx}",
+    "src/instrumentation.ts",
+    "scripts/**/*.{ts,mjs}",
+    "next.config.ts",
+    "drizzle.config.ts",
+    "vitest.config.ts"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "scripts/**/*.{ts,mjs}"
+  ],
+  "next": true,
+  "vitest": true,
+  "drizzle": true,
+  "eslint": true
+}

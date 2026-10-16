@@ -28,7 +28,7 @@ vi.mock('@/hooks/useSpotify', () => ({
 
 let mockNeedsRecovery = false;
 let mockDeviceId = 'existing_dev_1';
-let mockIsPremium = true;
+let mockAccountTier = 'premium';
 let mockCurrentTrack: any = { id: 'track_1', uri: 'spotify:track:track_1' };
 
 const mockSetQueue = vi.fn();
@@ -43,7 +43,7 @@ vi.mock('@/store/spotifyStore', () => ({
       getState: () => ({
         player: null,
         deviceId: mockDeviceId,
-        isPremium: mockIsPremium,
+        accountTier: mockAccountTier,
         currentTrack: mockCurrentTrack,
         queue: [],
         queueIndex: 0,
@@ -80,7 +80,7 @@ describe('usePlaybackActions', () => {
     vi.clearAllMocks();
     mockNeedsRecovery = false;
     mockDeviceId = 'existing_dev_1';
-    mockIsPremium = true;
+    mockAccountTier = 'premium';
   });
 
   it('returns all required actions and userPausedRef', () => {

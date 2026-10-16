@@ -137,3 +137,7 @@ export function useGameState() {
   if (!ctx) throw new Error("useGameState must be used within GameStateProvider");
   return ctx;
 }
+
+export function useOptionalGameState() {
+  return useContext(GameStateContext);
+}

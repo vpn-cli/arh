@@ -143,12 +143,14 @@ export const VolumeControl = memo(function VolumeControl({
 
   return (
     <div
+      data-precision="true"
       className={`mw-volume-control flex items-center gap-2 px-2 h-7 select-none shrink-0 ${className}`}
       role="group"
       aria-label="Volume controls"
     >
       <button
         type="button"
+        data-cursor="music"
         onClick={handleToggleMute}
         disabled={!isReady}
         aria-label={localVolume === 0 ? 'Unmute' : 'Mute'}
@@ -163,6 +165,7 @@ export const VolumeControl = memo(function VolumeControl({
       </label>
       <input
         id="now-playing-volume-slider"
+        data-cursor="music"
         type="range"
         min={0}
         max={100}

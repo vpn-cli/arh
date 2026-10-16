@@ -7,6 +7,7 @@ import {
   useSpotifyPlayer,
   disconnectSpotifyPlayer,
 } from '../SpotifyPlayerProvider';
+import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 
 // Mocks
 let mockCurrentWorld = 'home';
@@ -27,6 +28,10 @@ vi.mock('@/hooks/useSpotify', () => ({
   }),
 }));
 
+vi.mock('@/hooks/useAccountTier', () => ({
+  useAccountTier: vi.fn(),
+}));
+
 vi.mock('@/lib/spotifyClient', () => ({
   getFreshToken: vi.fn().mockResolvedValue('fresh_token_123'),
   onLoginRequired: vi.fn(),
@@ -38,6 +43,9 @@ describe('SpotifyPlayerProvider', () => {
 
   beforeEach(() => {
     disconnectSpotifyPlayer();
+    useSpotifyPlayerStore.setState({
+      accountTier: 'premium',
+    });
     mockCurrentWorld = 'home';
     mockSessionToken = 'test_token_123';
 
@@ -94,6 +102,40 @@ describe('SpotifyPlayerProvider', () => {
     );
 
     expect(playerConstructorSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not create or connect SDK when accountTier is free', () => {
+    useSpotifyPlayerStore.setState({
+      accountTier: 'free',
+    });
+    mockCurrentWorld = 'music';
+    mockSessionToken = 'test_token_123';
+
+    render(
+      <SpotifyPlayerProvider>
+        <div>Child</div>
+      </SpotifyPlayerProvider>
+    );
+
+    expect(playerConstructorSpy).not.toHaveBeenCalled();
+    expect(mockPlayerInstance.connect).not.toHaveBeenCalled();
+  });
+
+  it('does not create or connect SDK when accountTier is unknown', () => {
+    useSpotifyPlayerStore.setState({
+      accountTier: 'unknown',
+    });
+    mockCurrentWorld = 'music';
+    mockSessionToken = 'test_token_123';
+
+    render(
+      <SpotifyPlayerProvider>
+        <div>Child</div>
+      </SpotifyPlayerProvider>
+    );
+
+    expect(playerConstructorSpy).not.toHaveBeenCalled();
+    expect(mockPlayerInstance.connect).not.toHaveBeenCalled();
   });
 
   it('creates player once when currentWorld is music and user has a token', () => {

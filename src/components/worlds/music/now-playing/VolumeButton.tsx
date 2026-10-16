@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
+import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { usePlayerVolumeStore } from '@/providers/volumeStore';
 import { SpeakerIcon } from '../icons';
 import { VolumeControl } from './VolumeControl';
@@ -13,8 +14,13 @@ export interface VolumeButtonProps {
 export const VolumeButton = memo(function VolumeButton({
   className = '',
 }: VolumeButtonProps) {
+  const accountTier = useSpotifyPlayerStore((s) => s.accountTier);
   const [isOpen, setIsOpen] = useState(false);
   const volume = usePlayerVolumeStore((s) => s.volume);
+
+  if (accountTier === 'free') {
+    return null;
+  }
 
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -73,6 +79,7 @@ export const VolumeButton = memo(function VolumeButton({
       <button
         ref={buttonRef}
         type="button"
+        data-cursor="music"
         onClick={handleToggle}
         aria-label="Volume"
         aria-expanded={isOpen}

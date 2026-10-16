@@ -291,6 +291,7 @@ export default function TheLetter() {
         tabIndex={!isOpen ? 0 : undefined}
         aria-expanded={isOpen}
         aria-label="Open birthday letter"
+        data-cursor={!isOpen ? "peel" : undefined}
         onKeyDown={(e) => {
           if (!isOpen && (e.key === "Enter" || e.key === " ")) {
             e.preventDefault();

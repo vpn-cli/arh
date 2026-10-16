@@ -58,6 +58,8 @@ export const QueuePanel = memo(function QueuePanel({
   const isDraggingRef = React.useRef(false);
 
   const queue = useSpotifyPlayerStore((s) => s.queue);
+  const accountTier = useSpotifyPlayerStore((s) => s.accountTier);
+  const isFree = accountTier === 'free';
   const queueIndex = useSpotifyPlayerStore((s) => s.queueIndex);
   const setQueue = useSpotifyPlayerStore((s) => s.setQueue);
   const setQueueIndex = useSpotifyPlayerStore((s) => s.setQueueIndex);
@@ -184,6 +186,7 @@ export const QueuePanel = memo(function QueuePanel({
                 <div
                   key={`${item.track?.id || item.track?.uri || 'queue'}-${storeIndex}`}
                   draggable={effectiveQueue.length > 0}
+                  data-cursor="grab"
                   onDragStart={(e) => {
                     if (effectiveQueue.length === 0) return;
                     ensureQueueInitialized();
@@ -326,16 +329,18 @@ export const QueuePanel = memo(function QueuePanel({
                     {track.artists?.map((a: { name: string }) => a.name).join(', ')}
                   </span>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddToQueue(track, item.context?.uri);
-                  }}
-                  className="mw-btn mw-row-action text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] min-h-[28px] px-2.5 py-1 rounded-full font-pixel text-meta font-bold shadow-xs shrink-0 flex items-center gap-1"
-                  title="Add to queue"
-                >
-                  <PlusIcon size={11} /> Queue
-                </button>
+                {!isFree && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddToQueue(track, item.context?.uri);
+                    }}
+                    className="mw-btn mw-row-action text-[var(--color-dark)] bg-white border border-[var(--color-muted)] hover:bg-[var(--color-vibrant)] hover:text-[var(--on-vibrant)] min-h-[28px] px-2.5 py-1 rounded-full font-pixel text-meta font-bold shadow-xs shrink-0 flex items-center gap-1"
+                    title="Add to queue"
+                  >
+                    <PlusIcon size={11} /> Queue
+                  </button>
+                )}
               </div>
             );
           })

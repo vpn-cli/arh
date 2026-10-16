@@ -25,6 +25,7 @@ import { MediaSessionHost } from "@/components/worlds/music/pip/MediaSessionHost
 import { updateSharedPlaybackState } from "@/components/worlds/music/playback/playbackClock";
 import { PLAYBACK_DEBUG } from "@/components/worlds/music/playback/playbackHelpers";
 import { loadSpotifySDK } from "./spotifySdkLoader";
+import { useAccountTier } from "@/hooks/useAccountTier";
 
 declare global {
   interface Window {
@@ -96,9 +97,11 @@ export function useSpotifyPlayer(): SpotifyPlayerContextValue {
 }
 
 export function SpotifyPlayerProvider({ children }: { children: React.ReactNode }) {
+  useAccountTier();
   const { currentWorld } = useGameState();
   const { data: sessionData } = useSpotifySession();
   const token = sessionData?.accessToken || null;
+  const accountTier = useSpotifyPlayerStore((s) => s.accountTier);
 
   const player = useSyncExternalStore(
     (callback) => {
@@ -144,6 +147,8 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
   // Visibility and online health check
   useEffect(() => {
     const checkStateHealth = async () => {
+      const tier = useSpotifyPlayerStore.getState().accountTier;
+      if (tier === "free") return;
       const p = sharedPlayer;
       if (!p) return;
 
@@ -199,10 +204,12 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("online", handleOnline);
+    window.addEventListener("focus", handleVisibilityChange);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("online", handleOnline);
+      window.removeEventListener("focus", handleVisibilityChange);
     };
   }, []);
 
@@ -216,6 +223,7 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
   // Create player once, the first time Music World opens with a logged-in session
   useEffect(() => {
     if (currentWorld !== "music" || !token) return;
+    if (accountTier !== "premium") return;
     if (sharedPlayer || isInitializing) return;
 
     isInitializing = true;
@@ -325,25 +333,11 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
           store.setIsShuffle(incomingShuffle);
         }
         if (state.repeat_mode !== undefined) {
-          if (
-            state.repeat_mode === 0 ||
-            state.repeat_mode === "0" ||
-            state.repeat_mode === "off"
-          ) {
-            store.setRepeatMode("off");
-          } else if (
-            state.repeat_mode === 1 ||
-            state.repeat_mode === "1" ||
-            state.repeat_mode === "context"
-          ) {
-            store.setRepeatMode("context");
-          } else if (
-            state.repeat_mode === 2 ||
-            state.repeat_mode === "2" ||
-            state.repeat_mode === "track"
-          ) {
-            store.setRepeatMode("track");
-          }
+          const rMap: Record<string, "off" | "context" | "track"> = {
+            "0": "off", "1": "context", "2": "track", off: "off", context: "context", track: "track",
+          };
+          const nextRepeat = rMap[String(state.repeat_mode)];
+          if (nextRepeat) store.setRepeatMode(nextRepeat);
         }
         store.setDuration(state.duration);
 
@@ -365,7 +359,7 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
       });
       spotifyPlayer.addListener("account_error", ({ message }: { message: string }) => {
         console.error(`[Spotify SDK account_error] ${message}`);
-        useSpotifyPlayerStore.getState().setIsPremium(false);
+        useSpotifyPlayerStore.getState().setAccountTier("free");
         useSpotifyPlayerStore.getState().setError("Premium required for web playback.");
       });
 
@@ -373,7 +367,7 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
     };
 
     loadSpotifySDK(initializePlayer);
-  }, [currentWorld, token]);
+  }, [currentWorld, token, accountTier]);
 
   const value = useMemo<SpotifyPlayerContextValue>(
     () => ({

@@ -1,7 +1,8 @@
 "use client";
 
 import React from 'react';
-import { isSpotifyMockMode } from '@/mocks/spotify/config';
+import { isSpotifyMockMode, getMockSpotifyProduct } from '@/mocks/spotify/config';
+import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 
 export function SpotifyModeBadge() {
   if (process.env.NODE_ENV === 'production') {
@@ -9,11 +10,13 @@ export function SpotifyModeBadge() {
   }
 
   const isMock = isSpotifyMockMode();
+  const accountTier = useSpotifyPlayerStore((s) => s.accountTier);
+  const tier = accountTier !== 'unknown' ? accountTier : getMockSpotifyProduct();
 
   return (
     <div
       data-testid="spotify-mode-badge"
-      className="fixed bottom-3 right-3 z-50 pointer-events-none select-none flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium tracking-wide shadow-md backdrop-blur-md border border-neutral-700/50"
+      className="pointer-events-auto select-none flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium tracking-wide shadow-md backdrop-blur-md border border-neutral-700/50 shrink-0"
       style={{
         backgroundColor: isMock ? 'rgba(245, 158, 11, 0.18)' : 'rgba(16, 185, 129, 0.18)',
         color: isMock ? '#fbbf24' : '#34d399',
@@ -26,7 +29,7 @@ export function SpotifyModeBadge() {
           backgroundColor: isMock ? '#fbbf24' : '#34d399',
         }}
       />
-      {isMock ? 'mock spotify' : 'LIVE spotify'}
+      {isMock ? `mock spotify (${tier})` : 'LIVE spotify'}
     </div>
   );
 }

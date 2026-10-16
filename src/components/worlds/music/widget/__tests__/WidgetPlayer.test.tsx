@@ -24,6 +24,7 @@ describe("WidgetPlayer", () => {
   beforeEach(() => {
     window.resizeTo = vi.fn();
     useSpotifyPlayerStore.setState({
+      accountTier: 'premium',
       currentTrack: {
         id: "track-widget-1",
         name: "Cozy Lofi Beats",
@@ -114,5 +115,28 @@ describe("WidgetPlayer", () => {
     expect(screen.getByText("NOT SIGNED IN")).toBeDefined();
     expect(screen.getByText("Open the full app to sign in")).toBeDefined();
     expect(screen.getByRole("button", { name: /open full app/i })).toBeDefined();
+  });
+
+  it("shows loading and disabled play button when accountTier is unknown", () => {
+    useSpotifyPlayerStore.setState({
+      accountTier: 'unknown',
+    });
+
+    render(<WidgetPlayer />);
+
+    const loadBtn = screen.getByRole("button", { name: "Loading player" });
+    expect(loadBtn).toBeDefined();
+    expect((loadBtn as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("hides progress bar and shows Open in Spotify button when accountTier is free", () => {
+    useSpotifyPlayerStore.setState({
+      accountTier: 'free',
+    });
+
+    render(<WidgetPlayer />);
+
+    expect(screen.getByRole("button", { name: "Open in Spotify" })).toBeDefined();
+    expect(screen.queryByRole("slider", { name: "Playback progress" })).toBeNull();
   });
 });

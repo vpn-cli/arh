@@ -323,6 +323,7 @@ export function VibesSection({
                  <div
                    key={vibe.id}
                    onClick={() => setSelectedVibeId(vibe.id)}
+                   data-cursor="music"
                    className="mw-card p-3 flex flex-col items-start text-left cursor-pointer select-none group rounded-[1rem] overflow-hidden"
                    style={{ backgroundColor: 'color-mix(in srgb, var(--color-vibrant) 8%, #ffffff)' }}
                    role="button"

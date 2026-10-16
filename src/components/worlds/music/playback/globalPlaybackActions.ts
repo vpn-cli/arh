@@ -25,8 +25,12 @@ export async function ensurePlaybackDevice(fallbackUri?: string): Promise<string
     activePlayer.activateElement().catch(() => {});
   }
 
-  if (!store.isPremium) {
+  if (store.accountTier === "free") {
     openInSpotify(fallbackUri);
+    return null;
+  }
+
+  if (store.accountTier !== "premium") {
     return null;
   }
 

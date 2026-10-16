@@ -31,7 +31,7 @@ describe('Snoopy Stickers & StickerIcon', () => {
     const { container } = render(<StickerIcon name="header" size={32} />);
     const img = container.querySelector('img');
     expect(img).not.toBeNull();
-    expect(img?.getAttribute('src')).toBe('/stickers/snoopy-v1/r4c4.png');
+    expect(img?.getAttribute('src')).toBe('/images/hello-kitty-header.png');
     expect(img?.getAttribute('alt')).toBe('');
     expect(img?.getAttribute('aria-hidden')).toBe('true');
     expect(img?.style.width).toBe('32px');
@@ -40,9 +40,9 @@ describe('Snoopy Stickers & StickerIcon', () => {
 
   it('renders correct sticker files for each configured slot', () => {
     const slots: Array<[config.StickerSlot, string, number]> = [
-      ['header', '/stickers/snoopy-v1/r4c4.png', 32],
+      ['header', '/images/hello-kitty-header.png', 32],
       ['kawaiiCard', '/stickers/snoopy-v1/r4c2.png', 80],
-      ['continueListening', '/stickers/snoopy-v1/r5c2.png', 48],
+      ['continueListening', '/stickers/snoopy-v1/r2c4.png', 48],
       ['recentlyPlayed', '/stickers/snoopy-v1/r4c1.png', 48],
       ['queueTab', '/stickers/snoopy-v1/r1c4.png', 28],
       ['queueModal', '/stickers/snoopy-v1/r1c4.png', 48],
@@ -71,7 +71,7 @@ describe('Snoopy Stickers & StickerIcon', () => {
       SNOOPY_STICKER_MAP: {
         header: 'r4c4',
         kawaiiCard: 'r4c2',
-        continueListening: 'r5c2',
+        continueListening: 'r2c4',
         recentlyPlayed: 'r4c1',
         queueTab: 'r1c4',
         queueModal: 'r1c4',
@@ -81,10 +81,10 @@ describe('Snoopy Stickers & StickerIcon', () => {
 
     const { StickerIcon: FallbackStickerIcon } = await import('../StickerIcon');
 
-    // Header restores hello_kitty_pin
+    // Header restores hello-kitty-header
     const headerRender = render(<FallbackStickerIcon name="header" size={32} />);
     const headerImg = headerRender.container.querySelector('img');
-    expect(headerImg?.getAttribute('src')).toBe('/hampter/hello_kitty_pin.png');
+    expect(headerImg?.getAttribute('src')).toBe('/images/hello-kitty-header.png');
 
     // KawaiiCard restores hello_kitty_pin
     const cardRender = render(<FallbackStickerIcon name="kawaiiCard" size={80} />);

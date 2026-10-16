@@ -3,6 +3,7 @@ import tracksFixture from './fixtures/tracks.json';
 import playlistsFixture from './fixtures/playlists.json';
 import devicesFixture from './fixtures/devices.json';
 import playerFixture from './fixtures/player.json';
+import { getMockSpotifyProduct } from './config';
 
 export interface MockTrack {
   id: string;
@@ -111,7 +112,10 @@ class SpotifyMockState {
 
   // --- /me ---
   public getMe() {
-    return this.user;
+    return {
+      ...this.user,
+      product: getMockSpotifyProduct(),
+    };
   }
 
   // --- /me/playlists ---
