@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { CursorMode } from "@/components/ui/cursorUtils";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
@@ -9,12 +9,8 @@ interface CursorContextType {
   setCursorMode: (mode: CursorMode) => void;
   programmaticMode: CursorMode | null;
   setProgrammaticMode: (mode: CursorMode | null) => void;
-  soundEnabled: boolean;
-  setSoundEnabled: (enabled: boolean) => void;
-  toggleSound: () => void;
   isFinePointer: boolean;
   prefersReducedMotion: boolean;
-  hasInteracted: boolean;
 }
 
 const CursorContext = createContext<CursorContextType | null>(null);
@@ -22,9 +18,7 @@ const CursorContext = createContext<CursorContextType | null>(null);
 export function CursorProvider({ children }: { children: React.ReactNode }) {
   const [cursorMode, setCursorMode] = useState<CursorMode>("default");
   const [programmaticMode, setProgrammaticMode] = useState<CursorMode | null>(null);
-  const [soundEnabled, setSoundEnabledState] = useState<boolean>(false);
   const [isFinePointer, setIsFinePointer] = useState<boolean>(true);
-  const [hasInteracted, setHasInteracted] = useState<boolean>(false);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
@@ -43,43 +37,21 @@ export function CursorProvider({ children }: { children: React.ReactNode }) {
       mq.addListener(updatePointer);
     }
 
-    // Load persisted sound preference (strictly default false)
+    // Clean up legacy localStorage key for cursor sound toggle
     try {
-      const stored = localStorage.getItem("kitty_cursor_sound");
-      if (stored === "true") {
-        setSoundEnabledState(true);
-      }
+      localStorage.removeItem("kitty_cursor_sound");
     } catch {
       // safe fallback
     }
-
-    // Track first user gesture to unlock Web Audio API safely
-    const handleFirstGesture = () => {
-      setHasInteracted(true);
-      window.removeEventListener("pointerdown", handleFirstGesture);
-      window.removeEventListener("keydown", handleFirstGesture);
-    };
-    window.addEventListener("pointerdown", handleFirstGesture, { passive: true });
-    window.addEventListener("keydown", handleFirstGesture, { passive: true });
 
     return () => {
-      window.removeEventListener("pointerdown", handleFirstGesture);
-      window.removeEventListener("keydown", handleFirstGesture);
+      if (mq.removeEventListener) {
+        mq.removeEventListener("change", updatePointer);
+      } else {
+        mq.removeListener(updatePointer);
+      }
     };
   }, []);
-
-  const setSoundEnabled = useCallback((enabled: boolean) => {
-    setSoundEnabledState(enabled);
-    try {
-      localStorage.setItem("kitty_cursor_sound", enabled ? "true" : "false");
-    } catch {
-      // safe fallback
-    }
-  }, []);
-
-  const toggleSound = useCallback(() => {
-    setSoundEnabled(!soundEnabled);
-  }, [soundEnabled, setSoundEnabled]);
 
   return (
     <CursorContext.Provider
@@ -88,12 +60,8 @@ export function CursorProvider({ children }: { children: React.ReactNode }) {
         setCursorMode,
         programmaticMode,
         setProgrammaticMode,
-        soundEnabled,
-        setSoundEnabled,
-        toggleSound,
         isFinePointer,
         prefersReducedMotion,
-        hasInteracted,
       }}
     >
       {children}

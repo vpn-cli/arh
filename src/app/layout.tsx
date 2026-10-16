@@ -4,7 +4,6 @@ import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { SpotifyModeBadge } from "@/components/SpotifyModeBadge";
 import { CursorProvider } from "@/context/CursorContext";
 import HelloKittyCursor from "@/components/ui/HelloKittyCursor";
-import { CursorSoundToggle } from "@/components/ui/CursorSoundToggle";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -35,7 +34,6 @@ export default function RootLayout({
             {children}
             {/* Bottom-Right Shared Floating Controls */}
             <div className="fixed bottom-3 right-3 z-50 flex items-center gap-2 pointer-events-none select-none">
-              <CursorSoundToggle />
               <SpotifyModeBadge />
             </div>
           </CursorProvider>
