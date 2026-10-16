@@ -11,16 +11,15 @@ export interface VolumeButtonProps {
   className?: string;
 }
 
-export const VolumeButton = memo(function VolumeButton({
+interface VolumeButtonInnerProps {
+  className?: string;
+}
+
+const VolumeButtonInner = memo(function VolumeButtonInner({
   className = '',
-}: VolumeButtonProps) {
-  const accountTier = useSpotifyPlayerStore((s) => s.accountTier);
+}: VolumeButtonInnerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const volume = usePlayerVolumeStore((s) => s.volume);
-
-  if (accountTier === 'free') {
-    return null;
-  }
 
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -106,6 +105,20 @@ export const VolumeButton = memo(function VolumeButton({
       </div>
     </div>
   );
+});
+
+VolumeButtonInner.displayName = 'VolumeButtonInner';
+
+export const VolumeButton = memo(function VolumeButton({
+  className = '',
+}: VolumeButtonProps) {
+  const accountTier = useSpotifyPlayerStore((s) => s.accountTier);
+
+  if (accountTier === 'free') {
+    return null;
+  }
+
+  return <VolumeButtonInner className={className} />;
 });
 
 VolumeButton.displayName = 'VolumeButton';

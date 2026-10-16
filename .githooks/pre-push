@@ -3,14 +3,21 @@
 
 echo "=== Running pre-push checks ==="
 
-echo "1/2 Running TypeScript check (npm run typecheck)..."
+echo "1/3 Running TypeScript check (npm run typecheck)..."
 npm run typecheck
 if [ $? -ne 0 ]; then
   echo "❌ TypeScript type check failed! Fix type errors before pushing."
   exit 1
 fi
 
-echo "2/2 Running Vitest test suite (npm test)..."
+echo "2/3 Running ESLint check (npm run lint -- --quiet)..."
+npm run lint -- --quiet
+if [ $? -ne 0 ]; then
+  echo "❌ ESLint check failed with errors! Fix lint errors before pushing."
+  exit 1
+fi
+
+echo "3/3 Running Vitest test suite (npm test)..."
 npm test
 if [ $? -ne 0 ]; then
   echo "❌ Vitest test suite failed! Fix failing tests before pushing."

@@ -4,11 +4,7 @@ import React from 'react';
 import { isSpotifyMockMode, getMockSpotifyProduct } from '@/mocks/spotify/config';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 
-export function SpotifyModeBadge() {
-  if (process.env.NODE_ENV === 'production') {
-    return null;
-  }
-
+function SpotifyModeBadgeInner() {
   const isMock = isSpotifyMockMode();
   const accountTier = useSpotifyPlayerStore((s) => s.accountTier);
   const tier = accountTier !== 'unknown' ? accountTier : getMockSpotifyProduct();
@@ -32,4 +28,12 @@ export function SpotifyModeBadge() {
       {isMock ? `mock spotify (${tier})` : 'LIVE spotify'}
     </div>
   );
+}
+
+export function SpotifyModeBadge() {
+  if (process.env.NODE_ENV === 'production') {
+    return null;
+  }
+
+  return <SpotifyModeBadgeInner />;
 }
