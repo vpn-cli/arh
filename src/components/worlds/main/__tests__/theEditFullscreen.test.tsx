@@ -288,4 +288,26 @@ describe("TheEdit and fullscreenUtils", () => {
     });
     expect(video.muted).toBe(false);
   });
+
+  it("Shows poster with 'couldn't load video, tap to retry' on error, and tapping retries playback", async () => {
+    const mockPlay = vi.fn().mockImplementation(() => Promise.resolve());
+    window.HTMLMediaElement.prototype.play = mockPlay;
+    window.HTMLMediaElement.prototype.load = vi.fn();
+
+    const { container } = render(<TheEdit />);
+    const video = container.querySelector("video") as HTMLVideoElement;
+
+    act(() => {
+      fireEvent.error(video);
+    });
+
+    const retryBanner = screen.getByText(/couldn't load video, tap to retry/i);
+    expect(retryBanner).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(retryBanner);
+    });
+
+    expect(window.HTMLMediaElement.prototype.load).toHaveBeenCalled();
+  });
 });
