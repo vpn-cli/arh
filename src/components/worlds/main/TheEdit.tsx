@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import { sfx } from "@/lib/audio";
 import TheEditHelloKitty from "./TheEditHelloKitty";
 import TheEditEndCard from "./TheEditEndCard";
 import TheEditControls from "./TheEditControls";
@@ -9,7 +8,7 @@ import TheEditTvHardware from "./TheEditTvHardware";
 import PhaseHeader from "./PhaseHeader";
 import { formatTime, requestNativeFullscreen, exitNativeFullscreen } from "./fullscreenUtils";
 
-const VIDEO_SOURCES = ["/videos/arh_vid_final.mp4", "/videos/real_vid.mp4", "/Arh.mp4"];
+const VIDEO_SOURCES = ["/videos/real_vid.mp4", "/videos/arh_vid_final.mp4", "/Arh.mp4"];
 const POSTER_SRC = "/images/ar.jpeg";
 
 export default function TheEdit() {
@@ -59,12 +58,15 @@ export default function TheEdit() {
     return () => document.body.removeAttribute("data-cinema-fullscreen");
   }, [isFullscreen]);
 
-  // Launch initial playback & attempt true native fullscreen
+  // Launch initial playback & attempt true native fullscreen with sound immediately on first click
   const handleStartPlay = () => {
     requestNativeFullscreen(
       playerContainerRef.current,
       videoRef.current,
-      () => { setIsFullscreen(true); setShowControls(true); },
+      () => {
+        setIsFullscreen(true);
+        setShowControls(true);
+      },
       () => setShowControls(true)
     );
 
@@ -72,18 +74,25 @@ export default function TheEdit() {
     if (!video) return;
     if (isEnded || video.currentTime >= (video.duration || 1)) video.currentTime = 0;
 
-    // Play with sound immediately on first click (original behavior)
+    // Start with sound on first click with zero delay; no AudioContext activity
     video.muted = false;
     const playPromise = video.play();
     if (playPromise !== undefined) {
       playPromise
-        .then(() => { setHasStarted(true); resetControlsTimeout(); })
+        .then(() => {
+          setHasStarted(true);
+          resetControlsTimeout();
+        })
         .catch((err) => {
           console.warn("Unmuted play blocked by browser policy, falling back to muted:", err);
           video.muted = true;
           setIsMuted(true);
-          video.play()
-            .then(() => { setHasStarted(true); resetControlsTimeout(); })
+          video
+            .play()
+            .then(() => {
+              setHasStarted(true);
+              resetControlsTimeout();
+            })
             .catch(() => setShowControls(true));
         });
     }
@@ -94,9 +103,7 @@ export default function TheEdit() {
       exitNativeFullscreen();
       setIsFullscreen(false);
       setShowControls(true);
-      sfx.pop();
     } else {
-      // Synchronously request native fullscreen FIRST before any audio consumes the user gesture token
       requestNativeFullscreen(
         playerContainerRef.current,
         videoRef.current,
@@ -105,7 +112,6 @@ export default function TheEdit() {
           setShowControls(true);
         }
       );
-      sfx.select();
       if (!hasStarted) {
         setHasStarted(true);
         if (videoRef.current) {
@@ -118,7 +124,6 @@ export default function TheEdit() {
   };
 
   const handleExitFullscreen = () => {
-    sfx.pop();
     exitNativeFullscreen();
     setIsFullscreen(false);
     setShowControls(true);
