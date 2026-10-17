@@ -432,9 +432,10 @@ A chronological record of project development across all 217 commits:
 - `05ccef3` (2026-10-17 15:41): Removed unused legacy `public/Arh.mp4` video binary.
 - `f7979a6` (2026-10-17 16:15): docs: add full project log.
 - `fedecea` (2026-10-17 16:18): docs: update project log.
-- `2a5ee06` (2026-10-17 16:30): feat(letter): update postage stamps to Okayama with enhanced visual hierarchy.
-- `d413fe1` (2026-10-17 16:31): feat(letter): add strawberry cake and clipped out Batman stickers to letter stationery.
-- `feat(main)` (2026-10-17 16:50): cuter hero layout — polaroids, player card, marquee. Redesigned Main World hero ("The Adventure") into an exactly 100vh / 100svh 3-column kawaii scrapbook composition (left polaroids with washi tape, center Hello Kitty mascot with radial glow, peeking hamster, stickers, speech bubble, sticker-style title with bow atop "A", description card, and pixel "▶ CONTINUE" pill; right Player Card sticker in GameBoy style with Okayama quest and overlapping polaroid; bottom full-width pink washi marquee ribbon). Responsive with side columns hidden on mobile, full reduced motion support, zero-error lint, passed all 601 tests, and built cleanly.
+- `0940053` (2026-10-17 16:53): `feat(main): cuter hero layout — polaroids, player card, marquee`. Redesigned Main World hero into a 3-column kawaii scrapbook composition.
+- `617ff8b` (2026-10-17 17:11): `chore(stickers): slice and clip sticker pack`. Added automated sharp slice script (`scripts/slice-sticker-sheet.mjs`) and generated 19 transparent-clipped WebP stickers across bows, food, hello kitty, shinchan, snoopy, and misc.
+- `e134fde` (2026-10-17 17:23): `refactor(main): remove polaroids, player card, and marquee from hero`. Removed evidence polaroids, washi tape, player card, and bottom marquee ribbon from "The Adventure" hero. Maintained centered Hello Kitty mascot with radial glow, "psst... scroll" speech bubble, mascot stickers, title card with perched bow, description card, and continue pill. Cleaned up unused CSS keyframes in `globals.css`.
+- `0bb835c` (2026-10-17 18:08): `fix(main): remove empty viewport after end card`. Resolved the ~1 full viewport of empty background below "END OF TRANSMISSION" and "RETURN TO HUB" by updating `<main>`'s bottom padding from `pb-36` (144px) to `pb-16 sm:pb-20` (64px mobile / 80px desktop), ensuring comfortable 64–96px breathing room while preserving Phase 04 active navigation dot tracking.
 
 ---
 
