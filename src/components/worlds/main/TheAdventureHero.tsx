@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { sfx } from "@/lib/audio";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import HeroStickerBomb from "./HeroStickerBomb";
 
 export default function TheAdventureHero() {
   const [avatarBooped, setAvatarBooped] = useState(false);
@@ -29,6 +30,9 @@ export default function TheAdventureHero() {
       aria-label="Main World Introduction"
       className="w-full h-screen h-[100svh] min-h-[620px] flex flex-col justify-center items-center relative overflow-hidden px-4 sm:px-6 snap-start select-none"
     >
+      {/* ═══ SCATTERED STICKER PACK (BEHIND CONTENT Z-10) ═══ */}
+      <HeroStickerBomb />
+
       {/* ═══ HERO CONTENT (VERTICALLY & HORIZONTALLY CENTERED) ═══ */}
       <div className="w-full max-w-lg flex flex-col items-center text-center relative z-20">
         {/* Guide Avatar with Pink Radial Glow, Peeking Hamster, Stickers & Speech Bubble */}
