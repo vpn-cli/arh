@@ -163,7 +163,7 @@ export default function MainWorld() {
       {/* ═══ CONTENT FLOW ═══ */}
       <main
         ref={mainRef}
-        className="relative z-10 w-full flex flex-col items-center pb-36"
+        className="relative z-10 w-full flex flex-col items-center pb-16 sm:pb-20"
       >
         {/* Ribbon Thread Connecting Phases (Hidden on Mobile < 768px) */}
         <ScrollRibbon
