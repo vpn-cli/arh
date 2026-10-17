@@ -2369,15 +2369,16 @@ body[data-cinema-fullscreen="true"] [data-cinema-hide-on-fs] {
 @keyframes hero-sticker-pop {
   0% {
     opacity: 0;
-    transform: scale(0.6) rotate(var(--sticker-rot, 0deg));
-  }
-  70% {
-    transform: scale(1.06) rotate(var(--sticker-rot, 0deg));
+    transform: scale(0.85);
   }
   100% {
     opacity: 1;
-    transform: scale(1) rotate(var(--sticker-rot, 0deg));
+    transform: scale(1);
   }
+}
+
+.hero-sticker-pop {
+  animation: hero-sticker-pop 280ms ease-out both;
 }
 
 /* Gentle, calm water floating drift & buoyancy (slow, zero CPU toll, transform-only) */
@@ -2386,44 +2387,35 @@ body[data-cinema-fullscreen="true"] [data-cinema-hide-on-fs] {
     transform: translate3d(0, 0, 0) rotate(0deg);
   }
   25% {
-    transform: translate3d(2.5px, -3px, 0) rotate(calc(var(--st-float-rot, 1.5deg) * 0.7));
+    transform: translate3d(1.5px, -1.5px, 0) rotate(calc(var(--st-float-rot, 0.8deg) * 0.7));
   }
   50% {
-    transform: translate3d(-1.5px, var(--st-float-dist, -6px), 0) rotate(var(--st-float-rot, -1.2deg));
+    transform: translate3d(-1px, calc(var(--st-float-dist, 3px) * -1), 0) rotate(var(--st-float-rot, -0.6deg));
   }
   75% {
-    transform: translate3d(-2.5px, -2.5px, 0) rotate(calc(var(--st-float-rot, 1.5deg) * -0.5));
+    transform: translate3d(-1.5px, -1px, 0) rotate(calc(var(--st-float-rot, 0.8deg) * -0.5));
   }
-}
-
-.hero-sticker-pop {
-  animation: hero-sticker-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .hero-sticker-float {
-  animation: hero-sticker-bob var(--st-float-dur, 7s) ease-in-out infinite var(--st-float-delay, 0s);
+  animation: hero-sticker-bob var(--st-float-dur, 9s) ease-in-out infinite var(--st-float-delay, 0s);
   will-change: transform;
-}
-
-/* Hover: lift + wiggle + scale 1.08 */
-@keyframes hero-sticker-wiggle-subtle {
-  0%, 100% {
-    transform: scale(1.08) translateY(-4px) rotate(calc(var(--sticker-rot, 0deg) - 2deg));
-  }
-  50% {
-    transform: scale(1.08) translateY(-5px) rotate(calc(var(--sticker-rot, 0deg) + 2deg));
-  }
 }
 
 .hero-sticker-item {
   rotate: var(--sticker-rot, 0deg);
   scale: 1;
-  transition: scale 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: scale 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), translate 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
   will-change: transform, scale;
 }
 
 .hero-sticker-item:hover {
   scale: 1.08;
+  translate: 0 -3px;
+}
+
+.hero-sticker-item:hover img {
+  opacity: 1 !important;
 }
 
 .hero-sticker-parallax {

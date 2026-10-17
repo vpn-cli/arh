@@ -60,13 +60,13 @@ export default function TheAdventureHero() {
       <div className="w-full max-w-lg flex flex-col items-center text-center relative z-20">
         {/* Guide Avatar with Pink Radial Glow, Peeking Hamster, Stickers & Speech Bubble */}
         <div className="relative flex flex-col items-center justify-center mb-2.5 sm:mb-3">
-          {/* Soft pink radial glow behind the mascot */}
+          {/* Soft pink radial glow behind the mascot (strengthened focal glow) */}
           <div
             aria-hidden="true"
-            className="absolute w-44 h-44 sm:w-56 sm:h-56 rounded-full pointer-events-none -z-10"
+            className="absolute w-56 h-56 sm:w-72 sm:h-72 rounded-full pointer-events-none -z-10"
             style={{
               background:
-                "radial-gradient(circle, rgba(255, 143, 179, 0.45) 0%, rgba(255, 182, 193, 0.20) 55%, transparent 75%)",
+                "radial-gradient(circle, rgba(255, 143, 179, 0.58) 0%, rgba(255, 182, 193, 0.28) 55%, transparent 75%)",
             }}
           />
 

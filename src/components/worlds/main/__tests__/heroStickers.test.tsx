@@ -1,10 +1,15 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import fs from "node:fs";
 import path from "node:path";
 import HeroStickerBomb from "../HeroStickerBomb";
 import { HERO_STICKERS } from "../heroStickers";
+import {
+  TIER_MULTIPLIERS,
+  getStickerTier,
+  getStickerStyle,
+} from "../stickerStyles";
 
 // Mock next/image
 vi.mock("next/image", () => ({
@@ -43,45 +48,57 @@ describe("heroStickers config", () => {
     }
   });
 
-  it("assigns valid depth (0.2 to 1.0) and idle float params (5-9s, 4-8px, +-2 deg) to every sticker", () => {
+  it("assigns calmer motion parameters (7-12s duration, 2-4px amplitude, +-1 deg rotation)", () => {
     for (const sticker of HERO_STICKERS) {
       expect(sticker.depth).toBeGreaterThanOrEqual(0.2);
       expect(sticker.depth).toBeLessThanOrEqual(1.0);
 
       const durationSec = parseFloat(sticker.floatDuration);
-      expect(durationSec).toBeGreaterThanOrEqual(5.0);
-      expect(durationSec).toBeLessThanOrEqual(9.0);
+      expect(durationSec).toBeGreaterThanOrEqual(7.0);
+      expect(durationSec).toBeLessThanOrEqual(12.0);
 
-      expect(sticker.floatDistance).toBeGreaterThanOrEqual(4);
-      expect(sticker.floatDistance).toBeLessThanOrEqual(8);
+      expect(sticker.floatDistance).toBeGreaterThanOrEqual(2);
+      expect(sticker.floatDistance).toBeLessThanOrEqual(4);
 
-      expect(sticker.floatRotation).toBeGreaterThanOrEqual(-2.0);
-      expect(sticker.floatRotation).toBeLessThanOrEqual(2.0);
+      expect(sticker.floatRotation).toBeGreaterThanOrEqual(-1.0);
+      expect(sticker.floatRotation).toBeLessThanOrEqual(1.0);
     }
   });
 
-  it("softens dark/heavy items to blend with pastel theme while keeping characters full color", () => {
-    const softenedIds = [
-      "vinyl-record",
-      "canon-camera",
-      "billiard-ball-7",
-      "full-moon",
-      "headphones-with-bows",
-      "spiderman-mask",
-      "coca-cola-can",
-      "electric-guitar",
-    ];
+  it("configures depth tiers correctly and restricts FRONT to exactly 3 characters", () => {
+    const frontStickers = HERO_STICKERS.filter((s) => s.tier === "front");
+    expect(frontStickers).toHaveLength(3);
+    const frontIds = frontStickers.map((s) => s.id).sort();
+    expect(frontIds).toEqual(["hello-kitty-peeking", "shinchan-featured", "snoopy-sleeping"].sort());
 
-    for (const id of softenedIds) {
-      const sticker = HERO_STICKERS.find((s) => s.id === id);
-      expect(sticker?.soften).toBe(true);
+    for (const s of frontStickers) {
+      expect(s.depth).toBeGreaterThanOrEqual(0.8);
+      expect(s.floatDistance).toBe(4);
     }
 
-    // Hello Kitty, Snoopy, and Shin-chan must remain full color
-    const fullColorIds = ["shinchan-featured", "snoopy-sleeping", "hello-kitty-peeking"];
-    for (const id of fullColorIds) {
+    const heavyDarkIds = [
+      "vinyl-record",
+      "full-moon",
+      "coca-cola-can",
+      "spiderman-mask",
+      "billiard-ball-7",
+      "canon-camera",
+      "electric-guitar",
+      "headphones-with-bows",
+    ];
+
+    for (const id of heavyDarkIds) {
       const sticker = HERO_STICKERS.find((s) => s.id === id);
-      expect(sticker?.soften).toBe(false);
+      expect(sticker?.tier).not.toBe("front");
+      expect(sticker?.tier === "back" || sticker?.tier === "mid").toBe(true);
+    }
+  });
+
+  it("enforces a wide clear zone with no stickers in the center column (x between 15% and 84%)", () => {
+    for (const sticker of HERO_STICKERS) {
+      const isLeft = sticker.x <= 15;
+      const isRight = sticker.x >= 85;
+      expect(isLeft || isRight).toBe(true);
     }
   });
 
@@ -140,57 +157,49 @@ describe("HeroStickerBomb Component", () => {
     expect(screen.getByText("🙏")).toBeDefined();
   });
 
-  it("renders dev-only floating switcher and toggles presets A, B, and C", async () => {
-    const { rerender } = render(<HeroStickerBomb />);
-    const switcher = screen.getByTestId("dev-sticker-switcher");
-    expect(switcher).toBeDefined();
+  it("applies Preset A locked-in tier styling with size multipliers, opacity, and blur", () => {
+    render(<HeroStickerBomb />);
 
-    const btnA = screen.getByTestId("preset-btn-a");
-    const btnB = screen.getByTestId("preset-btn-b");
-    const btnC = screen.getByTestId("preset-btn-c");
+    // Test a BACK sticker (e.g. vinyl-record: depth 0.3)
+    const vinylContainer = screen.getByTestId("hero-sticker-vinyl-record");
+    const vinylImg = vinylContainer.querySelector("img");
+    expect(vinylImg?.style.opacity).toBe("0.45");
+    expect(vinylImg?.style.filter).toContain("blur(1px)");
+    expect(vinylImg?.style.filter).toContain("drop-shadow(-3px 0 0");
+    expect(vinylImg?.style.filter).toContain("saturate(0.6)");
 
-    expect(btnA.getAttribute("aria-pressed")).toBe("true");
-    expect(btnB.getAttribute("aria-pressed")).toBe("false");
-    expect(btnC.getAttribute("aria-pressed")).toBe("false");
+    // Test a MID sticker (e.g. bunny-headphones: depth 0.6)
+    const bunnyContainer = screen.getByTestId("hero-sticker-bunny-headphones");
+    const bunnyImg = bunnyContainer.querySelector("img");
+    expect(bunnyImg?.style.opacity).toBe("0.65");
+    expect(bunnyImg?.style.filter).not.toContain("blur");
+    expect(bunnyImg?.style.filter).toContain("saturate(0.75)");
 
-    // Click Preset B
-    act(() => {
-      fireEvent.click(btnB);
-    });
-    expect(btnB.getAttribute("aria-pressed")).toBe("true");
-
-    // Under Preset B: coca-cola-can should have mixBlendMode multiply, hello-kitty-peeking should NOT
-    const colaImg = screen.getByTestId("hero-sticker-coca-cola-can").querySelector("img");
-    expect(colaImg?.style.mixBlendMode).toBe("multiply");
-    expect(colaImg?.style.filter).not.toContain("drop-shadow(-3px 0 0");
-
-    const kittyImg = screen.getByTestId("hero-sticker-hello-kitty-peeking").querySelector("img");
-    expect(kittyImg?.style.mixBlendMode).toBe("normal");
-    expect(kittyImg?.style.filter).toContain("drop-shadow(-3px 0 0");
-
-    // Click Preset C
-    act(() => {
-      fireEvent.click(btnC);
-    });
-    expect(btnC.getAttribute("aria-pressed")).toBe("true");
-
-    // Under Preset C: grain overlay should be rendered and blur(0.3px) applied
-    const grainOverlays = screen.getByTestId("hero-sticker-bomb").querySelectorAll(".hero-sticker-grain-overlay");
-    expect(grainOverlays.length).toBe(19);
-    expect(colaImg?.style.filter).toContain("blur(0.3px)");
+    // Test a FRONT sticker (e.g. shinchan-featured: depth 0.9)
+    const shinchanContainer = screen.getByTestId("hero-sticker-shinchan-featured");
+    const shinchanImg = shinchanContainer.querySelector("img");
+    expect(shinchanImg?.style.opacity).toBe("0.8");
+    expect(shinchanImg?.style.filter).not.toContain("blur");
+    expect(shinchanImg?.style.filter).toContain("saturate(0.75)");
   });
 
-  it("strips dev switcher completely in production builds", () => {
-    const originalEnv = process.env.NODE_ENV;
-    try {
-      // @ts-expect-error mutating for test
-      process.env.NODE_ENV = "production";
-      render(<HeroStickerBomb />);
-      expect(screen.queryByTestId("dev-sticker-switcher")).toBeNull();
-    } finally {
-      // @ts-expect-error restoring env
-      process.env.NODE_ENV = originalEnv;
-    }
+  it("verifies tier multiplier constants", () => {
+    expect(TIER_MULTIPLIERS.back.sizeMultiplier).toBe(0.6);
+    expect(TIER_MULTIPLIERS.back.opacity).toBe(0.45);
+    expect(TIER_MULTIPLIERS.back.blurPx).toBe(1.0);
+    expect(TIER_MULTIPLIERS.back.saturate).toBe(0.6);
+    expect(TIER_MULTIPLIERS.back.floatDistance).toBe(2);
+
+    expect(TIER_MULTIPLIERS.mid.sizeMultiplier).toBe(0.8);
+    expect(TIER_MULTIPLIERS.mid.opacity).toBe(0.65);
+    expect(TIER_MULTIPLIERS.mid.blurPx).toBe(0);
+    expect(TIER_MULTIPLIERS.mid.saturate).toBe(0.75);
+    expect(TIER_MULTIPLIERS.mid.floatDistance).toBe(3);
+
+    expect(TIER_MULTIPLIERS.front.sizeMultiplier).toBe(0.9);
+    expect(TIER_MULTIPLIERS.front.opacity).toBe(0.8);
+    expect(TIER_MULTIPLIERS.front.blurPx).toBe(0);
+    expect(TIER_MULTIPLIERS.front.saturate).toBe(0.75);
+    expect(TIER_MULTIPLIERS.front.floatDistance).toBe(4);
   });
 });
-

@@ -885,3 +885,48 @@ To prevent CSS transform collisions (where animations, hover states, or filters 
 - Conditioned strictly behind `process.env.NODE_ENV !== "production"`. When built for production, the switcher component returns `null` and Next.js / Turbopack dead-code-eliminates the dev UI, guaranteeing 0% presence in production bundles.
 - All 71 test suites (618 tests) passing; production build verified cleanly.
 
+---
+
+## 13. Session Log: Locked-In Preset A & Calmer Depth Hierarchy
+
+### Context & Goals
+After live side-by-side evaluation, Preset A ("Faded print") was selected as the final styling for the hero stickers. To establish a clear visual hierarchy and ensure the center content column (avatar mascot, title, welcome card, CONTINUE button) remains the unambiguous focus of the hero section, the stickers were organized into 3 depth tiers, pushed outward toward the viewport perimeters, and given tranquil motion curves.
+
+### 1. Preset A Lock-In & Dev Code Stripping
+- Removed Presets B and C, the dev switcher component, the `?stickers=` URL query parameter, and associated dev switcher unit tests.
+- Preserved the clean 3-layer motion isolation architecture:
+  `outer wrapper (parallax translate)` → `middle wrapper (float animation + hover scale)` → `<img> (filters/opacity only)`.
+- Removed all obsolete CSS animations (`@keyframes hero-sticker-wiggle-subtle`) and overlay elements to guarantee zero leftover dead code.
+
+### 2. Depth Tiers & Visual Multipliers
+The 19 placed stickers were mapped across 3 tiers driven by `depth` (exposed via `TIER_MULTIPLIERS` in `stickerStyles.ts`):
+- **BACK (9 stickers: depth 0.25–0.35)**:
+  - Multipliers: size ×0.6, opacity 0.45, blur 1.0px, extra desaturation (`saturate(0.6)`), float amplitude 2px.
+  - Role: Blends naturally into the cream wallpaper texture as subtle background ambiance.
+  - Items: *Cherries (top-left), Vinyl Record, Red Star Small 1, Canon Camera, Red Star Large 1, Billiard Ball 7, Red Ribbon Bow (accent), Red Star Small 2, Red Star Large 2*.
+- **MID (7 stickers: depth 0.50–0.65)**:
+  - Multipliers: size ×0.8, opacity 0.65, no blur, standard desaturation (`saturate(0.75)`), float amplitude 3px.
+  - Items: *Bunny with Headphones, Full Moon, Headphones with Bows, Spider-Man Mask, Coca-Cola Can, Electric Guitar, Red Ribbon Bow (main)*.
+- **FRONT (3 stickers: depth 0.85–0.90)**:
+  - Multipliers: size ×0.9, opacity 0.80, no blur, standard desaturation (`saturate(0.75)`), float amplitude 4px.
+  - Restraints: Strictly reserved for key character illustrations; heavy/dark items are prohibited from FRONT.
+  - Items: *Shin-chan Namaste (with speech bubble), Snoopy Sleeping, Hello Kitty Peeking*.
+
+### 3. Perimeter Placement & Center Clearance
+- Widened the center clear zone: no sticker is positioned within ~120px of the center column (left stickers kept at `x <= 14%`, right stickers kept at `x >= 85%`).
+- Stickers pushed outward to perimeter edges and corners with natural border cropping.
+- Kept completely clear of top navigation pills (Home / Main World), right phase tracker dots, and bottom indicators.
+
+### 4. Calmer Motion & Hover Dynamics
+- **Float Bobbing**: Calmed vertical amplitudes (2px BACK, 3px MID, 4px FRONT), elongated cycles (7.4s–11.2s), and gentle oscillation rotations (within ±1.0°).
+- **Parallax Translate**: Capped maximum mouse drift at 6px (scaled by depth, making BACK tier move only ~1.8px).
+- **Subtler Pop-in**: Faster, gentle transition (`scale 0.85 -> 1.0` with opacity fade over 280ms).
+- **Hover Interaction**: Hovering over any sticker triggers a 3px lift, a smooth 1.08 scale, and brings the image to full 1.0 opacity (`opacity: 1 !important`) via standard CSS transitions.
+
+### 5. Strengthened Center Mascot Glow
+- Expanded the pink radial glow behind the Kitty mascot (`w-56 h-56 sm:w-72 sm:h-72`) and increased the core gradient opacity (`rgba(255, 143, 179, 0.58)` to `0.28`), establishing an unmistakable warm focal center.
+
+### 6. Verification
+- All verification gates passed: `check:frozen` (0 modifications to frozen files), `typecheck` (0 errors), `lint -- --quiet` (0 errors), `npm test` (71 suites, 619 tests passed), and `npm run build` (production Next.js build succeeded).
+
+
