@@ -1,6 +1,6 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent, act } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import AsciiSection from "../AsciiSection";
 
 // Mock sfx and canvas-confetti
@@ -266,7 +266,8 @@ describe("KittyOS Terminal Quiz Workflow", () => {
       expectTerminalLog(
         "> [✓] correct. glad we finally agree. apology accepted in advance."
       );
-      expect(screen.getByText(/ALL 3 CLEARANCE QUESTIONS COMPLETED/i)).toBeDefined();
+      expect(screen.getByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeDefined();
+      expect(screen.queryByText(/MAXIMUM BIRTHDAY ENERGY/i)).toBeNull();
     });
 
     it("Q3 hint prints 'it's you. it's always been you.'", () => {
@@ -305,21 +306,140 @@ describe("KittyOS Terminal Quiz Workflow", () => {
       expectTerminalLog(
         "> [💔] you'd rather give up than apologize. honestly, that tracks."
       );
-      expect(screen.getByText(/ALL 3 CLEARANCE QUESTIONS COMPLETED/i)).toBeDefined();
+      expect(screen.getByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeDefined();
+      expect(screen.queryByText(/MAXIMUM BIRTHDAY ENERGY/i)).toBeNull();
     });
   });
 
   describe("SKIP and REBOOT Operations", () => {
-    it("SKIP button prints exact pity note and bypasses clearance without confetti", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("SKIP at difficulty select: note appears once, input/buttons disabled, end screen appears only after 2.5s, double-click ignored", () => {
       render(<AsciiSection />);
       const skipBtn = screen.getByRole("button", { name: /Skip Terminal Questions/i });
-      fireEvent.click(skipBtn);
+      const rebootBtn = screen.getByRole("button", { name: /Reboot Terminal/i });
+      const input = screen.getByRole("textbox", { name: /kittyOS terminal command input/i });
 
-      expectTerminalLog(
-        "> [💔] skipped. weeks of effort, gone in one click. it's fine. he's fine. everything is fine."
-      );
+      // Double-click SKIP
+      act(() => {
+        fireEvent.click(skipBtn);
+        fireEvent.click(skipBtn);
+      });
 
-      // Unlocked
+      const noteText = "> [💔] mehnat ki kadr hi nhi hai";
+      expectTerminalLog(noteText);
+
+      // Verify note appears exactly once despite double click
+      const logs = screen.getByTestId("terminal-logs-container").textContent || "";
+      const matches = logs.split(noteText).length - 1;
+      expect(matches).toBe(1);
+
+      // During the 2.5s delay: end screen not shown, buttons and input disabled
+      expect(screen.queryByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeNull();
+      expect(skipBtn.getAttribute("disabled")).not.toBeNull();
+      expect(rebootBtn.getAttribute("disabled")).not.toBeNull();
+      expect(input.getAttribute("disabled")).not.toBeNull();
+
+      // Fast-forward 2.4s: still not unlocked
+      act(() => {
+        vi.advanceTimersByTime(2400);
+      });
+      expect(screen.queryByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeNull();
+
+      // Fast-forward the remaining 100ms: unlocked!
+      act(() => {
+        vi.advanceTimersByTime(100);
+      });
+      expect(screen.getByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeDefined();
+    });
+
+    it("SKIP during Q1: shows note, delays end screen for 2.5s", () => {
+      render(<AsciiSection />);
+      const input = screen.getByRole("textbox", { name: /kittyOS terminal command input/i });
+      const form = input.closest("form")!;
+
+      act(() => {
+        fireEvent.change(input, { target: { value: "easy" } });
+        fireEvent.submit(form);
+      });
+      expect(screen.getByText(/\[Q1\/3/i)).toBeDefined();
+
+      const skipBtn = screen.getByRole("button", { name: /Skip Terminal Questions/i });
+      act(() => {
+        fireEvent.click(skipBtn);
+      });
+
+      const noteText = "> [💔] mehnat ki kadr hi nhi hai";
+      expectTerminalLog(noteText);
+      expect(screen.queryByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeNull();
+
+      act(() => {
+        vi.advanceTimersByTime(2500);
+      });
+      expect(screen.getByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeDefined();
+    });
+
+    it("SKIP during Q2: shows note, delays end screen for 2.5s", () => {
+      render(<AsciiSection />);
+      const input = screen.getByRole("textbox", { name: /kittyOS terminal command input/i });
+      const form = input.closest("form")!;
+
+      act(() => {
+        fireEvent.change(input, { target: { value: "easy" } });
+        fireEvent.submit(form);
+        fireEvent.change(input, { target: { value: "give up" } });
+        fireEvent.submit(form);
+      });
+      expect(screen.getByText(/\[Q2\/3 ✦ VPN LORE\]/i)).toBeDefined();
+
+      const skipBtn = screen.getByRole("button", { name: /Skip Terminal Questions/i });
+      act(() => {
+        fireEvent.click(skipBtn);
+      });
+
+      const noteText = "> [💔] mehnat ki kadr hi nhi hai";
+      expectTerminalLog(noteText);
+      expect(screen.queryByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeNull();
+
+      act(() => {
+        vi.advanceTimersByTime(2500);
+      });
+      expect(screen.getByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeDefined();
+    });
+
+    it("SKIP during Q3: shows note, delays end screen for 2.5s", () => {
+      render(<AsciiSection />);
+      const input = screen.getByRole("textbox", { name: /kittyOS terminal command input/i });
+      const form = input.closest("form")!;
+
+      act(() => {
+        fireEvent.change(input, { target: { value: "easy" } });
+        fireEvent.submit(form);
+        fireEvent.change(input, { target: { value: "give up" } });
+        fireEvent.submit(form);
+        fireEvent.change(input, { target: { value: "1" } });
+        fireEvent.submit(form);
+      });
+      expect(screen.getByText(/\[Q3\/3 ✦ THE TRUTH\]/i)).toBeDefined();
+
+      const skipBtn = screen.getByRole("button", { name: /Skip Terminal Questions/i });
+      act(() => {
+        fireEvent.click(skipBtn);
+      });
+
+      const noteText = "> [💔] mehnat ki kadr hi nhi hai";
+      expectTerminalLog(noteText);
+      expect(screen.queryByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeNull();
+
+      act(() => {
+        vi.advanceTimersByTime(2500);
+      });
       expect(screen.getByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeDefined();
     });
 
@@ -329,22 +449,29 @@ describe("KittyOS Terminal Quiz Workflow", () => {
       const form = input.closest("form")!;
 
       // 1st attempt: start easy
-      fireEvent.change(input, { target: { value: "easy" } });
-      fireEvent.submit(form);
+      act(() => {
+        fireEvent.change(input, { target: { value: "easy" } });
+        fireEvent.submit(form);
+      });
 
       const q1PromptEl = screen.getByText(/\[Q1\/3/i);
       const prompt1 = q1PromptEl.textContent;
 
       // Click reboot
       const rebootBtn = screen.getByRole("button", { name: /Reboot Terminal/i });
-      fireEvent.click(rebootBtn);
+      act(() => {
+        fireEvent.click(rebootBtn);
+        vi.advanceTimersByTime(100);
+      });
 
       // Back to difficulty selection
       expect(screen.getByText(/SELECT DIFFICULTY/i)).toBeDefined();
 
       // 2nd attempt: start easy again
-      fireEvent.change(input, { target: { value: "easy" } });
-      fireEvent.submit(form);
+      act(() => {
+        fireEvent.change(input, { target: { value: "easy" } });
+        fireEvent.submit(form);
+      });
 
       const q1PromptEl2 = screen.getAllByText(/\[Q1\/3/i);
       const prompt2 = q1PromptEl2[q1PromptEl2.length - 1].textContent;

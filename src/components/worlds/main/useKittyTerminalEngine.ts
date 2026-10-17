@@ -1,22 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { sfx } from "@/lib/audio";
 import { dispatchPuzzleSolved, dispatchPuzzleSkipped } from "@/components/ui/cursorUtils";
 import { parseIntegerAnswer } from "@/lib/kittyos/calculusGenerator";
 import {
-  Difficulty,
-  TerminalQuestion,
-  getQuestionsForDifficulty,
-  getBootLogs,
-  LogLine,
-  Q2_DATA,
-  Q2_REVEAL_LINES,
-  Q3_DATA,
-  Q3_VPN_ROTATION,
-  Q3_CORRECT_LINE,
-  PITY_LINES,
+  Difficulty, TerminalQuestion, getQuestionsForDifficulty, getBootLogs, LogLine,
+  Q2_DATA, Q2_REVEAL_LINES, Q3_DATA, Q3_VPN_ROTATION, Q3_CORRECT_LINE, PITY_LINES,
 } from "./terminalQuestions";
 
 interface UseKittyTerminalEngineProps {
@@ -26,6 +17,13 @@ interface UseKittyTerminalEngineProps {
 }
 
 export type TerminalStage = "difficulty" | "quiz" | "cleared";
+
+let logSeq = 0;
+const logEntry = (type: LogLine["type"], text: string, prefix = "log"): LogLine => ({
+  id: `${prefix}-${Date.now()}-${++logSeq}`,
+  type,
+  text,
+});
 
 export function useKittyTerminalEngine({
   onUnlock,
@@ -42,26 +40,33 @@ export function useKittyTerminalEngine({
   const [logs, setLogs] = useState<LogLine[]>(() => getBootLogs());
   const [inputVal, setInputVal] = useState("");
   const [internalUnlocked, setInternalUnlocked] = useState(false);
+  const [isSkipping, setIsSkipping] = useState(false);
 
+  const isSkippingRef = useRef(false);
+  const skipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const usedPromptsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    return () => {
+      if (skipTimerRef.current) clearTimeout(skipTimerRef.current);
+    };
+  }, []);
 
   const triggerConfetti = () => {
     try {
-      const prefersReducedMotion =
-        typeof window !== "undefined" &&
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (prefersReducedMotion) return;
-
-      confetti({
-        particleCount: 80,
-        spread: 90,
-        origin: { y: 0.6 },
-        colors: ["#FF8FB3", "#FFEAA7", "#C8EADE", "#FFB6C1", "#FFD166"],
-      });
+      if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      confetti({ particleCount: 80, spread: 90, origin: { y: 0.6 }, colors: ["#FF8FB3", "#FFEAA7", "#C8EADE", "#FFB6C1", "#FFD166"] });
     } catch {}
   };
 
   const handleReset = () => {
+    if (isSkippingRef.current) return;
+    if (skipTimerRef.current) {
+      clearTimeout(skipTimerRef.current);
+      skipTimerRef.current = null;
+    }
+    isSkippingRef.current = false;
+    setIsSkipping(false);
     sfx.click.play();
     setStage("difficulty");
     setQuestions([]);
@@ -77,56 +82,58 @@ export function useKittyTerminalEngine({
   };
 
   const handleSkip = () => {
+    if (isSkippingRef.current || internalUnlocked || stage === "cleared") return;
+    isSkippingRef.current = true;
+    setIsSkipping(true);
+
     sfx.select();
     dispatchPuzzleSkipped();
-    setLogs((prev) => [
-      ...prev,
-      {
-        id: `skip-${Date.now()}`,
-        type: "system",
-        text: PITY_LINES.skipButton,
-      },
-    ]);
-    setInternalUnlocked(true);
-    setStage("cleared");
-    onUnlock?.();
+    setLogs((prev) => [...prev, logEntry("system", PITY_LINES.skipButton, "skip")]);
+    setInputVal("");
+
+    skipTimerRef.current = setTimeout(() => {
+      setInternalUnlocked(true);
+      setStage("cleared");
+      setIsSkipping(false);
+      isSkippingRef.current = false;
+      onUnlock?.();
+    }, 2500);
   };
 
   const navigateOptions = (dir: "up" | "down") => {
-    const activeQ = questions[questionIndex];
-    const opts = activeQ?.options;
+    if (isSkippingRef.current) return;
+    const opts = questions[questionIndex]?.options;
     if (!opts || opts.length === 0) return;
     const len = opts.length;
     setSelectedOptionIndex((prev) => (dir === "up" ? (prev - 1 + len) % len : (prev + 1) % len));
   };
 
+  const finishClearance = (extraLines: LogLine[]) => {
+    sfx.select();
+    triggerConfetti();
+    dispatchPuzzleSolved();
+    setLogs((prev) => [...prev, ...extraLines]);
+    setInternalUnlocked(true);
+    setStage("cleared");
+    onUnlock?.();
+    setInputVal("");
+  };
+
   const selectOption = (optIndex: number) => {
-    if (stage !== "quiz") return;
+    if (stage !== "quiz" || isSkippingRef.current) return;
 
     if (questionIndex === 1) {
-      // Q2: Option selection
       const optText = Q2_DATA.options[optIndex] ?? "Option";
       sfx.pop();
-
-      const userLine: LogLine = {
-        id: `user-${Date.now()}`,
-        type: "user",
-        text: `guest@kittyOS:~$ ${optIndex + 1}) ${optText}`,
-      };
-
       setQuestionIndex(2);
       setSelectedOptionIndex(0);
       setLogs((prev) => [
         ...prev,
-        userLine,
-        { id: `q2-rev1-${Date.now()}`, type: "system", text: Q2_REVEAL_LINES[0] },
-        { id: `q2-rev2-${Date.now()}`, type: "system", text: Q2_REVEAL_LINES[1] },
-        { id: `q2-rev3-${Date.now()}`, type: "system", text: Q2_REVEAL_LINES[2] },
-        {
-          id: `q3-prompt-${Date.now()}`,
-          type: "question",
-          text: `[Q3/3 ✦ ${Q3_DATA.topic}] ${Q3_DATA.prompt}`,
-        },
+        logEntry("user", `guest@kittyOS:~$ ${optIndex + 1}) ${optText}`, "user"),
+        logEntry("system", Q2_REVEAL_LINES[0], "q2-rev1"),
+        logEntry("system", Q2_REVEAL_LINES[1], "q2-rev2"),
+        logEntry("system", Q2_REVEAL_LINES[2], "q2-rev3"),
+        logEntry("question", `[Q3/3 ✦ ${Q3_DATA.topic}] ${Q3_DATA.prompt}`, "q3-prompt"),
       ]);
       setInputVal("");
       setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
@@ -134,27 +141,14 @@ export function useKittyTerminalEngine({
     }
 
     if (questionIndex === 2) {
-      // Q3: Option selection
       if (optIndex === 1) {
-        // VPN selected: cycle through sarcastic lines, retry
         sfx.error();
         const line = Q3_VPN_ROTATION[q3VpnCount % Q3_VPN_ROTATION.length];
         setQ3VpnCount((c) => c + 1);
-
-        const userLine: LogLine = {
-          id: `user-${Date.now()}`,
-          type: "user",
-          text: `guest@kittyOS:~$ 2) VPN`,
-        };
-
         setLogs((prev) => [
           ...prev,
-          userLine,
-          {
-            id: `q3-err-${Date.now()}`,
-            type: "error",
-            text: line,
-          },
+          logEntry("user", `guest@kittyOS:~$ 2) VPN`, "user"),
+          logEntry("error", line, "q3-err"),
         ]);
         setInputVal("");
         setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
@@ -162,331 +156,223 @@ export function useKittyTerminalEngine({
       }
 
       if (optIndex === 0) {
-        // Arhana selected: Correct!
         sfx.pop();
-        const userLine: LogLine = {
-          id: `user-${Date.now()}`,
-          type: "user",
-          text: `guest@kittyOS:~$ 1) Arhana`,
-        };
-
-        sfx.select();
-        triggerConfetti();
-        dispatchPuzzleSolved();
-
-        setLogs((prev) => [
-          ...prev,
-          userLine,
-          {
-            id: `q3-ok-${Date.now()}`,
-            type: "success",
-            text: Q3_CORRECT_LINE,
-          },
-          {
-            id: `quiz-complete-${Date.now()}`,
-            type: "success",
-            text: "> [✓] ALL 3 CLEARANCE QUESTIONS COMPLETED! 🎉 DEPLOYING MAXIMUM BIRTHDAY ENERGY 🎀",
-          },
+        finishClearance([
+          logEntry("user", `guest@kittyOS:~$ 1) Arhana`, "user"),
+          logEntry("success", Q3_CORRECT_LINE, "q3-ok"),
         ]);
-        setInternalUnlocked(true);
-        setStage("cleared");
-        onUnlock?.();
-        setInputVal("");
       }
     }
   };
 
-  const submitAnswer = (rawAnswer: string) => {
-    const trimmed = rawAnswer.trim();
-    if (!trimmed && stage !== "cleared" && questionIndex === 0) return;
+  const submitDifficulty = (trimmed: string, lower: string) => {
+    sfx.click.play();
+    const userLine = logEntry("user", `guest@kittyOS:~$ ${trimmed}`, "user");
 
-    if (trimmed.toLowerCase() === "reboot" || trimmed.toLowerCase() === "restart") {
-      handleReset();
-      return;
-    }
+    let selectedDiff: Difficulty | null = null;
+    if (lower === "1" || lower === "easy" || lower === "e") selectedDiff = "easy";
+    else if (lower === "2" || lower === "med" || lower === "medium" || lower === "m") selectedDiff = "medium";
+    else if (lower === "3" || lower === "hard" || lower === "h") selectedDiff = "hard";
 
-    if (trimmed.toLowerCase() === "skip" || trimmed.toLowerCase() === "bypass") {
-      handleSkip();
+    if (!selectedDiff) {
+      sfx.error();
+      setLogs((prev) => [
+        ...prev,
+        userLine,
+        logEntry("error", "> [!] Please choose: easy, med, or hard (or 1, 2, 3).", "diff-err"),
+      ]);
       setInputVal("");
       return;
     }
 
-    const lower = trimmed.toLowerCase();
+    sfx.pop();
+    const qList = getQuestionsForDifficulty(selectedDiff, usedPromptsRef.current);
+    usedPromptsRef.current.add(qList[0].prompt);
 
-    if (stage === "difficulty") {
-      sfx.click.play();
-      const userLine: LogLine = {
-        id: `user-${Date.now()}`,
-        type: "user",
-        text: `guest@kittyOS:~$ ${trimmed}`,
-      };
+    setDifficulty(selectedDiff);
+    setQuestions(qList);
+    setQuestionIndex(0);
+    setWrongAttempts(0);
+    setQ3VpnCount(0);
+    setSelectedOptionIndex(0);
+    setStage("quiz");
 
-      let selectedDiff: Difficulty | null = null;
-      if (lower === "1" || lower === "easy" || lower === "e") selectedDiff = "easy";
-      else if (lower === "2" || lower === "med" || lower === "medium" || lower === "m") selectedDiff = "medium";
-      else if (lower === "3" || lower === "hard" || lower === "h") selectedDiff = "hard";
+    const firstQ = qList[0];
+    setLogs((prev) => [
+      ...prev,
+      userLine,
+      logEntry("success", `> [✓] DIFFICULTY LEVEL: ${selectedDiff.toUpperCase()} 🎓 Clearance protocol activated. 3 questions loaded.`, "diff-ok"),
+      logEntry("question", `[Q1/3 ✦ ${firstQ.topic}] ${firstQ.prompt}`, "q1-prompt"),
+      logEntry("system", ">> Enter your integer answer into the terminal prompt below:", "q1-hint"),
+    ]);
+    setInputVal("");
+    setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
+  };
 
-      if (!selectedDiff) {
-        sfx.error();
-        setLogs((prev) => [
-          ...prev,
-          userLine,
-          {
-            id: `diff-err-${Date.now()}`,
-            type: "error",
-            text: "> [!] Please choose: easy, med, or hard (or 1, 2, 3).",
-          },
-        ]);
-        setInputVal("");
-        return;
-      }
+  const submitQ1 = (trimmed: string, lower: string, currentQ: TerminalQuestion) => {
+    sfx.click.play();
+    const userLine = logEntry("user", `guest@kittyOS:~$ ${trimmed}`, "user");
 
-      sfx.pop();
-      const qList = getQuestionsForDifficulty(selectedDiff, usedPromptsRef.current);
-      usedPromptsRef.current.add(qList[0].prompt);
+    if (lower === "hint" || lower === "help") {
+      sfx.select();
+      setLogs((prev) => [...prev, userLine, logEntry("system", `> [hint] ${currentQ.hint}`, "hint")]);
+      setInputVal("");
+      return;
+    }
 
-      setDifficulty(selectedDiff);
-      setQuestions(qList);
-      setQuestionIndex(0);
-      setWrongAttempts(0);
-      setQ3VpnCount(0);
+    if (lower === "give up" || lower === "pass" || lower === "idk" || lower === "surrender") {
+      sfx.error();
+      setQuestionIndex(1);
       setSelectedOptionIndex(0);
-      setStage("quiz");
-
-      const firstQ = qList[0];
       setLogs((prev) => [
         ...prev,
         userLine,
-        {
-          id: `diff-ok-${Date.now()}`,
-          type: "success",
-          text: `> [✓] DIFFICULTY LEVEL: ${selectedDiff.toUpperCase()} 🎓 Clearance protocol activated. 3 questions loaded.`,
-        },
-        {
-          id: `q1-prompt-${Date.now()}`,
-          type: "question",
-          text: `[Q1/3 ✦ ${firstQ.topic}] ${firstQ.prompt}`,
-        },
-        {
-          id: `q1-hint-${Date.now()}`,
-          type: "system",
-          text: ">> Enter your integer answer into the terminal prompt below:",
-        },
+        logEntry("system", PITY_LINES.giveUpQ1orQ2, "giveup-1"),
+        logEntry("question", `[Q2/3 ✦ ${Q2_DATA.topic}] ${Q2_DATA.prompt}`, "q2-prompt"),
       ]);
       setInputVal("");
       setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
       return;
     }
 
+    const parsed = parseIntegerAnswer(trimmed);
+    if (parsed !== null && parsed === currentQ.answer) {
+      sfx.pop();
+      setQuestionIndex(1);
+      setSelectedOptionIndex(0);
+      setLogs((prev) => [
+        ...prev,
+        userLine,
+        logEntry("success", `> [✓] Correct: ${currentQ.answer}! Nicely done! 🧠✨`, "ans-ok"),
+        logEntry("question", `[Q2/3 ✦ ${Q2_DATA.topic}] ${Q2_DATA.prompt}`, "q2-prompt"),
+      ]);
+    } else {
+      sfx.error();
+      setWrongAttempts((w) => w + 1);
+      setLogs((prev) => [...prev, userLine, logEntry("error", PITY_LINES.q1Wrong, "ans-err")]);
+    }
+    setInputVal("");
+    setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
+  };
+
+  const submitQ2 = (trimmed: string, lower: string) => {
+    if (lower === "hint" || lower === "help") {
+      sfx.select();
+      setLogs((prev) => [
+        ...prev,
+        logEntry("user", `guest@kittyOS:~$ ${trimmed}`, "user"),
+        logEntry("system", `> [hint] ${Q2_DATA.hint}`, "hint"),
+      ]);
+      setInputVal("");
+      return;
+    }
+
+    if (lower === "give up" || lower === "pass" || lower === "idk" || lower === "surrender") {
+      sfx.error();
+      setQuestionIndex(2);
+      setSelectedOptionIndex(0);
+      setLogs((prev) => [
+        ...prev,
+        logEntry("user", `guest@kittyOS:~$ ${trimmed}`, "user"),
+        logEntry("system", PITY_LINES.giveUpQ1orQ2, "giveup-2"),
+        logEntry("system", Q2_REVEAL_LINES[0], "q2-rev1"),
+        logEntry("system", Q2_REVEAL_LINES[1], "q2-rev2"),
+        logEntry("system", Q2_REVEAL_LINES[2], "q2-rev3"),
+        logEntry("question", `[Q3/3 ✦ ${Q3_DATA.topic}] ${Q3_DATA.prompt}`, "q3-prompt"),
+      ]);
+      setInputVal("");
+      setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
+      return;
+    }
+
+    let optIdx = selectedOptionIndex;
+    if (trimmed === "1" || lower === "batman") optIdx = 0;
+    else if (trimmed === "2" || lower === "gentleman") optIdx = 1;
+    else if (trimmed === "3" || lower === "bevkoof") optIdx = 2;
+    else if (trimmed !== "") {
+      sfx.error();
+      setLogs((prev) => [
+        ...prev,
+        logEntry("user", `guest@kittyOS:~$ ${trimmed}`, "user"),
+        logEntry("error", "> [!] Please choose an option (1, 2, or 3) or use ↑/↓ arrows + Enter.", "q2-err"),
+      ]);
+      setInputVal("");
+      return;
+    }
+
+    selectOption(optIdx);
+  };
+
+  const submitQ3 = (trimmed: string, lower: string) => {
+    if (lower === "hint" || lower === "help") {
+      sfx.select();
+      setLogs((prev) => [
+        ...prev,
+        logEntry("user", `guest@kittyOS:~$ ${trimmed}`, "user"),
+        logEntry("system", `> [hint] ${Q3_DATA.hint}`, "hint"),
+      ]);
+      setInputVal("");
+      return;
+    }
+
+    if (lower === "give up" || lower === "pass" || lower === "idk" || lower === "surrender") {
+      sfx.error();
+      finishClearance([
+        logEntry("user", `guest@kittyOS:~$ ${trimmed}`, "user"),
+        logEntry("system", PITY_LINES.giveUpQ3, "giveup-3"),
+      ]);
+      return;
+    }
+
+    let optIdx = selectedOptionIndex;
+    if (trimmed === "1" || lower === "arhana") optIdx = 0;
+    else if (trimmed === "2" || lower === "vpn") optIdx = 1;
+    else if (trimmed !== "") {
+      sfx.error();
+      setLogs((prev) => [
+        ...prev,
+        logEntry("user", `guest@kittyOS:~$ ${trimmed}`, "user"),
+        logEntry("error", "> [!] Please choose an option (1 or 2) or use ↑/↓ arrows + Enter.", "q3-err"),
+      ]);
+      setInputVal("");
+      return;
+    }
+
+    selectOption(optIdx);
+  };
+
+  const submitAnswer = (rawAnswer: string) => {
+    if (isSkippingRef.current) return;
+    const trimmed = rawAnswer.trim();
+    if (!trimmed && stage !== "cleared" && questionIndex === 0) return;
+
+    const lower = trimmed.toLowerCase();
+    if (lower === "reboot" || lower === "restart") {
+      handleReset();
+      return;
+    }
+    if (lower === "skip" || lower === "bypass") {
+      handleSkip();
+      setInputVal("");
+      return;
+    }
+
+    if (stage === "difficulty") {
+      submitDifficulty(trimmed, lower);
+      return;
+    }
+
     if (stage === "quiz") {
       const currentQ = questions[questionIndex];
       if (!currentQ) return;
-
-      // Q1: Numerical Calculus
-      if (questionIndex === 0) {
-        sfx.click.play();
-        const userLine: LogLine = {
-          id: `user-${Date.now()}`,
-          type: "user",
-          text: `guest@kittyOS:~$ ${trimmed}`,
-        };
-
-        if (lower === "hint" || lower === "help") {
-          sfx.select();
-          setLogs((prev) => [
-            ...prev,
-            userLine,
-            {
-              id: `hint-${Date.now()}`,
-              type: "system",
-              text: `> [hint] ${currentQ.hint}`,
-            },
-          ]);
-          setInputVal("");
-          return;
-        }
-
-        if (lower === "give up" || lower === "pass" || lower === "idk" || lower === "surrender") {
-          sfx.error();
-          setQuestionIndex(1);
-          setSelectedOptionIndex(0);
-          setLogs((prev) => [
-            ...prev,
-            userLine,
-            {
-              id: `giveup-1-${Date.now()}`,
-              type: "system",
-              text: PITY_LINES.giveUpQ1orQ2,
-            },
-            {
-              id: `q2-prompt-${Date.now()}`,
-              type: "question",
-              text: `[Q2/3 ✦ ${Q2_DATA.topic}] ${Q2_DATA.prompt}`,
-            },
-          ]);
-          setInputVal("");
-          setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
-          return;
-        }
-
-        const parsed = parseIntegerAnswer(trimmed);
-        const isCorrect = parsed !== null && parsed === currentQ.answer;
-
-        if (isCorrect) {
-          sfx.pop();
-          setQuestionIndex(1);
-          setSelectedOptionIndex(0);
-          setLogs((prev) => [
-            ...prev,
-            userLine,
-            {
-              id: `ans-ok-${Date.now()}`,
-              type: "success",
-              text: `> [✓] Correct: ${currentQ.answer}! Nicely done! 🧠✨`,
-            },
-            {
-              id: `q2-prompt-${Date.now()}`,
-              type: "question",
-              text: `[Q2/3 ✦ ${Q2_DATA.topic}] ${Q2_DATA.prompt}`,
-            },
-          ]);
-        } else {
-          sfx.error();
-          setWrongAttempts((w) => w + 1);
-          setLogs((prev) => [
-            ...prev,
-            userLine,
-            {
-              id: `ans-err-${Date.now()}`,
-              type: "error",
-              text: PITY_LINES.q1Wrong,
-            },
-          ]);
-        }
-
-        setInputVal("");
-        setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
-        return;
-      }
-
-      // Q2: Option Selector
-      if (questionIndex === 1) {
-        if (lower === "hint" || lower === "help") {
-          sfx.select();
-          setLogs((prev) => [
-            ...prev,
-            { id: `user-${Date.now()}`, type: "user", text: `guest@kittyOS:~$ ${trimmed}` },
-            { id: `hint-${Date.now()}`, type: "system", text: `> [hint] ${Q2_DATA.hint}` },
-          ]);
-          setInputVal("");
-          return;
-        }
-
-        if (lower === "give up" || lower === "pass" || lower === "idk" || lower === "surrender") {
-          sfx.error();
-          setQuestionIndex(2);
-          setSelectedOptionIndex(0);
-          setLogs((prev) => [
-            ...prev,
-            { id: `user-${Date.now()}`, type: "user", text: `guest@kittyOS:~$ ${trimmed}` },
-            { id: `giveup-2-${Date.now()}`, type: "system", text: PITY_LINES.giveUpQ1orQ2 },
-            { id: `q2-rev1-${Date.now()}`, type: "system", text: Q2_REVEAL_LINES[0] },
-            { id: `q2-rev2-${Date.now()}`, type: "system", text: Q2_REVEAL_LINES[1] },
-            { id: `q2-rev3-${Date.now()}`, type: "system", text: Q2_REVEAL_LINES[2] },
-            {
-              id: `q3-prompt-${Date.now()}`,
-              type: "question",
-              text: `[Q3/3 ✦ ${Q3_DATA.topic}] ${Q3_DATA.prompt}`,
-            },
-          ]);
-          setInputVal("");
-          setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
-          return;
-        }
-
-        let optIdx = selectedOptionIndex;
-        if (trimmed === "1" || lower === "batman") optIdx = 0;
-        else if (trimmed === "2" || lower === "gentleman") optIdx = 1;
-        else if (trimmed === "3" || lower === "bevkoof") optIdx = 2;
-        else if (trimmed !== "") {
-          sfx.error();
-          setLogs((prev) => [
-            ...prev,
-            { id: `user-${Date.now()}`, type: "user", text: `guest@kittyOS:~$ ${trimmed}` },
-            {
-              id: `q2-err-${Date.now()}`,
-              type: "error",
-              text: "> [!] Please choose an option (1, 2, or 3) or use ↑/↓ arrows + Enter.",
-            },
-          ]);
-          setInputVal("");
-          return;
-        }
-
-        selectOption(optIdx);
-        return;
-      }
-
-      // Q3: Option Selector
-      if (questionIndex === 2) {
-        if (lower === "hint" || lower === "help") {
-          sfx.select();
-          setLogs((prev) => [
-            ...prev,
-            { id: `user-${Date.now()}`, type: "user", text: `guest@kittyOS:~$ ${trimmed}` },
-            { id: `hint-${Date.now()}`, type: "system", text: `> [hint] ${Q3_DATA.hint}` },
-          ]);
-          setInputVal("");
-          return;
-        }
-
-        if (lower === "give up" || lower === "pass" || lower === "idk" || lower === "surrender") {
-          sfx.error();
-          sfx.select();
-          triggerConfetti();
-          dispatchPuzzleSolved();
-
-          setLogs((prev) => [
-            ...prev,
-            { id: `user-${Date.now()}`, type: "user", text: `guest@kittyOS:~$ ${trimmed}` },
-            { id: `giveup-3-${Date.now()}`, type: "system", text: PITY_LINES.giveUpQ3 },
-            {
-              id: `quiz-complete-${Date.now()}`,
-              type: "success",
-              text: "> [✓] ALL 3 CLEARANCE QUESTIONS COMPLETED! 🎉 DEPLOYING MAXIMUM BIRTHDAY ENERGY 🎀",
-            },
-          ]);
-          setInternalUnlocked(true);
-          setStage("cleared");
-          onUnlock?.();
-          setInputVal("");
-          return;
-        }
-
-        let optIdx = selectedOptionIndex;
-        if (trimmed === "1" || lower === "arhana") optIdx = 0;
-        else if (trimmed === "2" || lower === "vpn") optIdx = 1;
-        else if (trimmed !== "") {
-          sfx.error();
-          setLogs((prev) => [
-            ...prev,
-            { id: `user-${Date.now()}`, type: "user", text: `guest@kittyOS:~$ ${trimmed}` },
-            {
-              id: `q3-err-${Date.now()}`,
-              type: "error",
-              text: "> [!] Please choose an option (1 or 2) or use ↑/↓ arrows + Enter.",
-            },
-          ]);
-          setInputVal("");
-          return;
-        }
-
-        selectOption(optIdx);
-      }
+      if (questionIndex === 0) submitQ1(trimmed, lower, currentQ);
+      else if (questionIndex === 1) submitQ2(trimmed, lower);
+      else if (questionIndex === 2) submitQ3(trimmed, lower);
     }
   };
 
   const getPlaceholder = () => {
+    if (isSkipping) return "Clearance skipped...";
     if (stage === "difficulty") return "Choose difficulty: easy, med, or hard...";
     if (stage === "quiz") {
       if (questionIndex === 0) return "Type your integer answer (or 'hint' / 'give up')...";
@@ -497,20 +383,8 @@ export function useKittyTerminalEngine({
   };
 
   return {
-    stage,
-    logs,
-    inputVal,
-    setInputVal,
-    internalUnlocked,
-    questionIndex,
-    questions,
-    selectedOptionIndex,
-    setSelectedOptionIndex,
-    navigateOptions,
-    selectOption,
-    submitAnswer,
-    handleReset,
-    handleSkip,
-    getPlaceholder,
+    stage, logs, inputVal, setInputVal, internalUnlocked, isSkipping,
+    questionIndex, questions, selectedOptionIndex, setSelectedOptionIndex,
+    navigateOptions, selectOption, submitAnswer, handleReset, handleSkip, getPlaceholder,
   };
 }

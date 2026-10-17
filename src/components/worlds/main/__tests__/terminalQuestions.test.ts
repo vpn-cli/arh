@@ -87,9 +87,7 @@ describe("terminalQuestions", () => {
     expect(PITY_LINES.giveUpQ3).toBe(
       "> [💔] you'd rather give up than apologize. honestly, that tracks."
     );
-    expect(PITY_LINES.skipButton).toBe(
-      "> [💔] skipped. weeks of effort, gone in one click. it's fine. he's fine. everything is fine."
-    );
+    expect(PITY_LINES.skipButton).toBe("> [💔] mehnat ki kadr hi nhi hai");
     expect(PITY_LINES.q1Wrong).toBe("> [✗] chii chii hag diya");
   });
 

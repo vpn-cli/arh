@@ -1124,4 +1124,46 @@ Rework the Phase 01 KittyOS Terminal Quiz into an engaging, witty, and personali
 - **Unit & Integration Tests**: 72 test files passed, 658 tests passed (including `calculusGenerator.test.ts`, `terminalQuestions.test.ts`, and `calculusTerminal.test.tsx`).
 - **Production Build**: `npm run build` completed successfully via Turbopack.
 
+---
+
+## 18. Session Log: KittyOS Terminal Skip Note Visibility & Delay Fix
+
+### Context & Diagnosis
+- **Reported Bug**: Pressing `⏭ SKIP` in KittyOS showed no pity note and jumped immediately to the `"HAPPY BIRTHDAY!"` end screen (specifically reproducible at the difficulty selection screen before choosing Easy/Medium/Hard).
+- **Diagnosis**:
+  - The skip note was previously wired into `handleSkip` in `src/components/worlds/main/useKittyTerminalEngine.ts` across all states, but `setInternalUnlocked(true)`, `setStage("cleared")`, and `onUnlock?.()` were executed synchronously in the exact same event loop tick as `setLogs`.
+  - Because `isUnlocked = externalUnlocked ?? internalUnlocked` became `true` in the same tick, `AsciiSection.tsx` immediately rendered the end screen (`KittyMascot` + `✦ HAPPY BIRTHDAY! ✦` card) and auto-scrolled down to the bottom, concealing the newly appended terminal line before the user could read it.
+
+### Changes & Architecture
+1. **Pity Note Copy Update**:
+   - Updated `PITY_LINES.skipButton` in `src/components/worlds/main/terminalQuestions.ts` to exactly:
+     `> [💔] mehnat ki kadr hi nhi hai`
+   - Preserved existing give up notes (`giveUpQ1orQ2` and `giveUpQ3`).
+2. **Sequential Delay and Skip State**:
+   - Added `isSkipping` state and `isSkippingRef` guard in `useKittyTerminalEngine.ts`.
+   - On `handleSkip` (invoked either by clicking `⏭ SKIP` or typing `skip`/`bypass`):
+     - Appends `> [💔] mehnat ki kadr hi nhi hai` to terminal logs immediately.
+     - Sets `isSkipping = true`, disabling `submitAnswer`, `navigateOptions`, `selectOption`, and `handleReset`.
+     - Starts a 2,500ms timeout (`skipTimerRef`).
+     - Under `prefers-reduced-motion`, the 2.5s delay is maintained identically since it represents reading time for the text rather than visual motion.
+     - When the timer fires, transitions to `internalUnlocked = true`, `stage = "cleared"`, `isSkipping = false`, and fires `onUnlock?.()`.
+3. **Double-Click Protection & UI Disabling**:
+   - Double-clicking `⏭ SKIP` is guarded by `if (isSkippingRef.current || internalUnlocked || stage === "cleared") return;`. Subsequent clicks are ignored and do not print duplicate pity notes or queue redundant timers.
+   - In `AsciiSection.tsx`, disabled attributes and `opacity-50 pointer-events-none cursor-not-allowed` styles are applied while `isSkipping` to `⏭ SKIP`, `↺ REBOOT`, option selector items, and the command input/submit button.
+   - Implemented `logEntry` helper with unique sequence ID generator (`nextLogId`), preventing React key collision warnings during synchronous and fake-timer test runs.
+   - Refactored `useKittyTerminalEngine.ts` to strictly adhere to the < 400 lines rule (391 lines).
+4. **Behavioral Continuity**:
+   - Preserved shrug cursor expression (`dispatchPuzzleSkipped()`), zero confetti, and seamless unlocking of Phase 02 Birthday Vault.
+
+### Verification & Quality Gates
+- **Frozen Guard**: `npm run check:frozen` passed.
+- **Unit & Integration Tests**:
+  - `calculusTerminal.test.tsx`: Verified SKIP at difficulty select, Q1, Q2, and Q3 ensures the pity note appears exactly once, the end screen appears strictly after the 2.5s delay, and double clicks are safely ignored.
+  - `AsciiSection.test.tsx` & `terminalQuestions.test.ts`: Updated to assert new copy and delayed unlock sequence.
+  - Full test suite: 72 test files passed, 661 tests passed (`npm test`).
+- **TypeScript**: `npm run typecheck` passed with 0 errors.
+- **ESLint**: `npx eslint --quiet` passed with 0 errors.
+- **Production Build**: `npm run build` compiled cleanly in Turbopack.
+
+
 

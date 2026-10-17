@@ -63,8 +63,7 @@ export const PITY_LINES = {
   giveUpQ1orQ2:
     "> [💔] giving up? after he built an entire operating system for you? wow. noted. VPN will remember this.",
   giveUpQ3: "> [💔] you'd rather give up than apologize. honestly, that tracks.",
-  skipButton:
-    "> [💔] skipped. weeks of effort, gone in one click. it's fine. he's fine. everything is fine.",
+  skipButton: "> [💔] mehnat ki kadr hi nhi hai",
   q1Wrong: "> [✗] chii chii hag diya",
 };
 

@@ -56,18 +56,34 @@ describe("AsciiSection", () => {
     expect(document.querySelector("pre")).toBeNull();
   });
 
-  it("transitions to showing KittyMascot upon clicking skip", () => {
-    const handleUnlock = vi.fn();
-    render(<AsciiSection onUnlock={handleUnlock} />);
+  it("transitions to showing KittyMascot upon clicking skip after 2.5s delay", () => {
+    vi.useFakeTimers();
+    try {
+      const handleUnlock = vi.fn();
+      render(<AsciiSection onUnlock={handleUnlock} />);
 
-    const skipButton = screen.getByRole("button", { name: /skip terminal questions/i });
-    fireEvent.click(skipButton);
+      const skipButton = screen.getByRole("button", { name: /skip terminal questions/i });
+      act(() => {
+        fireEvent.click(skipButton);
+      });
 
-    expect(handleUnlock).toHaveBeenCalled();
-    expect(
-      screen.getByRole("img", { name: /Hello Kitty mascot/i })
-    ).toBeDefined();
-    expect(screen.getByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeDefined();
+      // Not unlocked immediately
+      expect(handleUnlock).not.toHaveBeenCalled();
+      expect(screen.queryByRole("img", { name: /Hello Kitty mascot/i })).toBeNull();
+
+      // Fast-forward 2.5s
+      act(() => {
+        vi.advanceTimersByTime(2500);
+      });
+
+      expect(handleUnlock).toHaveBeenCalled();
+      expect(
+        screen.getByRole("img", { name: /Hello Kitty mascot/i })
+      ).toBeDefined();
+      expect(screen.getByText(/✦ HAPPY BIRTHDAY! ✦/i)).toBeDefined();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   describe("Terminal log overflow measurements (Prompt M2)", () => {

@@ -53,6 +53,7 @@ export default function AsciiSection({
     inputVal,
     setInputVal,
     internalUnlocked,
+    isSkipping,
     questionIndex,
     questions,
     selectedOptionIndex,
@@ -154,9 +155,12 @@ export default function AsciiSection({
               <button
                 type="button"
                 onClick={handleSkip}
+                disabled={isSkipping}
                 data-cursor="pointer"
                 aria-label="Skip Terminal Questions"
-                className="kitty-pill-bounce text-xs font-terminal uppercase text-[#3A2440] hover:text-[#2D1B36] px-2.5 py-1 min-h-[32px] rounded border border-[#3A2440]/35 hover:bg-[#FFEAA7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] transition-colors cursor-pointer"
+                className={`kitty-pill-bounce text-xs font-terminal uppercase text-[#3A2440] hover:text-[#2D1B36] px-2.5 py-1 min-h-[32px] rounded border border-[#3A2440]/35 hover:bg-[#FFEAA7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] transition-colors cursor-pointer ${
+                  isSkipping ? "opacity-50 pointer-events-none cursor-not-allowed" : ""
+                }`}
               >
                 ⏭ SKIP
               </button>
@@ -164,9 +168,12 @@ export default function AsciiSection({
             <button
               type="button"
               onClick={handleReset}
+              disabled={isSkipping}
               data-cursor="pointer"
               aria-label="Reboot Terminal"
-              className="kitty-pill-bounce text-xs font-terminal uppercase text-[#3A2440] hover:text-[#2D1B36] px-2.5 py-1 min-h-[32px] rounded border border-[#3A2440]/35 hover:bg-[#FFEAA7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] transition-colors cursor-pointer"
+              className={`kitty-pill-bounce text-xs font-terminal uppercase text-[#3A2440] hover:text-[#2D1B36] px-2.5 py-1 min-h-[32px] rounded border border-[#3A2440]/35 hover:bg-[#FFEAA7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] transition-colors cursor-pointer ${
+                isSkipping ? "opacity-50 pointer-events-none cursor-not-allowed" : ""
+              }`}
             >
               ↺ REBOOT
             </button>
@@ -222,17 +229,20 @@ export default function AsciiSection({
                         type="button"
                         role="option"
                         id={`kitty-option-${idx}`}
+                        disabled={isSkipping}
                         aria-selected={isSelected}
                         onClick={(e) => {
                           e.stopPropagation();
-                          selectOption(idx);
+                          if (!isSkipping) selectOption(idx);
                         }}
-                        onMouseEnter={() => setSelectedOptionIndex(idx)}
+                        onMouseEnter={() => {
+                          if (!isSkipping) setSelectedOptionIndex(idx);
+                        }}
                         className={`flex items-center gap-2 text-left font-terminal text-[15px] sm:text-base md:text-[17px] py-1 px-2 rounded cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FF8FB3] ${
                           isSelected
                             ? "text-[#FF8FB3] font-bold bg-[#FF8FB3]/15"
                             : "text-[#FFE27A] hover:text-[#FFE27A]/90 hover:bg-[#FFE27A]/5"
-                        }`}
+                        } ${isSkipping ? "opacity-50 pointer-events-none cursor-not-allowed" : ""}`}
                       >
                         <span className="w-3 text-center select-none" aria-hidden="true">
                           {isSelected ? "▸" : " "}
@@ -287,6 +297,7 @@ export default function AsciiSection({
               <input
                 ref={inputRef}
                 type="text"
+                disabled={isSkipping}
                 data-cursor="text"
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
@@ -295,15 +306,20 @@ export default function AsciiSection({
                 aria-label="kittyOS terminal command input"
                 aria-controls={hasOptions ? "kitty-options-listbox" : undefined}
                 aria-activedescendant={hasOptions ? `kitty-option-${selectedOptionIndex}` : undefined}
-                className="flex-1 bg-transparent text-[#FFE27A] font-terminal text-[15px] sm:text-base md:text-[17px] outline-none border-none p-0 focus:ring-0 placeholder:text-[#FFE27A]/40 caret-[#FF8FB3]"
+                className={`flex-1 bg-transparent text-[#FFE27A] font-terminal text-[15px] sm:text-base md:text-[17px] outline-none border-none p-0 focus:ring-0 placeholder:text-[#FFE27A]/40 caret-[#FF8FB3] ${
+                  isSkipping ? "opacity-50 cursor-not-allowed" : ""
+                }`}
                 autoComplete="off"
                 spellCheck={false}
               />
               <button
                 type="submit"
+                disabled={isSkipping}
                 data-cursor="pointer"
                 aria-label="Submit command"
-                className="min-h-[36px] px-3.5 py-1 bg-[#FF8FB3]/25 hover:bg-[#FF8FB3]/45 border border-[#FF8FB3]/70 text-[#FF8FB3] rounded font-terminal text-sm sm:text-base shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF8FB3] transition-colors cursor-pointer font-bold"
+                className={`min-h-[36px] px-3.5 py-1 bg-[#FF8FB3]/25 hover:bg-[#FF8FB3]/45 border border-[#FF8FB3]/70 text-[#FF8FB3] rounded font-terminal text-sm sm:text-base shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF8FB3] transition-colors cursor-pointer font-bold ${
+                  isSkipping ? "opacity-50 pointer-events-none cursor-not-allowed" : ""
+                }`}
               >
                 ENTER ⏎
               </button>
