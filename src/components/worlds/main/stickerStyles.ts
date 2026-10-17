@@ -9,38 +9,38 @@ export interface TierMultipliers {
   opacity: number;
   /** Subtle edge blur in pixels to simulate wallpaper depth */
   blurPx: number;
-  /** Saturation multiplier (lower for BACK tier to blend like wallpaper) */
+  /** Saturation multiplier */
   saturate: number;
   /** Calmed vertical float bob distance in pixels */
   floatDistance: number;
 }
 
 /**
- * Top-level depth tier multipliers for easy tweaking in one place:
- * - BACK  (depth 0.2–0.4): size ×0.6, opacity 0.45, blur(1px), saturate 0.6, float 2px
- * - MID   (depth 0.5–0.7): size ×0.8, opacity 0.65, no blur, saturate 0.75, float 3px
- * - FRONT (depth 0.8–1.0): size ×0.9, opacity 0.80, no blur, saturate 0.75, float 4px
+ * Top-level depth tier multipliers:
+ * - BACK  (depth 0.2–0.4): size ×0.85, opacity 0.50, blur 0.6px, saturate 0.60, float 2px
+ * - MID   (depth 0.5–0.7): size ×1.00, opacity 0.70, blur 0.0px, saturate 0.75, float 3px
+ * - FRONT (depth 0.8–1.0): size ×1.15, opacity 0.85, blur 0.0px, saturate 0.80, float 4px
  */
 export const TIER_MULTIPLIERS: Record<StickerTier, TierMultipliers> = {
   back: {
-    sizeMultiplier: 0.6,
-    opacity: 0.45,
-    blurPx: 1.0,
+    sizeMultiplier: 0.85,
+    opacity: 0.5,
+    blurPx: 0.6,
     saturate: 0.6,
     floatDistance: 2,
   },
   mid: {
-    sizeMultiplier: 0.8,
-    opacity: 0.65,
+    sizeMultiplier: 1.0,
+    opacity: 0.7,
     blurPx: 0,
     saturate: 0.75,
     floatDistance: 3,
   },
   front: {
-    sizeMultiplier: 0.9,
-    opacity: 0.8,
+    sizeMultiplier: 1.15,
+    opacity: 0.85,
     blurPx: 0,
-    saturate: 0.75,
+    saturate: 0.8,
     floatDistance: 4,
   },
 };

@@ -44,6 +44,8 @@ export default function TheAdventureHero() {
     }, 2000);
   };
 
+  const centerRef = useRef<HTMLDivElement | null>(null);
+
   const showGreeting = isMascotHovered || isMascotTapped;
   const bubbleText = showGreeting ? "aur bhai" : "psst… scroll ↓";
 
@@ -54,10 +56,14 @@ export default function TheAdventureHero() {
       className="w-full h-screen h-[100svh] min-h-[620px] flex flex-col justify-center items-center relative overflow-hidden px-4 sm:px-6 snap-start select-none"
     >
       {/* ═══ SCATTERED STICKER PACK (BEHIND CONTENT Z-10) ═══ */}
-      <HeroStickerBomb />
+      <HeroStickerBomb centerRef={centerRef} />
 
       {/* ═══ HERO CONTENT (VERTICALLY & HORIZONTALLY CENTERED) ═══ */}
-      <div className="w-full max-w-lg flex flex-col items-center text-center relative z-20">
+      <div
+        ref={centerRef}
+        id="hero-center-content"
+        className="w-full max-w-lg flex flex-col items-center text-center relative z-20"
+      >
         {/* Guide Avatar with Pink Radial Glow, Peeking Hamster, Stickers & Speech Bubble */}
         <div className="relative flex flex-col items-center justify-center mb-2.5 sm:mb-3">
           {/* Soft pink radial glow behind the mascot (strengthened focal glow) */}

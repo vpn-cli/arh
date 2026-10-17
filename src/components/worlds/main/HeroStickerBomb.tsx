@@ -1,17 +1,28 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import { HERO_STICKERS, HeroStickerItem } from "./heroStickers";
+import { HERO_STICKERS } from "./heroStickers";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { getStickerStyle } from "./stickerStyles";
 import {
-  getStickerStyle,
-  getStickerTier,
-  TIER_MULTIPLIERS,
-} from "./stickerStyles";
+  computeStickerLayout,
+  GridLayoutResult,
+  BoundingBox,
+} from "./stickerGrid";
 
-export default function HeroStickerBomb() {
+interface HeroStickerBombProps {
+  centerRef?: React.RefObject<HTMLDivElement | null>;
+}
+
+export default function HeroStickerBomb({ centerRef }: HeroStickerBombProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
+
+  // Layout result calculated via deterministic seeded jittered grid
+  const [layout, setLayout] = useState<GridLayoutResult>(() =>
+    computeStickerLayout(1440, 900, null, HERO_STICKERS)
+  );
 
   // Parallax tracking refs
   const targetPos = useRef({ x: 0, y: 0 });
@@ -19,6 +30,85 @@ export default function HeroStickerBomb() {
   const animFrameRef = useRef<number | null>(null);
   const isMovingRef = useRef(false);
   const parallaxRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  const measureAndLayout = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const width =
+      containerRect.width ||
+      (typeof window !== "undefined" ? window.innerWidth : 1440) ||
+      1440;
+    const height =
+      containerRect.height ||
+      (typeof window !== "undefined" ? window.innerHeight : 900) ||
+      900;
+
+    const centerEl =
+      centerRef?.current ||
+      (typeof document !== "undefined"
+        ? document.getElementById("hero-center-content")
+        : null);
+
+    let relCenter: BoundingBox | null = null;
+    if (centerEl) {
+      const centerBounding = centerEl.getBoundingClientRect();
+      if (centerBounding.width > 0 && centerBounding.height > 0) {
+        relCenter = {
+          left: centerBounding.left - containerRect.left,
+          top: centerBounding.top - containerRect.top,
+          right: centerBounding.right - containerRect.left,
+          bottom: centerBounding.bottom - containerRect.top,
+          width: centerBounding.width,
+          height: centerBounding.height,
+        };
+      }
+    }
+
+    const nextLayout = computeStickerLayout(width, height, relCenter, HERO_STICKERS);
+    setLayout(nextLayout);
+  }, [centerRef]);
+
+  // Recalculate on mount and resize with debounced 150ms ResizeObserver
+  useEffect(() => {
+    measureAndLayout();
+
+    let debounceTimer: NodeJS.Timeout | null = null;
+    const debouncedUpdate = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        measureAndLayout();
+      }, 150);
+    };
+
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => {
+        debouncedUpdate();
+      });
+
+      if (containerRef.current) {
+        observer.observe(containerRef.current);
+      }
+
+      const centerEl =
+        centerRef?.current || document.getElementById("hero-center-content");
+      if (centerEl) {
+        observer.observe(centerEl);
+      }
+    }
+
+    window.addEventListener("resize", debouncedUpdate, { passive: true });
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      if (observer) {
+        observer.disconnect();
+      }
+      window.removeEventListener("resize", debouncedUpdate);
+    };
+  }, [centerRef, measureAndLayout]);
 
   // Mouse parallax on outer wrapper (fine pointer only, idle-sleeping rAF loop, max 6px drift)
   useEffect(() => {
@@ -39,10 +129,12 @@ export default function HeroStickerBomb() {
         currentPos.current.y += dy * 0.08;
 
         const maxDrift = 6;
-        for (let i = 0; i < HERO_STICKERS.length; i++) {
+        for (let i = 0; i < layout.placedStickers.length; i++) {
+          const item = layout.placedStickers[i];
+          if (!item.visible) continue;
           const el = parallaxRefs.current[i];
           if (el) {
-            const depth = HERO_STICKERS[i].depth;
+            const depth = item.sticker.depth;
             const px = -currentPos.current.x * depth * maxDrift;
             const py = -currentPos.current.y * depth * maxDrift;
             el.style.transform = `translate3d(${px.toFixed(2)}px, ${py.toFixed(2)}px, 0)`;
@@ -79,61 +171,37 @@ export default function HeroStickerBomb() {
         cancelAnimationFrame(animFrameRef.current);
       }
     };
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, layout.placedStickers]);
 
   return (
     <div
+      ref={containerRef}
       aria-hidden="true"
       data-testid="hero-sticker-bomb"
       className="absolute inset-0 pointer-events-none overflow-hidden z-10"
     >
-      {HERO_STICKERS.map((sticker: HeroStickerItem, index: number) => {
-        const isMobileOnlyHidden = !sticker.showOnMobile;
-        const isTabletHidden = sticker.hideOnTablet;
+      {layout.placedStickers.map((placed, index) => {
+        if (!placed.visible) return null;
 
-        // Responsive visibility classes
-        let visibilityClass = "block";
-        if (isMobileOnlyHidden && isTabletHidden) {
-          visibilityClass = "hidden lg:block";
-        } else if (isMobileOnlyHidden) {
-          visibilityClass = "hidden md:block";
-        } else if (isTabletHidden) {
-          visibilityClass = "block md:hidden lg:block";
-        }
-
-        const tier = getStickerTier(sticker.depth);
-        const tierCfg = TIER_MULTIPLIERS[tier];
-
-        // Apply tier size scaling (BACK ×0.6, MID ×0.8, FRONT ×0.9)
-        const desktopSize = Math.round(sticker.size * tierCfg.sizeMultiplier);
-        const tabletSize = Math.round(desktopSize * 0.8);
-        const mobileSize = sticker.mobileSize ?? Math.min(desktopSize, 64);
-
-        const desktopX = sticker.x;
-        const desktopY = sticker.y;
-        const mobileX = sticker.mobileX ?? sticker.x;
-        const mobileY = sticker.mobileY ?? sticker.y;
-
+        const sticker = placed.sticker;
         const stickerStyle = getStickerStyle(sticker.depth);
 
         return (
           <div
-            key={sticker.id}
-            data-testid={`hero-sticker-${sticker.id}`}
+            key={placed.id}
+            data-testid={`hero-sticker-${placed.id}`}
             className={`absolute -translate-x-1/2 -translate-y-1/2 select-none hero-sticker-pos ${
               prefersReducedMotion ? "" : "hero-sticker-pop"
-            } ${visibilityClass}`}
+            }`}
             style={{
-              ["--st-x" as string]: `${desktopX}%`,
-              ["--st-y" as string]: `${desktopY}%`,
-              ["--st-tab-x" as string]: `${sticker.tabletX ?? desktopX}%`,
-              ["--st-tab-y" as string]: `${sticker.tabletY ?? desktopY}%`,
-              ["--st-size" as string]: `${desktopSize}px`,
-              ["--st-tab-size" as string]: `${tabletSize}px`,
-              ["--st-mob-x" as string]: `${mobileX}%`,
-              ["--st-mob-y" as string]: `${mobileY}%`,
-              ["--st-mob-size" as string]: `${mobileSize}px`,
-              ["--sticker-rot" as string]: `${sticker.rotation}deg`,
+              left: `${placed.x}px`,
+              top: `${placed.y}px`,
+              width: `${placed.size}px`,
+              height: `${placed.size}px`,
+              ["--st-x" as string]: `${placed.x}px`,
+              ["--st-y" as string]: `${placed.y}px`,
+              ["--st-size" as string]: `${placed.size}px`,
+              ["--sticker-rot" as string]: `${placed.rotation}deg`,
               animationDelay: prefersReducedMotion ? "0ms" : `${index * 30}ms`,
             }}
           >
@@ -156,7 +224,7 @@ export default function HeroStickerBomb() {
                   ["--st-float-delay" as string]: sticker.floatDelay,
                   ["--st-float-dist" as string]: `${sticker.floatDistance}px`,
                   ["--st-float-rot" as string]: `${sticker.floatRotation}deg`,
-                  ["--sticker-rot" as string]: `${sticker.rotation}deg`,
+                  ["--sticker-rot" as string]: `${placed.rotation}deg`,
                 }}
                 title={sticker.name}
               >
@@ -165,8 +233,8 @@ export default function HeroStickerBomb() {
                   src={sticker.src}
                   alt=""
                   priority
-                  width={desktopSize}
-                  height={desktopSize}
+                  width={placed.size}
+                  height={placed.size}
                   className="w-full h-full object-contain pointer-events-none select-none hero-sticker-pack-filter"
                   style={stickerStyle}
                 />

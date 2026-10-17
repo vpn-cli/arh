@@ -929,4 +929,54 @@ The 19 placed stickers were mapped across 3 tiers driven by `depth` (exposed via
 ### 6. Verification
 - All verification gates passed: `check:frozen` (0 modifications to frozen files), `typecheck` (0 errors), `lint -- --quiet` (0 errors), `npm test` (71 suites, 619 tests passed), and `npm run build` (production Next.js build succeeded).
 
+---
+
+## 14. Session Log: Even Jittered-Grid Sticker Layout & Larger Sizes
+
+### Context & Goals
+Re-layout the Main World hero stickers using a deterministic seeded jittered-grid system across the entire viewport to eliminate artificial edge clumping, populate intermediate bands (15–35% and 65–85% width), increase base sticker sizes (80–140px), and preserve the locked-in Preset A "Faded print" aesthetic and 3-tier depth hierarchy.
+
+### 1. Jittered Grid Architecture (`stickerGrid.ts`)
+- **Grid Subdivision**:
+  - Desktop (≥1280px): 6 columns × 4 rows (24 cells).
+  - Compact Desktop (1024–1279px): 5 columns × 4 rows (20 cells).
+  - Tablet (768–1023px): 4 columns × 4 rows (16 cells, sizes scaled by ×0.8).
+  - Mobile (<768px): Corner and edge responsive placement (≤64px small items + Shin-chan, no text overlap).
+- **Runtime Center Corridor Detection**:
+  - The center content cluster (mascot + speech bubble, title, description card, CONTINUE button) is measured dynamically via `centerRef` (`id="hero-center-content"`) + a debounced (150ms) `ResizeObserver`.
+  - Padded by a strict 40px clearance zone. Cells that overlap the center corridor are marked blocked (`isCenterBlocked = true`).
+- **Seeded Mulberry32 PRNG (`createPRNG`)**:
+  - Algorithm seed `0x4d61616869` guarantees 100% deterministic positioning, jitter (±25% of cell width/height), and rotation (−12° to +12°) on every reload without reshuffling.
+- **Intermediate Bands Populated**:
+  - The bands between the edges and the center (15–35% and 65–85% width) receive stickers consistently, eliminating empty vertical strips.
+- **Variety & Spacing Rules**:
+  - The 3 FRONT characters are distributed across separate quadrants (Shin-chan in bottom-left, Snoopy in top-right, Hello Kitty in top-left).
+  - No two stickers of the same category (stars, bows) occupy adjacent cells (`areCellsAdjacent` guard).
+  - Shin-chan's "namaste ji 🙏" speech bubble is clamped to guarantee it remains inside viewport boundaries.
+- **Multi-Obstacle Collision & Nudge Pass**:
+  - Validates placements against the center block (+40px), top-left/right navigation pills, right phase tracker dots, and neighbor sticker overlap (>15% area).
+  - Automatically attempts radial nudges within the cell boundary; safely hides stickers if clearance cannot be resolved.
+
+### 2. Larger Base Sizes & Updated Depth Multipliers
+- Base sizes scaled up to 80–140px.
+- Tier multipliers in `TIER_MULTIPLIERS` (`stickerStyles.ts`):
+  - **BACK (9 stickers)**: size ×0.85, opacity 0.50, blur 0.6px, saturate 0.60, float amplitude 2px.
+  - **MID (7 stickers)**: size ×1.00, opacity 0.70, blur 0.0px, saturate 0.75, float amplitude 3px.
+  - **FRONT (3 stickers)**: size ×1.15, opacity 0.85, blur 0.0px, saturate 0.80, float amplitude 4px.
+  - Heavy and dark items strictly kept in BACK/MID tiers.
+
+### 3. Preserved Systems
+- 3-layer motion isolation: outer wrapper (parallax translate, 0% CPU when idle) → middle wrapper (float bobbing + hover scale) → inner `<img>` (Preset A filters only).
+- Smooth hover interaction lifts sticker 3px, scales ×1.08, and brings image to full 1.0 opacity.
+- Strong pink radial center glow and reduced-motion accessibility gates preserved.
+
+### 4. Verification & Quality Gates
+- **Frozen Guard**: `npm run check:frozen` passed (0 modifications to frozen files).
+- **Type Safety**: `npm run typecheck` passed with 0 errors.
+- **Linter**: `npm run lint -- --quiet` passed with 0 errors.
+- **Tests**: `npm test` passed all 71 test files and 627 unit/integration tests.
+- **Build**: `npm run build` compiled successfully in 4.1s with Turbopack.
+- **Visual Audit**: Verified precise layout at 1920×1080 (19 visible), 1366×768 (15 visible), and 375×812 (7 visible) via Playwright screenshots.
+
+
 
