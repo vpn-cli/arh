@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "check:frozen": "node scripts/check-frozen.mjs",
     "optimize-images": "node scripts/optimize-images.mjs",
     "db:migrate": "tsx scripts/apply-migration.ts",
     "slideshow": "tsx scripts/build_slideshow.ts",

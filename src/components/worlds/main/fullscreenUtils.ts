@@ -1,3 +1,4 @@
+// FROZEN: do not modify without explicit owner approval. See AGENTS.md.
 export function formatTime(seconds: number): string {
   if (isNaN(seconds) || seconds < 0) return "0:00";
   const mins = Math.floor(seconds / 60);

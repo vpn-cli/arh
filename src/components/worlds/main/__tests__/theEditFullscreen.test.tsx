@@ -1,3 +1,4 @@
+// FROZEN: do not modify without explicit owner approval. See AGENTS.md.
 import React from "react";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";

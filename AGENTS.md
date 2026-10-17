@@ -16,3 +16,25 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Position or animate with transform and opacity only. No blur or will-change on elements that are off screen.
 - Never claim a performance result that was not measured on a production build.
 - No arbitrary text-[Npx] sizes in Music World. Use defined type tokens (caption, meta, body, title, heading, display).
+
+# World Rules
+- **Home World Freeze Rule**: `src/components/worlds/HomeWorld.tsx` and `src/components/worlds/home/*` are strictly FROZEN. Do NOT modify, refactor, or edit any Home World content, copy, layout, or styles ever again.
+
+# FROZEN — Do Not Modify: Main World "The Edit"
+The following files comprise "The Edit" cinema video experience and are strictly **FROZEN**. Any modification, refactoring, re-encoding, media swapping, or styling change requires the owner's **explicit approval in the conversation first**.
+
+### Frozen Files List:
+1. `src/components/worlds/main/TheEdit.tsx`
+2. `src/components/worlds/main/TheEditControls.tsx`
+3. `src/components/worlds/main/TheEditTvHardware.tsx`
+4. `src/components/worlds/main/TheEditEndCard.tsx`
+5. `src/components/worlds/main/TheEditHelloKitty.tsx`
+6. `src/components/worlds/main/fullscreenUtils.ts`
+7. `src/components/worlds/main/__tests__/theEditFullscreen.test.tsx`
+8. `public/videos/arh_vid_final.mp4` (SHA-256: `1c88b1bea228f2d005d1eb8d439737f37e3287a9c8ed0ff342895eebc2e967ae`)
+9. `public/images/ar.jpeg` (SHA-256: `7451eee8d0665fb1da8689339f4574a01f33dc7fc28d9df031831547f9c4c10c`)
+
+### Enforcement Rules:
+- **No Unsolicited Modifications**: Any change requires explicit owner approval in the conversation first.
+- **Global Changes Must Skip These Files**: Global updates across the project (custom cursors, CSS utilities/tokens, sound effects, audio systems, wide refactors, or automated lint cleanups) MUST skip these files. If a global change would affect The Edit, STOP and ask the owner before proceeding.
+- **Automated Check**: Pre-commit hooks, pre-push hooks, and CI run `npm run check:frozen` to guarantee these files and checksums are never modified. The only bypass is setting `ALLOW_FROZEN=1` with explicit owner consent.

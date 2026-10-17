@@ -1,3 +1,4 @@
+// FROZEN: do not modify without explicit owner approval. See AGENTS.md.
 "use client";
 
 import React from "react";

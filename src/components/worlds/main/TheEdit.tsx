@@ -1,3 +1,4 @@
+// FROZEN: do not modify without explicit owner approval. See AGENTS.md.
 "use client";
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
@@ -17,6 +18,7 @@ export default function TheEdit() {
   const progressBarRef = useRef<HTMLDivElement>(null);
   const timeDisplayRef = useRef<HTMLSpanElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timingRef = useRef<{ clickTime: number; loggedUpdate: boolean }>({ clickTime: 0, loggedUpdate: false });
 
   const [hasStarted, setHasStarted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -30,9 +32,7 @@ export default function TheEdit() {
     setShowControls(true);
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     if (isPlaying) {
-      controlsTimeoutRef.current = setTimeout(() => {
-        setShowControls(false);
-      }, 2500);
+      controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 2500);
     }
   }, [isPlaying]);
 
@@ -60,13 +60,15 @@ export default function TheEdit() {
 
   // Launch initial playback & attempt true native fullscreen with sound immediately on first click
   const handleStartPlay = () => {
+    if (process.env.NODE_ENV !== "production") {
+      timingRef.current = { clickTime: performance.now(), loggedUpdate: false };
+      console.log(`[TheEdit Timing] Click at ${timingRef.current.clickTime.toFixed(1)}ms`);
+    }
+
     requestNativeFullscreen(
       playerContainerRef.current,
       videoRef.current,
-      () => {
-        setIsFullscreen(true);
-        setShowControls(true);
-      },
+      () => { setIsFullscreen(true); setShowControls(true); },
       () => setShowControls(true)
     );
 
@@ -80,6 +82,9 @@ export default function TheEdit() {
     if (playPromise !== undefined) {
       playPromise
         .then(() => {
+          if (process.env.NODE_ENV !== "production" && timingRef.current.clickTime) {
+            console.log(`[TheEdit Timing] play() resolved: +${(performance.now() - timingRef.current.clickTime).toFixed(1)}ms`);
+          }
           setHasStarted(true);
           resetControlsTimeout();
         })
@@ -87,12 +92,8 @@ export default function TheEdit() {
           console.warn("Unmuted play blocked by browser policy, falling back to muted:", err);
           video.muted = true;
           setIsMuted(true);
-          video
-            .play()
-            .then(() => {
-              setHasStarted(true);
-              resetControlsTimeout();
-            })
+          video.play()
+            .then(() => { setHasStarted(true); resetControlsTimeout(); })
             .catch(() => setShowControls(true));
         });
     }
@@ -104,20 +105,14 @@ export default function TheEdit() {
       setIsFullscreen(false);
       setShowControls(true);
     } else {
-      requestNativeFullscreen(
-        playerContainerRef.current,
-        videoRef.current,
-        () => {
-          setIsFullscreen(true);
-          setShowControls(true);
-        }
-      );
+      requestNativeFullscreen(playerContainerRef.current, videoRef.current, () => {
+        setIsFullscreen(true);
+        setShowControls(true);
+      });
       if (!hasStarted) {
         setHasStarted(true);
         if (videoRef.current) {
-          videoRef.current.play().then(() => {
-            resetControlsTimeout();
-          }).catch(() => {});
+          videoRef.current.play().then(() => { resetControlsTimeout(); }).catch(() => {});
         }
       }
     }
@@ -138,12 +133,8 @@ export default function TheEdit() {
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
-      if (isEnded || video.currentTime >= (video.duration || 1)) {
-        video.currentTime = 0;
-      }
-      video.play().catch((err) => {
-        console.warn("Video play prevented:", err);
-      });
+      if (isEnded || video.currentTime >= (video.duration || 1)) video.currentTime = 0;
+      video.play().catch((err) => console.warn("Video play prevented:", err));
       resetControlsTimeout();
     } else {
       video.pause();
@@ -155,9 +146,7 @@ export default function TheEdit() {
     const video = videoRef.current;
     if (!video) return;
     video.currentTime = 0;
-    video.play().catch((err) => {
-      console.warn("Replay video play prevented:", err);
-    });
+    video.play().catch((err) => console.warn("Replay video play prevented:", err));
     setIsEnded(false);
     resetControlsTimeout();
   };
@@ -173,6 +162,10 @@ export default function TheEdit() {
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video) return;
+    if (process.env.NODE_ENV !== "production" && timingRef.current.clickTime && !timingRef.current.loggedUpdate) {
+      timingRef.current.loggedUpdate = true;
+      console.log(`[TheEdit Timing] First timeupdate: +${(performance.now() - timingRef.current.clickTime).toFixed(1)}ms (pos: ${video.currentTime.toFixed(3)}s)`);
+    }
     const cur = video.currentTime;
     const dur = video.duration || 1;
     const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
@@ -243,7 +236,13 @@ export default function TheEdit() {
         playsInline
         poster={POSTER_SRC}
         onPlay={() => { setIsPlaying(true); setHasStarted(true); setIsEnded(false); }}
-        onPlaying={() => { setIsPlaying(true); setIsEnded(false); }}
+        onPlaying={() => {
+          if (process.env.NODE_ENV !== "production" && timingRef.current.clickTime) {
+            console.log(`[TheEdit Timing] 'playing' event: +${(performance.now() - timingRef.current.clickTime).toFixed(1)}ms`);
+          }
+          setIsPlaying(true);
+          setIsEnded(false);
+        }}
         onPause={() => setIsPlaying(false)}
         onVolumeChange={() => { if (videoRef.current) setIsMuted(videoRef.current.muted); }}
         onTimeUpdate={handleTimeUpdate}

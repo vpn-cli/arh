@@ -1,0 +1,10 @@
+#!/bin/sh
+# Pre-commit hook: ensures frozen files are not modified without explicit owner approval
+
+node scripts/check-frozen.mjs
+if [ $? -ne 0 ]; then
+  echo "❌ Commit rejected: A frozen file was modified without owner approval (ALLOW_FROZEN=1)."
+  exit 1
+fi
+
+exit 0

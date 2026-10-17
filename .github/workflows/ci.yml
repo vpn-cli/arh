@@ -16,6 +16,23 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  frozen-check:
+    name: Frozen Lock Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify frozen files and checksums
+        run: node scripts/check-frozen.mjs
+
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest
