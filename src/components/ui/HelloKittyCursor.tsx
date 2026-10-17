@@ -2,7 +2,13 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useCursor } from "@/context/CursorContext";
-import { CursorMode, KITTY_CURSOR_HOTSPOT } from "./cursorUtils";
+import {
+  CursorMode,
+  KITTY_CURSOR_HOTSPOT,
+  CURSOR_RENDER_MODE,
+  CURSOR_DISPLAY_WIDTH,
+  CURSOR_DISPLAY_HEIGHT,
+} from "./cursorUtils";
 import { useOptionalGameState } from "@/lib/gameState";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { CursorParticles } from "./CursorParticles";
@@ -117,98 +123,121 @@ export default function HelloKittyCursor() {
         />
       </div>
 
-      {/* 3. ZERO-LATENCY HELLO KITTY HEAD (HOTSPOT LOCKED, NO TRANSITION ON OUTER WRAPPER) */}
+      {/* 3. ZERO-LATENCY HELLO KITTY HEAD & EFFECTS */}
       <div
         ref={kittyRef}
         className="fixed top-0 left-0 pointer-events-none will-change-transform"
         style={{ transform: "translate3d(-100px, -100px, 0)", transition: "none" }}
       >
-        {/* Transform Layer 1: Anchored at ear hotspot for hover scaling & flavor tilts */}
-        <div
-          style={{
-            transformOrigin: `${KITTY_CURSOR_HOTSPOT.x}px ${KITTY_CURSOR_HOTSPOT.y}px`,
-          }}
-          className={`relative pointer-events-none transition-transform ${
-            prefersReducedMotion ? "duration-0" : "duration-150 ease-out"
-          } ${
-            isHover || isMusic
-              ? "scale-112 rotate-4"
-              : isDrag
-              ? "scale-110 -rotate-6"
-              : isPuzzle
-              ? "scale-110 rotate-3"
-              : isPolaroid
-              ? "scale-110 -rotate-3"
-              : isZoomOut
-              ? "scale-90 rotate-0"
-              : isText
-              ? "scale-75"
-              : "scale-100 rotate-0"
-          }`}
-        >
-          {/* Transform Layer 2: Anchored at bottom-center (50% 100%) for press squish, waking pop & landing bounce */}
+        {CURSOR_RENDER_MODE === "native" ? (
+          /* Native Mode: Kitty image rendered natively by OS cursor (zero latency); DOM renders badges & FX only */
           <div
-            className={`relative pointer-events-none origin-bottom transition-transform ${
-              prefersReducedMotion ? "duration-0" : "duration-100 ease-out"
+            style={{
+              width: `${CURSOR_DISPLAY_WIDTH}px`,
+              height: `${CURSOR_DISPLAY_HEIGHT}px`,
+            }}
+            className="relative pointer-events-none"
+          >
+            <CursorBadges
+              isText={false}
+              isDisabled={false}
+              isLoading={isLoading}
+              isPuzzle={isPuzzle}
+              isPolaroid={isPolaroid}
+              isZoomOut={isZoomOut}
+              isHover={isHover}
+              isIdleSleep={isIdleSleep}
+              prefersReducedMotion={prefersReducedMotion}
+            />
+          </div>
+        ) : (
+          /* DOM Mode Fallback: Full DOM Kitty Head with transforms and expression frames */
+          <div
+            style={{
+              transformOrigin: `${KITTY_CURSOR_HOTSPOT.x}px ${KITTY_CURSOR_HOTSPOT.y}px`,
+            }}
+            className={`relative pointer-events-none transition-transform ${
+              prefersReducedMotion ? "duration-0" : "duration-150 ease-out"
             } ${
-              isWarping
-                ? "animate-kitty-warp"
-                : isLanding
-                ? "animate-kitty-landing"
-                : isPressed
-                ? "scale-x-[1.14] scale-y-[0.84]"
-                : isClickPopping || isWaking
-                ? "scale-112"
-                : "scale-100"
+              isHover || isMusic
+                ? "scale-112 rotate-4"
+                : isDrag
+                ? "scale-110 -rotate-6"
+                : isPuzzle
+                ? "scale-110 rotate-3"
+                : isPolaroid
+                ? "scale-110 -rotate-3"
+                : isZoomOut
+                ? "scale-90 rotate-0"
+                : isText
+                ? "scale-75"
+                : "scale-100 rotate-0"
             }`}
           >
-            {/* Transform Layer 3: Inner Image wrapper receiving RAF velocity spring lean & music sway */}
+            {/* Transform Layer 2: Anchored at bottom-center (50% 100%) for press squish, waking pop & landing bounce */}
             <div
-              ref={innerImgRef}
-              className={`relative drop-shadow-[0_2px_5px_rgba(58,36,64,0.35)] ${
-                isPeel ? "rotate-[-4deg] drop-shadow-[0_4px_8px_rgba(58,36,64,0.4)]" : ""
+              className={`relative pointer-events-none origin-bottom transition-transform ${
+                prefersReducedMotion ? "duration-0" : "duration-100 ease-out"
               } ${
-                !prefersReducedMotion &&
-                !isHover &&
-                !isPressed &&
-                !isClickPopping &&
-                !isWaking &&
-                !isText &&
-                !isDisabled &&
-                !isWarping &&
-                !isLanding &&
-                !isPuzzle &&
-                !isPeel &&
-                !(isMusicWorld && isMusicPlaying)
-                  ? "animate-kitty-bob"
-                  : ""
-              } ${!prefersReducedMotion && isDisabled ? "animate-kitty-shake" : ""}`}
+                isWarping
+                  ? "animate-kitty-warp"
+                  : isLanding
+                  ? "animate-kitty-landing"
+                  : isPressed
+                  ? "scale-x-[1.14] scale-y-[0.84]"
+                  : isClickPopping || isWaking
+                  ? "scale-112"
+                  : "scale-100"
+              }`}
             >
-              {/* Layer 1 & 2: Stack of Expression Frames + Cheek Blush */}
-              <CursorExpressions
-                activeExpression={activeExpression}
-                activeCoreFrame={activeCoreFrame}
-                isPressed={isPressed}
-                isHover={isHover}
-                isMusic={isMusic}
-                isMusicPlaying={isMusicPlaying}
-              />
+              {/* Transform Layer 3: Inner Image wrapper receiving RAF velocity spring lean & music sway */}
+              <div
+                ref={innerImgRef}
+                className={`relative drop-shadow-[0_2px_5px_rgba(58,36,64,0.35)] ${
+                  isPeel ? "rotate-[-4deg] drop-shadow-[0_4px_8px_rgba(58,36,64,0.4)]" : ""
+                } ${
+                  !prefersReducedMotion &&
+                  !isHover &&
+                  !isPressed &&
+                  !isClickPopping &&
+                  !isWaking &&
+                  !isText &&
+                  !isDisabled &&
+                  !isWarping &&
+                  !isLanding &&
+                  !isPuzzle &&
+                  !isPeel &&
+                  !(isMusicWorld && isMusicPlaying)
+                    ? "animate-kitty-bob"
+                    : ""
+                } ${!prefersReducedMotion && isDisabled ? "animate-kitty-shake" : ""}`}
+              >
+                {/* Layer 1 & 2: Stack of Expression Frames + Cheek Blush */}
+                <CursorExpressions
+                  activeExpression={activeExpression}
+                  activeCoreFrame={activeCoreFrame}
+                  isPressed={isPressed}
+                  isHover={isHover}
+                  isMusic={isMusic}
+                  isMusicPlaying={isMusicPlaying}
+                />
 
-              {/* Layer 3 & 4: Badges, Caret, Sparkles, and Floating Zzz */}
-              <CursorBadges
-                isText={isText}
-                isDisabled={isDisabled}
-                isLoading={isLoading}
-                isPuzzle={isPuzzle}
-                isPolaroid={isPolaroid}
-                isZoomOut={isZoomOut}
-                isHover={isHover}
-                isIdleSleep={isIdleSleep}
-                prefersReducedMotion={prefersReducedMotion}
-              />
+                {/* Layer 3 & 4: Badges, Caret, Sparkles, and Floating Zzz */}
+                <CursorBadges
+                  isText={isText}
+                  isDisabled={isDisabled}
+                  isLoading={isLoading}
+                  isPuzzle={isPuzzle}
+                  isPolaroid={isPolaroid}
+                  isZoomOut={isZoomOut}
+                  isHover={isHover}
+                  isIdleSleep={isIdleSleep}
+                  prefersReducedMotion={prefersReducedMotion}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

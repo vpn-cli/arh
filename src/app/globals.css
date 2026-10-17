@@ -96,9 +96,85 @@ html {
    CUSTOM HELLO KITTY CURSOR SYSTEM
    ═══════════════════════════════════════════════════════ */
 
+/* Fallback for DOM Mode: Hide OS cursor when custom DOM cursor is active */
 html.custom-cursor-active,
 html.custom-cursor-active * {
   cursor: none !important;
+}
+
+/* Zero-Latency Native CSS Cursor System (1x / 2x image-set + 32px fallback) */
+@media (hover: hover) and (pointer: fine) {
+  html[data-kitty="default"],
+  html[data-kitty="default"] * {
+    cursor: url('/hampter/cursor/kitty_default_32.png') 5 1, auto !important;
+    cursor: image-set(
+      url('/hampter/cursor/kitty_default_32.png') 1x,
+      url('/hampter/cursor/kitty_default_64.png') 2x
+    ) 5 1, auto !important;
+  }
+
+  html[data-kitty="blink"],
+  html[data-kitty="blink"] * {
+    cursor: url('/hampter/cursor/kitty_blink_32.png') 5 1, auto !important;
+    cursor: image-set(
+      url('/hampter/cursor/kitty_blink_32.png') 1x,
+      url('/hampter/cursor/kitty_blink_64.png') 2x
+    ) 5 1, auto !important;
+  }
+
+  html[data-kitty="squeeze"],
+  html[data-kitty="squeeze"] * {
+    cursor: url('/hampter/cursor/kitty_squeeze_32.png') 5 1, auto !important;
+    cursor: image-set(
+      url('/hampter/cursor/kitty_squeeze_32.png') 1x,
+      url('/hampter/cursor/kitty_squeeze_64.png') 2x
+    ) 5 1, auto !important;
+  }
+
+  html[data-kitty="happy"],
+  html[data-kitty="happy"] * {
+    cursor: url('/hampter/cursor/kitty_happy_32.png') 5 1, auto !important;
+    cursor: image-set(
+      url('/hampter/cursor/kitty_happy_32.png') 1x,
+      url('/hampter/cursor/kitty_happy_64.png') 2x
+    ) 5 1, auto !important;
+  }
+
+  html[data-kitty="sleepy"],
+  html[data-kitty="sleepy"] * {
+    cursor: url('/hampter/cursor/kitty_sleepy_32.png') 5 1, auto !important;
+    cursor: image-set(
+      url('/hampter/cursor/kitty_sleepy_32.png') 1x,
+      url('/hampter/cursor/kitty_sleepy_64.png') 2x
+    ) 5 1, auto !important;
+  }
+
+  html[data-kitty="dizzy"],
+  html[data-kitty="dizzy"] * {
+    cursor: url('/hampter/cursor/kitty_dizzy_32.png') 5 1, auto !important;
+    cursor: image-set(
+      url('/hampter/cursor/kitty_dizzy_32.png') 1x,
+      url('/hampter/cursor/kitty_dizzy_64.png') 2x
+    ) 5 1, auto !important;
+  }
+
+  html[data-kitty="locked"],
+  html[data-kitty="locked"] * {
+    cursor: url('/hampter/cursor/kitty_locked_32.png') 5 1, auto !important;
+    cursor: image-set(
+      url('/hampter/cursor/kitty_locked_32.png') 1x,
+      url('/hampter/cursor/kitty_locked_64.png') 2x
+    ) 5 1, auto !important;
+  }
+
+  /* Normal native I-beam caret for text inputs and textareas (excluding disabled ones) */
+  html[data-kitty] input:not([type='button']):not([type='submit']):not([type='reset']):not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):not([type='color']):not([disabled]):not(:disabled):not([aria-disabled='true']):not([data-disabled='true']),
+  html[data-kitty] textarea:not([disabled]):not(:disabled):not([aria-disabled='true']):not([data-disabled='true']),
+  html[data-kitty] [contenteditable='true']:not([aria-disabled='true']),
+  html[data-kitty] [role='textbox']:not([aria-disabled='true']),
+  html[data-kitty] [data-cursor='text']:not([aria-disabled='true']) {
+    cursor: text !important;
+  }
 }
 
 .kitty-cursor-img,

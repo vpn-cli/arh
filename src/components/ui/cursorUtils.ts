@@ -20,12 +20,15 @@ export const CURSOR_MODES = [
 
 export type CursorMode = (typeof CURSOR_MODES)[number];
 
+export type CursorRenderMode = "native" | "dom";
+export const CURSOR_RENDER_MODE: CursorRenderMode = "native";
+
 /**
- * Permanent default cursor display size: 40px width (40x29).
- * Aspect ratio of the tightly cropped enamel head is 96:69 (~1.39:1).
+ * Permanent default cursor display size: 32px width (32x23).
+ * Aspect ratio of the tightly cropped enamel head is 502:358 (~1.40:1).
  */
-export const CURSOR_DISPLAY_WIDTH = 40;
-export const CURSOR_DISPLAY_HEIGHT = Math.round(CURSOR_DISPLAY_WIDTH * (69 / 96)); // 29px
+export const CURSOR_DISPLAY_WIDTH = 32;
+export const CURSOR_DISPLAY_HEIGHT = Math.round(CURSOR_DISPLAY_WIDTH * (358 / 502)); // 23px
 
 /**
  * Click point hotspot for the tightly-cropped Hello Kitty enamel pin icon.
@@ -33,7 +36,7 @@ export const CURSOR_DISPLAY_HEIGHT = Math.round(CURSOR_DISPLAY_WIDTH * (69 / 96)
  * Ear apex in 502x358 trimmed image is at x=71, y=0.
  */
 export const KITTY_CURSOR_HOTSPOT = {
-  x: Math.round(CURSOR_DISPLAY_WIDTH * (71 / 502)), // 6px for 40px width
+  x: Math.round(CURSOR_DISPLAY_WIDTH * (71 / 502)), // 5px for 32px width
   y: 1, // Ear apex touches top border
 };
 
@@ -147,12 +150,13 @@ export const KITTY_EXPRESSIONS = [
   "sad",
   "wink",
   "peel",
+  "locked",
 ] as const;
 
 export type KittyExpression = (typeof KITTY_EXPRESSIONS)[number];
 
 /**
- * 6 Core animated frames with dedicated assets.
+ * 7 Core animated frames with dedicated native assets.
  */
 export const CORE_KITTY_EXPRESSIONS = [
   "default",
@@ -161,13 +165,46 @@ export const CORE_KITTY_EXPRESSIONS = [
   "squeeze",
   "sleepy",
   "dizzy",
+  "locked",
 ] as const;
 
 export type CoreKittyExpression = (typeof CORE_KITTY_EXPRESSIONS)[number];
 
 /**
+ * 7 Native CSS cursor expressions available at 32px (1x) and 64px (2x).
+ */
+export const NATIVE_KITTY_EXPRESSIONS = [
+  "default",
+  "blink",
+  "squeeze",
+  "happy",
+  "sleepy",
+  "dizzy",
+  "locked",
+] as const;
+
+export type NativeKittyExpression = (typeof NATIVE_KITTY_EXPRESSIONS)[number];
+
+/**
+ * Maps semantic expressions to one of the 7 native CSS cursor expressions.
+ */
+export function toNativeKittyExpression(expr: KittyExpression): NativeKittyExpression {
+  if (
+    expr === "blink" ||
+    expr === "squeeze" ||
+    expr === "happy" ||
+    expr === "sleepy" ||
+    expr === "dizzy" ||
+    expr === "locked"
+  ) {
+    return expr;
+  }
+  return "default";
+}
+
+/**
  * All generated asset frames available in public/hampter/cursor/ (WebP + PNG fallbacks).
- * Includes the 6 core expressions plus kitty_peel.
+ * Includes the 7 core expressions plus kitty_peel.
  */
 export const KITTY_ASSET_FRAMES = [
   "default",
@@ -177,6 +214,7 @@ export const KITTY_ASSET_FRAMES = [
   "sleepy",
   "dizzy",
   "peel",
+  "locked",
 ] as const;
 
 export type KittyAssetFrame = (typeof KITTY_ASSET_FRAMES)[number];
@@ -189,6 +227,7 @@ export interface ResolveExpressionOptions {
   isIdleSleep?: boolean;
   isMusicPlaying?: boolean;
   isPuzzleSolved?: boolean;
+  isWarping?: boolean;
 }
 
 /**
@@ -203,6 +242,7 @@ export function resolveKittyExpression({
   isIdleSleep = false,
   isMusicPlaying = false,
   isPuzzleSolved = false,
+  isWarping = false,
 }: ResolveExpressionOptions): KittyExpression {
   // 1. High priority action states (Mousedown press > Click release pop > Puzzle solve)
   if (isPressed) {
@@ -212,27 +252,32 @@ export function resolveKittyExpression({
     return "happy"; // "^ ^"
   }
 
-  // 2. Music World actively playing vibes to the sway
+  // 2. Disabled / Locked elements (hover-lock)
+  if (mode === "disabled") {
+    return "locked";
+  }
+
+  // 3. Music World actively playing vibes to the sway
   if (mode === "music" && isMusicPlaying) {
     return "happy"; // "^ ^"
   }
 
-  // 3. Idle sleep (after 8s idle)
+  // 4. Idle sleep (after 8s idle)
   if (isIdleSleep) {
     return "sleepy";
   }
 
-  // 4. Loading / world transition warp spin
-  if (mode === "loading") {
+  // 5. Loading / world transition warp spin
+  if (mode === "loading" || isWarping) {
     return "dizzy"; // "@ @"
   }
 
-  // 5. Blinking (only valid when eyes were otherwise open)
+  // 6. Blinking (only valid when eyes were otherwise open)
   if (isBlinking) {
     return "blink";
   }
 
-  // 6. Flavor / page modes
+  // 7. Flavor / page modes
   if (mode === "peel") {
     return "peel";
   }
@@ -245,9 +290,6 @@ export function resolveKittyExpression({
   if (mode === "text") {
     return "focused";
   }
-  if (mode === "disabled") {
-    return "sad";
-  }
 
   // Hover uses default / curious eyes with blush & sparkle (NOT happy closed-eye)
   if (mode === "hover") {
@@ -259,9 +301,6 @@ export function resolveKittyExpression({
 
 /**
  * Dedicated frame availability mapping.
- * Start with 6 core frames + kitty_peel in the asset list.
- * Curious, focused, sad, and wink currently map to default + contextual badges/FX,
- * with the resolver ready to use dedicated frames if added later.
  */
 export const DEDICATED_FRAME_MAP: Record<KittyExpression, KittyAssetFrame> = {
   default: "default",
@@ -271,9 +310,10 @@ export const DEDICATED_FRAME_MAP: Record<KittyExpression, KittyAssetFrame> = {
   sleepy: "sleepy",
   dizzy: "dizzy",
   peel: "peel",
+  locked: "locked",
   curious: "default",
   focused: "default",
-  sad: "default",
+  sad: "locked",
   wink: "default",
 };
 

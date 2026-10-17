@@ -7,11 +7,16 @@ import {
   getExpressionAssetPaths,
   isInstantExpressionSwap,
   canBlink,
+  toNativeKittyExpression,
+  NATIVE_KITTY_EXPRESSIONS,
+  CURSOR_RENDER_MODE,
 } from "../cursorUtils";
+import fs from "node:fs";
+import path from "node:path";
 
 describe("cursorUtils", () => {
   it("defines a precise hotspot near the top-left ear tip", () => {
-    expect(KITTY_CURSOR_HOTSPOT.x).toBe(6);
+    expect(KITTY_CURSOR_HOTSPOT.x).toBe(5);
     expect(KITTY_CURSOR_HOTSPOT.y).toBe(1);
   });
 
@@ -217,25 +222,29 @@ describe("cursorUtils", () => {
       expect(resolveKittyExpression({ mode: "polaroid", isPressed: false })).toBe("wink");
       expect(resolveKittyExpression({ mode: "puzzle", isPressed: false })).toBe("curious");
       expect(resolveKittyExpression({ mode: "text", isPressed: false })).toBe("focused");
-      expect(resolveKittyExpression({ mode: "disabled", isPressed: false })).toBe("sad");
+      expect(resolveKittyExpression({ mode: "disabled", isPressed: false })).toBe("locked");
+    });
+
+    it("returns 'dizzy' (@ @) during world transitions when isWarping is true", () => {
+      expect(resolveKittyExpression({ mode: "default", isPressed: false, isWarping: true })).toBe("dizzy");
     });
   });
 
   describe("mapExpressionToCoreFrame", () => {
-    it("maps 6 core expressions and peel directly", () => {
+    it("maps 7 core expressions and peel directly", () => {
       expect(mapExpressionToCoreFrame("default")).toBe("default");
       expect(mapExpressionToCoreFrame("blink")).toBe("blink");
       expect(mapExpressionToCoreFrame("happy")).toBe("happy");
       expect(mapExpressionToCoreFrame("squeeze")).toBe("squeeze");
       expect(mapExpressionToCoreFrame("sleepy")).toBe("sleepy");
       expect(mapExpressionToCoreFrame("dizzy")).toBe("dizzy");
+      expect(mapExpressionToCoreFrame("locked")).toBe("locked");
       expect(mapExpressionToCoreFrame("peel")).toBe("peel");
     });
 
-    it("maps curious, focused, sad, and wink to default frame", () => {
+    it("maps curious, focused, and wink to default frame", () => {
       expect(mapExpressionToCoreFrame("curious")).toBe("default");
       expect(mapExpressionToCoreFrame("focused")).toBe("default");
-      expect(mapExpressionToCoreFrame("sad")).toBe("default");
       expect(mapExpressionToCoreFrame("wink")).toBe("default");
     });
   });
@@ -283,6 +292,83 @@ describe("cursorUtils", () => {
       expect(canBlink("default", false, true)).toBe(false);
     });
   });
+
+  describe("Native Cursor Rendering Mode & data-kitty Mapping", () => {
+    it("defaults CURSOR_RENDER_MODE to 'native'", () => {
+      expect(CURSOR_RENDER_MODE).toBe("native");
+    });
+
+    it("maps state events to the exact data-kitty expression", () => {
+      // 1. Press -> squeeze
+      const pressedExpr = resolveKittyExpression({ mode: "default", isPressed: true });
+      expect(toNativeKittyExpression(pressedExpr)).toBe("squeeze");
+
+      // 2. Release click pop -> happy
+      const releaseExpr = resolveKittyExpression({ mode: "default", isPressed: false, isClickPopping: true });
+      expect(toNativeKittyExpression(releaseExpr)).toBe("happy");
+
+      // 3. Idle sleep -> sleepy
+      const idleExpr = resolveKittyExpression({ mode: "default", isPressed: false, isIdleSleep: true });
+      expect(toNativeKittyExpression(idleExpr)).toBe("sleepy");
+
+      // 4. Warp transition -> dizzy
+      const warpExpr = resolveKittyExpression({ mode: "default", isPressed: false, isWarping: true });
+      expect(toNativeKittyExpression(warpExpr)).toBe("dizzy");
+
+      // 5. Disabled / locked hover -> locked
+      const disabledExpr = resolveKittyExpression({ mode: "disabled", isPressed: false });
+      expect(toNativeKittyExpression(disabledExpr)).toBe("locked");
+
+      // 6. Blink -> blink
+      const blinkExpr = resolveKittyExpression({ mode: "default", isPressed: false, isBlinking: true });
+      expect(toNativeKittyExpression(blinkExpr)).toBe("blink");
+    });
+
+    it("only supports the 7 native expressions", () => {
+      expect(NATIVE_KITTY_EXPRESSIONS).toEqual([
+        "default",
+        "blink",
+        "squeeze",
+        "happy",
+        "sleepy",
+        "dizzy",
+        "locked",
+      ]);
+    });
+
+    it("verifies all 7 native cursor PNGs exist on disk with 1x <= 32px and 2x <= 64px", () => {
+      const cursorDir = path.resolve(process.cwd(), "public/hampter/cursor");
+      for (const expr of NATIVE_KITTY_EXPRESSIONS) {
+        const file1x = path.join(cursorDir, `kitty_${expr}_32.png`);
+        const file2x = path.join(cursorDir, `kitty_${expr}_64.png`);
+
+        expect(fs.existsSync(file1x)).toBe(true);
+        expect(fs.existsSync(file2x)).toBe(true);
+
+        const buf1x = fs.readFileSync(file1x);
+        const buf2x = fs.readFileSync(file2x);
+
+        // PNG signature check
+        expect(buf1x.subarray(0, 8)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+        expect(buf2x.subarray(0, 8)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+
+        // Read width & height from PNG IHDR chunk (bytes 16-24)
+        const w1x = buf1x.readUInt32BE(16);
+        const h1x = buf1x.readUInt32BE(20);
+        const w2x = buf2x.readUInt32BE(16);
+        const h2x = buf2x.readUInt32BE(20);
+
+        expect(w1x).toBeLessThanOrEqual(32);
+        expect(w1x).toBe(32);
+        expect(h1x).toBe(23);
+
+        expect(w2x).toBeLessThanOrEqual(64);
+        expect(w2x).toBe(64);
+        expect(h2x).toBe(46);
+      }
+    });
+  });
 });
+
 
 

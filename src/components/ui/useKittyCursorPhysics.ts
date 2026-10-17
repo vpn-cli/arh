@@ -11,6 +11,8 @@ import {
   resolveKittyExpression,
   mapExpressionToCoreFrame,
   canBlink,
+  CURSOR_RENDER_MODE,
+  toNativeKittyExpression,
 } from "./cursorUtils";
 import { sfx } from "@/lib/audio";
 import { ParticleType, spawnCursorParticle } from "./CursorParticles";
@@ -109,11 +111,36 @@ export function useKittyCursorPhysics({
     isIdleSleep,
     isMusicPlaying,
     isPuzzleSolved,
+    isWarping,
   });
   const activeCoreFrame = mapExpressionToCoreFrame(activeExpression);
   const activeExpressionRef = useRef(activeExpression);
   activeExpressionRef.current = activeExpression;
 
+
+  // 1b. Sync native cursor expression via data attribute on <html> (zero-latency CSS cursor)
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    if (CURSOR_RENDER_MODE === "native") {
+      if (!isFinePointer || activeMode === "hidden") {
+        document.documentElement.removeAttribute("data-kitty");
+        return;
+      }
+      const nativeExpr = toNativeKittyExpression(activeExpression);
+      if (document.documentElement.getAttribute("data-kitty") !== nativeExpr) {
+        document.documentElement.setAttribute("data-kitty", nativeExpr);
+      }
+    } else {
+      document.documentElement.removeAttribute("data-kitty");
+    }
+
+    return () => {
+      if (CURSOR_RENDER_MODE === "native") {
+        document.documentElement.removeAttribute("data-kitty");
+      }
+    };
+  }, [activeExpression, isFinePointer, activeMode]);
 
   // 2. Clean up timers and puzzle-solve event listener
   useEffect(() => {
@@ -195,11 +222,15 @@ export function useKittyCursorPhysics({
 
   // 4. Core Pointer Listeners and RAF Spring Loop
   useEffect(() => {
-    if (!isFinePointer) {
+    if (CURSOR_RENDER_MODE === "dom") {
+      if (!isFinePointer) {
+        document.documentElement.classList.remove("custom-cursor-active");
+        return;
+      }
+      document.documentElement.classList.add("custom-cursor-active");
+    } else {
       document.documentElement.classList.remove("custom-cursor-active");
-      return;
     }
-    document.documentElement.classList.add("custom-cursor-active");
 
     let animationFrameId: number;
 
@@ -385,59 +416,61 @@ export function useKittyCursorPhysics({
         }px, ${glowCoords.current.y - KITTY_CURSOR_HOTSPOT.y}px, 0)`;
       }
 
-      // 4. Velocity Lean & Squash/Stretch Springs (inner image wrapper only)
-      let targetLean = 0;
-      let targetScaleX = 1.0;
-      let targetScaleY = 1.0;
+      // 4. Velocity Lean & Squash/Stretch Springs (inner image wrapper only, DOM mode only)
+      if (CURSOR_RENDER_MODE === "dom") {
+        let targetLean = 0;
+        let targetScaleX = 1.0;
+        let targetScaleY = 1.0;
 
-      const isDrag = activeModeRef.current === "drag";
-      if (!prefersReducedMotion && !isPressedRef.current && !isDrag && !isWarpingRef.current) {
-        if (moveSpeed > 0.5) {
-          targetLean = Math.max(-6, Math.min(6, vx * 0.35));
-          targetScaleX = Math.max(0.97, Math.min(1.03, 1.0 + (Math.abs(vx) * 0.003 - Math.abs(vy) * 0.002)));
-          targetScaleY = Math.max(0.97, Math.min(1.03, 1.0 + (Math.abs(vy) * 0.003 - Math.abs(vx) * 0.002)));
+        const isDrag = activeModeRef.current === "drag";
+        if (!prefersReducedMotion && !isPressedRef.current && !isDrag && !isWarpingRef.current) {
+          if (moveSpeed > 0.5) {
+            targetLean = Math.max(-6, Math.min(6, vx * 0.35));
+            targetScaleX = Math.max(0.97, Math.min(1.03, 1.0 + (Math.abs(vx) * 0.003 - Math.abs(vy) * 0.002)));
+            targetScaleY = Math.max(0.97, Math.min(1.03, 1.0 + (Math.abs(vy) * 0.003 - Math.abs(vx) * 0.002)));
+          }
         }
-      }
 
-      const leanStiffness = 0.22;
-      const leanDamping = 0.72;
-      leanSpringVel.current += (targetLean - currentLean.current) * (leanStiffness * step);
-      currentLean.current += leanSpringVel.current * step;
-      leanSpringVel.current *= Math.pow(leanDamping, step);
+        const leanStiffness = 0.22;
+        const leanDamping = 0.72;
+        leanSpringVel.current += (targetLean - currentLean.current) * (leanStiffness * step);
+        currentLean.current += leanSpringVel.current * step;
+        leanSpringVel.current *= Math.pow(leanDamping, step);
 
-      const scaleStiffness = 0.25;
-      const scaleDamping = 0.70;
-      scaleXSpringVel.current += (targetScaleX - currentScaleX.current) * (scaleStiffness * step);
-      currentScaleX.current += scaleXSpringVel.current * step;
-      scaleXSpringVel.current *= Math.pow(scaleDamping, step);
+        const scaleStiffness = 0.25;
+        const scaleDamping = 0.70;
+        scaleXSpringVel.current += (targetScaleX - currentScaleX.current) * (scaleStiffness * step);
+        currentScaleX.current += scaleXSpringVel.current * step;
+        scaleXSpringVel.current *= Math.pow(scaleDamping, step);
 
-      scaleYSpringVel.current += (targetScaleY - currentScaleY.current) * (scaleStiffness * step);
-      currentScaleY.current += scaleYSpringVel.current * step;
-      scaleYSpringVel.current *= Math.pow(scaleDamping, step);
+        scaleYSpringVel.current += (targetScaleY - currentScaleY.current) * (scaleStiffness * step);
+        currentScaleY.current += scaleYSpringVel.current * step;
+        scaleYSpringVel.current *= Math.pow(scaleDamping, step);
 
-      // Music World simulated sway
-      const isPrecisionHover = isHoveringPrecisionRef.current;
-      if (isMusicWorldRef.current && isMusicPlayingRef.current && !prefersReducedMotion && !isPrecisionHover) {
-        const targetSway = Math.sin((time / 1000) * ((115 / 60) * Math.PI)) * 6.5;
-        const swayFactor = 1 - Math.pow(1 - 0.15, step);
-        swayAngleRef.current += (targetSway - swayAngleRef.current) * swayFactor;
-      } else {
-        const returnFactor = 1 - Math.pow(1 - 0.12, step);
-        swayAngleRef.current += (0 - swayAngleRef.current) * returnFactor;
-        if (Math.abs(swayAngleRef.current) < 0.05) swayAngleRef.current = 0;
-      }
+        // Music World simulated sway
+        const isPrecisionHover = isHoveringPrecisionRef.current;
+        if (isMusicWorldRef.current && isMusicPlayingRef.current && !prefersReducedMotion && !isPrecisionHover) {
+          const targetSway = Math.sin((time / 1000) * ((115 / 60) * Math.PI)) * 6.5;
+          const swayFactor = 1 - Math.pow(1 - 0.15, step);
+          swayAngleRef.current += (targetSway - swayAngleRef.current) * swayFactor;
+        } else {
+          const returnFactor = 1 - Math.pow(1 - 0.12, step);
+          swayAngleRef.current += (0 - swayAngleRef.current) * returnFactor;
+          if (Math.abs(swayAngleRef.current) < 0.05) swayAngleRef.current = 0;
+        }
 
-      // Shrug tilt on quiz skip
-      const targetShrug = isShrugging ? 11 : 0;
-      const shrugFactor = 1 - Math.pow(1 - 0.18, step);
-      shrugAngleRef.current += (targetShrug - shrugAngleRef.current) * shrugFactor;
-      if (!isShrugging && Math.abs(shrugAngleRef.current) < 0.05) shrugAngleRef.current = 0;
+        // Shrug tilt on quiz skip
+        const targetShrug = isShrugging ? 11 : 0;
+        const shrugFactor = 1 - Math.pow(1 - 0.18, step);
+        shrugAngleRef.current += (targetShrug - shrugAngleRef.current) * shrugFactor;
+        if (!isShrugging && Math.abs(shrugAngleRef.current) < 0.05) shrugAngleRef.current = 0;
 
-      if (innerImgRef.current) {
-        const totalRotate = currentLean.current + swayAngleRef.current + shrugAngleRef.current;
-        innerImgRef.current.style.transform = `rotate(${totalRotate.toFixed(2)}deg) scale(${currentScaleX.current.toFixed(
-          3
-        )}, ${currentScaleY.current.toFixed(3)})`;
+        if (innerImgRef.current) {
+          const totalRotate = currentLean.current + swayAngleRef.current + shrugAngleRef.current;
+          innerImgRef.current.style.transform = `rotate(${totalRotate.toFixed(2)}deg) scale(${currentScaleX.current.toFixed(
+            3
+          )}, ${currentScaleY.current.toFixed(3)})`;
+        }
       }
 
       animationFrameId = requestAnimationFrame(renderLoop);
@@ -456,7 +489,11 @@ export function useKittyCursorPhysics({
     animationFrameId = requestAnimationFrame(renderLoop);
 
     return () => {
-      document.documentElement.classList.remove("custom-cursor-active");
+      if (CURSOR_RENDER_MODE === "dom") {
+        document.documentElement.classList.remove("custom-cursor-active");
+      } else {
+        document.documentElement.removeAttribute("data-kitty");
+      }
       window.removeEventListener("pointermove", handlePointerMove);
       document.removeEventListener("pointerover", handlePointerOver);
       document.removeEventListener("pointerout", handlePointerOut);
