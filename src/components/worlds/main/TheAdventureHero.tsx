@@ -70,20 +70,6 @@ export default function TheAdventureHero() {
             }}
           />
 
-          {/* Sticker 1: Hamster peeking from behind Hello Kitty */}
-          <div
-            className="absolute -bottom-1 -left-7 sm:-left-9 w-12 h-12 sm:w-14 sm:h-14 -rotate-12 z-0 pointer-events-none select-none hero-sticker-wiggle"
-            style={{ ["--sticker-rot" as string]: "-12deg" }}
-            aria-hidden="true"
-          >
-            <Image
-              src="/images/crop_hamp.png"
-              alt=""
-              width={56}
-              height={56}
-              className="w-full h-full object-contain drop-shadow-xs"
-            />
-          </div>
 
           {/* Sticker 2: Satin bow near top-left of Kitty */}
           <div

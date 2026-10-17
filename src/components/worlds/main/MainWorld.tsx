@@ -163,7 +163,7 @@ export default function MainWorld() {
       {/* ═══ CONTENT FLOW ═══ */}
       <main
         ref={mainRef}
-        className="relative z-10 w-full flex flex-col items-center pb-16 sm:pb-20"
+        className="relative z-10 w-full flex flex-col items-center pb-8 sm:pb-12"
       >
         {/* Ribbon Thread Connecting Phases (Hidden on Mobile < 768px) */}
         <ScrollRibbon
@@ -221,7 +221,7 @@ export default function MainWorld() {
               </PhaseSection>
 
               {/* Phase 04: The Letter */}
-              <PhaseSection id="phase-04-letter" className="z-10">
+              <PhaseSection id="phase-04-letter" className="z-10 !pb-3 md:!pb-4">
                 <TheLetter />
               </PhaseSection>
             </>
@@ -232,7 +232,7 @@ export default function MainWorld() {
         {isUnlocked && (
           <div
             id="end-of-transmission"
-            className="mt-16 sm:mt-20 text-center relative z-20 flex flex-col items-center gap-3"
+            className="mt-6 sm:mt-8 text-center relative z-20 flex flex-col items-center gap-3"
           >
             <p className="font-retro text-[10px] sm:text-xs text-[#4A3855] tracking-[2px] font-bold uppercase">
               END OF TRANSMISSION ✦ THANKS FOR VISITING

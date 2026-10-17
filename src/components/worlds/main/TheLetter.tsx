@@ -83,7 +83,7 @@ export default function TheLetter() {
   return (
     <div
       onMouseMove={handleMouseMove}
-      className="w-full relative z-10 flex flex-col items-center py-8 sm:py-12 px-3 sm:px-4"
+      className="w-full relative z-10 flex flex-col items-center pt-6 sm:pt-10 pb-2 sm:pb-3 px-3 sm:px-4"
     >
       {/* ═══ KAWAII GOOGLE FONTS & SCRAPBOOK CSS SYSTEM ═══ */}
       <style>{`

@@ -567,13 +567,25 @@ A chronological record of project development across all 217 commits:
 - **Commit**: `9123828`.
 - **Lesson**: Third-party APIs with strict rate limits require defensive architecture from day one: atomic rate limiting, circuit breakers, caching, and a local mock mode.
 
-### 11. PowerShell UTF-16LE Output Redirection Corrupted Git Log Viewing
-- **Symptom**: When dumping the full 217-commit git history to scratch storage using PowerShell `>` redirection, inspecting the file failed with an `unsupported mime type text/plain; charset=utf-16le` error.
-- **Root Cause**: Windows PowerShell defaults to UTF-16LE encoding when redirecting command stdout with `>`.
-- **Fix**: Re-exported the commit log explicitly using `Out-File -Encoding utf8`, allowing clean UTF-8 inspection without tool failures.
-- **Commit**: Process fix during commit `f7979a6`.
-- **Lesson**: On Windows systems, avoid bare `>` shell redirection for text processing tools; always explicitly specify UTF-8 encoding.
-
+### 12. Main World Hero Sticker Optimization, Hamster Cleanup, and Bottom Spacing Fix
+- **Symptom**:
+  1. Unwanted peeking hamster sticker appeared behind Hello Kitty in the hero section.
+  2. A massive empty space existed at the bottom of the page between the letter and "END OF TRANSMISSION".
+  3. Every sticker displayed a strange vertical white line/streak on its right edge in Chromium/Blink browsers.
+  4. Hero stickers felt harshly pasted on and did not blend into the warm pastel cream background.
+  5. The floating effect used a mouse parallax script with `requestAnimationFrame` and `mousemove` listeners rather than a tranquil, zero-overhead water floating drift.
+- **Root Cause**:
+  1. `crop_hamp.png` was anchored under Hello Kitty's mascot cluster in `TheAdventureHero.tsx`.
+  2. Stacked bottom paddings and margins (`py-12 md:py-16` on `PhaseSection`, `py-8 sm:py-12` on `TheLetter`, `mt-16 sm:mt-20` on `#end-of-transmission`, and `pb-16 sm:pb-20` on `<main>`) accumulated nearly 360px of dead space.
+  3. Chaining eight CSS `drop-shadow(#FFFFFF)` filters on elements with alpha channels in `.hero-sticker-pack-filter` triggered a known Chromium Skia rasterization bug where convolution kernels clamp to bounding box edges, drawing a white vertical streak on the right.
+  4. The 8x pure white `#FFFFFF` rims created harsh contrast against `#FAF5E9`.
+  5. `HeroStickerBomb.tsx` was running an active rAF lerp loop tracking mouse coordinates across 19 DOM elements.
+- **Fix**:
+  - Removed `crop_hamp.png` from `TheAdventureHero.tsx`.
+  - Replaced the 8 stacked pure-white filters with a dual soft warm plum and rosy depth shadow (`rgba(58, 36, 64, 0.10)` and `rgba(255, 143, 179, 0.16)`) in `src/app/globals.css`, eliminating the white streaks and softly blending stickers into the scene.
+  - Removed all mouse event listeners and rAF loops from `HeroStickerBomb.tsx`, replacing them with pure GPU-composited CSS keyframes (`hero-sticker-bob`) simulating slow, calm water buoyancy and drift (zero CPU/JS overhead).
+  - Tightened bottom spacing in `MainWorld.tsx` and `TheLetter.tsx` (`mt-6 sm:mt-8` on `#end-of-transmission`, `pb-8 sm:pb-12` on `main`, `!pb-3 md:!pb-4` on `#phase-04-letter`, and `pt-6 sm:pt-10 pb-2 sm:pb-3` on `TheLetter.tsx`).
+- **Verification**: Verified in headless and full Chromium via Playwright; all 71 test suites (616 tests) passed; `check:frozen`, `typecheck`, `lint`, and production build passed.
 
 ---
 

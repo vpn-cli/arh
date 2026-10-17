@@ -7,66 +7,6 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 export default function HeroStickerBomb() {
   const prefersReducedMotion = usePrefersReducedMotion();
-  const parallaxRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const targetPos = useRef({ x: 0.5, y: 0.5 });
-  const currentPos = useRef({ x: 0.5, y: 0.5 });
-  const rafId = useRef<number | null>(null);
-
-  // Desktop Mouse Parallax (smooth rAF lerp, paused when tab is hidden or reduced motion)
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-
-    // Check for desktop fine pointer
-    const isDesktopPointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    if (!isDesktopPointer) return;
-
-    let isTabVisible = document.visibilityState === "visible";
-
-    const handleVisibilityChange = () => {
-      isTabVisible = document.visibilityState === "visible";
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      targetPos.current.x = e.clientX / window.innerWidth;
-      targetPos.current.y = e.clientY / window.innerHeight;
-    };
-
-    const animateParallax = () => {
-      if (isTabVisible) {
-        // Smooth lerp (0.08)
-        currentPos.current.x += (targetPos.current.x - currentPos.current.x) * 0.08;
-        currentPos.current.y += (targetPos.current.y - currentPos.current.y) * 0.08;
-
-        // Normalized delta from screen center (-1 to +1)
-        const deltaX = (currentPos.current.x - 0.5) * 2;
-        const deltaY = (currentPos.current.y - 0.5) * 2;
-
-        // Apply drift opposite to cursor (max 12px for depth 1.0)
-        parallaxRefs.current.forEach((el, idx) => {
-          if (!el) return;
-          const sticker = HERO_STICKERS[idx];
-          const depth = sticker?.depth ?? 0.5;
-          const moveX = -deltaX * 12 * depth;
-          const moveY = -deltaY * 12 * depth;
-          el.style.transform = `translate3d(${moveX.toFixed(2)}px, ${moveY.toFixed(2)}px, 0)`;
-        });
-      }
-
-      rafId.current = requestAnimationFrame(animateParallax);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove, { passive: true });
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    rafId.current = requestAnimationFrame(animateParallax);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (rafId.current) {
-        cancelAnimationFrame(rafId.current);
-      }
-    };
-  }, [prefersReducedMotion]);
 
   return (
     <div
@@ -115,20 +55,13 @@ export default function HeroStickerBomb() {
               ["--sticker-rot" as string]: `${sticker.rotation}deg`,
             }}
           >
-            {/* Parallax Drift Container (Driven by smoothed rAF transform) */}
+            {/* Staggered Pop-In Container (Scale 0.6 -> 1 on load) */}
             <div
-              ref={(el) => {
-                parallaxRefs.current[index] = el;
+              className={`w-full h-full ${prefersReducedMotion ? "" : "hero-sticker-pop"}`}
+              style={{
+                animationDelay: prefersReducedMotion ? "0ms" : `${index * 40}ms`,
               }}
-              className="w-full h-full will-change-transform"
             >
-              {/* Staggered Pop-In Container (Scale 0.6 -> 1 on load) */}
-              <div
-                className={`w-full h-full ${prefersReducedMotion ? "" : "hero-sticker-pop"}`}
-                style={{
-                  animationDelay: prefersReducedMotion ? "0ms" : `${index * 40}ms`,
-                }}
-              >
                 {/* Idle Floating Bob Container (4-8px, ±2°, 5-9s randomized phase) */}
                 <div
                   className={`w-full h-full ${prefersReducedMotion ? "" : "hero-sticker-float"}`}
@@ -192,7 +125,6 @@ export default function HeroStickerBomb() {
                 </div>
               </div>
             </div>
-          </div>
         );
       })}
     </div>
