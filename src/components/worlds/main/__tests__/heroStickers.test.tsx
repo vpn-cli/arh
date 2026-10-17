@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import fs from "node:fs";
 import path from "node:path";
 import HeroStickerBomb from "../HeroStickerBomb";
@@ -139,4 +139,58 @@ describe("HeroStickerBomb Component", () => {
     expect(screen.getByText("namaste ji")).toBeDefined();
     expect(screen.getByText("🙏")).toBeDefined();
   });
+
+  it("renders dev-only floating switcher and toggles presets A, B, and C", async () => {
+    const { rerender } = render(<HeroStickerBomb />);
+    const switcher = screen.getByTestId("dev-sticker-switcher");
+    expect(switcher).toBeDefined();
+
+    const btnA = screen.getByTestId("preset-btn-a");
+    const btnB = screen.getByTestId("preset-btn-b");
+    const btnC = screen.getByTestId("preset-btn-c");
+
+    expect(btnA.getAttribute("aria-pressed")).toBe("true");
+    expect(btnB.getAttribute("aria-pressed")).toBe("false");
+    expect(btnC.getAttribute("aria-pressed")).toBe("false");
+
+    // Click Preset B
+    act(() => {
+      fireEvent.click(btnB);
+    });
+    expect(btnB.getAttribute("aria-pressed")).toBe("true");
+
+    // Under Preset B: coca-cola-can should have mixBlendMode multiply, hello-kitty-peeking should NOT
+    const colaImg = screen.getByTestId("hero-sticker-coca-cola-can").querySelector("img");
+    expect(colaImg?.style.mixBlendMode).toBe("multiply");
+    expect(colaImg?.style.filter).not.toContain("drop-shadow(-3px 0 0");
+
+    const kittyImg = screen.getByTestId("hero-sticker-hello-kitty-peeking").querySelector("img");
+    expect(kittyImg?.style.mixBlendMode).toBe("normal");
+    expect(kittyImg?.style.filter).toContain("drop-shadow(-3px 0 0");
+
+    // Click Preset C
+    act(() => {
+      fireEvent.click(btnC);
+    });
+    expect(btnC.getAttribute("aria-pressed")).toBe("true");
+
+    // Under Preset C: grain overlay should be rendered and blur(0.3px) applied
+    const grainOverlays = screen.getByTestId("hero-sticker-bomb").querySelectorAll(".hero-sticker-grain-overlay");
+    expect(grainOverlays.length).toBe(19);
+    expect(colaImg?.style.filter).toContain("blur(0.3px)");
+  });
+
+  it("strips dev switcher completely in production builds", () => {
+    const originalEnv = process.env.NODE_ENV;
+    try {
+      // @ts-expect-error mutating for test
+      process.env.NODE_ENV = "production";
+      render(<HeroStickerBomb />);
+      expect(screen.queryByTestId("dev-sticker-switcher")).toBeNull();
+    } finally {
+      // @ts-expect-error restoring env
+      process.env.NODE_ENV = originalEnv;
+    }
+  });
 });
+

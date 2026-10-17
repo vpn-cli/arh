@@ -845,3 +845,43 @@ Current pending tasks and backlog items:
 - **Turbopack**: Rust-based bundler powering Next.js local development builds for high-speed compilation.
 - **MSW (Mock Service Worker)**: An API mocking library that intercepts HTTP requests at the network level using Service Worker or Node request interception.
 - **Zustand**: Lightweight React state management library based on simplified publish-subscribe stores without context provider boilerplate.
+
+---
+
+## 12. Session Log: Main World Hero Sticker Blending Presets (Dev Switch)
+
+### Context & Goals
+To allow live side-by-side evaluation and comparison of hero sticker integration into the scrapbook background, three switchable blending presets were designed, configured in `stickerStyles.ts`, and hooked into `HeroStickerBomb.tsx` alongside a dev-only bottom-center switcher and URL query parameter (`?stickers=a|b|c`).
+
+### Architecture & Motion Isolation
+To prevent CSS transform collisions (where animations, hover states, or filters overwrite each other), each sticker follows a strict 3-tier element hierarchy:
+1. **Outer Wrapper (`.hero-sticker-parallax`)**:
+   - Manages mouse parallax translate (`translate3d(x, y, 0)`).
+   - Driven by an idle-sleeping `requestAnimationFrame` loop that normalizes pointer offsets across desktop screens, lerps coordinates (0.08 damping), and sleeps when settled for 0% CPU consumption during cursor idle.
+   - Bypassed entirely when `prefers-reduced-motion` is active or on coarse/touch screens.
+2. **Middle Wrapper (`.hero-sticker-float.hero-sticker-item`)**:
+   - Manages idle water-float bobbing (`@keyframes hero-sticker-bob`) via CSS animation.
+   - Manages interactive hover scaling (`scale: 1.08; transition: scale 0.22s ...`) using standard CSS `scale` (CSS Transforms Level 2), which operates completely independently of `@keyframes` transform translates.
+   - Manages peel cursor (`data-cursor="peel"`), click targets, and holds Shin-chan's speech bubble.
+3. **Inner Image (`<Image>` / `<img>`)**:
+   - Dedicated strictly to filters, opacity, and `mix-blend-mode`.
+   - Never applies transforms or animations directly to the image element.
+
+### The 3 Presets
+- **Preset A ("Faded print" — Default)**:
+  - Filter: `drop-shadow(-3px 0 0 #FFFFFF) drop-shadow(3px 0 0 #FFFFFF) drop-shadow(0 -3px 0 #FFFFFF) drop-shadow(0 3px 0 #FFFFFF) drop-shadow(0 4px 10px rgba(194, 24, 91, 0.15)) saturate(0.75) contrast(0.88) brightness(1.06) sepia(0.12) hue-rotate(-12deg)`
+  - Opacity: `0.88`
+  - Outline: 3px stacked white die-cut outline + warm pink drop shadow.
+- **Preset B ("Printed on the paper")**:
+  - Dark/colored stickers: `mix-blend-mode: multiply`, no white outline, softer ambient shadow (`drop-shadow(0 3px 6px rgba(194, 24, 91, 0.12))`), and base dusty rose color grade.
+  - White-heavy stickers (`hello-kitty-peeking`, `snoopy-sleeping`, `shinchan-featured`, `bunny-headphones`): Use Preset A die-cut styling to prevent white illustrations from turning transparent.
+- **Preset C ("Washi grain")**:
+  - Base Preset A color grade and outline + subtle `blur(0.3px)` on the image to soften digital sharpness.
+  - Clipped SVG `feTurbulence` paper noise overlay (`mix-blend-mode: overlay`, `opacity: 0.25`) constrained to each sticker's exact silhouette using `mask-image: url(...)` and `mask-size: contain`.
+
+### Dev-Only Switcher & Production Pruning
+- Reads dev query parameter `?stickers=a|b|c` on load; defaults to A.
+- Renders an interactive bottom-center pill switcher (`[A] Faded | [B] Paper | [C] Washi`) that toggles presets live and syncs URL parameters via `window.history.replaceState`.
+- Conditioned strictly behind `process.env.NODE_ENV !== "production"`. When built for production, the switcher component returns `null` and Next.js / Turbopack dead-code-eliminates the dev UI, guaranteeing 0% presence in production bundles.
+- All 71 test suites (618 tests) passing; production build verified cleanly.
+
