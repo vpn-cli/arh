@@ -7,6 +7,7 @@ vi.mock("@/lib/audio", () => ({
   sfx: {
     pop: vi.fn(),
     paper: vi.fn(),
+    batmanSqueak: vi.fn(),
   },
 }));
 
@@ -115,5 +116,22 @@ describe("TheLetter Component", () => {
     fireEvent.click(foldBtn);
 
     expect(envelope.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("displays 'pat me' text cloud box and plays cute hehe sound when tapping Batman", async () => {
+    const { sfx } = await import("@/lib/audio");
+    render(<TheLetter />);
+    const envelope = screen.getByLabelText("Open birthday letter");
+    fireEvent.click(envelope);
+
+    // Initial text cloud says "pat me"
+    expect(screen.getByText("pat me")).toBeDefined();
+
+    const batmanBtn = screen.getByLabelText("Batman sticker - pat me");
+    expect(batmanBtn).toBeDefined();
+
+    fireEvent.click(batmanBtn);
+    expect(sfx.batmanSqueak).toHaveBeenCalled();
+    expect(screen.getByText(/hehe!/i)).toBeDefined();
   });
 });

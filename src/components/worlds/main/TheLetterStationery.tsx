@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import TheLetterScrapbookBacking from "./TheLetterScrapbookBacking";
 import TheLetterHeader from "./TheLetterHeader";
 import TheLetterPoem from "./TheLetterPoem";
 import TheLetterBirthdaySticker from "./TheLetterBirthdaySticker";
 import TheLetterPolaroids from "./TheLetterPolaroids";
+import TheLetterBatman from "./TheLetterBatman";
 
 interface TheLetterStationeryProps {
   isOpen: boolean;
@@ -147,16 +147,8 @@ export default function TheLetterStationery({
                 </span>
               </div>
 
-              {/* Clipped out Batman sticker */}
-              <div className="relative shrink-0 -rotate-3 hover:rotate-3 transition-transform duration-300">
-                <Image
-                  src="/images/batman.webp"
-                  alt="Batman sticker"
-                  width={88}
-                  height={88}
-                  className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.18)] hover:scale-105 transition-transform select-none"
-                />
-              </div>
+              {/* Interactive Squeaking Batman sticker with 'pat me' text cloud box */}
+              <TheLetterBatman />
             </div>
 
             {/* Cute handwritten P.S. note on a taped card */}

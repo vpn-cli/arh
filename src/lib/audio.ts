@@ -81,6 +81,60 @@ export function playNoise(startTime: number, duration: number, volume = 0.2) {
   }
 }
 
+let batmanAudio: HTMLAudioElement | null = null;
+
+export function playBatmanProceduralHehe(volume = 0.18) {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  try {
+    const now = ctx.currentTime;
+    // Pure melodic smiling double chime: C6 (1046Hz) and E6 (1318Hz)
+    // Clean sine tones with soft attack and decay - zero splash, zero water modulation
+    const playChirp = (freq: number, start: number, dur: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, start);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.08, start + dur);
+
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.linearRampToValueAtTime(volume, start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + dur);
+    };
+
+    playChirp(1046, now, 0.09);
+    playChirp(1318, now + 0.12, 0.11);
+  } catch {
+    /* safely ignore audio errors */
+  }
+}
+
+export function playBatmanSqueak(volume = 0.5) {
+  try {
+    if (typeof window !== "undefined") {
+      if (!batmanAudio) {
+        batmanAudio = new Audio("/sounds/batman-hehe.mp3");
+      }
+      batmanAudio.currentTime = 0;
+      batmanAudio.volume = volume;
+      const playPromise = batmanAudio.play();
+      if (playPromise) {
+        playPromise.catch(() => {
+          playBatmanProceduralHehe(volume * 0.35);
+        });
+        return;
+      }
+    }
+  } catch {
+    /* safely ignore audio errors */
+  }
+  playBatmanProceduralHehe(volume * 0.35);
+}
+
 export const sfx = {
   // Snappy Game Boy menu cursor chirp (dual rapid square blip: 740Hz -> 988Hz)
   move: () => {
@@ -145,5 +199,16 @@ export const sfx = {
     if (!ctx) return;
     const now = ctx.currentTime;
     playNoise(now, 0.45, 0.8);
-  }
+  },
+  // Cute "hehe" giggle sound for tapping Batman in The Letter
+  batmanSqueak: Object.assign(
+    () => {
+      playBatmanSqueak(0.5);
+    },
+    {
+      play: () => {
+        playBatmanSqueak(0.5);
+      },
+    }
+  ),
 };
