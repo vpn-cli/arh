@@ -430,6 +430,8 @@ A chronological record of project development across all 217 commits:
 - `cab4e0f` (2026-10-17 15:26): Permanently FROZE The Edit, instituted SHA-256 integrity checks (`scripts/check-frozen.mjs`) in git hooks and CI, and released Service Worker v2.
 - `eed43d3` (2026-10-17 15:39): Set `arh_vid_final.mp4` as the sole cinema video source and added load error retry poster banner.
 - `05ccef3` (2026-10-17 15:41): Removed unused legacy `public/Arh.mp4` video binary.
+- `f7979a6` (2026-10-17 16:15): docs: add full project log.
+
 
 ---
 
@@ -557,6 +559,14 @@ A chronological record of project development across all 217 commits:
   - Added request deduplication for identical in-flight GET requests (`src/lib/server/spotifyInFlight.ts`).
 - **Commit**: `9123828`.
 - **Lesson**: Third-party APIs with strict rate limits require defensive architecture from day one: atomic rate limiting, circuit breakers, caching, and a local mock mode.
+
+### 11. PowerShell UTF-16LE Output Redirection Corrupted Git Log Viewing
+- **Symptom**: When dumping the full 217-commit git history to scratch storage using PowerShell `>` redirection, inspecting the file failed with an `unsupported mime type text/plain; charset=utf-16le` error.
+- **Root Cause**: Windows PowerShell defaults to UTF-16LE encoding when redirecting command stdout with `>`.
+- **Fix**: Re-exported the commit log explicitly using `Out-File -Encoding utf8`, allowing clean UTF-8 inspection without tool failures.
+- **Commit**: Process fix during commit `f7979a6`.
+- **Lesson**: On Windows systems, avoid bare `>` shell redirection for text processing tools; always explicitly specify UTF-8 encoding.
+
 
 ---
 
@@ -791,6 +801,9 @@ Current pending tasks and backlog items:
    - Clean up remaining non-error ESLint warnings (~696 warnings, primarily `@typescript-eslint/no-explicit-any` in test fixtures and mock handlers).
 6. **Visually Confirm Main World Redesigns**:
    - Visually confirm the Phase 04 navigation dot fix, hero presentation, and letter stationery styling in real browser viewports.
+7. **Full Project Log Creation and Verification**:
+   - `docs/PROJECT_LOG.md` was created, verified against all 601 tests, committed (`f7979a6`), and pushed to GitHub `origin/main`.
+
 
 ---
 
