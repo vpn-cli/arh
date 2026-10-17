@@ -11,7 +11,7 @@ export default function TheLetterEnvelope({ isOpen }: TheLetterEnvelopeProps) {
     <div
       className={`absolute inset-x-0 top-0 h-[310px] sm:h-[350px] bg-gradient-to-b from-[#FFFDF8] via-[#FFEBF2] to-[#FFDDE8] border-3 border-[#FF7597]/70 shadow-[0_18px_45px_-10px_rgba(255,117,151,0.38),0_0_0_4px_#FFF0F5] rounded-[32px] sm:rounded-[40px] transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-20 flex flex-col items-center justify-between p-5 sm:p-7 overflow-hidden group select-none motion-safe:animate-envelope-bob ${
         isOpen
-          ? "opacity-0 pointer-events-none scale-95 -translate-y-6 invisible"
+          ? "opacity-0 pointer-events-none scale-95 -translate-y-6 invisible hidden"
           : "opacity-100 scale-100 translate-y-0"
       }`}
     >

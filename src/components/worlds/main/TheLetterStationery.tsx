@@ -17,12 +17,11 @@ export default function TheLetterStationery({
   isOpen,
   onClose,
 }: TheLetterStationeryProps) {
+  if (!isOpen) return null;
+
   return (
     <div
-      className={`transition-all duration-700 origin-top z-10 relative ${isOpen
-          ? "opacity-100 scale-100 translate-y-0 pointer-events-auto stationery-spring-in"
-          : "absolute inset-x-0 top-0 opacity-0 scale-95 pointer-events-none"
-        }`}
+      className="transition-all duration-700 origin-top z-10 relative opacity-100 scale-100 translate-y-0 pointer-events-auto stationery-spring-in"
     >
       {/* ═══ 1. SCRAPBOOK ALBUM CARDSTOCK (Tilted Craft Backing Layer) ═══ */}
       <TheLetterScrapbookBacking />
