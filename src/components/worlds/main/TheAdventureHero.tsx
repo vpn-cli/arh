@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { sfx } from "@/lib/audio";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
@@ -8,7 +8,18 @@ import HeroStickerBomb from "./HeroStickerBomb";
 
 export default function TheAdventureHero() {
   const [avatarBooped, setAvatarBooped] = useState(false);
+  const [isMascotHovered, setIsMascotHovered] = useState(false);
+  const [isMascotTapped, setIsMascotTapped] = useState(false);
+  const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
+
+  useEffect(() => {
+    return () => {
+      if (tapTimeoutRef.current) {
+        clearTimeout(tapTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleScrollToPhase1 = () => {
     sfx.select();
@@ -22,7 +33,19 @@ export default function TheAdventureHero() {
     sfx.pop();
     setAvatarBooped(true);
     setTimeout(() => setAvatarBooped(false), 600);
+
+    // Touch devices / clicks: show "aur bhai" for 2s, then revert
+    setIsMascotTapped(true);
+    if (tapTimeoutRef.current) {
+      clearTimeout(tapTimeoutRef.current);
+    }
+    tapTimeoutRef.current = setTimeout(() => {
+      setIsMascotTapped(false);
+    }, 2000);
   };
+
+  const showGreeting = isMascotHovered || isMascotTapped;
+  const bubbleText = showGreeting ? "aur bhai" : "psst… scroll ↓";
 
   return (
     <section
@@ -107,12 +130,17 @@ export default function TheAdventureHero() {
             />
           </div>
 
-          {/* Speech Bubble: "psst… scroll ↓" */}
+          {/* Speech Bubble: EXACTLY ONE bubble exists. Swaps between "psst… scroll ↓" and "aur bhai" */}
           <div
             aria-hidden="true"
-            className="absolute -top-3.5 sm:-top-4 -right-10 sm:-right-14 bg-[#FFFDF8] border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440] rounded-xl px-2.5 py-1 text-[9px] sm:text-[10px] font-retro text-[#3A2440] font-bold tracking-wider select-none pointer-events-none rotate-3 motion-safe:animate-bounce-soft z-30"
+            data-testid="mascot-speech-bubble"
+            className={`absolute -top-3.5 sm:-top-4 -right-10 sm:-right-14 bg-[#FFFDF8] border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440] rounded-xl px-2.5 py-1 text-[9px] sm:text-[10px] font-retro text-[#3A2440] font-bold tracking-wider select-none pointer-events-none rotate-3 motion-safe:animate-bounce-soft z-30 transition-transform duration-150 ease-out ${
+              showGreeting ? "scale-105" : "scale-100"
+            }`}
           >
-            <span>psst… scroll ↓</span>
+            <span key={bubbleText} className="inline-block bubble-squish-in">
+              {bubbleText}
+            </span>
             {/* Cute speech bubble pointer tail */}
             <div
               className="absolute -bottom-1.5 left-3 w-2.5 h-2.5 bg-[#FFFDF8] border-r-2 border-b-2 border-[#3A2440] rotate-45"
@@ -120,19 +148,24 @@ export default function TheAdventureHero() {
             />
           </div>
 
-          {/* Mascot Button (Exact image, copy and interactive boop preserved) */}
+          {/* Mascot Button (Single button, no tooltip/title attribute, no secondary bubble) */}
           <button
             id="guide-cat-avatar"
             type="button"
             onClick={handleAvatarClick}
-            onMouseEnter={() => sfx.hover()}
+            onMouseEnter={() => {
+              sfx.hover();
+              setIsMascotHovered(true);
+            }}
+            onMouseLeave={() => setIsMascotHovered(false)}
+            onFocus={() => setIsMascotHovered(true)}
+            onBlur={() => setIsMascotHovered(false)}
             className={`relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 select-none cursor-pointer transition-transform duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-4 rounded-3xl group z-10 ${
               avatarBooped
                 ? "scale-110 -rotate-6"
                 : "hover:scale-105 hover:rotate-2 hero-float-anim"
             }`}
             aria-label="Boop Hello Kitty guide avatar"
-            title="Click to boop!"
           >
             <Image
               src="/images/portals/hk-main.webp"
@@ -142,18 +175,6 @@ export default function TheAdventureHero() {
               className="w-full h-full object-contain filter drop-shadow-[0_12px_28px_rgba(58,36,64,0.18)] drop-shadow-[0_4px_12px_rgba(255,143,179,0.35)] select-none pointer-events-none transition-transform duration-300"
               priority
             />
-
-            {/* Dynamic hover / boop reaction tag */}
-            <div
-              aria-hidden="true"
-              className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-[#FFFDF8] border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440] rounded-full text-[9px] sm:text-[10px] font-retro text-[#3A2440] font-bold tracking-wider pointer-events-none transition-all duration-300 ${
-                avatarBooped
-                  ? "scale-125 -top-6 opacity-100"
-                  : "opacity-0 group-hover:opacity-100 -top-2"
-              }`}
-            >
-              {avatarBooped ? "BOOP! 🌸" : "heyy! ✨"}
-            </div>
           </button>
         </div>
 
