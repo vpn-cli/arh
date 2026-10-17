@@ -2278,15 +2278,6 @@ body[data-cinema-fullscreen="true"] [data-cinema-hide-on-fs] {
    MAIN WORLD HERO ("The Adventure") STYLES
    ═══════════════════════════════════════════════════════ */
 
-@keyframes hero-marquee {
-  0% {
-    transform: translateX(0%);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
 @keyframes hero-float {
   0%, 100% {
     transform: translateY(0);
@@ -2312,12 +2303,6 @@ body[data-cinema-fullscreen="true"] [data-cinema-hide-on-fs] {
   filter: drop-shadow(4px 4px 0 #3A2440);
 }
 
-.hero-marquee-track {
-  display: flex;
-  width: max-content;
-  animation: hero-marquee 24s linear infinite;
-}
-
 .hero-float-anim {
   animation: hero-float 4s ease-in-out infinite;
 }
@@ -2331,7 +2316,6 @@ body[data-cinema-fullscreen="true"] [data-cinema-hide-on-fs] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-marquee-track,
   .hero-float-anim,
   .hero-sticker-wiggle {
     animation: none !important;
