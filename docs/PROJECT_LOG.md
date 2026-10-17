@@ -1080,3 +1080,48 @@ Re-anchor the Main World hero section with witty, affectionate birthday copy for
 - **Unit Tests**: `theAdventureHero.test.tsx` (9 tests passed) + full test suite (`npm test`, 71 test files, 632 tests passed).
 - **Production Build**: `npm run build` compiled successfully via Next.js Turbopack in 2.8s.
 
+---
+
+## 17. Session Log: KittyOS Terminal Quiz Rework (Phase 01)
+
+### Context & Goals
+Rework the Phase 01 KittyOS Terminal Quiz into an engaging, witty, and personalized clearance flow: a procedurally generated calculus Q1 covering derivatives, integrals, and limits with guaranteed integer answers; replace the old college lore question with a humorous VPN lore Q2 ("Batman", "Gentleman", "Bevkoof"); add an interactive arrow-key option selector with touch/keyboard support; add Q3 ("In every argument, who should apologize?") with sarcastic cycling error responses for picking VPN; and implement approved sarcastic copy for wrong answers, hints, give up, and SKIP.
+
+### 1. Pure Calculus Generator (`src/lib/kittyos/calculusGenerator.ts`)
+- Dependency-free module supporting 14 distinct template families across `easy`, `medium`, and `hard`:
+  - **Easy**: Polynomial derivatives at a point, definite integrals of linear/quadratic polynomials, limits of polynomials.
+  - **Medium**: Chain rule $d/dx (ax+b)^n$, product rule at a point, definite integrals of cubics, removable discontinuity limits $(x^2-a^2)/(x-a)$ as $x \to a$.
+  - **Hard**: Trig limits $\lim_{x \to 0} \sin(kx)/x$, exponential limits $\lim_{x \to 0} (e^{kx}-1)/x$, derivatives of $e^{kx}$ and $\ln(kx+1)$ at $x=0$, second derivatives at a point, trig integrals $\int_0^\pi k\sin x\,dx$, integration by parts $\int_0^1 k x e^x\,dx$, and integer area between curves $y = (bL)x$ and $y = bx^2$.
+- Every answer is an integer by construction with $|answer| \le 500$.
+- Formatted with Unicode math characters ($x^3, \int, \pi, e^x, \ln, -$).
+- Strict parser accepting trimmed whitespace, Unicode minus (`−`), positive sign (`+`), and trailing `.0`.
+- Unit test suite (`calculusGenerator.test.ts`) verified 2,000 seeded samples per template (28,000 total cases) numerically within $10^{-6}$ via finite differences, Simpson's rule, and symmetric limits.
+
+### 2. Option Selector & Sarcastic Terminal Flow (`useKittyTerminalEngine.ts` & `AsciiSection.tsx`)
+- Terminal option selector for Q2 and Q3 with `role="listbox"`, `role="option"`, `aria-selected`, `▸` cursor indicator, and pink highlighted row styling (`#FF8FB3`).
+- Arrow key (↑/↓) navigation, number typing (`1`, `2`, `3`), Enter selection, and direct touch/tap interaction.
+- Emojis rendered inside isolated spans with an emoji font stack (`Apple Color Emoji`, `Segoe UI Emoji`, `Noto Color Emoji`) to prevent font corruption.
+- **Q1**: Wrong answer outputs `> [✗] chii chii hag diya` and prompts retry without failing out. Hint prints template-specific explanation.
+- **Q2**: Any option choice outputs the 3 reveal lines:
+  - `> [~] partially correct.`
+  - `> [!] the full answer is: ALL OF THE ABOVE.`
+  - `> [!] it wasn't an option, because no single option could handle him.`
+- **Q3**: Apology question with Arhana (correct) and VPN. Picking VPN cycles through 4 sarcastic refusal lines:
+  - `> [✗] ERROR: answer rejected. VPN has never been wrong in recorded history.`
+  - `> [✗] interesting choice. wrong, but interesting. try again.`
+  - `> [✗] the system refuses to process this lie.`
+  - `> [✗] you can keep picking it. it will keep being wrong.`
+- **Pity notes & Bypass**:
+  - 'give up' on Q1/Q2: `> [💔] giving up? after he built an entire operating system for you? wow. noted. VPN will remember this.` (Q2 also displays the 3 reveal lines).
+  - 'give up' on Q3: `> [💔] you'd rather give up than apologize. honestly, that tracks.`
+  - SKIP button: `> [💔] skipped. weeks of effort, gone in one click. it's fine. he's fine. everything is fine.` (Triggers shrugging cursor expression, zero confetti).
+  - REBOOT: Resets quiz state and generates a fresh calculus Q1 avoiding repeat questions in the session.
+
+### 3. Verification & Quality Gates
+- **Frozen Guard**: `npm run check:frozen` passed with zero modifications to frozen files.
+- **TypeScript**: `npm run typecheck` passed with 0 errors.
+- **ESLint**: `npx eslint --quiet` passed with 0 errors.
+- **Unit & Integration Tests**: 72 test files passed, 658 tests passed (including `calculusGenerator.test.ts`, `terminalQuestions.test.ts`, and `calculusTerminal.test.tsx`).
+- **Production Build**: `npm run build` completed successfully via Turbopack.
+
+

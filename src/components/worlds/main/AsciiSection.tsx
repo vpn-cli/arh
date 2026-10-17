@@ -12,6 +12,30 @@ interface AsciiSectionProps {
   isUnlocked?: boolean;
 }
 
+const EMOJI_FONT_STACK =
+  '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+
+function renderTextWithEmojiSpan(text: string) {
+  const parts = text.split(
+    /([\u{1F300}-\u{1FAFF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2728}])/u
+  );
+  if (parts.length <= 1) return text;
+  return parts.map((part, i) => {
+    if (i % 2 === 1) {
+      return (
+        <span
+          key={i}
+          className="font-sans inline-block"
+          style={{ fontFamily: EMOJI_FONT_STACK }}
+        >
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
 export default function AsciiSection({
   onUnlock,
   onReset,
@@ -24,11 +48,17 @@ export default function AsciiSection({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const {
+    stage,
     logs,
     inputVal,
     setInputVal,
     internalUnlocked,
     questionIndex,
+    questions,
+    selectedOptionIndex,
+    setSelectedOptionIndex,
+    navigateOptions,
+    selectOption,
     submitAnswer,
     handleReset,
     handleSkip,
@@ -36,6 +66,12 @@ export default function AsciiSection({
   } = useKittyTerminalEngine({ onUnlock, onReset, inputRef });
 
   const isUnlocked = externalUnlocked ?? internalUnlocked;
+  const activeQuestion = questions[questionIndex];
+  const hasOptions =
+    !isUnlocked &&
+    stage === "quiz" &&
+    (questionIndex === 1 || questionIndex === 2) &&
+    Boolean(activeQuestion?.options?.length);
 
   const checkOverflow = useCallback(() => {
     const container = logsContainerRef.current;
@@ -70,11 +106,23 @@ export default function AsciiSection({
     if (logsContainerRef.current) {
       logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
     }
-  }, [logs, questionIndex, isUnlocked, isOverflowing, checkOverflow]);
+  }, [logs, questionIndex, selectedOptionIndex, isUnlocked, isOverflowing, checkOverflow]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     submitAnswer(inputVal);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (hasOptions) {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        navigateOptions("up");
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        navigateOptions("down");
+      }
+    }
   };
 
   const scrollToVault = () => {
@@ -130,7 +178,10 @@ export default function AsciiSection({
           data-cursor="puzzle"
           className="bg-[#1C1221] rounded-xl p-4 sm:p-6 border-2 border-[#3A2440] shadow-[inset_0_4px_16px_rgba(0,0,0,0.6)] relative overflow-hidden min-h-[320px] max-h-[480px] flex flex-col justify-between cursor-text select-text"
         >
-          <div className="absolute inset-0 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQIW2NkYGD4z8DAwMgAI0AMDA4wBBE/wDAAAAAASUVORK5CYII=')] opacity-15 pointer-events-none" aria-hidden="true" />
+          <div
+            className="absolute inset-0 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQIW2NkYGD4z8DAwMgAI0AMDA4wBBE/wDAAAAAASUVORK5CYII=')] opacity-15 pointer-events-none"
+            aria-hidden="true"
+          />
 
           <div
             ref={logsContainerRef}
@@ -151,10 +202,49 @@ export default function AsciiSection({
 
                 return (
                   <div key={log.id} className="animate-slide-up origin-left">
-                    <span className={colorClass}>{log.text}</span>
+                    <span className={colorClass}>{renderTextWithEmojiSpan(log.text)}</span>
                   </div>
                 );
               })}
+
+              {hasOptions && (
+                <div
+                  role="listbox"
+                  id="kitty-options-listbox"
+                  aria-label="Question options"
+                  className="flex flex-col gap-1 my-1 pl-1"
+                >
+                  {activeQuestion.options?.map((opt, idx) => {
+                    const isSelected = idx === selectedOptionIndex;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        role="option"
+                        id={`kitty-option-${idx}`}
+                        aria-selected={isSelected}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selectOption(idx);
+                        }}
+                        onMouseEnter={() => setSelectedOptionIndex(idx)}
+                        className={`flex items-center gap-2 text-left font-terminal text-[15px] sm:text-base md:text-[17px] py-1 px-2 rounded cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#FF8FB3] ${
+                          isSelected
+                            ? "text-[#FF8FB3] font-bold bg-[#FF8FB3]/15"
+                            : "text-[#FFE27A] hover:text-[#FFE27A]/90 hover:bg-[#FFE27A]/5"
+                        }`}
+                      >
+                        <span className="w-3 text-center select-none" aria-hidden="true">
+                          {isSelected ? "▸" : " "}
+                        </span>
+                        <span>
+                          {idx + 1}) {opt}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {isUnlocked && (
                 <div className="mt-4 flex flex-col items-center animate-slide-up text-center w-full">
@@ -188,7 +278,10 @@ export default function AsciiSection({
               onSubmit={handleFormSubmit}
               className="flex items-center gap-2 mt-3 pt-2.5 border-t border-[#FFE27A]/20 relative z-10"
             >
-              <span className="text-[#FF8FB3] font-terminal text-[15px] sm:text-base md:text-[17px] select-none shrink-0 font-bold" aria-hidden="true">
+              <span
+                className="text-[#FF8FB3] font-terminal text-[15px] sm:text-base md:text-[17px] select-none shrink-0 font-bold"
+                aria-hidden="true"
+              >
                 guest@kittyOS:~$
               </span>
               <input
@@ -197,8 +290,11 @@ export default function AsciiSection({
                 data-cursor="text"
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder={getPlaceholder()}
                 aria-label="kittyOS terminal command input"
+                aria-controls={hasOptions ? "kitty-options-listbox" : undefined}
+                aria-activedescendant={hasOptions ? `kitty-option-${selectedOptionIndex}` : undefined}
                 className="flex-1 bg-transparent text-[#FFE27A] font-terminal text-[15px] sm:text-base md:text-[17px] outline-none border-none p-0 focus:ring-0 placeholder:text-[#FFE27A]/40 caret-[#FF8FB3]"
                 autoComplete="off"
                 spellCheck={false}
