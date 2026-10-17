@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import TheLetterScrapbookBacking from "./TheLetterScrapbookBacking";
 import TheLetterHeader from "./TheLetterHeader";
 import TheLetterPoem from "./TheLetterPoem";
@@ -18,11 +19,10 @@ export default function TheLetterStationery({
 }: TheLetterStationeryProps) {
   return (
     <div
-      className={`transition-all duration-700 origin-top z-10 relative ${
-        isOpen
+      className={`transition-all duration-700 origin-top z-10 relative ${isOpen
           ? "opacity-100 scale-100 translate-y-0 pointer-events-auto stationery-spring-in"
           : "absolute inset-x-0 top-0 opacity-0 scale-95 pointer-events-none"
-      }`}
+        }`}
     >
       {/* ═══ 1. SCRAPBOOK ALBUM CARDSTOCK (Tilted Craft Backing Layer) ═══ */}
       <TheLetterScrapbookBacking />
@@ -140,11 +140,24 @@ export default function TheLetterStationery({
         {/* ═══ 6. SIGN-OFF & SCRAPBOOK POLAROID CLUSTER ═══ */}
         <div className="relative z-10 mt-9 pt-5 border-t-2 border-dashed border-[#FFD0DC] flex flex-col sm:flex-row sm:items-end justify-between gap-6">
           <div>
-            <div className="font-letter-handwritten">
-              <span className="block text-2xl sm:text-3xl text-[#881337] font-bold">Love always,</span>
-              <span className="block text-3xl sm:text-4xl text-[#9B2C61] font-bold tracking-wide mt-0.5">
-                Batman 🦇
-              </span>
+            <div className="flex items-center gap-3.5">
+              <div className="font-letter-handwritten">
+                <span className="block text-2xl sm:text-3xl text-[#881337] font-bold">Love always,</span>
+                <span className="block text-3xl sm:text-4xl text-[#9B2C61] font-bold tracking-wide mt-0.5">
+                  Batman
+                </span>
+              </div>
+
+              {/* Clipped out Batman sticker */}
+              <div className="relative shrink-0 -rotate-3 hover:rotate-3 transition-transform duration-300">
+                <Image
+                  src="/images/batman.webp"
+                  alt="Batman sticker"
+                  width={88}
+                  height={88}
+                  className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.18)] hover:scale-105 transition-transform select-none"
+                />
+              </div>
             </div>
 
             {/* Cute handwritten P.S. note on a taped card */}

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { LETTER_CLIMAX, LETTER_OUTRO_LINES } from "./theLetterContent";
 
 export default function TheLetterBirthdaySticker() {
@@ -40,10 +41,22 @@ export default function TheLetterBirthdaySticker() {
       </div>
 
       {/* Climax text in Pacifico / Fredoka with deep rose text */}
-      <p className="font-letter-title text-2xl sm:text-3xl md:text-4xl text-[#881337] tracking-wide flex items-center justify-center gap-2 drop-shadow-[0_1px_1px_rgba(255,143,179,0.3)]">
-        <span>🎂</span>
+      <p className="font-letter-title text-2xl sm:text-3xl md:text-4xl text-[#881337] tracking-wide flex items-center justify-center gap-2.5 sm:gap-3.5 drop-shadow-[0_1px_1px_rgba(255,143,179,0.3)]">
+        <Image
+          src="/images/cake.webp"
+          alt="Birthday cake"
+          width={48}
+          height={48}
+          className="w-8 h-8 sm:w-11 sm:h-11 md:w-12 md:h-12 object-contain drop-shadow-[0_3px_6px_rgba(255,105,150,0.3)] -rotate-6 hover:rotate-0 transition-transform duration-200"
+        />
         <span>✦ {LETTER_CLIMAX} ✦</span>
-        <span>🎂</span>
+        <Image
+          src="/images/cake.webp"
+          alt="Birthday cake"
+          width={48}
+          height={48}
+          className="w-8 h-8 sm:w-11 sm:h-11 md:w-12 md:h-12 object-contain drop-shadow-[0_3px_6px_rgba(255,105,150,0.3)] rotate-6 hover:rotate-0 transition-transform duration-200"
+        />
       </p>
 
       {/* Outro lines in Caveat */}
