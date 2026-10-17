@@ -40,14 +40,10 @@ export default function TheEdit() {
   // Sync native OS-level fullscreen changes & hide page overlays
   useEffect(() => {
     const onFsChange = () => {
-      const isNativeFs = !!(
-        document.fullscreenElement ||
-        (document as unknown as { webkitFullscreenElement?: Element }).webkitFullscreenElement
-      );
+      const anyDoc = document as unknown as { webkitFullscreenElement?: Element };
+      const isNativeFs = !!(document.fullscreenElement || anyDoc.webkitFullscreenElement);
       setIsFullscreen(isNativeFs);
-      if (!isNativeFs) {
-        setShowControls(true);
-      }
+      if (!isNativeFs) setShowControls(true);
     };
     document.addEventListener("fullscreenchange", onFsChange);
     document.addEventListener("webkitfullscreenchange", onFsChange);
@@ -65,45 +61,30 @@ export default function TheEdit() {
 
   // Launch initial playback & attempt true native fullscreen
   const handleStartPlay = () => {
-    // Synchronously request native fullscreen FIRST before any audio or state updates consume the transient user activation
     requestNativeFullscreen(
       playerContainerRef.current,
       videoRef.current,
-      () => {
-        setIsFullscreen(true);
-        setShowControls(true);
-      },
-      () => {
-        setShowControls(true);
-      }
+      () => { setIsFullscreen(true); setShowControls(true); },
+      () => setShowControls(true)
     );
 
     const video = videoRef.current;
     if (!video) return;
-
-    if (isEnded || video.currentTime >= (video.duration || 1)) {
-      video.currentTime = 0;
-    }
+    if (isEnded || video.currentTime >= (video.duration || 1)) video.currentTime = 0;
 
     // Play with sound immediately on first click (original behavior)
     video.muted = false;
     const playPromise = video.play();
     if (playPromise !== undefined) {
       playPromise
-        .then(() => {
-          setHasStarted(true);
-          resetControlsTimeout();
-        })
+        .then(() => { setHasStarted(true); resetControlsTimeout(); })
         .catch((err) => {
           console.warn("Unmuted play blocked by browser policy, falling back to muted:", err);
           video.muted = true;
           setIsMuted(true);
-          video.play().then(() => {
-            setHasStarted(true);
-            resetControlsTimeout();
-          }).catch(() => {
-            setShowControls(true);
-          });
+          video.play()
+            .then(() => { setHasStarted(true); resetControlsTimeout(); })
+            .catch(() => setShowControls(true));
         });
     }
   };
@@ -223,25 +204,15 @@ export default function TheEdit() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) return;
-      if (e.key === "Escape" && isFullscreen) {
-        e.preventDefault();
-        handleExitFullscreen();
-      } else if ((e.key === " " || e.code === "Space") && hasStarted) {
-        e.preventDefault();
-        togglePlay();
-      } else if (e.key.toLowerCase() === "m") {
-        toggleMute();
-      } else if (e.key.toLowerCase() === "r" && hasStarted) {
-        e.preventDefault();
-        handlePlayAgain();
-      } else if (e.key.toLowerCase() === "f" && hasStarted) {
-        e.preventDefault();
-        handleToggleFullscreen();
-      }
+      if (e.key === "Escape" && isFullscreen) { e.preventDefault(); handleExitFullscreen(); }
+      else if ((e.key === " " || e.code === "Space") && hasStarted) { e.preventDefault(); togglePlay(); }
+      else if (e.key.toLowerCase() === "m") { toggleMute(); }
+      else if (e.key.toLowerCase() === "r" && hasStarted) { e.preventDefault(); handlePlayAgain(); }
+      else if (e.key.toLowerCase() === "f" && hasStarted) { e.preventDefault(); handleToggleFullscreen(); }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isFullscreen, isPlaying, hasStarted]);
+  }, [isFullscreen, hasStarted]);
 
   const playerContent = (
     <div
@@ -266,6 +237,10 @@ export default function TheEdit() {
         className="w-full h-full object-contain bg-black transition-all duration-300 ease-out"
         playsInline
         poster={POSTER_SRC}
+        onPlay={() => { setIsPlaying(true); setHasStarted(true); setIsEnded(false); }}
+        onPlaying={() => { setIsPlaying(true); setIsEnded(false); }}
+        onPause={() => setIsPlaying(false)}
+        onVolumeChange={() => { if (videoRef.current) setIsMuted(videoRef.current.muted); }}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
@@ -283,6 +258,23 @@ export default function TheEdit() {
           <span className={`inline-block w-2 h-2 rounded-full ${isPlaying ? "bg-red-500 animate-pulse" : "bg-amber-400"}`} />
           <span>{isPlaying ? "REC ●" : "PAUSE ❚❚"}</span>
         </div>
+      )}
+
+      {/* Tap for sound affordance when video is playing muted */}
+      {hasStarted && isMuted && isPlaying && !isEnded && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleMute();
+          }}
+          className="absolute top-3 right-3 z-30 font-retro text-[9px] sm:text-[10px] text-white bg-black/75 hover:bg-[#FF4F9A] border border-[#FF8FB3]/60 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-md cursor-pointer transition-all hover:scale-105 active:scale-95"
+          title="Tap to unmute sound"
+          aria-label="Tap to unmute sound"
+        >
+          <span>🔇</span>
+          <span>TAP FOR SOUND 💖</span>
+        </button>
       )}
 
       {/* 1. INITIAL UNSTARTED STATE: Custom Thumbnail & Play Trigger */}
@@ -339,7 +331,7 @@ export default function TheEdit() {
           showControls={showControls || !isPlaying}
           progressBarRef={progressBarRef}
           timeDisplayRef={timeDisplayRef}
-          onTogglePlay={togglePlay}
+          onTogglePlay={!hasStarted ? handleStartPlay : togglePlay}
           onToggleFullscreen={handleToggleFullscreen}
           onToggleMute={toggleMute}
           onSeekFraction={handleSeekFraction}

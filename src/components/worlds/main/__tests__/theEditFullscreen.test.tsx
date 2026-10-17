@@ -227,4 +227,64 @@ describe("TheEdit and fullscreenUtils", () => {
     // Pointer up
     fireEvent.pointerUp(window);
   });
+
+  it("Video play/pause DOM events keep all UI indicators in lockstep with the real media state", async () => {
+    window.HTMLMediaElement.prototype.play = vi.fn().mockImplementation(() => Promise.resolve());
+    window.HTMLMediaElement.prototype.pause = vi.fn();
+
+    const { container } = render(<TheEdit />);
+    const video = container.querySelector("video") as HTMLVideoElement;
+    expect(video).toBeDefined();
+
+    // Initially unstarted: play button exists
+    expect(screen.getByTitle("Play Video")).toBeDefined();
+
+    // Click play trigger
+    const playButton = screen.getByTitle("Play Video");
+    await act(async () => {
+      fireEvent.click(playButton);
+    });
+
+    // Simulate native DOM 'play' event
+    act(() => {
+      fireEvent.play(video);
+    });
+
+    // In playing state:
+    // 1. OSD badge shows REC ●
+    expect(screen.getByText(/REC ●/i)).toBeDefined();
+    // 2. Big center play trigger is gone
+    expect(screen.queryByTitle("Play Video")).toBeNull();
+    // 3. Both playback control buttons (inline bar + TV hardware strip) update in lockstep to "Pause"
+    const pauseButtons = screen.getAllByRole("button", { name: "Pause" });
+    expect(pauseButtons).toHaveLength(2);
+
+    // Simulate native DOM 'pause' event
+    act(() => {
+      fireEvent.pause(video);
+    });
+
+    // In paused state:
+    // 1. OSD badge shows PAUSE ❚❚
+    expect(screen.getByText(/PAUSE ❚❚/i)).toBeDefined();
+    // 2. Both playback control buttons update in lockstep to "Play"
+    const playButtons = screen.getAllByRole("button", { name: "Play" });
+    expect(playButtons).toHaveLength(2);
+
+    // Simulate video playing while muted -> 'TAP FOR SOUND' affordance appears
+    video.muted = true;
+    act(() => {
+      fireEvent.volumeChange(video);
+      fireEvent.play(video);
+    });
+
+    const tapForSound = screen.getByRole("button", { name: /Tap to unmute sound/i });
+    expect(tapForSound).toBeDefined();
+
+    // Clicking tap for sound un-mutes the video
+    act(() => {
+      fireEvent.click(tapForSound);
+    });
+    expect(video.muted).toBe(false);
+  });
 });

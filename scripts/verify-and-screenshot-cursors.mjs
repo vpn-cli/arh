@@ -7,7 +7,7 @@ const PORT = 3847;
 const PUBLIC_DIR = path.resolve('public');
 const ARTIFACTS_DIR = 'C:\\Users\\vipin\\.gemini\\antigravity-ide\\brain\\16bbb94c-36f3-4a03-ba47-5fafe7902397';
 
-const STATES = ['default', 'blink', 'squeeze', 'happy', 'sleepy', 'dizzy', 'locked'];
+const STATES = ['default', 'hover', 'squeeze', 'happy', 'locked', 'puzzle', 'music', 'polaroid', 'peel'];
 
 const server = http.createServer((req, res) => {
   const urlPath = req.url.split('?')[0];

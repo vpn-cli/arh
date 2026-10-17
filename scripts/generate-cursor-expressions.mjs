@@ -43,56 +43,73 @@ const whiteEyelidPatch = `
 const LOCK_BADGE_SVG = `
   <defs>
     <filter id="badge-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="1.5" stdDeviation="1" flood-color="#20233F" flood-opacity="0.35"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#20233F" flood-opacity="0.4"/>
     </filter>
   </defs>
   <g filter="url(#badge-shadow)">
-    <circle cx="160" cy="107" r="23" fill="#FFF9E6" stroke="#20233F" stroke-width="3.5" />
+    <!-- High-readability badge ring -->
+    <circle cx="154" cy="100" r="28" fill="#FFF9E6" stroke="#20233F" stroke-width="4.5" />
+    <!-- Sturdy lock shackle -->
+    <path d="M 144 98 V 88 C 144 80 164 80 164 88 V 98" fill="none" stroke="#20233F" stroke-width="5.0" stroke-linecap="round" />
+    <!-- Solid brass lock body -->
+    <rect x="139" y="96" width="30" height="22" rx="4.5" fill="#E5B25D" stroke="#20233F" stroke-width="4.0" />
+    <!-- Crisp Keyhole -->
+    <circle cx="154" cy="104.5" r="3.2" fill="#20233F" />
+    <polygon points="152.4,104.5 155.6,104.5 155.0,112.5 153.0,112.5" fill="#20233F" />
   </g>
-  <rect x="149" y="106" width="22" height="17" rx="3.5" fill="#E5B25D" stroke="#20233F" stroke-width="2.8" />
-  <path d="M 153.5 106 V 100 C 153.5 95.5 166.5 95.5 166.5 100 V 106" fill="none" stroke="#20233F" stroke-width="2.8" stroke-linecap="round" />
-  <circle cx="160" cy="112.5" r="2.2" fill="#20233F" />
-  <polygon points="158.8,112.5 161.2,112.5 160.8,117.5 159.2,117.5" fill="#20233F" />
 `;
 
 const PUZZLE_BADGE_SVG = `
   <defs>
     <filter id="puzzle-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="1.5" stdDeviation="1" flood-color="#20233F" flood-opacity="0.35"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#20233F" flood-opacity="0.4"/>
     </filter>
   </defs>
   <g filter="url(#puzzle-shadow)">
-    <circle cx="160" cy="107" r="23" fill="#FFEAA7" stroke="#20233F" stroke-width="3.5" />
-    <text x="160" y="117" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif" font-weight="900" font-size="28" fill="#20233F" text-anchor="middle">!</text>
+    <!-- High-readability yellow badge ring -->
+    <circle cx="154" cy="100" r="28" fill="#FFEAA7" stroke="#20233F" stroke-width="4.5" />
+    <!-- Chunky, crisp alert '!' mark -->
+    <path d="M 151 83 L 157 83 L 155.6 102 L 152.4 102 Z" fill="#20233F" />
+    <circle cx="154" cy="111" r="3.8" fill="#20233F" />
   </g>
 `;
 
 const MUSIC_BADGE_SVG = `
   <defs>
     <filter id="music-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="1.5" stdDeviation="1" flood-color="#20233F" flood-opacity="0.35"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#20233F" flood-opacity="0.4"/>
     </filter>
   </defs>
   <g filter="url(#music-shadow)">
-    <circle cx="160" cy="107" r="23" fill="#FF8FB3" stroke="#20233F" stroke-width="3.5" />
-    <!-- Musical Eighth Note ♪ -->
-    <path d="M 163 94 V 110.5 A 4.5 4.5 0 1 1 158.5 106 A 4.5 4.5 0 0 1 163 110.5 V 98 L 171 95 V 103" fill="none" stroke="#20233F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="156" cy="112" r="4.5" fill="#20233F"/>
+    <!-- High-readability pink badge ring -->
+    <circle cx="154" cy="100" r="28" fill="#FF8FB3" stroke="#20233F" stroke-width="4.5" />
+    <!-- Chunky solid Musical Eighth Note ♪ -->
+    <ellipse cx="147" cy="110.5" rx="7.8" ry="5.8" transform="rotate(-25 147 110.5)" fill="#20233F" />
+    <rect x="151.8" y="86" width="5.4" height="23" rx="1.5" fill="#20233F" />
+    <path d="M 154 86 C 163.5 87 169 92.5 168 102.5 C 164.5 96.5 160 94.5 154 93.5 Z" fill="#20233F" />
   </g>
 `;
 
 const POLAROID_BADGE_SVG = `
   <defs>
     <filter id="polaroid-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="1.5" stdDeviation="1" flood-color="#20233F" flood-opacity="0.35"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#20233F" flood-opacity="0.4"/>
     </filter>
   </defs>
   <g filter="url(#polaroid-shadow)">
-    <circle cx="160" cy="107" r="23" fill="#FFF9E6" stroke="#20233F" stroke-width="3.5" />
-    <!-- 4-point camera flash sparkle -->
-    <path d="M 160 92 L 163.5 103.5 L 175 107 L 163.5 110.5 L 160 122 L 156.5 110.5 L 145 107 L 156.5 103.5 Z" fill="#FF7597" stroke="#20233F" stroke-width="1.8" />
-    <circle cx="160" cy="107" r="2.5" fill="#FFEAA7" />
+    <!-- High-readability cream badge ring -->
+    <circle cx="154" cy="100" r="28" fill="#FFF9E6" stroke="#20233F" stroke-width="4.5" />
+    <!-- Bold 4-point camera flash sparkle -->
+    <path d="M 154 81 L 159.5 94.5 L 173 100 L 159.5 105.5 L 154 119 L 148.5 105.5 L 135 100 L 148.5 94.5 Z" fill="#FF7597" stroke="#20233F" stroke-width="3.2" stroke-linejoin="round" />
+    <circle cx="154" cy="100" r="4.2" fill="#FFEAA7" stroke="#20233F" stroke-width="1.8" />
   </g>
+`;
+
+const MUSIC_OVERLAY_SVG = `
+  <!-- Rosy Cheek Blush -->
+  <ellipse cx="50" cy="98" rx="14" ry="9" fill="#FF7597" opacity="0.65" />
+  <ellipse cx="142" cy="98" rx="14" ry="9" fill="#FF7597" opacity="0.65" />
+  ${MUSIC_BADGE_SVG}
 `;
 
 const HOVER_OVERLAY_SVG = `
@@ -157,17 +174,17 @@ const EXPRESSIONS = {
     `,
     overlay: "",
   },
+  locked: {
+    eyes: "",
+    overlay: LOCK_BADGE_SVG,
+  },
   puzzle: {
     eyes: "",
     overlay: PUZZLE_BADGE_SVG,
   },
   music: {
-    eyes: `
-      ${whiteEyelidPatch}
-      <path d="M 22.5 46.5 Q 27.2 40.0 32.0 46.5" fill="none" stroke="#20233F" stroke-width="2.8" stroke-linecap="round" />
-      <path d="M 63.5 46.7 Q 68.4 40.2 73.5 46.7" fill="none" stroke="#20233F" stroke-width="2.8" stroke-linecap="round" />
-    `,
-    overlay: MUSIC_BADGE_SVG,
+    eyes: "",
+    overlay: MUSIC_OVERLAY_SVG,
   },
   polaroid: {
     eyes: "",
