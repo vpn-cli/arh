@@ -978,5 +978,41 @@ Re-layout the Main World hero stickers using a deterministic seeded jittered-gri
 - **Build**: `npm run build` compiled successfully in 4.1s with Turbopack.
 - **Visual Audit**: Verified precise layout at 1920×1080 (19 visible), 1366×768 (15 visible), and 375×812 (7 visible) via Playwright screenshots.
 
+---
 
+## 15. Session Log: Hello Kitty Mascot Romaji Greeting & Typewriter Animation
 
+### Context & Goals
+Update the Main World Hello Kitty mascot's default speech bubble with a warm, personalized bilingual greeting for Arhana in Romaji Japanese, matching the Tokyo/Japan journey theme. The bubble features an authentic 25ms/char typewriter reveal, emoji font fallback for heart symbols, neat 2–3 line wrapping, and strict viewport collision avoidance across 1920, 1366, 768, and 375 widths.
+
+### 1. Romaji Greeting Copy & Single Bubble Swapping
+- **Default Copy**:
+  `"Watashi wa Hello Kitty! Anata wa Arhana-chan desho? Hajimemashite~ ♡"`
+  (Translation: "I am Hello Kitty! You must be Arhana-chan, right? Nice to meet you~ ♡")
+- **Heart Emoji Fallback**:
+  The trailing `"♡"` is styled with an explicit fallback emoji font family (`"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`) to ensure crisp, uniform cross-platform glyph rendering.
+- **Single Bubble Invariant**:
+  Hovering or focusing Kitty's avatar smoothly transitions the *same* bubble (`#mascot-speech-bubble`, `data-testid="mascot-speech-bubble"`) to `"aur bhai"`. On leave/blur, it returns to the Romaji greeting.
+- **Touch Interaction**:
+  Touch devices trigger a 2-second peek of `"aur bhai"` before smoothly restoring the greeting.
+
+### 2. Typewriter Reveal Effect
+- Progressively types out the greeting on first render at ~25ms per character via an interval timer.
+- Integrated with `usePrefersReducedMotion`: if the user has requested reduced motion, the typewriter effect is immediately bypassed and the full string renders instantly without animation delay.
+
+### 3. Spatial Composition & Multi-Viewport Layout
+- Positioned above Kitty: `bottom-full mb-1.5 sm:mb-2.5 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:-right-6 md:-right-10`.
+- Max widths: `max-w-[200px]` on mobile (`<640px`) and `max-w-[260px]` on desktop (`≥640px`), cleanly wrapping the text into 2–3 lines.
+- Downward-pointing tail anchored at `-bottom-1.5`, pointing directly at Hello Kitty's head.
+- Deterministic bounding box validation via Playwright confirmed zero collision with the `<h1>THE ADVENTURE</h1>` title and zero viewport clipping:
+  - 1920×1080: Bubble `x=834.7, y=220.9` (Title `y=517.0` → ~210px vertical clearance, 0 clipping).
+  - 1366×768: Bubble `x=557.7, y=64.9` (Title `y=361.0` → ~210px vertical clearance, 0 clipping).
+  - 768×1024: Bubble `x=258.4, y=175.0` (Title `y=489.0` → ~210px vertical clearance, 0 clipping).
+  - 375×812: Bubble `x=86.3, y=148.7, w=202.5` (Title `y=371.1` → ~140px vertical clearance, 0 clipping).
+
+### 4. Verification & Quality Gates
+- **Frozen Guard**: `npm run check:frozen` verified 100% integrity across all frozen cinema files.
+- **Type Safety**: `npm run typecheck` passed with 0 errors.
+- **Linter**: `npm run lint -- --quiet` passed with 0 errors.
+- **Unit Tests**: `theAdventureHero.test.tsx` (all 6 tests passed) + full suite (`npm test`, 71 test files, 629 tests passed).
+- **Production Build**: `npm run build` compiled cleanly in 2.5s via Turbopack.

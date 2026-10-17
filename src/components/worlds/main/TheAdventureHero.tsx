@@ -46,8 +46,42 @@ export default function TheAdventureHero() {
 
   const centerRef = useRef<HTMLDivElement | null>(null);
 
+  const GREETING_TEXT =
+    "Watashi wa Hello Kitty! Anata wa Arhana-chan desho? Hajimemashite~ ";
+  const GREETING_HEART = "♡";
+
+  const [charCount, setCharCount] = useState(() =>
+    prefersReducedMotion ? GREETING_TEXT.length + 1 : 0
+  );
+  const hasRevealedRef = useRef(false);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setCharCount(GREETING_TEXT.length + 1);
+      hasRevealedRef.current = true;
+      return;
+    }
+
+    if (hasRevealedRef.current) {
+      setCharCount(GREETING_TEXT.length + 1);
+      return;
+    }
+
+    const total = GREETING_TEXT.length + 1;
+    let current = 0;
+    const interval = setInterval(() => {
+      current++;
+      setCharCount(current);
+      if (current >= total) {
+        clearInterval(interval);
+        hasRevealedRef.current = true;
+      }
+    }, 25);
+
+    return () => clearInterval(interval);
+  }, [prefersReducedMotion]);
+
   const showGreeting = isMascotHovered || isMascotTapped;
-  const bubbleText = showGreeting ? "aur bhai" : "psst… scroll ↓";
 
   return (
     <section
@@ -122,20 +156,43 @@ export default function TheAdventureHero() {
             />
           </div>
 
-          {/* Speech Bubble: EXACTLY ONE bubble exists. Swaps between "psst… scroll ↓" and "aur bhai" */}
+          {/* Speech Bubble: EXACTLY ONE bubble exists. Swaps between Romaji greeting and "aur bhai" */}
           <div
+            id="mascot-speech-bubble"
             aria-hidden="true"
             data-testid="mascot-speech-bubble"
-            className={`absolute -top-3.5 sm:-top-4 -right-10 sm:-right-14 bg-[#FFFDF8] border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440] rounded-xl px-2.5 py-1 text-[9px] sm:text-[10px] font-retro text-[#3A2440] font-bold tracking-wider select-none pointer-events-none rotate-3 motion-safe:animate-bounce-soft z-30 transition-transform duration-150 ease-out ${
-              showGreeting ? "scale-105" : "scale-100"
+            className={`absolute z-30 bg-[#FFFDF8] border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440] rounded-xl sm:rounded-2xl px-3 py-2 sm:px-3.5 sm:py-2.5 text-[#3A2440] font-retro font-bold select-none pointer-events-none rotate-2 motion-safe:animate-bounce-soft transition-all duration-150 ease-out bottom-full mb-1.5 sm:mb-2.5 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:-right-6 md:-right-10 ${
+              showGreeting
+                ? "scale-105 whitespace-nowrap text-[11px] sm:text-xs"
+                : "w-max max-w-[200px] sm:max-w-[260px] text-[10px] sm:text-[11px] leading-snug sm:leading-relaxed text-center sm:text-left"
             }`}
           >
-            <span key={bubbleText} className="inline-block bubble-squish-in">
-              {bubbleText}
+            <span
+              key={showGreeting ? "greeting-hover" : "greeting-default"}
+              className="inline-block bubble-squish-in"
+            >
+              {showGreeting ? (
+                "aur bhai"
+              ) : (
+                <>
+                  <span>{GREETING_TEXT.slice(0, charCount)}</span>
+                  {charCount > GREETING_TEXT.length && (
+                    <span
+                      className="inline-block text-[11px] sm:text-[12px] leading-none ml-0.5 text-[#FF6B8B]"
+                      style={{
+                        fontFamily:
+                          '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif',
+                      }}
+                    >
+                      {GREETING_HEART}
+                    </span>
+                  )}
+                </>
+              )}
             </span>
             {/* Cute speech bubble pointer tail */}
             <div
-              className="absolute -bottom-1.5 left-3 w-2.5 h-2.5 bg-[#FFFDF8] border-r-2 border-b-2 border-[#3A2440] rotate-45"
+              className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 sm:left-6 sm:translate-x-0 w-2.5 h-2.5 bg-[#FFFDF8] border-r-2 border-b-2 border-[#3A2440] rotate-45"
               aria-hidden="true"
             />
           </div>
