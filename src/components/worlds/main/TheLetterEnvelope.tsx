@@ -49,10 +49,10 @@ export default function TheLetterEnvelope({ isOpen }: TheLetterEnvelopeProps) {
           <span className="hidden sm:inline">🌸 航空便</span>
         </div>
 
-        {/* Tokyo Airmail Postage Stamp */}
+        {/* Okayama Airmail Postage Stamp */}
         <div className="w-13 h-16 sm:w-15 sm:h-18 bg-white p-1 rounded-md border-2 border-dashed border-[#FF7597] shadow-xs rotate-3 flex flex-col items-center justify-center text-center">
           <span className="text-lg sm:text-xl">🎀</span>
-          <span className="font-letter-ui text-[8px] text-[#881337] font-bold mt-0.5">TOKYO</span>
+          <span className="font-letter-ui text-[8px] text-[#881337] font-bold mt-0.5">OKAYAMA</span>
           <span className="font-letter-ui text-[6px] text-[#FF7597] tracking-wider font-semibold">OCT 2026</span>
           <span className="font-letter-ui text-[6px] text-[#881337] font-bold">1ST CLASS</span>
         </div>

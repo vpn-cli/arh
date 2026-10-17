@@ -28,34 +28,61 @@ export default function TheLetterHeader() {
           </h3>
         </div>
 
-        {/* Tokyo Airmail Postage Stamp + Hand-Drawn Wavy Cancellation Mark */}
+        {/* Okayama Airmail Postage Stamp + Hand-Drawn Wavy Cancellation Mark */}
         <div className="relative flex items-center select-none shrink-0" aria-hidden="true">
           {/* Circular postmark stamp */}
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#9B2C61]/50 -rotate-12 flex flex-col items-center justify-center text-[7px] font-letter-ui text-[#9B2C61]/80 leading-tight bg-white/80 shadow-2xs">
-            <span className="font-bold">TOKYO</span>
-            <span className="text-[6px] tracking-wider font-bold">14 OCT</span>
-            <span className="text-[8px] text-[#FF7597]">♡</span>
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-[#9B2C61]/70 -rotate-12 flex flex-col items-center justify-center text-[8px] sm:text-[9px] font-letter-ui text-[#9B2C61] leading-tight bg-white/90 shadow-xs relative">
+            <div className="absolute inset-1 rounded-full border border-dashed border-[#9B2C61]/40 pointer-events-none" />
+            <span className="font-extrabold tracking-widest text-[#881337] text-[9px] sm:text-[10px]">OKAYAMA</span>
+            <span className="text-[7px] sm:text-[8px] tracking-wider font-bold text-[#9B2C61] my-0.5">14 OCT 2026</span>
+            <span className="text-[8px] sm:text-[9px] text-[#FF4F9A]">♡ 航空便 ♡</span>
           </div>
 
           {/* Wavy ink cancellation lines */}
           <svg
-            className="w-8 sm:w-10 h-6 text-[#9B2C61]/45 -ml-1 sm:-ml-2"
+            className="w-10 sm:w-14 h-8 sm:h-10 text-[#9B2C61]/60 -ml-2 sm:-ml-3 z-10 pointer-events-none"
             viewBox="0 0 60 40"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.5"
+            strokeWidth="2"
             strokeLinecap="round"
           >
-            <path d="M0 10 Q 15 5, 30 10 T 60 10" />
+            <path d="M0 8 Q 15 3, 30 8 T 60 8" />
             <path d="M0 20 Q 15 15, 30 20 T 60 20" />
-            <path d="M0 30 Q 15 25, 30 30 T 60 30" />
+            <path d="M0 32 Q 15 27, 30 32 T 60 32" />
           </svg>
 
-          {/* Perforated Cute Japanese Postage Stamp */}
-          <div className="w-12 h-15 sm:w-14 sm:h-17 bg-gradient-to-b from-[#FFF5F8] to-[#FFE4EE] p-1 rounded-xs border-2 border-dashed border-[#FF8FB3] shadow-xs rotate-3 flex flex-col items-center justify-center text-center -ml-2">
-            <span className="text-lg sm:text-xl">🎀</span>
-            <span className="font-letter-ui text-[7px] text-[#881337] font-bold mt-0.5">日本郵便</span>
-            <span className="font-letter-ui text-[5px] text-[#FF7597] tracking-widest font-semibold">1ST CLASS</span>
+          {/* Perforated Cute Japanese Postage Stamp with High Visual Hierarchy */}
+          <div className="relative -ml-3 sm:-ml-4 rotate-3 group/stamp hover:rotate-0 transition-transform duration-300">
+            <div className="w-18 h-24 sm:w-22 sm:h-28 bg-white p-1.5 rounded-sm border-2 border-dashed border-[#FF7597] shadow-[0_6px_18px_rgba(255,105,150,0.28),0_2px_4px_rgba(0,0,0,0.06)] flex flex-col items-center justify-between text-center bg-gradient-to-b from-[#FFFDF9] via-[#FFF5F8] to-[#FFE6EE]">
+              {/* Inner Stamp Framing Border */}
+              <div className="w-full h-full border border-[#FF8FB3]/80 rounded-xs p-1 flex flex-col items-center justify-between bg-white/70 backdrop-blur-[1px]">
+                {/* Header: Nippon Post */}
+                <div className="w-full flex items-center justify-between text-[6px] sm:text-[7px] font-letter-ui font-bold text-[#881337] px-0.5">
+                  <span>🌸 日本郵便</span>
+                  <span className="text-[#FF4F9A] font-extrabold">84円</span>
+                </div>
+
+                {/* Center Badge: Cute Satin Bow with Soft Blush Halo */}
+                <div className="relative my-auto flex items-center justify-center">
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-[#FFE4EE] to-[#FFD5E5] border border-[#FF8FB3]/50 flex items-center justify-center shadow-inner group-hover/stamp:scale-110 transition-transform duration-300">
+                    <span className="text-xl sm:text-2xl drop-shadow-[0_2px_4px_rgba(255,79,154,0.35)]">
+                      🎀
+                    </span>
+                  </div>
+                </div>
+
+                {/* Footer: OKAYAMA AIRMAIL • 1ST CLASS */}
+                <div className="w-full flex flex-col items-center">
+                  <span className="font-letter-ui text-[7px] sm:text-[8px] text-[#881337] font-extrabold tracking-wider leading-none">
+                    OKAYAMA
+                  </span>
+                  <span className="font-letter-ui text-[5px] sm:text-[6px] text-[#FF6584] font-bold tracking-widest uppercase mt-0.5">
+                    Airmail ✦ 1st Class
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
