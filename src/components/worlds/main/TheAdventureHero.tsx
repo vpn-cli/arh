@@ -49,6 +49,8 @@ export default function TheAdventureHero() {
   const GREETING_TEXT =
     "Watashi wa Hello Kitty! Anata wa Arhana-chan desho? Hajimemashite~ ";
   const GREETING_HEART = "♡";
+  const FULL_GREETING_ACCESSIBLE =
+    "Watashi wa Hello Kitty! Anata wa Arhana-chan desho? Hajimemashite~ ♡";
 
   const [charCount, setCharCount] = useState(() =>
     prefersReducedMotion ? GREETING_TEXT.length + 1 : 0
@@ -159,8 +161,8 @@ export default function TheAdventureHero() {
           {/* Speech Bubble: EXACTLY ONE bubble exists. Swaps between Romaji greeting and "aur bhai" */}
           <div
             id="mascot-speech-bubble"
-            aria-hidden="true"
             data-testid="mascot-speech-bubble"
+            aria-label={showGreeting ? "aur bhai" : FULL_GREETING_ACCESSIBLE}
             className={`absolute z-30 bg-[#FFFDF8] border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440] rounded-xl sm:rounded-2xl px-3 py-2 sm:px-3.5 sm:py-2.5 text-[#3A2440] font-retro font-bold select-none pointer-events-none rotate-2 motion-safe:animate-bounce-soft transition-all duration-150 ease-out bottom-full mb-1.5 sm:mb-2.5 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:-right-6 md:-right-10 ${
               showGreeting
                 ? "scale-105 whitespace-nowrap text-[11px] sm:text-xs"
@@ -170,6 +172,7 @@ export default function TheAdventureHero() {
             <span
               key={showGreeting ? "greeting-hover" : "greeting-default"}
               className="inline-block bubble-squish-in"
+              aria-hidden="true"
             >
               {showGreeting ? (
                 "aur bhai"
@@ -227,14 +230,13 @@ export default function TheAdventureHero() {
           </button>
         </div>
 
-        {/* Title "THE ADVENTURE" — Sticker style with white outline + offset shadow + bow perched on "A" */}
-        <h1 className="font-pixel text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-wider mb-2.5 sm:mb-3 leading-tight adventure-title-sticker select-none">
-          <span>THE </span>
+        {/* Title "CONGRATULATIONS, YOU’RE OLD" — Sticker style with white outline + offset shadow + bow perched on "C" */}
+        <h1 className="font-pixel text-[clamp(1.4rem,4.2vw,2.65rem)] font-extrabold tracking-wider mb-3.5 sm:mb-4 leading-tight adventure-title-sticker select-none text-center">
           <span className="relative inline-block">
-            <span className="relative z-0">A</span>
-            {/* Bow perched atop the "A" */}
+            <span className="relative z-0">C</span>
+            {/* Bow perched atop the "C" */}
             <span
-              className="absolute -top-3 sm:-top-4.5 -left-1 sm:-left-2 w-6 h-6 sm:w-7 sm:h-7 -rotate-12 pointer-events-none select-none z-10 drop-shadow-xs"
+              className="absolute -top-3.5 sm:-top-5 -left-1.5 sm:-left-2.5 w-6 h-6 sm:w-7 sm:h-7 -rotate-12 pointer-events-none select-none z-10 drop-shadow-xs"
               aria-hidden="true"
             >
               <Image
@@ -246,21 +248,82 @@ export default function TheAdventureHero() {
               />
             </span>
           </span>
-          <span>DVENTURE</span>
+          <span>ONGRATULATIONS, </span>
+          <span className="inline-block sm:inline whitespace-nowrap">YOU’RE OLD</span>
         </h1>
 
-        {/* Subtitle Description Card — Exactly preserved */}
-        <div className="relative max-w-lg bg-[#FFFDF8] px-5 py-3.5 sm:px-6 sm:py-4 rounded-2xl border-2 border-[#3A2440] shadow-[4px_4px_0_#3A2440] mb-4 sm:mb-5">
+        {/* Subtitle Description Card — Cute "Official Notice" */}
+        <div className="relative w-full max-w-[440px] bg-[#FFFBF5] px-4 pt-3.5 pb-4.5 sm:px-6 sm:pt-4 sm:pb-4 rounded-[18px] border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] mb-4 sm:mb-5 rotate-[-1deg] transition-all duration-200 ease-out [@media(hover:hover)]:hover:rotate-0 [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:shadow-[4px_5px_0_#3A2440] motion-reduce:rotate-0 motion-reduce:transform-none motion-reduce:transition-none">
+          {/* Subtle paper grain texture overlay */}
           <div
-            className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-24 h-5 bg-[#FFB6C1]/80 border border-black/10 rounded-xs rotate-1 pointer-events-none shadow-2xs"
+            className="absolute inset-0 rounded-[16px] pointer-events-none opacity-[0.04] mix-blend-multiply overflow-hidden"
+            aria-hidden="true"
             style={{
-              clipPath: "polygon(0% 0%, 95% 0%, 100% 50%, 95% 100%, 0% 100%, 5% 50%)",
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
             }}
+          />
+
+          {/* Inner dashed stitched border in soft pink (#FF8FB3 at 50%), inset 6px */}
+          <div
+            className="absolute inset-[6px] rounded-[12px] border border-dashed border-[#FF8FB3]/50 pointer-events-none"
             aria-hidden="true"
           />
-          <p className="font-baloo text-sm sm:text-base text-[#3A2440] font-semibold leading-relaxed">
-            welcome to the main storyline. scroll down to relive our questionable decisions, crack unhinged puzzles, and pretend you&apos;re surprised.
+
+          {/* Header tab pill: "⚠ OFFICIAL NOTICE" overlapping top border */}
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 sm:px-3 sm:py-0.5 bg-[#FFD6E3] border border-[#3A2440] rounded-full text-[#3A2440] font-retro text-[8px] sm:text-[9.5px] font-bold tracking-wider shadow-[1px_1px_0_#3A2440] flex items-center gap-1.5 select-none whitespace-nowrap z-10">
+            <span
+              aria-hidden="true"
+              className="text-[9px] sm:text-[10.5px] leading-none"
+              style={{
+                fontFamily:
+                  '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif',
+              }}
+            >
+              ⚠
+            </span>
+            <span>OFFICIAL NOTICE</span>
+          </div>
+
+          {/* Corner accents: tiny pink heart ♥ in 2 opposite corners */}
+          <span
+            aria-hidden="true"
+            className="absolute top-2 right-3 text-[#FF8FB3]/70 text-[10px] sm:text-xs select-none pointer-events-none z-10"
+          >
+            ♥
+          </span>
+          <span
+            aria-hidden="true"
+            className="absolute bottom-2 left-3 text-[#FF8FB3]/70 text-[10px] sm:text-xs select-none pointer-events-none z-10"
+          >
+            ♥
+          </span>
+
+          {/* Description Text */}
+          <p className="font-baloo text-[15px] sm:text-[17.5px] text-[#3A2440] font-semibold leading-relaxed text-center relative z-10 px-2 sm:px-3 pt-1 pb-1">
+            to celebrate your slow decline, here are 4 phases of{" "}
+            <span
+              className="font-normal inline-block"
+              style={{
+                backgroundImage:
+                  "linear-gradient(to top, rgba(255, 143, 179, 0.45) 0%, rgba(255, 143, 179, 0.45) 100%)",
+                backgroundSize: "100% 40%",
+                backgroundPosition: "0 100%",
+                backgroundRepeat: "no-repeat",
+              }}
+            >
+              mild inconvenience
+            </span>
+            .
           </p>
+
+          {/* Rubber stamp at bottom-right corner, rotated -8°: "APPROVED ✓" */}
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-3 right-2 sm:-bottom-3.5 sm:right-3 px-1.5 py-0.5 sm:px-2 sm:py-0.5 border border-[#FF8FB3] rounded-[4px] text-[#FF8FB3] font-retro text-[6.5px] sm:text-[8px] font-bold tracking-wider opacity-60 rotate-[-8deg] select-none pointer-events-none uppercase shadow-2xs flex items-center gap-1 z-10 bg-[#FFFBF5]/95"
+          >
+            <span>APPROVED</span>
+            <span style={{ fontFamily: "system-ui, sans-serif" }}>✓</span>
+          </div>
         </div>
 
         {/* Pixel "▶ CONTINUE" Pill — Replaces pink triangle, gentle pulse */}

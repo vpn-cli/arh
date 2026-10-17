@@ -1016,3 +1016,67 @@ Update the Main World Hello Kitty mascot's default speech bubble with a warm, pe
 - **Linter**: `npm run lint -- --quiet` passed with 0 errors.
 - **Unit Tests**: `theAdventureHero.test.tsx` (all 6 tests passed) + full suite (`npm test`, 71 test files, 629 tests passed).
 - **Production Build**: `npm run build` compiled cleanly in 2.5s via Turbopack.
+
+---
+
+## 16. Session Log: Sarcastic Hero Copy, Notice Card Styling & Mascot Bubble Accessibility
+
+### Context & Goals
+Re-anchor the Main World hero section with witty, affectionate birthday copy for Arhana ("CONGRATULATIONS, YOU’RE OLD" + "to celebrate your slow decline, here are 4 phases of mild inconvenience."), transform the subtitle into a cute "Official Notice" stationery card with paper grain, stitched border, header tab pill, corner hearts, rubber stamp, and hover straightening, and fix screen-reader output on the typewriter mascot speech bubble.
+
+### 1. Sarcastic Hero Title & Bow Repositioning
+- Replaced title `THE ADVENTURE` with `<h1>` `CONGRATULATIONS, YOU’RE OLD`.
+- Typographic apostrophe (`’`) rendered cleanly in Fredoka font.
+- Repositioned the perched satin bow atop the initial `"C"` (`-top-3.5 sm:-top-5 -left-1.5 sm:-left-2.5`).
+- Scaled smoothly with `text-[clamp(1.4rem,4.2vw,2.65rem)]` and wrapped neatly into 2 lines (`CONGRATULATIONS,` / `YOU’RE OLD`) without colliding with Kitty's speech bubble above or the card below.
+
+### 2. Cute "Official Notice" Description Card
+- **Dimensions**: Centered compact card (`w-full max-w-[440px]`), wrapping the copy into 2 lines.
+- **Paper & Stitched Border**: Warm cream background (`#FFFBF5`) with subtle SVG `feTurbulence` paper noise overlay (~4% opacity), `rounded-[18px]`, thick outline + offset shadow (`border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440]`), and an inner dashed stitched border (`inset-[6px] rounded-[12px] border border-dashed border-[#FF8FB3]/50`).
+- **Header Tab Pill**: Overlaps top border in `font-retro`: `"⚠ OFFICIAL NOTICE"` (`#FFD6E3` background, dark text, warning emoji in an emoji-font span with `aria-hidden="true"`).
+- **Corner Accents**: Low-key pink hearts `♥` (`aria-hidden="true"`) in opposite corners.
+- **Copy & Highlighter**:
+  `to celebrate your slow decline, here are 4 phases of mild inconvenience.` in dark plum `font-baloo` (15px mobile, 17.5px desktop). "mild inconvenience" highlighted with a soft pink marker-style underline (`linear-gradient` on the bottom 40%), not bold.
+- **Approved Rubber Stamp**: Tiny stamp at bottom-right corner, rotated −8°: `"APPROVED ✓"` in `font-retro`, pink outline (`border border-[#FF8FB3] text-[#FF8FB3]`), ~60% opacity (`aria-hidden="true"`), never overlapping text.
+- **Tactile Hover Dynamics**: Slight −1° resting tilt (`rotate-[-1deg]`); straightens to 0° with a soft 1px lift on hover (`hover:rotate-0 hover:-translate-y-1 hover:shadow-[4px_5px_0_#3A2440]`), fully disabled under `prefers-reduced-motion`.
+
+### 3. Screen Reader Fix (Mascot Bubble Accessibility)
+- The mascot speech bubble now exposes its complete text immediately via `aria-label={showGreeting ? "aur bhai" : FULL_GREETING_ACCESSIBLE}`.
+- The letter-by-letter animated typewriter span is marked `aria-hidden="true"` so screen readers are not spammed by character additions.
+- Zero `aria-live` attributes present on typing elements.
+- Decorative card elements (rubber stamp, corner hearts, warning icon) are `aria-hidden="true"`, while `"OFFICIAL NOTICE"` and notice body copy remain cleanly readable.
+
+### 4. Multi-Viewport Layout & Collision Verification
+- Automated measurement across all 4 responsive breakpoints confirmed 0 collisions and 0 clipping:
+  - **1920×1080**:
+    - Bubble: `x=834.7, y=202.4, w=262.6, h=86.7`
+    - Title: `x=704.0, y=498.6, w=512.0, h=106.0` (2 lines: "CONGRATULATIONS," / "YOU’RE OLD", ~210px clearance below bubble)
+    - Card: `x=739.2, y=616.7, w=441.7, h=108.5` (2 lines of text)
+    - Stamp: `x=1070.5, y=705.3, w=97.2, h=32.7`
+    - Collisions: Bubble-Title: No, Title-Card: No, Stamp-Text: No, Clipped: No
+  - **1366×768**:
+    - Bubble: `x=557.4, y=28.6, w=263.2, h=104.5`
+    - Title: `x=427.0, y=342.6, w=512.0, h=106.0` (2 lines)
+    - Card: `x=462.2, y=460.7, w=441.7, h=108.5` (2 lines)
+    - Stamp: `x=793.5, y=549.3, w=97.2, h=32.7`
+    - Collisions: Bubble-Title: No, Title-Card: No, Stamp-Text: No, Clipped: No
+  - **768×1024**:
+    - Bubble: `x=258.4, y=189.4, w=263.2, h=104.5`
+    - Title: `x=131.6, y=503.4, w=504.8, h=40.3` (1 line)
+    - Card: `x=163.2, y=555.9, w=441.7, h=108.5` (2 lines)
+    - Stamp: `x=494.5, y=644.5, w=97.2, h=32.7`
+    - Collisions: Bubble-Title: No, Title-Card: No, Stamp-Text: No, Clipped: No
+  - **375×812**:
+    - Bubble: `x=86.3, y=141.2, w=202.5, h=81.9`
+    - Title: `x=16.0, y=363.6, w=343.0, h=56.0` (2 lines)
+    - Card: `x=15.2, y=430.6, w=344.6, h=98.7` (2 lines)
+    - Stamp: `x=271.3, y=512.5, w=79.3, h=27.7` (below text, 0 overlap)
+    - Collisions: Bubble-Title: No, Title-Card: No, Stamp-Text: No, Clipped: No
+
+### 5. Verification & Quality Gates
+- **Frozen Guard**: `npm run check:frozen` passed (0 modifications to frozen cinema files).
+- **TypeScript**: `npm run typecheck` passed with 0 errors.
+- **ESLint**: `npm run lint -- --quiet` passed with 0 errors.
+- **Unit Tests**: `theAdventureHero.test.tsx` (9 tests passed) + full test suite (`npm test`, 71 test files, 632 tests passed).
+- **Production Build**: `npm run build` compiled successfully via Next.js Turbopack in 2.8s.
+

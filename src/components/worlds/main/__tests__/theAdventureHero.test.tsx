@@ -165,4 +165,63 @@ describe("TheAdventureHero mascot speech bubble", () => {
     expect(bubble.textContent).toContain("Watashi wa Hello Kitty!");
     expect(bubble.textContent).toContain("♡");
   });
+
+  it("provides full accessible text via aria-label with aria-hidden animated span and no aria-live", () => {
+    render(<TheAdventureHero />);
+
+    const bubble = screen.getByTestId("mascot-speech-bubble");
+    expect(bubble.getAttribute("aria-label")).toBe(FULL_GREETING);
+    expect(bubble.getAttribute("aria-live")).toBeNull();
+
+    // The animated typewriter span is aria-hidden so screen readers only hear the aria-label
+    const animatedSpan = bubble.querySelector(".bubble-squish-in");
+    expect(animatedSpan?.getAttribute("aria-hidden")).toBe("true");
+
+    const avatarBtn = document.getElementById("guide-cat-avatar")!;
+    fireEvent.mouseEnter(avatarBtn);
+    expect(bubble.getAttribute("aria-label")).toBe("aur bhai");
+
+    fireEvent.mouseLeave(avatarBtn);
+    expect(bubble.getAttribute("aria-label")).toBe(FULL_GREETING);
+  });
+
+  it("renders the <h1> title 'CONGRATULATIONS, YOU’RE OLD' with bow on C", () => {
+    render(<TheAdventureHero />);
+
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading.textContent).toContain("CONGRATULATIONS,");
+    expect(heading.textContent).toContain("YOU’RE OLD");
+
+    // Bow perched on C
+    const bowImg = heading.querySelector("img[src*='bow_satin']");
+    expect(bowImg).not.toBeNull();
+  });
+
+  it("renders the official notice description card with accessible tab and hidden decorative accents", () => {
+    render(<TheAdventureHero />);
+
+    // Official notice tab
+    expect(screen.getByText("OFFICIAL NOTICE")).toBeDefined();
+
+    // Sarcastic copy
+    expect(
+      screen.getByText(/to celebrate your slow decline, here are 4 phases of/i)
+    ).toBeDefined();
+    expect(screen.getByText("mild inconvenience")).toBeDefined();
+
+    // Approved stamp
+    expect(screen.getByText("APPROVED")).toBeDefined();
+
+    // Decorative items (stamp, hearts, tab emoji) are aria-hidden
+    const hiddenElements = document.querySelectorAll("[aria-hidden='true']");
+    const stampEl = Array.from(hiddenElements).find((el) =>
+      el.textContent?.includes("APPROVED")
+    );
+    expect(stampEl).toBeDefined();
+
+    const warningEmoji = Array.from(hiddenElements).find(
+      (el) => el.textContent === "⚠"
+    );
+    expect(warningEmoji).toBeDefined();
+  });
 });
