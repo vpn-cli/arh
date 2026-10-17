@@ -434,8 +434,8 @@ A chronological record of project development across all 217 commits:
 - `fedecea` (2026-10-17 16:18): docs: update project log.
 - `0940053` (2026-10-17 16:53): `feat(main): cuter hero layout — polaroids, player card, marquee`. Redesigned Main World hero into a 3-column kawaii scrapbook composition.
 - `617ff8b` (2026-10-17 17:11): `chore(stickers): slice and clip sticker pack`. Added automated sharp slice script (`scripts/slice-sticker-sheet.mjs`) and generated 19 transparent-clipped WebP stickers across bows, food, hello kitty, shinchan, snoopy, and misc.
-- `e134fde` (2026-10-17 17:23): `refactor(main): remove polaroids, player card, and marquee from hero`. Removed evidence polaroids, washi tape, player card, and bottom marquee ribbon from "The Adventure" hero. Maintained centered Hello Kitty mascot with radial glow, "psst... scroll" speech bubble, mascot stickers, title card with perched bow, description card, and continue pill. Cleaned up unused CSS keyframes in `globals.css`.
 - `0bb835c` (2026-10-17 18:08): `fix(main): remove empty viewport after end card`. Resolved the ~1 full viewport of empty background below "END OF TRANSMISSION" and "RETURN TO HUB" by updating `<main>`'s bottom padding from `pb-36` (144px) to `pb-16 sm:pb-20` (64px mobile / 80px desktop), ensuring comfortable 64–96px breathing room while preserving Phase 04 active navigation dot tracking.
+- `5a84c44` (2026-10-17 18:49): `feat(main): scatter sticker pack across hero`. Scattered the newly sliced sticker pack across the full 100vh × 100vw Main World hero in an organic scrapbook aesthetic. Hand-tuned 19-sticker configuration in `heroStickers.ts` with % coordinates, rotation (-15° to +15°), and weights (heavier items kept small 56–72px). Featured Shin-chan in lower-left with a handwritten-style speech bubble ("namaste ji 🙏" in font-retro). Unified die-cut styling with white border and soft drop shadow. Staggered 40ms pop-in on load, slow idle float drift, and data-cursor="peel" hover reaction. Full reduced motion support. Verified zero overlap across desktop (1920×1080), laptop (1366×768), tablet (820×1180), and mobile (375×812). Excluded and git rm'd lipstick kiss and fingerprint heart. Passed all 611 Vitest tests and production build.
 
 ---
 
@@ -711,8 +711,8 @@ To protect painstakingly calibrated creative assets from inadvertent agent edits
 ## 7. Testing and Quality
 
 ### Test Suite Metrics
-- **Total Test Files**: 69 files passed.
-- **Total Unit & Integration Tests**: 601 tests passed.
+- **Total Test Files**: 70 files passed.
+- **Total Unit & Integration Tests**: 611 tests passed.
 - **Test Framework**: Vitest with `@testing-library/react` and `jsdom`.
 - **API Mocking**: Mock Service Worker (MSW) mocking all 29 Spotify endpoints and stubbing the Web Playback SDK player.
 
