@@ -8,7 +8,7 @@ import TheEditTvHardware from "./TheEditTvHardware";
 import PhaseHeader from "./PhaseHeader";
 import { formatTime, requestNativeFullscreen, exitNativeFullscreen } from "./fullscreenUtils";
 
-const VIDEO_SOURCES = ["/videos/real_vid.mp4", "/videos/arh_vid_final.mp4", "/Arh.mp4"];
+const VIDEO_SOURCES = ["/videos/arh_vid_final.mp4", "/Arh.mp4"];
 const POSTER_SRC = "/images/ar.jpeg";
 
 export default function TheEdit() {
