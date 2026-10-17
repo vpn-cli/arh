@@ -7,6 +7,9 @@ import confetti from "canvas-confetti";
 import PhaseHeader from "./PhaseHeader";
 import { dispatchPuzzleSolved } from "@/components/ui/cursorUtils";
 
+const EMOJI_FONT_STACK =
+  '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+
 export default function BirthdayVault() {
   const [isOpen, setIsOpen] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
@@ -97,18 +100,28 @@ export default function BirthdayVault() {
 
         <span className="text-6xl mb-4 animate-bounce-soft" aria-hidden="true">🎂</span>
 
-        <span className="font-retro text-[10px] tracking-[3px] text-[#7A4B16] font-bold uppercase mb-1">
-          VAULT UNLOCKED ✦
+        <span className="font-retro text-[10px] tracking-[3px] text-[#7A4B16] font-bold mb-1">
+          ACCESS GRANTED · reluctantly ✦
         </span>
 
-        <h2 id="vault-modal-title" className="font-pixel text-2xl sm:text-3xl font-extrabold text-[#2D1B36] tracking-wide mb-3">
-          HAPPY BIRTHDAY!
+        <h2 id="vault-modal-title" className="font-pixel text-2xl sm:text-3xl font-extrabold text-[#2D1B36] tracking-wide mb-3 text-center leading-tight">
+          WOW. YOU DID SOMETHING.
         </h2>
 
         <div className="h-[2px] w-32 bg-[#FF8FB3]/50 mx-auto mb-4" aria-hidden="true" />
 
-        <p id="vault-modal-desc" className="font-baloo text-sm sm:text-base text-[#3A2440] font-medium leading-relaxed max-w-md mb-6">
-          You actually cracked it! Happy birthday to someone who has witnessed all my questionable decisions and somehow hasn&apos;t disowned me yet. 😂💖
+        <p id="vault-modal-desc" className="font-baloo text-sm sm:text-base text-[#3A2440] font-medium leading-relaxed max-w-md">
+          first time for everything, i guess. don’t let it go to your head. there’s not much room up there anyway.
+        </p>
+
+        <p className="mt-3 mb-6 font-letter-handwritten text-xs sm:text-sm text-[#FF7597] font-semibold leading-relaxed">
+          okay, one nice thing: thanks for existing. genuinely.{" "}
+          <span
+            className="font-sans inline-block"
+            style={{ fontFamily: EMOJI_FONT_STACK }}
+          >
+            💗
+          </span>
         </p>
 
         <button
@@ -117,7 +130,7 @@ export default function BirthdayVault() {
           data-cursor="pointer"
           className="min-h-[44px] px-6 py-2.5 bg-[#FF8FB3] hover:bg-[#FF6584] text-[#2D1B36] font-retro font-bold text-xs tracking-wider rounded-xl border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-2 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer"
         >
-          RETURN TO ADVENTURE ✦
+          CONTINUE YOUR DECLINE ✦
         </button>
       </div>
     </div>
