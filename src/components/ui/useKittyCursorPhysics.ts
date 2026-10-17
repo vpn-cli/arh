@@ -188,7 +188,7 @@ export function useKittyCursorPhysics({
 
   // 3. Blinking Timer: Uses refs to prevent re-triggering cleanup and locking on blink
   useEffect(() => {
-    if (prefersReducedMotion) return;
+    if (prefersReducedMotion || CURSOR_RENDER_MODE === "native") return;
 
     let blinkTimeout: ReturnType<typeof setTimeout>;
     let closeTimeout: ReturnType<typeof setTimeout>;
@@ -386,38 +386,38 @@ export function useKittyCursorPhysics({
         }
       }
 
-      // 2. Velocity calculations for springs & glow snap
-      const dx = coords.current.x - prevCoords.current.x;
-      const dy = coords.current.y - prevCoords.current.y;
-      prevCoords.current = { x: coords.current.x, y: coords.current.y };
+      // 2. Velocity calculations, Glow Ring & Physics Springs (DOM mode only)
+      if (CURSOR_RENDER_MODE === "dom") {
+        const dx = coords.current.x - prevCoords.current.x;
+        const dy = coords.current.y - prevCoords.current.y;
+        prevCoords.current = { x: coords.current.x, y: coords.current.y };
 
-      const vx = dx / step;
-      const vy = dy / step;
-      const moveSpeed = Math.hypot(vx, vy);
+        const vx = dx / step;
+        const vy = dy / step;
+        const moveSpeed = Math.hypot(vx, vy);
 
-      // 3. Fast snappy glow follow (lerp ~0.52; snaps during fast flick so it NEVER drifts visibly behind)
-      if (!prefersReducedMotion) {
-        const glowLerpFactor = 1 - Math.pow(1 - 0.52, step);
-        if (moveSpeed > 18) {
+        // 3. Fast snappy glow follow (lerp ~0.52; snaps during fast flick so it NEVER drifts visibly behind)
+        if (!prefersReducedMotion) {
+          const glowLerpFactor = 1 - Math.pow(1 - 0.52, step);
+          if (moveSpeed > 18) {
+            glowCoords.current.x = coords.current.x;
+            glowCoords.current.y = coords.current.y;
+          } else {
+            glowCoords.current.x += (coords.current.x - glowCoords.current.x) * glowLerpFactor;
+            glowCoords.current.y += (coords.current.y - glowCoords.current.y) * glowLerpFactor;
+          }
+        } else {
           glowCoords.current.x = coords.current.x;
           glowCoords.current.y = coords.current.y;
-        } else {
-          glowCoords.current.x += (coords.current.x - glowCoords.current.x) * glowLerpFactor;
-          glowCoords.current.y += (coords.current.y - glowCoords.current.y) * glowLerpFactor;
         }
-      } else {
-        glowCoords.current.x = coords.current.x;
-        glowCoords.current.y = coords.current.y;
-      }
 
-      if (glowRef.current) {
-        glowRef.current.style.transform = `translate3d(${
-          glowCoords.current.x - KITTY_CURSOR_HOTSPOT.x
-        }px, ${glowCoords.current.y - KITTY_CURSOR_HOTSPOT.y}px, 0)`;
-      }
+        if (glowRef.current) {
+          glowRef.current.style.transform = `translate3d(${
+            glowCoords.current.x - KITTY_CURSOR_HOTSPOT.x
+          }px, ${glowCoords.current.y - KITTY_CURSOR_HOTSPOT.y}px, 0)`;
+        }
 
-      // 4. Velocity Lean & Squash/Stretch Springs (inner image wrapper only, DOM mode only)
-      if (CURSOR_RENDER_MODE === "dom") {
+        // 4. Velocity Lean & Squash/Stretch Springs (inner image wrapper only)
         let targetLean = 0;
         let targetScaleX = 1.0;
         let targetScaleY = 1.0;

@@ -102,26 +102,28 @@ export default function HelloKittyCursor() {
       {/* 1. LIGHT PARTICLES TRAIL (Direct DOM acceleration, zero React re-renders) */}
       {!prefersReducedMotion && <CursorParticles />}
 
-      {/* 2. LERP GLOW RING (Snappy ~0.52 lerp, zero transform transitions) */}
-      <div
-        ref={glowRef}
-        className="fixed top-0 left-0 pointer-events-none will-change-transform"
-        style={{ transform: "translate3d(-100px, -100px, 0)", transition: "none" }}
-      >
+      {/* 2. LERP GLOW RING (DOM mode only — omitted in native mode to eliminate lag trail behind hardware pointer) */}
+      {CURSOR_RENDER_MODE === "dom" && (
         <div
-          className={`w-9 h-9 -ml-1 -mt-1 rounded-full transition-colors duration-200 pointer-events-none ${
-            isWarping
-              ? "bg-[#FFEAA7]/40 shadow-[0_0_24px_8px_rgba(255,234,167,0.7)] scale-150 border-2 border-[#FFD98A]"
-              : isHover || isPuzzle || isPolaroid || isPeel || isMusic
-              ? "bg-[#FF8FB3]/35 shadow-[0_0_16px_4px_rgba(255,143,179,0.5)] scale-125 border border-[#FF7597]/50"
-              : isDisabled
-              ? "bg-gray-400/20 scale-90 border border-gray-400/30"
-              : isZoomOut
-              ? "bg-[#B9D7C0]/35 scale-95 border border-[#B9D7C0]/50"
-              : "bg-[#FFD0DC]/25 scale-100"
-          } ${!prefersReducedMotion && (isHover || isPuzzle || isMusic) ? "animate-kitty-glow" : ""}`}
-        />
-      </div>
+          ref={glowRef}
+          className="fixed top-0 left-0 pointer-events-none will-change-transform"
+          style={{ transform: "translate3d(-100px, -100px, 0)", transition: "none" }}
+        >
+          <div
+            className={`w-9 h-9 -ml-1 -mt-1 rounded-full transition-colors duration-200 pointer-events-none ${
+              isWarping
+                ? "bg-[#FFEAA7]/40 shadow-[0_0_24px_8px_rgba(255,234,167,0.7)] scale-150 border-2 border-[#FFD98A]"
+                : isHover || isPuzzle || isPolaroid || isPeel || isMusic
+                ? "bg-[#FF8FB3]/35 shadow-[0_0_16px_4px_rgba(255,143,179,0.5)] scale-125 border border-[#FF7597]/50"
+                : isDisabled
+                ? "bg-gray-400/20 scale-90 border border-gray-400/30"
+                : isZoomOut
+                ? "bg-[#B9D7C0]/35 scale-95 border border-[#B9D7C0]/50"
+                : "bg-[#FFD0DC]/25 scale-100"
+            } ${!prefersReducedMotion && (isHover || isPuzzle || isMusic) ? "animate-kitty-glow" : ""}`}
+          />
+        </div>
+      )}
 
       {/* 3. ZERO-LATENCY HELLO KITTY HEAD & EFFECTS */}
       <div

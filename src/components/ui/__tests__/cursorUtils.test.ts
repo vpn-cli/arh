@@ -298,41 +298,41 @@ describe("cursorUtils", () => {
       expect(CURSOR_RENDER_MODE).toBe("native");
     });
 
-    it("maps state events to the exact data-kitty expression", () => {
-      // 1. Press -> squeeze
+    it("maps state events to the exact data-kitty expression (interactive swaps only)", () => {
+      // 1. Press -> squeeze (interaction)
       const pressedExpr = resolveKittyExpression({ mode: "default", isPressed: true });
       expect(toNativeKittyExpression(pressedExpr)).toBe("squeeze");
 
-      // 2. Release click pop -> happy
+      // 2. Release click pop -> happy (interaction)
       const releaseExpr = resolveKittyExpression({ mode: "default", isPressed: false, isClickPopping: true });
       expect(toNativeKittyExpression(releaseExpr)).toBe("happy");
 
-      // 3. Idle sleep -> sleepy
+      // 3. Idle sleep -> default in native cursor (DOM 'z z z' badge is the cue; no stationary repaint)
       const idleExpr = resolveKittyExpression({ mode: "default", isPressed: false, isIdleSleep: true });
-      expect(toNativeKittyExpression(idleExpr)).toBe("sleepy");
+      expect(idleExpr).toBe("sleepy");
+      expect(toNativeKittyExpression(idleExpr)).toBe("default");
 
-      // 4. Warp transition -> dizzy
+      // 4. Warp transition -> dizzy (interaction)
       const warpExpr = resolveKittyExpression({ mode: "default", isPressed: false, isWarping: true });
       expect(toNativeKittyExpression(warpExpr)).toBe("dizzy");
 
-      // 5. Disabled / locked hover -> locked
+      // 5. Disabled / locked hover -> locked (interaction)
       const disabledExpr = resolveKittyExpression({ mode: "disabled", isPressed: false });
       expect(toNativeKittyExpression(disabledExpr)).toBe("locked");
 
-      // 6. Blink -> blink
+      // 6. Blink -> default in native cursor (stationary frame not swapped in native cursor)
       const blinkExpr = resolveKittyExpression({ mode: "default", isPressed: false, isBlinking: true });
-      expect(toNativeKittyExpression(blinkExpr)).toBe("blink");
+      expect(blinkExpr).toBe("blink");
+      expect(toNativeKittyExpression(blinkExpr)).toBe("default");
     });
 
-    it("only supports the 7 native expressions", () => {
+    it("only supports interactive native expressions", () => {
       expect(NATIVE_KITTY_EXPRESSIONS).toEqual([
         "default",
-        "blink",
         "squeeze",
         "happy",
-        "sleepy",
-        "dizzy",
         "locked",
+        "dizzy",
       ]);
     });
 

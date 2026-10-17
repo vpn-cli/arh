@@ -171,31 +171,32 @@ export const CORE_KITTY_EXPRESSIONS = [
 export type CoreKittyExpression = (typeof CORE_KITTY_EXPRESSIONS)[number];
 
 /**
- * 7 Native CSS cursor expressions available at 32px (1x) and 64px (2x).
+ * Interactive native CSS cursor expressions.
+ * Stationary frames (blink, sleepy) are excluded in native mode because Windows/Chromium
+ * does not repaint the OS custom cursor while the pointer remains still.
+ * The floating 'z z z' DOM effect provides the sleepy cue instead.
  */
 export const NATIVE_KITTY_EXPRESSIONS = [
   "default",
-  "blink",
   "squeeze",
   "happy",
-  "sleepy",
-  "dizzy",
   "locked",
+  "dizzy",
 ] as const;
 
 export type NativeKittyExpression = (typeof NATIVE_KITTY_EXPRESSIONS)[number];
 
 /**
- * Maps semantic expressions to one of the 7 native CSS cursor expressions.
+ * Maps semantic expressions to one of the interactive native CSS cursor expressions.
+ * Only swaps on interaction (squeeze, happy, locked, dizzy).
+ * Stationary states (blink, sleepy) resolve to 'default'.
  */
 export function toNativeKittyExpression(expr: KittyExpression): NativeKittyExpression {
   if (
-    expr === "blink" ||
     expr === "squeeze" ||
     expr === "happy" ||
-    expr === "sleepy" ||
-    expr === "dizzy" ||
-    expr === "locked"
+    expr === "locked" ||
+    expr === "dizzy"
   ) {
     return expr;
   }
