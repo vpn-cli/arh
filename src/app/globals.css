@@ -2274,4 +2274,69 @@ body[data-cinema-fullscreen="true"] [data-cinema-hide-on-fs] {
   pointer-events: none !important;
 }
 
+/* ═══════════════════════════════════════════════════════
+   MAIN WORLD HERO ("The Adventure") STYLES
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes hero-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes hero-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes hero-sticker-wiggle {
+  0%, 100% {
+    transform: rotate(var(--sticker-rot, 0deg));
+  }
+  50% {
+    transform: rotate(calc(var(--sticker-rot, 0deg) + 6deg));
+  }
+}
+
+.adventure-title-sticker {
+  color: #2D1B36;
+  -webkit-text-stroke: 3.5px #FFFFFF;
+  paint-order: stroke fill;
+  filter: drop-shadow(4px 4px 0 #3A2440);
+}
+
+.hero-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: hero-marquee 24s linear infinite;
+}
+
+.hero-float-anim {
+  animation: hero-float 4s ease-in-out infinite;
+}
+
+.hero-sticker-wiggle {
+  animation: hero-sticker-wiggle 3s ease-in-out infinite;
+}
+
+.font-letter-handwritten {
+  font-family: var(--font-handwriting, 'Caveat', cursive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-marquee-track,
+  .hero-float-anim,
+  .hero-sticker-wiggle {
+    animation: none !important;
+  }
+}
+
+
 

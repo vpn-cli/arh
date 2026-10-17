@@ -434,7 +434,7 @@ A chronological record of project development across all 217 commits:
 - `fedecea` (2026-10-17 16:18): docs: update project log.
 - `2a5ee06` (2026-10-17 16:30): feat(letter): update postage stamps to Okayama with enhanced visual hierarchy.
 - `d413fe1` (2026-10-17 16:31): feat(letter): add strawberry cake and clipped out Batman stickers to letter stationery.
-
+- `feat(main)` (2026-10-17 16:50): cuter hero layout — polaroids, player card, marquee. Redesigned Main World hero ("The Adventure") into an exactly 100vh / 100svh 3-column kawaii scrapbook composition (left polaroids with washi tape, center Hello Kitty mascot with radial glow, peeking hamster, stickers, speech bubble, sticker-style title with bow atop "A", description card, and pixel "▶ CONTINUE" pill; right Player Card sticker in GameBoy style with Okayama quest and overlapping polaroid; bottom full-width pink washi marquee ribbon). Responsive with side columns hidden on mobile, full reduced motion support, zero-error lint, passed all 601 tests, and built cleanly.
 
 ---
 

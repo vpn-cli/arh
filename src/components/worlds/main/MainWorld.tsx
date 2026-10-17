@@ -14,19 +14,16 @@ import TheLetter from "./TheLetter";
 import ScrollRibbon from "./ScrollRibbon";
 import PhaseTracker from "./PhaseTracker";
 import PhaseSection from "./PhaseSection";
+import TheAdventureHero from "./TheAdventureHero";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function MainWorld() {
-  const { goHome, mainWorldScrollY, setMainWorldScrollY } = useGameState();
-  const heroRef = useRef<HTMLDivElement>(null);
-  const catRef = useRef<HTMLButtonElement>(null);
+  const { goHome, setMainWorldScrollY } = useGameState();
   const containerRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const [isUnlocked, setIsUnlocked] = React.useState(false);
-  const [avatarBooped, setAvatarBooped] = React.useState(false);
-  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     // Always reboot terminal fresh whenever user lands on the page
@@ -63,35 +60,6 @@ export default function MainWorld() {
       setMainWorldScrollY(window.scrollY);
     };
   }, [setMainWorldScrollY]);
-
-  // Entrance animations for hero respecting reduced motion
-  useEffect(() => {
-    if (!heroRef.current) return;
-
-    if (prefersReducedMotion) {
-      gsap.set(heroRef.current.children, { opacity: 1, y: 0 });
-      return;
-    }
-
-    // Smooth entrance transition for the guide cat mascot
-    if (catRef.current) {
-      gsap.fromTo(
-        catRef.current,
-        { opacity: 0, scale: 0.85, y: -16 },
-        { opacity: 1, scale: 1, y: 0, duration: 0.75, ease: "back.out(1.4)" }
-      );
-    }
-
-    const otherChildren = Array.from(heroRef.current.children).filter(
-      (el) => el !== catRef.current
-    );
-
-    gsap.fromTo(
-      otherChildren,
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, delay: 0.15, ease: "power2.out" }
-    );
-  }, [prefersReducedMotion]);
 
   return (
     <div
@@ -195,7 +163,7 @@ export default function MainWorld() {
       {/* ═══ CONTENT FLOW ═══ */}
       <main
         ref={mainRef}
-        className="relative z-10 w-full flex flex-col items-center pt-24 sm:pt-32 pb-36"
+        className="relative z-10 w-full flex flex-col items-center pb-36"
       >
         {/* Ribbon Thread Connecting Phases (Hidden on Mobile < 768px) */}
         <ScrollRibbon
@@ -206,78 +174,7 @@ export default function MainWorld() {
         />
 
         {/* 1. HERO SECTION */}
-        <div
-          ref={heroRef}
-          className="w-full max-w-2xl min-h-[70vh] px-4 flex flex-col items-center justify-center text-center mb-4 sm:mb-8 relative z-10 snap-start scroll-mt-28 sm:scroll-mt-32"
-        >
-          {/* Guide Avatar — Enlarge sticker, frame-free with cute interactive boop */}
-          <button
-            ref={catRef}
-            id="guide-cat-avatar"
-            type="button"
-            onClick={() => {
-              sfx.pop();
-              setAvatarBooped(true);
-              setTimeout(() => setAvatarBooped(false), 600);
-            }}
-            onMouseEnter={() => sfx.hover()}
-            className={`relative w-36 h-36 sm:w-48 sm:h-48 md:w-56 md:h-56 mb-4 select-none cursor-pointer transition-transform duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-4 rounded-3xl group ${
-              avatarBooped
-                ? "scale-110 -rotate-6"
-                : "hover:scale-105 hover:rotate-2 motion-safe:animate-float"
-            }`}
-            aria-label="Boop Hello Kitty guide avatar"
-            title="Click to boop!"
-          >
-            <Image
-              src="/images/portals/hk-main.webp"
-              alt="Guide"
-              width={224}
-              height={224}
-              className="w-full h-full object-contain filter drop-shadow-[0_12px_28px_rgba(58,36,64,0.18)] drop-shadow-[0_4px_12px_rgba(255,143,179,0.35)] select-none pointer-events-none transition-transform duration-300"
-              priority
-            />
-            {/* Cute mini speech tag floating above on hover or click */}
-            <div
-              aria-hidden="true"
-              className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-1 bg-[#FFFDF8] border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440] rounded-full text-[10px] sm:text-xs font-retro text-[#3A2440] font-bold tracking-wider pointer-events-none transition-all duration-300 ${
-                avatarBooped
-                  ? "scale-125 -top-6 opacity-100"
-                  : "opacity-0 group-hover:opacity-100 -top-2"
-              }`}
-            >
-              {avatarBooped ? "BOOP! 🌸" : "heyy! ✨"}
-            </div>
-          </button>
-
-          {/* Title */}
-          <h1 className="font-pixel text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#2D1B36] tracking-wider mb-3 leading-tight drop-shadow-[0_2px_0_rgba(255,143,179,0.3)]">
-            THE ADVENTURE
-          </h1>
-
-          {/* Subtitle Card */}
-          <div className="relative max-w-lg bg-[#FFFDF8] px-5 py-3.5 sm:px-6 sm:py-4 rounded-2xl border-2 border-[#3A2440] shadow-[4px_4px_0_#3A2440] mb-6">
-            <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-24 h-5 bg-[#FFB6C1]/80 border border-black/10 rounded-xs rotate-1 pointer-events-none" />
-            <p className="font-baloo text-sm sm:text-base text-[#3A2440] font-semibold leading-relaxed">
-              welcome to the main storyline. scroll down to relive our questionable decisions, crack unhinged puzzles, and pretend you&apos;re surprised.
-            </p>
-          </div>
-
-          {/* Down Indicator with Smooth Scroll Navigation */}
-          <button
-            id="hero-down-indicator"
-            type="button"
-            onClick={() =>
-              document
-                .getElementById("phase-01-terminal")
-                ?.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth" })
-            }
-            aria-label="Scroll down to storyline phases"
-            className="min-h-[44px] min-w-[44px] p-2 rounded-full motion-safe:animate-bounce opacity-80 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-2 transition-all cursor-pointer flex items-center justify-center"
-          >
-            <span aria-hidden="true" className="text-[#FF8FB3] text-xl font-pixel">▼</span>
-          </button>
-        </div>
+        <TheAdventureHero />
 
         {/* 2. THE STORY PHASES */}
         <div id="kitty-terminal" className="w-full relative flex flex-col items-center z-10">
