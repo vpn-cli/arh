@@ -35,7 +35,7 @@ export const PlaybackControls = memo(function PlaybackControls({
       <button
         onClick={toggleShuffle}
         data-cursor="music"
-        className={`relative w-8 h-8 min-w-[32px] min-h-[32px] rounded-full flex items-center justify-center transition-transform duration-150 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100 ${
+        className={`kitty-music-control relative w-8 h-8 min-w-[32px] min-h-[32px] rounded-full flex items-center justify-center transition-transform duration-150 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100 ${
           isShuffle
             ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs'
             : 'bg-transparent text-[var(--color-dark)] hover:bg-[var(--color-dark)]/5'
@@ -59,7 +59,7 @@ export const PlaybackControls = memo(function PlaybackControls({
       <button
         onClick={prevTrack}
         data-cursor="music"
-        className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center bg-transparent text-[var(--color-dark)] hover:bg-[var(--color-dark)]/5 transition-transform duration-150 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
+        className="kitty-music-control w-10 h-10 min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center bg-transparent text-[var(--color-dark)] hover:bg-[var(--color-dark)]/5 transition-transform duration-150 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
         disabled={!isReady && !token}
         aria-label="Previous track"
         title="Previous"
@@ -74,7 +74,7 @@ export const PlaybackControls = memo(function PlaybackControls({
       <button
         onClick={togglePlay}
         data-cursor="music"
-        className={`w-14 h-14 min-w-[56px] min-h-[56px] rounded-full flex items-center justify-center text-[var(--on-vibrant)] transition-transform duration-150 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100 ${
+        className={`kitty-music-control ${!isPaused && !isFree && !isLoading ? 'kitty-play-pulse' : ''} w-14 h-14 min-w-[56px] min-h-[56px] rounded-full flex items-center justify-center text-[var(--on-vibrant)] transition-transform duration-150 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100 ${
           isFree
             ? 'bg-[#1DB954] ring-4 ring-[#1DB954]/25 shadow-[0_4px_14px_rgba(29,185,84,0.4)]'
             : 'bg-[var(--color-vibrant)] ring-4 ring-[var(--color-vibrant)]/25 shadow-[0_4px_14px_var(--color-vibrant)]'
@@ -121,7 +121,7 @@ export const PlaybackControls = memo(function PlaybackControls({
       <button
         onClick={nextTrack}
         data-cursor="music"
-        className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center bg-transparent text-[var(--color-dark)] hover:bg-[var(--color-dark)]/5 transition-transform duration-150 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
+        className="kitty-music-control w-10 h-10 min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center bg-transparent text-[var(--color-dark)] hover:bg-[var(--color-dark)]/5 transition-transform duration-150 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
         disabled={!isReady && !token}
         aria-label="Next track"
         title="Next"
@@ -136,7 +136,7 @@ export const PlaybackControls = memo(function PlaybackControls({
       <button
         onClick={toggleRepeat}
         data-cursor="music"
-        className={`relative w-8 h-8 min-w-[32px] min-h-[32px] rounded-full flex items-center justify-center transition-transform duration-150 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100 ${
+        className={`kitty-music-control relative w-8 h-8 min-w-[32px] min-h-[32px] rounded-full flex items-center justify-center transition-transform duration-150 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-vibrant)] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100 ${
           repeatMode !== 'off'
             ? 'bg-[var(--color-vibrant)] text-[var(--on-vibrant)] shadow-xs'
             : 'bg-transparent text-[var(--color-dark)] hover:bg-[var(--color-dark)]/5'

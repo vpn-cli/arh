@@ -55,8 +55,68 @@ const LOCK_BADGE_SVG = `
   <polygon points="158.8,112.5 161.2,112.5 160.8,117.5 159.2,117.5" fill="#20233F" />
 `;
 
+const PUZZLE_BADGE_SVG = `
+  <defs>
+    <filter id="puzzle-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1" flood-color="#20233F" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <g filter="url(#puzzle-shadow)">
+    <circle cx="160" cy="107" r="23" fill="#FFEAA7" stroke="#20233F" stroke-width="3.5" />
+    <text x="160" y="117" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif" font-weight="900" font-size="28" fill="#20233F" text-anchor="middle">!</text>
+  </g>
+`;
+
+const MUSIC_BADGE_SVG = `
+  <defs>
+    <filter id="music-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1" flood-color="#20233F" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <g filter="url(#music-shadow)">
+    <circle cx="160" cy="107" r="23" fill="#FF8FB3" stroke="#20233F" stroke-width="3.5" />
+    <!-- Musical Eighth Note ♪ -->
+    <path d="M 163 94 V 110.5 A 4.5 4.5 0 1 1 158.5 106 A 4.5 4.5 0 0 1 163 110.5 V 98 L 171 95 V 103" fill="none" stroke="#20233F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="156" cy="112" r="4.5" fill="#20233F"/>
+  </g>
+`;
+
+const POLAROID_BADGE_SVG = `
+  <defs>
+    <filter id="polaroid-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1" flood-color="#20233F" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <g filter="url(#polaroid-shadow)">
+    <circle cx="160" cy="107" r="23" fill="#FFF9E6" stroke="#20233F" stroke-width="3.5" />
+    <!-- 4-point camera flash sparkle -->
+    <path d="M 160 92 L 163.5 103.5 L 175 107 L 163.5 110.5 L 160 122 L 156.5 110.5 L 145 107 L 156.5 103.5 Z" fill="#FF7597" stroke="#20233F" stroke-width="1.8" />
+    <circle cx="160" cy="107" r="2.5" fill="#FFEAA7" />
+  </g>
+`;
+
+const HOVER_OVERLAY_SVG = `
+  <!-- Rosy Cheek Blush -->
+  <ellipse cx="50" cy="98" rx="14" ry="9" fill="#FF7597" opacity="0.65" />
+  <ellipse cx="142" cy="98" rx="14" ry="9" fill="#FF7597" opacity="0.65" />
+  <!-- Cute Ear Sparkle -->
+  <path d="M 166 18 L 169 26 L 177 29 L 169 32 L 166 40 L 163 32 L 155 29 L 163 26 Z" fill="#FFEAA7" stroke="#20233F" stroke-width="1.5" />
+`;
+
+const PEEL_OVERLAY_SVG = `
+  <!-- Rosy Cheek Blush -->
+  <ellipse cx="50" cy="98" rx="12" ry="8" fill="#FF7597" opacity="0.5" />
+  <ellipse cx="142" cy="98" rx="12" ry="8" fill="#FF7597" opacity="0.5" />
+  <!-- Mischievous Little Smirk -->
+  <path d="M 94 104 Q 99 108 106 103" fill="none" stroke="#20233F" stroke-width="2.2" stroke-linecap="round" />
+`;
+
 const EXPRESSIONS = {
   default: { eyes: "", overlay: "" },
+  hover: {
+    eyes: "",
+    overlay: HOVER_OVERLAY_SVG,
+  },
   blink: {
     eyes: `
       ${whiteEyelidPatch}
@@ -97,13 +157,29 @@ const EXPRESSIONS = {
     `,
     overlay: "",
   },
+  puzzle: {
+    eyes: "",
+    overlay: PUZZLE_BADGE_SVG,
+  },
+  music: {
+    eyes: `
+      ${whiteEyelidPatch}
+      <path d="M 22.5 46.5 Q 27.2 40.0 32.0 46.5" fill="none" stroke="#20233F" stroke-width="2.8" stroke-linecap="round" />
+      <path d="M 63.5 46.7 Q 68.4 40.2 73.5 46.7" fill="none" stroke="#20233F" stroke-width="2.8" stroke-linecap="round" />
+    `,
+    overlay: MUSIC_BADGE_SVG,
+  },
+  polaroid: {
+    eyes: "",
+    overlay: POLAROID_BADGE_SVG,
+  },
   peel: {
     eyes: `
       ${whiteEyelidPatch}
       <ellipse cx="29.2" cy="43.8" rx="3.0" ry="4.2" fill="#20233F" />
       <ellipse cx="70.4" cy="44.0" rx="3.0" ry="4.2" fill="#20233F" />
     `,
-    overlay: "",
+    overlay: PEEL_OVERLAY_SVG,
   },
   locked: {
     eyes: "",

@@ -9,7 +9,7 @@ export default function TheLetterPolaroids() {
       {/* Polaroid 1: Hamster Smirk Photo (Tilted Left) */}
       <div
         data-cursor="polaroid"
-        className="group relative w-24 sm:w-28 bg-white p-2 pb-4 border-2 border-[#FFCCD8] shadow-[0_6px_16px_rgba(255,140,175,0.22),0_2px_4px_rgba(136,19,55,0.06)] -rotate-6 hover:rotate-0 hover:-translate-y-2 hover:scale-105 hover:shadow-[0_12px_24px_rgba(255,140,175,0.35)] transition-all duration-300 ease-out rounded-2xl cursor-pointer"
+        className="kitty-polaroid-lift group relative w-24 sm:w-28 bg-white p-2 pb-4 border-2 border-[#FFCCD8] shadow-[0_6px_16px_rgba(255,140,175,0.22),0_2px_4px_rgba(136,19,55,0.06)] -rotate-6 hover:rotate-0 hover:-translate-y-2 hover:scale-105 hover:shadow-[0_12px_24px_rgba(255,140,175,0.35)] transition-all duration-300 ease-out rounded-2xl cursor-pointer"
       >
         {/* Mint washi tape tab */}
         <div
@@ -34,7 +34,7 @@ export default function TheLetterPolaroids() {
       {/* Polaroid 2: Devious Hamster Doodle (Tilted Right, with Satin Bow & Cherries) */}
       <div
         data-cursor="polaroid"
-        className="group relative w-28 sm:w-32 bg-white p-2 pb-4 border-2 border-[#FFCCD8] shadow-[0_8px_20px_rgba(255,140,175,0.25),0_2px_4px_rgba(136,19,55,0.06)] rotate-4 hover:rotate-0 hover:-translate-y-2 hover:scale-105 hover:shadow-[0_14px_28px_rgba(255,140,175,0.38)] transition-all duration-300 ease-out rounded-2xl cursor-pointer"
+        className="kitty-polaroid-lift group relative w-28 sm:w-32 bg-white p-2 pb-4 border-2 border-[#FFCCD8] shadow-[0_8px_20px_rgba(255,140,175,0.25),0_2px_4px_rgba(136,19,55,0.06)] rotate-4 hover:rotate-0 hover:-translate-y-2 hover:scale-105 hover:shadow-[0_14px_28px_rgba(255,140,175,0.38)] transition-all duration-300 ease-out rounded-2xl cursor-pointer"
       >
         {/* Butter yellow washi tape tab */}
         <div
@@ -56,7 +56,7 @@ export default function TheLetterPolaroids() {
         </p>
 
         {/* Satin bow accent */}
-        <div className="absolute -top-3.5 -right-3.5 w-8 h-8 pointer-events-none" aria-hidden="true">
+        <div className="kitty-sticker-wiggle absolute -top-3.5 -right-3.5 w-8 h-8 pointer-events-auto cursor-pointer" aria-hidden="true">
           <Image
             src="/images/elements/bow_satin.webp"
             alt="Satin bow"
@@ -67,7 +67,7 @@ export default function TheLetterPolaroids() {
         </div>
 
         {/* Cherries sticker accent */}
-        <div className="absolute -bottom-2.5 -left-2.5 w-7 h-7 pointer-events-none" aria-hidden="true">
+        <div className="kitty-sticker-wiggle absolute -bottom-2.5 -left-2.5 w-7 h-7 pointer-events-auto cursor-pointer" aria-hidden="true">
           <Image
             src="/images/elements/cherries.webp"
             alt="Sweet cherries"

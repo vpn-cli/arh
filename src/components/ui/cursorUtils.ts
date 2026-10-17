@@ -175,6 +175,9 @@ export type CoreKittyExpression = (typeof CORE_KITTY_EXPRESSIONS)[number];
  * Stationary frames (blink, sleepy) are excluded in native mode because Windows/Chromium
  * does not repaint the OS custom cursor while the pointer remains still.
  * The floating 'z z z' DOM effect provides the sleepy cue instead.
+ * 
+ * Hover-triggered expressions (hover, puzzle, music, polaroid, peel) work reliably
+ * because hover transitions occur while the pointer is moving.
  */
 export const NATIVE_KITTY_EXPRESSIONS = [
   "default",
@@ -182,24 +185,66 @@ export const NATIVE_KITTY_EXPRESSIONS = [
   "happy",
   "locked",
   "dizzy",
+  "hover",
+  "puzzle",
+  "music",
+  "polaroid",
+  "peel",
 ] as const;
 
 export type NativeKittyExpression = (typeof NATIVE_KITTY_EXPRESSIONS)[number];
 
 /**
- * Maps semantic expressions to one of the interactive native CSS cursor expressions.
- * Only swaps on interaction (squeeze, happy, locked, dizzy).
- * Stationary states (blink, sleepy) resolve to 'default'.
+ * Maps semantic expressions and cursor modes to one of the interactive native CSS cursor expressions.
+ * Priority Order:
+ * 1. Disabled / Locked elements (ALWAYS wins, even with press)
+ * 2. Press action (squeeze)
+ * 3. Release pop / puzzle solve (happy)
+ * 4. Loading / warp spin (dizzy)
+ * 5. Page / element flavor hover modes (puzzle, music, polaroid, peel, hover)
+ * 6. Default
  */
-export function toNativeKittyExpression(expr: KittyExpression): NativeKittyExpression {
-  if (
-    expr === "squeeze" ||
-    expr === "happy" ||
-    expr === "locked" ||
-    expr === "dizzy"
-  ) {
-    return expr;
+export function toNativeKittyExpression(
+  expr: KittyExpression,
+  mode?: CursorMode
+): NativeKittyExpression {
+  // 1. Locked / disabled ALWAYS wins
+  if (mode === "disabled" || expr === "locked") {
+    return "locked";
   }
+
+  // 2. Mousedown press squish
+  if (expr === "squeeze") {
+    return "squeeze";
+  }
+
+  // 3. Click pop / puzzle solve happy
+  if (expr === "happy") {
+    return "happy";
+  }
+
+  // 4. Warp / loading spin
+  if (expr === "dizzy" || mode === "loading") {
+    return "dizzy";
+  }
+
+  // 5. Target-specific hover flavor expressions
+  if (mode === "puzzle") {
+    return "puzzle";
+  }
+  if (mode === "music") {
+    return "music";
+  }
+  if (mode === "polaroid") {
+    return "polaroid";
+  }
+  if (mode === "peel" || expr === "peel") {
+    return "peel";
+  }
+  if (mode === "hover") {
+    return "hover";
+  }
+
   return "default";
 }
 

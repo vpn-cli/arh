@@ -167,6 +167,51 @@ html.custom-cursor-active * {
     ) 5 1, auto !important;
   }
 
+  html[data-kitty="hover"],
+  html[data-kitty="hover"] * {
+    cursor: url('/hampter/cursor/kitty_hover_32.png') 5 1, auto !important;
+    cursor: image-set(
+      url('/hampter/cursor/kitty_hover_32.png') 1x,
+      url('/hampter/cursor/kitty_hover_64.png') 2x
+    ) 5 1, auto !important;
+  }
+
+  html[data-kitty="puzzle"],
+  html[data-kitty="puzzle"] * {
+    cursor: url('/hampter/cursor/kitty_puzzle_32.png') 5 1, auto !important;
+    cursor: image-set(
+      url('/hampter/cursor/kitty_puzzle_32.png') 1x,
+      url('/hampter/cursor/kitty_puzzle_64.png') 2x
+    ) 5 1, auto !important;
+  }
+
+  html[data-kitty="music"],
+  html[data-kitty="music"] * {
+    cursor: url('/hampter/cursor/kitty_music_32.png') 5 1, auto !important;
+    cursor: image-set(
+      url('/hampter/cursor/kitty_music_32.png') 1x,
+      url('/hampter/cursor/kitty_music_64.png') 2x
+    ) 5 1, auto !important;
+  }
+
+  html[data-kitty="polaroid"],
+  html[data-kitty="polaroid"] * {
+    cursor: url('/hampter/cursor/kitty_polaroid_32.png') 5 1, auto !important;
+    cursor: image-set(
+      url('/hampter/cursor/kitty_polaroid_32.png') 1x,
+      url('/hampter/cursor/kitty_polaroid_64.png') 2x
+    ) 5 1, auto !important;
+  }
+
+  html[data-kitty="peel"],
+  html[data-kitty="peel"] * {
+    cursor: url('/hampter/cursor/kitty_peel_32.png') 5 1, auto !important;
+    cursor: image-set(
+      url('/hampter/cursor/kitty_peel_32.png') 1x,
+      url('/hampter/cursor/kitty_peel_64.png') 2x
+    ) 5 1, auto !important;
+  }
+
   /* Normal native I-beam caret for text inputs and textareas (excluding disabled ones) */
   html[data-kitty] input:not([type='button']):not([type='submit']):not([type='reset']):not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):not([type='color']):not([disabled]):not(:disabled):not([aria-disabled='true']):not([data-disabled='true']),
   html[data-kitty] textarea:not([disabled]):not(:disabled):not([aria-disabled='true']):not([data-disabled='true']),
@@ -174,6 +219,145 @@ html.custom-cursor-active * {
   html[data-kitty] [role='textbox']:not([aria-disabled='true']),
   html[data-kitty] [data-cursor='text']:not([aria-disabled='true']) {
     cursor: text !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   ELEMENT-SIDE MICRO-INTERACTIONS (Target-Anchored)
+   ═══════════════════════════════════════════════════════ */
+
+/* 1. Buttons & Pills: Hop on hover, squish on press, spring bounce back */
+.kitty-interactive-btn,
+.kitty-pill-bounce {
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  will-change: transform;
+}
+.kitty-interactive-btn:hover,
+.kitty-pill-bounce:hover {
+  transform: translateY(-2.5px) scale(1.02);
+}
+.kitty-interactive-btn:active,
+.kitty-pill-bounce:active {
+  transform: translateY(1px) scale(0.96);
+  transition-duration: 0.08s !important;
+}
+
+/* 2. Phase Nav Dots: Pop on hover, ring pulse when active */
+.kitty-nav-dot {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  will-change: transform;
+}
+.kitty-nav-dot:hover {
+  transform: scale(1.25);
+}
+.kitty-nav-dot-active {
+  animation: kitty-dot-pulse 2.2s ease-in-out infinite;
+}
+@keyframes kitty-dot-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 143, 179, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 143, 179, 0);
+  }
+}
+
+/* 3. Stickers (Snoopy, Hello Kitty, page stickers): Playful subtle wiggle on hover */
+.kitty-sticker-wiggle,
+[data-kitty-wiggle="true"] {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  will-change: transform;
+}
+.kitty-sticker-wiggle:hover,
+[data-kitty-wiggle="true"]:hover {
+  animation: kitty-wiggle 0.45s ease-in-out;
+}
+@keyframes kitty-wiggle {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-5deg) scale(1.06);
+  }
+  75% {
+    transform: rotate(4deg) scale(1.06);
+  }
+}
+
+/* 4. Polaroids & Memory Cards: Lift and straighten on hover */
+.kitty-polaroid-lift,
+[data-kitty-lift="true"] {
+  transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.28s ease-out !important;
+  will-change: transform;
+}
+.kitty-polaroid-lift:hover,
+[data-kitty-lift="true"]:hover {
+  transform: translateY(-5px) rotate(0deg) scale(1.03) !important;
+}
+
+/* 5. Letter Envelope & Wax Seal: Gentle wobble on hover */
+.kitty-envelope-wobble,
+[data-kitty-wobble="true"] {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: transform;
+}
+.kitty-envelope-wobble:hover,
+[data-kitty-wobble="true"]:hover {
+  animation: kitty-wobble-shake 0.5s ease-in-out;
+}
+@keyframes kitty-wobble-shake {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-2deg) scale(1.015);
+  }
+  40% {
+    transform: rotate(2deg) scale(1.015);
+  }
+  60% {
+    transform: rotate(-1deg) scale(1.01);
+  }
+  80% {
+    transform: rotate(1deg) scale(1.005);
+  }
+}
+
+/* 6. Music Controls: Bounce on press, play button pulses gently while playing */
+.kitty-music-control:active {
+  transform: scale(0.92) !important;
+  transition-duration: 0.08s !important;
+}
+.kitty-play-pulse {
+  animation: kitty-play-breathe 2.4s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes kitty-play-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Reduced Motion Override: Disable element hops, wiggles, pulses */
+@media (prefers-reduced-motion: reduce) {
+  .kitty-interactive-btn,
+  .kitty-pill-bounce,
+  .kitty-nav-dot,
+  .kitty-nav-dot-active,
+  .kitty-sticker-wiggle,
+  .kitty-polaroid-lift,
+  .kitty-envelope-wobble,
+  .kitty-music-control,
+  .kitty-play-pulse,
+  [data-kitty-wiggle="true"],
+  [data-kitty-lift="true"],
+  [data-kitty-wobble="true"] {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
   }
 }
 

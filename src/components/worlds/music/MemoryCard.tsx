@@ -242,7 +242,7 @@ export function MemoryCard({
 
       {/* Song as a mini polaroid with tilt and thicker bottom border */}
       <div
-        className="mt-3 relative z-10 transition-transform duration-180"
+        className="mt-3 relative z-10 transition-transform duration-180 kitty-polaroid-lift"
         style={{ transform: `rotate(${decor.polaroidTilt}deg)` }}
       >
         {isFailed ? (

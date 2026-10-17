@@ -144,10 +144,10 @@ export default function HelloKittyCursor() {
               isText={false}
               isDisabled={false}
               isLoading={isLoading}
-              isPuzzle={isPuzzle}
-              isPolaroid={isPolaroid}
+              isPuzzle={false}
+              isPolaroid={false}
               isZoomOut={isZoomOut}
-              isHover={isHover}
+              isHover={false}
               isIdleSleep={isIdleSleep}
               prefersReducedMotion={prefersReducedMotion}
             />

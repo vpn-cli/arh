@@ -127,7 +127,7 @@ export function useKittyCursorPhysics({
         document.documentElement.removeAttribute("data-kitty");
         return;
       }
-      const nativeExpr = toNativeKittyExpression(activeExpression);
+      const nativeExpr = toNativeKittyExpression(activeExpression, activeMode);
       if (document.documentElement.getAttribute("data-kitty") !== nativeExpr) {
         document.documentElement.setAttribute("data-kitty", nativeExpr);
       }
@@ -144,19 +144,22 @@ export function useKittyCursorPhysics({
 
   // 2. Clean up timers and puzzle-solve event listener
   useEffect(() => {
-    const handlePuzzleSolved = () => {
+    const handlePuzzleSolved = (e: Event) => {
       setIsPuzzleSolved(true);
       if (puzzleSolvedTimer.current) clearTimeout(puzzleSolvedTimer.current);
       puzzleSolvedTimer.current = setTimeout(() => {
         setIsPuzzleSolved(false);
       }, 2500);
 
-      // Burst ~12 confetti particles from cursor position directly to DOM (0 React re-renders)
+      // Burst ~14 confetti particles from cursor or solve position directly to DOM (0 React re-renders)
       if (!prefersReducedMotion) {
-        for (let i = 0; i < 12; i++) {
+        const customEvt = e as CustomEvent<{ x?: number; y?: number }> | undefined;
+        const originX = customEvt?.detail?.x ?? coords.current.x;
+        const originY = customEvt?.detail?.y ?? coords.current.y;
+        for (let i = 0; i < 14; i++) {
           spawnCursorParticle({
-            x: coords.current.x + (Math.random() - 0.5) * 80,
-            y: coords.current.y + (Math.random() - 0.5) * 80,
+            x: originX + (Math.random() - 0.5) * 80,
+            y: originY + (Math.random() - 0.5) * 80,
             type: DEFAULT_PARTICLE_TYPES[Math.floor(Math.random() * DEFAULT_PARTICLE_TYPES.length)],
             color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
             rotation: (Math.random() - 0.5) * 60,
@@ -333,6 +336,23 @@ export function useKittyCursorPhysics({
         if (popTimer.current) clearTimeout(popTimer.current);
         setIsPressed(true);
         setIsClickPopping(false);
+
+        // Click feedback anchored at the click point (zero tracking lag)
+        if (!prefersReducedMotion) {
+          const typePool = isMusicWorldRef.current ? MUSIC_PARTICLE_TYPES : DEFAULT_PARTICLE_TYPES;
+          const count = 3 + Math.floor(Math.random() * 2); // 3 to 4 particles
+          for (let i = 0; i < count; i++) {
+            const angle = (i / count) * 2 * Math.PI + (Math.random() - 0.5) * 0.4;
+            const dist = 5 + Math.random() * 10;
+            spawnCursorParticle({
+              x: e.clientX + Math.cos(angle) * dist,
+              y: e.clientY + Math.sin(angle) * dist,
+              type: typePool[Math.floor(Math.random() * typePool.length)],
+              color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
+              rotation: (Math.random() - 0.5) * 50,
+            });
+          }
+        }
       }
     };
 

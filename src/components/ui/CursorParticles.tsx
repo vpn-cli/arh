@@ -55,8 +55,10 @@ export function CursorParticles() {
       if (!p) return;
 
       const el = document.createElement("div");
-      el.className = "fixed top-0 left-0 pointer-events-none will-change-transform animate-cursor-particle";
-      el.style.transform = `translate3d(${p.x - 6}px, ${p.y - 6}px, 0) rotate(${p.rotation}deg)`;
+      el.className = "fixed pointer-events-none will-change-transform animate-cursor-particle";
+      el.style.left = `${p.x - 6}px`;
+      el.style.top = `${p.y - 6}px`;
+      el.style.transform = `rotate(${p.rotation}deg)`;
       const svgRenderer = PARTICLE_SVGS[p.type] || PARTICLE_SVGS.heart;
       el.innerHTML = svgRenderer(p.color);
 

@@ -33,6 +33,13 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
       videoRef.current.muted = true;
       videoRef.current.play().catch(() => {});
     }
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.src = "";
+        videoRef.current.load();
+      }
+    };
   }, []);
 
   const menuItems = ["CONTINUE", "START NEW GAME"];
@@ -123,6 +130,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           {isMounted && (
             <video
               ref={videoRef}
+              data-gameboy-video="true"
               src="/videos/real_vid.mp4"
               autoPlay
               loop

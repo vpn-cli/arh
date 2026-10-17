@@ -143,7 +143,7 @@ export const StickerIcon = React.memo(function StickerIcon({
       aria-hidden="true"
       width={size}
       height={size}
-      className={`object-contain ${className}`}
+      className={`object-contain kitty-sticker-wiggle ${className}`}
       style={combinedStyle}
     />
   );

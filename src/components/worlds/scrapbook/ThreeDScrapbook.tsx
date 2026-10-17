@@ -131,7 +131,7 @@ const Sticker = React.memo(({ type, active = true }: { type: string; active?: bo
   if (type === "note") return <SvgWrap className={active ? "animate-bounce" : ""}><rect x="4" y="0" width="3" height="1" fill="#A1C4FD" /><rect x="3" y="1" width="1" height="4" fill="#A1C4FD" /><rect x="6" y="1" width="1" height="2" fill="#A1C4FD" /><rect x="1" y="4" width="3" height="1" fill="#A1C4FD" /><rect x="0" y="5" width="4" height="2" fill="#A1C4FD" /></SvgWrap>;
   if (type === "sparkle") return <SvgWrap className={active ? "animate-pulse" : ""}><rect x="3" y="0" width="1" height="2" fill="#DFD5F5" /><rect x="3" y="5" width="1" height="2" fill="#DFD5F5" /><rect x="0" y="3" width="2" height="1" fill="#DFD5F5" /><rect x="5" y="3" width="2" height="1" fill="#DFD5F5" /><rect x="2" y="2" width="3" height="3" fill="#DFD5F5" /></SvgWrap>;
   if (type === "flower") return <SvgWrap className={`${active ? "animate-[spin_6s_linear_infinite_reverse]" : ""} origin-center`}><rect x="2" y="0" width="3" height="2" fill="#FF8FB3" /><rect x="0" y="2" width="2" height="3" fill="#FF8FB3" /><rect x="5" y="2" width="2" height="3" fill="#FF8FB3" /><rect x="2" y="5" width="3" height="2" fill="#FF8FB3" /><rect x="2" y="2" width="3" height="3" fill="#FFE4A1" /></SvgWrap>;
-  if (type === "banana") return <div data-cursor="peel" className="text-4xl font-sans select-none origin-center mt-2 pointer-events-auto cursor-pointer">🍌</div>;
+  if (type === "banana") return <div data-cursor="peel" className="kitty-sticker-wiggle text-4xl font-sans select-none origin-center mt-2 pointer-events-auto cursor-pointer">🍌</div>;
   return null;
 });
 Sticker.displayName = "Sticker";
@@ -218,7 +218,7 @@ const DraggableCropImage = React.memo(function DraggableCropImage({ item, onImag
   return (
     <div
       data-cursor={editMode ? "grab" : "polaroid"}
-      className={`relative w-full h-full bg-white overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 ease-out ${isSelected ? 'ring-4 ring-[#FF8FB3] scale-95 opacity-80' : ''}`}
+      className={`relative w-full h-full bg-white overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 ease-out kitty-polaroid-lift ${isSelected ? 'ring-4 ring-[#FF8FB3] scale-95 opacity-80' : ''}`}
       onPointerDown={handlePointerDown}
       onPointerMove={editMode ? handlePointerMove : undefined}
       onPointerUp={editMode ? handlePointerUp : undefined}

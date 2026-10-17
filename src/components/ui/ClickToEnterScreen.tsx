@@ -28,7 +28,7 @@ export default function ClickToEnterScreen({ onEnter }: ClickToEnterScreenProps)
 
     // 3. Immediately unmute background video and smoothly ramp up volume
     try {
-      const videos = document.querySelectorAll<HTMLVideoElement>("video");
+      const videos = document.querySelectorAll<HTMLVideoElement>("video[data-gameboy-video='true']");
       videos.forEach((v) => {
         v.muted = false;
         v.volume = 0;

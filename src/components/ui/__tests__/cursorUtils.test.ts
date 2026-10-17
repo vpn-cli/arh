@@ -324,19 +324,37 @@ describe("cursorUtils", () => {
       const blinkExpr = resolveKittyExpression({ mode: "default", isPressed: false, isBlinking: true });
       expect(blinkExpr).toBe("blink");
       expect(toNativeKittyExpression(blinkExpr)).toBe("default");
+
+      // 7. Hover modes (hover, puzzle, music, polaroid, peel)
+      expect(toNativeKittyExpression(resolveKittyExpression({ mode: "hover", isPressed: false }), "hover")).toBe("hover");
+      expect(toNativeKittyExpression(resolveKittyExpression({ mode: "puzzle", isPressed: false }), "puzzle")).toBe("puzzle");
+      expect(toNativeKittyExpression(resolveKittyExpression({ mode: "music", isPressed: false }), "music")).toBe("music");
+      expect(toNativeKittyExpression(resolveKittyExpression({ mode: "polaroid", isPressed: false }), "polaroid")).toBe("polaroid");
+      expect(toNativeKittyExpression(resolveKittyExpression({ mode: "peel", isPressed: false }), "peel")).toBe("peel");
+
+      // 8. Priority Order: Locked ALWAYS wins, even when pressed or hovering
+      const lockedHoverExpr = resolveKittyExpression({ mode: "disabled", isPressed: false });
+      expect(toNativeKittyExpression(lockedHoverExpr, "disabled")).toBe("locked");
+      const lockedPressExpr = resolveKittyExpression({ mode: "disabled", isPressed: true });
+      expect(toNativeKittyExpression(lockedPressExpr, "disabled")).toBe("locked");
     });
 
-    it("only supports interactive native expressions", () => {
+    it("supports all 10 interactive native expressions (including hover-triggered)", () => {
       expect(NATIVE_KITTY_EXPRESSIONS).toEqual([
         "default",
         "squeeze",
         "happy",
         "locked",
         "dizzy",
+        "hover",
+        "puzzle",
+        "music",
+        "polaroid",
+        "peel",
       ]);
     });
 
-    it("verifies all 7 native cursor PNGs exist on disk with 1x <= 32px and 2x <= 64px", () => {
+    it("verifies all 10 native cursor PNGs exist on disk with 1x <= 32px and 2x <= 64px", () => {
       const cursorDir = path.resolve(process.cwd(), "public/hampter/cursor");
       for (const expr of NATIVE_KITTY_EXPRESSIONS) {
         const file1x = path.join(cursorDir, `kitty_${expr}_32.png`);

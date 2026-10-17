@@ -73,7 +73,7 @@ export default function TheLetterEnvelope({ isOpen }: TheLetterEnvelopeProps) {
         {/* Ornate Wax Seal Medallion with Heart */}
         <div
           data-cursor="peel"
-          className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#FF6B8B] via-[#E83562] to-[#9E143C] border-3 border-[#FFFDF8] flex items-center justify-center shadow-[0_8px_25px_rgba(232,53,98,0.5),0_2px_4px_rgba(0,0,0,0.15)] group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 relative cursor-pointer"
+          className="kitty-envelope-wobble w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#FF6B8B] via-[#E83562] to-[#9E143C] border-3 border-[#FFFDF8] flex items-center justify-center shadow-[0_8px_25px_rgba(232,53,98,0.5),0_2px_4px_rgba(0,0,0,0.15)] group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 relative cursor-pointer"
           aria-hidden="true"
         >
           {/* Inner embossed wax ring with heart */}
@@ -97,7 +97,7 @@ export default function TheLetterEnvelope({ isOpen }: TheLetterEnvelopeProps) {
       <div className="z-10 w-full flex justify-center mb-1">
         <span
           data-cursor="peel"
-          className="font-letter-ui text-[#881337] text-xs sm:text-sm tracking-wider font-bold bg-[#FFEAA7] hover:bg-[#FFE082] px-7 py-2.5 sm:py-3 rounded-full border-2 border-[#881337] shadow-[0_5px_0_#C48B22] group-hover:translate-y-[-1px] group-hover:shadow-[0_6px_0_#C48B22] group-active:translate-y-[4px] group-active:shadow-[0_1px_0_#C48B22] transition-all flex items-center gap-2 cursor-pointer"
+          className="kitty-interactive-btn font-letter-ui text-[#881337] text-xs sm:text-sm tracking-wider font-bold bg-[#FFEAA7] hover:bg-[#FFE082] px-7 py-2.5 sm:py-3 rounded-full border-2 border-[#881337] shadow-[0_5px_0_#C48B22] group-hover:translate-y-[-1px] group-hover:shadow-[0_6px_0_#C48B22] group-active:translate-y-[4px] group-active:shadow-[0_1px_0_#C48B22] transition-all flex items-center gap-2 cursor-pointer"
         >
           <span>BREAK THE SEAL</span>
           <span className="text-[#FF4F9A]">✦</span>

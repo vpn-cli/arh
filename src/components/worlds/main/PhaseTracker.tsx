@@ -179,13 +179,13 @@ export default function PhaseTracker({ className = "", isUnlocked = false }: Pha
             data-cursor="pointer"
             aria-label={phase.ariaLabel}
             aria-current={isActive ? "step" : undefined}
-            className="group relative flex flex-col items-center justify-center p-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-2 rounded-full transition-transform"
+            className="kitty-nav-dot group relative flex flex-col items-center justify-center p-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-2 rounded-full transition-transform"
           >
             {/* Dot indicator */}
             <span
               className={`rounded-full transition-all duration-300 ${
                 isActive
-                  ? "w-3.5 h-3.5 bg-[#FF8FB3] border-2 border-[#3A2440] shadow-xs scale-110"
+                  ? "kitty-nav-dot-active w-3.5 h-3.5 bg-[#FF8FB3] border-2 border-[#3A2440] shadow-xs scale-110"
                   : "w-2.5 h-2.5 bg-[#FFF0F5] border border-[#3A2440]/60 group-hover:scale-115 group-hover:bg-[#FFEAA7]"
               }`}
             />

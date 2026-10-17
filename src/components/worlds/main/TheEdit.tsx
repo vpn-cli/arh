@@ -78,20 +78,33 @@ export default function TheEdit() {
       }
     );
 
-    sfx.select();
-    setHasStarted(true);
-    if (videoRef.current) {
-      if (isEnded || videoRef.current.currentTime >= (videoRef.current.duration || 1)) {
-        videoRef.current.currentTime = 0;
-      }
-      videoRef.current.play().then(() => {
-        setIsPlaying(true);
-        setIsEnded(false);
-        resetControlsTimeout();
-      }).catch(() => {
-        setIsPlaying(false);
-        setShowControls(true);
-      });
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isEnded || video.currentTime >= (video.duration || 1)) {
+      video.currentTime = 0;
+    }
+
+    // Play with sound immediately on first click (original behavior)
+    video.muted = false;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setHasStarted(true);
+          resetControlsTimeout();
+        })
+        .catch((err) => {
+          console.warn("Unmuted play blocked by browser policy, falling back to muted:", err);
+          video.muted = true;
+          setIsMuted(true);
+          video.play().then(() => {
+            setHasStarted(true);
+            resetControlsTimeout();
+          }).catch(() => {
+            setShowControls(true);
+          });
+        });
     }
   };
 
@@ -116,8 +129,6 @@ export default function TheEdit() {
         setHasStarted(true);
         if (videoRef.current) {
           videoRef.current.play().then(() => {
-            setIsPlaying(true);
-            setIsEnded(false);
             resetControlsTimeout();
           }).catch(() => {});
         }
@@ -138,36 +149,38 @@ export default function TheEdit() {
   };
 
   const togglePlay = () => {
-    if (!videoRef.current) return;
-    if (isPlaying) {
-      videoRef.current.pause();
-      setIsPlaying(false);
-      setShowControls(true);
-      sfx.pop();
-    } else {
-      videoRef.current.play().catch(() => {});
-      setIsPlaying(true);
-      setIsEnded(false);
-      sfx.select();
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      if (isEnded || video.currentTime >= (video.duration || 1)) {
+        video.currentTime = 0;
+      }
+      video.play().catch((err) => {
+        console.warn("Video play prevented:", err);
+      });
       resetControlsTimeout();
+    } else {
+      video.pause();
+      setShowControls(true);
     }
   };
 
   const handlePlayAgain = () => {
-    sfx.select();
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play().catch(() => {});
-      setIsPlaying(true);
-      setIsEnded(false);
-      resetControlsTimeout();
-    }
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = 0;
+    video.play().catch((err) => {
+      console.warn("Replay video play prevented:", err);
+    });
+    setIsEnded(false);
+    resetControlsTimeout();
   };
 
   const toggleMute = () => {
-    if (!videoRef.current) return;
-    videoRef.current.muted = !videoRef.current.muted;
-    setIsMuted(videoRef.current.muted);
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
   };
 
   // Direct DOM updates for playback position — NO React state for playback position!
@@ -176,11 +189,6 @@ export default function TheEdit() {
     if (!video) return;
     const cur = video.currentTime;
     const dur = video.duration || 1;
-    if (dur > 1 && cur >= dur - 0.25 && !isEnded && isPlaying) {
-      setIsPlaying(false);
-      setIsEnded(true);
-      setShowControls(true);
-    }
     const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
     if (progressBarRef.current) progressBarRef.current.style.width = `${pct}%`;
     if (timeDisplayRef.current) timeDisplayRef.current.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
@@ -197,7 +205,6 @@ export default function TheEdit() {
     setIsPlaying(false);
     setIsEnded(true);
     setShowControls(true);
-    sfx.select();
   };
 
   const handleSeekFraction = useCallback((fraction: number) => {
