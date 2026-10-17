@@ -93,6 +93,22 @@ export const POEM_SECTIONS: PoemSection[] = [
       "Yet I know it clearly this is not where our nonsense ends.",
       "Thou mayst have new streets to wander and new tales to tell,",
       "But distance hasn't granted thee an escape from me as well.",
+    ],
+  },
+  {
+    id: "wardrobe-twinning",
+    lines: [
+      "And then there's a mystery no science can explain,",
+      "How our wardrobes conspire as though sharing one brain.",
+      "Be it campus or video call, the result is the same:",
+      "We show up matching, and neither will take the blame.",
+      "Though in fairness, the odds aren't exactly a feat,",
+      "When my whole wardrobe's just three shirts on repeat.",
+    ],
+  },
+  {
+    id: "railway-station-delayed",
+    lines: [
       "For if life were a badly organised railway station,",
       "Thou'd be the train delayed beyond all expectation.",
       "I'd grumble at the announcements, curse the schedule, and sigh,",
