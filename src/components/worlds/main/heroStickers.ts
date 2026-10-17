@@ -12,10 +12,18 @@ export interface HeroStickerItem {
   rotation: number;
   /** Visual weight category */
   weight?: "heavy" | "medium" | "light";
-  /** Enables a gentle idle floating drift */
-  float?: boolean;
-  /** Staggered delay for floating drift */
-  floatDelay?: string;
+  /** Mouse parallax depth factor (0.2 to 1.0, drifts opposite cursor up to 12px) */
+  depth: number;
+  /** Idle floating cycle duration (5s to 9s) */
+  floatDuration: string;
+  /** Staggered randomized delay/phase so stickers never bob in sync */
+  floatDelay: string;
+  /** Vertical bob distance in pixels (4px to 8px) */
+  floatDistance: number;
+  /** Subtle bob oscillation rotation in degrees (-2° to +2°) */
+  floatRotation: number;
+  /** Slightly soften heavy/dark stickers to fit pastel theme (saturate 0.85, opacity 0.92) */
+  soften?: boolean;
   /** Hide on tablet viewports (768–1023px) to maintain clean clearance */
   hideOnTablet?: boolean;
   /** Tablet-specific horizontal position percentage (0 to 100) */
@@ -32,8 +40,10 @@ export interface HeroStickerItem {
   mobileSize?: number;
   /** Renders speech bubble caption (Shin-chan) */
   hasSpeechBubble?: boolean;
-  /** Speech bubble text */
+  /** Speech bubble text (rendered with retro font) */
   bubbleText?: string;
+  /** Optional emoji rendered in a separate span with an emoji font stack */
+  bubbleEmoji?: string;
 }
 
 /**
@@ -45,6 +55,8 @@ export interface HeroStickerItem {
  * - Kept clear of top pills (Home/Main), right nav dots, and bottom badge/dev indicator.
  * - Heavier/darker items (moon, vinyl, coca-cola, camera, guitar, ball) kept small (58-70px).
  * - Rotations strictly within -15° to +15°.
+ * - Depth factors (0.2-1.0) control smoothed mouse parallax drift.
+ * - Float bobbing (4-8px, ±2°, 5-9s) randomized per sticker to prevent synchronized motion.
  */
 export const HERO_STICKERS: HeroStickerItem[] = [
   // ─── ZONE 1: TOP-LEFT ───
@@ -57,8 +69,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 86,
     rotation: 8,
     weight: "light",
-    float: true,
-    floatDelay: "2.4s",
+    depth: 0.45,
+    floatDuration: "6.2s",
+    floatDelay: "-1.5s",
+    floatDistance: 6,
+    floatRotation: 1.8,
+    soften: false,
     tabletX: 8,
     tabletY: 15,
     showOnMobile: true,
@@ -75,6 +91,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 58,
     rotation: -10,
     weight: "heavy",
+    depth: 0.85,
+    floatDuration: "7.4s",
+    floatDelay: "-3.2s",
+    floatDistance: 5,
+    floatRotation: -1.5,
+    soften: true,
     hideOnTablet: true,
   },
   {
@@ -86,6 +108,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 52,
     rotation: 12,
     weight: "light",
+    depth: 0.3,
+    floatDuration: "5.6s",
+    floatDelay: "-0.8s",
+    floatDistance: 4,
+    floatRotation: 2.0,
+    soften: false,
     hideOnTablet: true,
     showOnMobile: true,
     mobileX: 48,
@@ -103,8 +131,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 104,
     rotation: -7,
     weight: "medium",
-    float: true,
-    floatDelay: "1.8s",
+    depth: 0.6,
+    floatDuration: "8.1s",
+    floatDelay: "-4.1s",
+    floatDistance: 7,
+    floatRotation: -1.8,
+    soften: false,
     tabletX: 6,
     tabletY: 38,
   },
@@ -117,6 +149,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 66,
     rotation: 6,
     weight: "heavy",
+    depth: 0.75,
+    floatDuration: "6.8s",
+    floatDelay: "-2.3s",
+    floatDistance: 6,
+    floatRotation: 1.6,
+    soften: true,
     tabletX: 6,
     tabletY: 58,
     showOnMobile: true,
@@ -133,6 +171,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 68,
     rotation: -12,
     weight: "light",
+    depth: 0.35,
+    floatDuration: "5.9s",
+    floatDelay: "-5.0s",
+    floatDistance: 5,
+    floatRotation: -2.0,
+    soften: false,
     tabletX: 18,
     tabletY: 13,
     showOnMobile: true,
@@ -151,10 +195,15 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 130,
     rotation: 4,
     weight: "medium",
-    float: true,
-    floatDelay: "0.5s",
+    depth: 0.9,
+    floatDuration: "7.2s",
+    floatDelay: "-1.2s",
+    floatDistance: 8,
+    floatRotation: 1.5,
+    soften: false,
     hasSpeechBubble: true,
-    bubbleText: "namaste ji 🙏",
+    bubbleText: "namaste ji",
+    bubbleEmoji: "🙏",
     tabletX: 14,
     tabletY: 84,
     showOnMobile: true,
@@ -171,6 +220,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 60,
     rotation: -5,
     weight: "heavy",
+    depth: 0.8,
+    floatDuration: "6.5s",
+    floatDelay: "-3.7s",
+    floatDistance: 5,
+    floatRotation: -1.7,
+    soften: true,
     hideOnTablet: true,
   },
   {
@@ -182,6 +237,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 62,
     rotation: -9,
     weight: "light",
+    depth: 0.4,
+    floatDuration: "5.8s",
+    floatDelay: "-2.9s",
+    floatDistance: 6,
+    floatRotation: 1.9,
+    soften: false,
     hideOnTablet: true,
   },
 
@@ -195,8 +256,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 112,
     rotation: -6,
     weight: "medium",
-    float: true,
-    floatDelay: "1.2s",
+    depth: 0.7,
+    floatDuration: "8.6s",
+    floatDelay: "-4.8s",
+    floatDistance: 7,
+    floatRotation: -1.6,
+    soften: false,
     tabletX: 91,
     tabletY: 15,
     showOnMobile: true,
@@ -213,8 +278,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 62,
     rotation: 11,
     weight: "heavy",
-    float: true,
-    floatDelay: "2.1s",
+    depth: 0.95,
+    floatDuration: "7.9s",
+    floatDelay: "-2.1s",
+    floatDistance: 6,
+    floatRotation: 1.8,
+    soften: true,
     tabletX: 80,
     tabletY: 12,
   },
@@ -227,6 +296,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 48,
     rotation: -14,
     weight: "light",
+    depth: 0.25,
+    floatDuration: "5.3s",
+    floatDelay: "-0.5s",
+    floatDistance: 4,
+    floatRotation: -1.9,
+    soften: false,
     hideOnTablet: true,
   },
 
@@ -240,8 +315,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 100,
     rotation: 7,
     weight: "medium",
-    float: true,
-    floatDelay: "3.0s",
+    depth: 0.65,
+    floatDuration: "7.0s",
+    floatDelay: "-3.6s",
+    floatDistance: 7,
+    floatRotation: 1.7,
+    soften: false,
     tabletX: 94,
     tabletY: 38,
   },
@@ -254,6 +333,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 88,
     rotation: -8,
     weight: "medium",
+    depth: 0.7,
+    floatDuration: "6.4s",
+    floatDelay: "-1.9s",
+    floatDistance: 6,
+    floatRotation: -1.5,
+    soften: true,
     hideOnTablet: true,
   },
   {
@@ -265,6 +350,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 70,
     rotation: 10,
     weight: "medium",
+    depth: 0.8,
+    floatDuration: "7.6s",
+    floatDelay: "-5.4s",
+    floatDistance: 6,
+    floatRotation: 1.8,
+    soften: true,
     hideOnTablet: true,
   },
   {
@@ -276,6 +367,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 62,
     rotation: -11,
     weight: "heavy",
+    depth: 0.85,
+    floatDuration: "6.7s",
+    floatDelay: "-2.7s",
+    floatDistance: 5,
+    floatRotation: -1.7,
+    soften: true,
     hideOnTablet: true,
   },
 
@@ -289,6 +386,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 70,
     rotation: 13,
     weight: "heavy",
+    depth: 0.9,
+    floatDuration: "8.3s",
+    floatDelay: "-4.3s",
+    floatDistance: 7,
+    floatRotation: 2.0,
+    soften: true,
     tabletX: 94,
     tabletY: 70,
   },
@@ -301,6 +404,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 78,
     rotation: -7,
     weight: "light",
+    depth: 0.5,
+    floatDuration: "6.0s",
+    floatDelay: "-1.1s",
+    floatDistance: 6,
+    floatRotation: -1.8,
+    soften: false,
     tabletX: 86,
     tabletY: 82,
     showOnMobile: true,
@@ -317,6 +426,12 @@ export const HERO_STICKERS: HeroStickerItem[] = [
     size: 58,
     rotation: 9,
     weight: "light",
+    depth: 0.35,
+    floatDuration: "5.5s",
+    floatDelay: "-3.8s",
+    floatDistance: 5,
+    floatRotation: 1.6,
+    soften: false,
     hideOnTablet: true,
   },
 ];

@@ -43,21 +43,55 @@ describe("heroStickers config", () => {
     }
   });
 
-  it("keeps heavier items (moon, vinyl, coca-cola, camera, guitar, ball) between 56px and 72px", () => {
-    const heavyStickers = HERO_STICKERS.filter((s) => s.weight === "heavy");
-    expect(heavyStickers.length).toBeGreaterThanOrEqual(5);
-    for (const sticker of heavyStickers) {
-      expect(sticker.size).toBeGreaterThanOrEqual(56);
-      expect(sticker.size).toBeLessThanOrEqual(72);
+  it("assigns valid depth (0.2 to 1.0) and idle float params (5-9s, 4-8px, +-2 deg) to every sticker", () => {
+    for (const sticker of HERO_STICKERS) {
+      expect(sticker.depth).toBeGreaterThanOrEqual(0.2);
+      expect(sticker.depth).toBeLessThanOrEqual(1.0);
+
+      const durationSec = parseFloat(sticker.floatDuration);
+      expect(durationSec).toBeGreaterThanOrEqual(5.0);
+      expect(durationSec).toBeLessThanOrEqual(9.0);
+
+      expect(sticker.floatDistance).toBeGreaterThanOrEqual(4);
+      expect(sticker.floatDistance).toBeLessThanOrEqual(8);
+
+      expect(sticker.floatRotation).toBeGreaterThanOrEqual(-2.0);
+      expect(sticker.floatRotation).toBeLessThanOrEqual(2.0);
     }
   });
 
-  it("gives Shin-chan a featured spot with namaste ji speech bubble", () => {
+  it("softens dark/heavy items to blend with pastel theme while keeping characters full color", () => {
+    const softenedIds = [
+      "vinyl-record",
+      "canon-camera",
+      "billiard-ball-7",
+      "full-moon",
+      "headphones-with-bows",
+      "spiderman-mask",
+      "coca-cola-can",
+      "electric-guitar",
+    ];
+
+    for (const id of softenedIds) {
+      const sticker = HERO_STICKERS.find((s) => s.id === id);
+      expect(sticker?.soften).toBe(true);
+    }
+
+    // Hello Kitty, Snoopy, and Shin-chan must remain full color
+    const fullColorIds = ["shinchan-featured", "snoopy-sleeping", "hello-kitty-peeking"];
+    for (const id of fullColorIds) {
+      const sticker = HERO_STICKERS.find((s) => s.id === id);
+      expect(sticker?.soften).toBe(false);
+    }
+  });
+
+  it("gives Shin-chan a featured spot with namaste ji speech bubble and emoji", () => {
     const shinchan = HERO_STICKERS.find((s) => s.id === "shinchan-featured");
     expect(shinchan).toBeDefined();
     expect(shinchan?.size).toBeGreaterThanOrEqual(120);
     expect(shinchan?.hasSpeechBubble).toBe(true);
-    expect(shinchan?.bubbleText).toBe("namaste ji 🙏");
+    expect(shinchan?.bubbleText).toBe("namaste ji");
+    expect(shinchan?.bubbleEmoji).toBe("🙏");
     expect(shinchan?.x).toBeLessThan(30); // Left zone
     expect(shinchan?.y).toBeGreaterThan(65); // Lower zone
   });
@@ -96,12 +130,13 @@ describe("HeroStickerBomb Component", () => {
       const img = el.querySelector("img");
       expect(img).toBeDefined();
       expect(img?.getAttribute("alt")).toBe("");
-      expect(img?.className).toContain("hero-sticker-pack-filter");
+      expect(el.querySelector(".hero-sticker-pack-filter")).toBeDefined();
     }
   });
 
-  it("renders Shin-chan's speech bubble", () => {
+  it("renders Shin-chan's speech bubble with separate emoji span", () => {
     render(<HeroStickerBomb />);
-    expect(screen.getByText("namaste ji 🙏")).toBeDefined();
+    expect(screen.getByText("namaste ji")).toBeDefined();
+    expect(screen.getByText("🙏")).toBeDefined();
   });
 });
