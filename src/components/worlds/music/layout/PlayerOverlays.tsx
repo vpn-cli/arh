@@ -68,7 +68,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
               <span>{recoveryError}</span>
               <button
                 onClick={onDismissRecoveryError}
-                className="ml-2 hover:opacity-75 font-bold w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center text-white rounded-full"
+                className="kitty-interactive-btn ml-2 hover:opacity-75 font-bold w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center text-white rounded-full"
                 aria-label="Dismiss error notice"
               >
                 <CloseIcon size={12} />
@@ -83,7 +83,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
           <div className="absolute top-4 left-4 z-10">
             <button
               onClick={handleGoHome}
-              className="group px-3.5 py-1.5 bg-white/90 hover:bg-white border-2 border-[var(--color-muted)] rounded-full flex items-center gap-1.5 shadow-sm hover:shadow transition-all cursor-pointer"
+              className="kitty-pill-bounce group px-3.5 py-1.5 bg-white/90 hover:bg-white border-2 border-[var(--color-muted)] rounded-full flex items-center gap-1.5 shadow-sm hover:shadow transition-all cursor-pointer"
               aria-label="Return to World Selection"
               title="Return to World Selection"
             >
@@ -108,7 +108,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
             </button>
             <button
               onClick={handleGoHome}
-              className="w-full bg-white hover:bg-[var(--color-light)] text-[var(--color-dark)] border-2 border-[var(--color-muted)] font-pixel text-caption font-bold py-2.5 px-4 rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:border-[var(--color-vibrant)]"
+              className="kitty-pill-bounce w-full bg-white hover:bg-[var(--color-light)] text-[var(--color-dark)] border-2 border-[var(--color-muted)] font-pixel text-caption font-bold py-2.5 px-4 rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:border-[var(--color-vibrant)]"
             >
               <ChevronLeftIcon size={12} className="text-[var(--color-dark)]" />
               <span>Back to World Select</span>
@@ -122,7 +122,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
           <div className="absolute top-4 left-4 z-10">
             <button
               onClick={handleGoHome}
-              className="group px-3.5 py-1.5 bg-white/90 hover:bg-white border-2 border-[var(--color-muted)] rounded-full flex items-center gap-1.5 shadow-sm hover:shadow transition-all cursor-pointer"
+              className="kitty-pill-bounce group px-3.5 py-1.5 bg-white/90 hover:bg-white border-2 border-[var(--color-muted)] rounded-full flex items-center gap-1.5 shadow-sm hover:shadow transition-all cursor-pointer"
               aria-label="Return to World Selection"
               title="Return to World Selection"
             >
@@ -147,7 +147,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
             </button>
             <button
               onClick={handleGoHome}
-              className="w-full bg-white/80 hover:bg-white text-[var(--color-dark)] border-2 border-[var(--color-muted)] font-pixel text-caption font-bold py-2.5 px-4 rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:border-[var(--color-vibrant)]"
+              className="kitty-pill-bounce w-full bg-white/80 hover:bg-white text-[var(--color-dark)] border-2 border-[var(--color-muted)] font-pixel text-caption font-bold py-2.5 px-4 rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer hover:border-[var(--color-vibrant)]"
             >
               <ChevronLeftIcon size={12} className="text-[var(--color-dark)]" />
               <span>Back to World Select</span>

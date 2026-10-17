@@ -108,7 +108,7 @@ export default function AsciiSection({
                 onClick={handleSkip}
                 data-cursor="pointer"
                 aria-label="Skip Terminal Questions"
-                className="text-xs font-terminal uppercase text-[#3A2440] hover:text-[#2D1B36] px-2.5 py-1 min-h-[32px] rounded border border-[#3A2440]/35 hover:bg-[#FFEAA7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] transition-colors cursor-pointer"
+                className="kitty-pill-bounce text-xs font-terminal uppercase text-[#3A2440] hover:text-[#2D1B36] px-2.5 py-1 min-h-[32px] rounded border border-[#3A2440]/35 hover:bg-[#FFEAA7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] transition-colors cursor-pointer"
               >
                 ⏭ SKIP
               </button>
@@ -118,7 +118,7 @@ export default function AsciiSection({
               onClick={handleReset}
               data-cursor="pointer"
               aria-label="Reboot Terminal"
-              className="text-xs font-terminal uppercase text-[#3A2440] hover:text-[#2D1B36] px-2.5 py-1 min-h-[32px] rounded border border-[#3A2440]/35 hover:bg-[#FFEAA7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] transition-colors cursor-pointer"
+              className="kitty-pill-bounce text-xs font-terminal uppercase text-[#3A2440] hover:text-[#2D1B36] px-2.5 py-1 min-h-[32px] rounded border border-[#3A2440]/35 hover:bg-[#FFEAA7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] transition-colors cursor-pointer"
             >
               ↺ REBOOT
             </button>

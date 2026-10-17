@@ -198,14 +198,14 @@ export function MemoryCard({
           <button
             type="button"
             onClick={() => onEditMemory(entity || null, memory.entityType, memory.id)}
-            className="text-meta font-bold text-[var(--color-dark)] font-pixel min-h-[24px] px-2 py-0.5 rounded hover:bg-[var(--color-light)] transition-colors inline-flex items-center justify-center cursor-pointer"
+            className="kitty-interactive-btn text-meta font-bold text-[var(--color-dark)] font-pixel min-h-[24px] px-2 py-0.5 rounded hover:bg-[var(--color-light)] transition-colors inline-flex items-center justify-center cursor-pointer"
           >
             EDIT
           </button>
           <button
             type="button"
             onClick={() => onDeleteMemory(memory.id)}
-            className="text-meta font-bold text-[var(--color-dark)] font-pixel min-h-[24px] px-2 py-0.5 rounded hover:bg-[var(--color-light)] transition-colors inline-flex items-center justify-center cursor-pointer"
+            className="kitty-interactive-btn text-meta font-bold text-[var(--color-dark)] font-pixel min-h-[24px] px-2 py-0.5 rounded hover:bg-[var(--color-light)] transition-colors inline-flex items-center justify-center cursor-pointer"
           >
             DELETE
           </button>

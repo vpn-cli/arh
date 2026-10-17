@@ -31,7 +31,7 @@ export const Pagination = React.memo(function Pagination({
         onClick={() => onPageChange(currentPage - 1)}
         disabled={isFirstPage}
         aria-label="Previous page"
-        className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-full border border-[var(--color-muted)] bg-white text-[var(--color-dark)] flex items-center justify-center cursor-pointer transition-all hover:bg-[var(--color-light)] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+        className="kitty-interactive-btn w-8 h-8 min-w-[32px] min-h-[32px] rounded-full border border-[var(--color-muted)] bg-white text-[var(--color-dark)] flex items-center justify-center cursor-pointer transition-all hover:bg-[var(--color-light)] disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
       >
         <ChevronLeftIcon size={14} />
       </button>
@@ -46,7 +46,7 @@ export const Pagination = React.memo(function Pagination({
         onClick={() => onPageChange(currentPage + 1)}
         disabled={isLastPage}
         aria-label="Next page"
-        className="w-8 h-8 min-w-[32px] min-h-[32px] rounded-full border border-[var(--color-muted)] bg-white text-[var(--color-dark)] flex items-center justify-center cursor-pointer transition-all hover:bg-[var(--color-light)] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
+        className="kitty-interactive-btn w-8 h-8 min-w-[32px] min-h-[32px] rounded-full border border-[var(--color-muted)] bg-white text-[var(--color-dark)] flex items-center justify-center cursor-pointer transition-all hover:bg-[var(--color-light)] disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dark)]"
       >
         <ChevronRightIcon size={14} />
       </button>

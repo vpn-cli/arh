@@ -43,7 +43,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
         {onGoHome && (
           <button
             onClick={onGoHome}
-            className="mw-btn group px-3 py-1 min-h-[28px] bg-white/50 hover:bg-[var(--color-light)] border border-[var(--color-muted)] rounded-full flex items-center gap-1.5"
+            className="mw-btn kitty-pill-bounce group px-3 py-1 min-h-[28px] bg-white/50 hover:bg-[var(--color-light)] border border-[var(--color-muted)] rounded-full flex items-center gap-1.5"
             aria-label="Return to Home World"
             title="Return to Home World"
           >
@@ -70,7 +70,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
         {searchQuery && (
           <button
             onClick={onClearSearch}
-            className="mw-btn absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-dark)] hover:text-[var(--color-dark)] w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded-full"
+            className="mw-btn kitty-interactive-btn absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-dark)] hover:text-[var(--color-dark)] w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center rounded-full"
             aria-label="Clear search"
             title="Clear search"
           >
@@ -82,7 +82,7 @@ export const PlayerHeader = React.memo(function PlayerHeader({
         {isStandalone && (
           <button
             onClick={switchToWidget}
-            className="mw-btn px-2.5 py-1 min-h-[28px] bg-white/50 hover:bg-[var(--color-light)] border border-[var(--color-muted)] rounded-full flex items-center gap-1.5 font-pixel text-caption text-[var(--color-dark)] font-bold tracking-wider uppercase group cursor-pointer"
+            className="mw-btn kitty-pill-bounce px-2.5 py-1 min-h-[28px] bg-white/50 hover:bg-[var(--color-light)] border border-[var(--color-muted)] rounded-full flex items-center gap-1.5 font-pixel text-caption text-[var(--color-dark)] font-bold tracking-wider uppercase group cursor-pointer"
             title="Switch to compact widget view"
             aria-label="Switch to compact widget view"
           >

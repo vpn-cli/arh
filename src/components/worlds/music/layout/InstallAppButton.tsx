@@ -70,7 +70,7 @@ export const InstallAppButton = React.memo(function InstallAppButton() {
   return (
     <button
       onClick={handleInstallClick}
-      className="mw-btn group px-2.5 py-1 min-h-[28px] bg-white/70 hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-[var(--on-vibrant)] border border-[var(--color-muted)] hover:border-[var(--color-vibrant)] rounded-full flex items-center gap-1.5 transition-colors shadow-xs"
+      className="mw-btn kitty-pill-bounce group px-2.5 py-1 min-h-[28px] bg-white/70 hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-[var(--on-vibrant)] border border-[var(--color-muted)] hover:border-[var(--color-vibrant)] rounded-full flex items-center gap-1.5 transition-colors shadow-xs"
       aria-label="Install app"
       title="Install Music World as Desktop App"
     >

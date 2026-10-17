@@ -267,7 +267,7 @@ export const LyricsView = React.memo(
                   window.localStorage.setItem('arh_edit_mode', next ? 'true' : 'false');
                 }
               }}
-              className={`font-pixel text-meta min-h-[30px] px-3 py-1 rounded-full border transition-all active:scale-95 ${
+              className={`kitty-pill-bounce font-pixel text-meta min-h-[30px] px-3 py-1 rounded-full border transition-all ${
                 editMode
                   ? 'bg-[var(--color-light)] text-[var(--color-dark)] border-[var(--color-dark)] font-bold shadow-xs'
                   : 'bg-white hover:bg-[var(--color-light)] text-[var(--color-text-muted)] border-[var(--color-muted)]'
@@ -279,7 +279,7 @@ export const LyricsView = React.memo(
             <button
               data-cursor="music"
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-[var(--on-vibrant)] border border-[var(--color-muted)] transition-colors shadow-xs active:scale-95"
+              className="kitty-interactive-btn w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-[var(--color-vibrant)] text-[var(--color-dark)] hover:text-[var(--on-vibrant)] border border-[var(--color-muted)] transition-colors shadow-xs"
               aria-label="Close Lyrics"
             >
               <CloseIcon size={14} />
