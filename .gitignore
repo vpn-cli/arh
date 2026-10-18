@@ -47,6 +47,10 @@ media-originals/
 assets-src/slideshow/*
 !assets-src/slideshow/.gitkeep
 
+# raw gif originals
+assets-src/gifs/*
+!assets-src/gifs/.gitkeep
+
 # scratch and temporary files
 *.backup.tsx
 scratch/
