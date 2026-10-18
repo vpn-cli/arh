@@ -1319,6 +1319,8 @@ Completely replace the Phase 04 letter poem ("50 shades of Maahi") with the fina
 - `npm run build`: Passed (Turbopack production build compiled successfully).
 - Code Commit: `ea3ab32` (intro always & story removal) pushed and confirmed matching `origin/main`.
 - Asset Deletion Commit: `7ae2909` (7 orphaned story assets removed) pushed and confirmed matching `origin/main`.
+- Fix Commit: `47210fd` (prevent redundant `goToWorld` call and 500ms flash when target equals current world) pushed and confirmed matching `origin/main`.
+
 
 
 
