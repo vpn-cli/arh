@@ -17,7 +17,7 @@ const SPARKLES = [
   { left: "60%", top: "20%", delay: "0.2s", duration: "4.0s", size: "15px", rotate: "270deg" },
   { left: "35%", top: "60%", delay: "3.3s", duration: "5.0s", size: "20px", rotate: "330deg" },
   { left: "80%", top: "40%", delay: "1.9s", duration: "3.9s", size: "13px", rotate: "65deg" },
-  { left: "18%", top: "85%", delay: "0.7s", duration: "4.6s", size: "140deg" },
+  { left: "18%", top: "85%", delay: "0.7s", duration: "4.6s", size: "26px", rotate: "140deg" },
   { left: "50%", top: "88%", delay: "2.8s", duration: "5.2s", size: "17px", rotate: "225deg" },
   { left: "95%", top: "25%", delay: "1.4s", duration: "3.6s", size: "11px", rotate: "315deg" },
   { left: "30%", top: "10%", delay: "2.2s", duration: "4.4s", size: "23px", rotate: "90deg" },

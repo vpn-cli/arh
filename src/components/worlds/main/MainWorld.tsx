@@ -15,7 +15,6 @@ import ScrollRibbon from "./ScrollRibbon";
 import PhaseTracker from "./PhaseTracker";
 import PhaseSection from "./PhaseSection";
 import TheAdventureHero from "./TheAdventureHero";
-import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useNotifyWorldPainted } from "@/lib/paintSignal";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -29,6 +28,7 @@ export default function MainWorld() {
 
   useEffect(() => {
     // Always reboot terminal fresh whenever user lands on the page
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Always reboot terminal fresh on world mount
     setIsUnlocked(false);
     try {
       sessionStorage.removeItem("kitty_terminal_unlocked");

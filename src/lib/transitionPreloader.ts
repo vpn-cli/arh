@@ -15,7 +15,13 @@ export function preloadWorldTransitions() {
   if (isPreloaded || typeof window === "undefined") return;
 
   // Check network conditions: skip on saveData or 2g
-  const nav = navigator as any;
+  interface NetworkInfo {
+    saveData?: boolean;
+    effectiveType?: string;
+  }
+  const nav = typeof navigator !== "undefined"
+    ? (navigator as unknown as { connection?: NetworkInfo; mozConnection?: NetworkInfo; webkitConnection?: NetworkInfo })
+    : null;
   const conn = nav?.connection || nav?.mozConnection || nav?.webkitConnection;
   if (conn?.saveData || conn?.effectiveType === "2g") {
     return;
@@ -60,8 +66,11 @@ export function preloadWorldTransitions() {
     });
   };
 
-  if ("requestIdleCallback" in window) {
-    (window as any).requestIdleCallback(runPreload, { timeout: 3000 });
+  const win = typeof window !== "undefined"
+    ? (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number })
+    : null;
+  if (win?.requestIdleCallback) {
+    win.requestIdleCallback(runPreload, { timeout: 3000 });
   } else {
     setTimeout(runPreload, 1200);
   }

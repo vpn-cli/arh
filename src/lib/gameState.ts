@@ -107,6 +107,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       url.searchParams.delete("spotify_auth");
       if (returnToMusic) {
         url.searchParams.set("world", "music");
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Restore music world state on Spotify OAuth redirect on mount
         setState((prev) => ({ ...prev, currentWorld: "music" }));
       }
       if (window.location.pathname === "/") {
@@ -138,6 +139,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       transitionTarget: null,
     }));
     if (typeof window !== "undefined") {
+      window.__transitionOverlayStartTime = null;
       window.scrollTo({ top: 0 });
     }
   }, []);
@@ -159,6 +161,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         transitionTarget: null,
       }));
       if (typeof window !== "undefined") {
+        window.__transitionOverlayStartTime = null;
         window.scrollTo({ top: 0 });
       }
       return;
@@ -167,6 +170,10 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     isTransitioningRef.current = true;
     transitionTargetRef.current = world;
     const fromWorld = currentWorldRef.current;
+
+    if (typeof window !== "undefined") {
+      window.__transitionOverlayStartTime = performance.now();
+    }
 
     setState((prev) => ({
       ...prev,
@@ -191,6 +198,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
           transitionTarget: null,
         }));
         if (typeof window !== "undefined") {
+          window.__transitionOverlayStartTime = null;
           window.scrollTo({ top: 0 });
         }
       }

@@ -66,7 +66,10 @@ export function SiteLoadOverlay({ onComplete }: SiteLoadOverlayProps) {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  });
 
   // Set video DOM properties synchronously on ref attachment for strict browser autoplay
   const setVideoRef = useCallback((el: HTMLVideoElement | null) => {
@@ -82,6 +85,7 @@ export function SiteLoadOverlay({ onComplete }: SiteLoadOverlayProps) {
     try {
       const media = window.matchMedia("(prefers-reduced-motion: reduce)");
       if (media.matches) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Read media query preference on client mount
         setPrefersReducedMotion(true);
       }
     } catch {
@@ -136,6 +140,7 @@ export function SiteLoadOverlay({ onComplete }: SiteLoadOverlayProps) {
       }`}
     >
       {/* Poster image fallback / first-paint layer */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- Instant LCP poster rendered before framework hydration */}
       <img
         src="/transitions/load-cat-5s.webp"
         alt=""
@@ -197,6 +202,7 @@ export function TransitionOverlay({
     try {
       const media = window.matchMedia("(prefers-reduced-motion: reduce)");
       if (media.matches) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Client preference check on mount
         setPrefersReducedMotion(true);
       }
     } catch {
@@ -206,6 +212,7 @@ export function TransitionOverlay({
 
   useEffect(() => {
     if (!isTransitioning) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Reset transition state when transitioning ends
       setIsFadingOut(false);
       if (videoRef.current) {
         videoRef.current.pause();
@@ -216,8 +223,8 @@ export function TransitionOverlay({
     }
 
     if (typeof window !== "undefined") {
-      (window as any).__fadeStartTime = null;
-      (window as any).__fadeEndTime = null;
+      window.__fadeStartTime = null;
+      window.__fadeEndTime = null;
     }
 
     if (videoRef.current && !prefersReducedMotion) {
@@ -230,10 +237,10 @@ export function TransitionOverlay({
       }
     }
 
-    // Fallback timer: if paint signal does not arrive within 3500ms, start fade-out anyway
+    // Fallback timer: if paint signal does not arrive within 4000ms, start fade-out anyway
     const fallbackFadeTimer = setTimeout(() => {
       setIsFadingOut(true);
-    }, 3500);
+    }, 4000);
 
     return () => {
       clearTimeout(fallbackFadeTimer);
@@ -246,20 +253,35 @@ export function TransitionOverlay({
   }, [isTransitioning, prefersReducedMotion]);
 
   // Start 300ms dissolve only when the target world has emitted its paint signal
+  // AND the 3.0s clip has reached its 2.7s playback window (Math.max(2700, paintedTime)).
   useEffect(() => {
-    if (isTransitioning && isTargetPainted && !isFadingOut) {
+    if (!isTransitioning || !isTargetPainted || isFadingOut) return;
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const triggerFade = () => {
       setIsFadingOut(true);
       if (typeof window !== "undefined") {
-        (window as any).__fadeStartTime = performance.now();
+        window.__fadeStartTime = performance.now();
       }
-      const completeTimer = setTimeout(() => {
+      setTimeout(() => {
         if (typeof window !== "undefined") {
-          (window as any).__fadeEndTime = performance.now();
+          window.__fadeEndTime = performance.now();
         }
         onFadeComplete?.();
       }, 300);
-      return () => clearTimeout(completeTimer);
-    }
+    };
+
+    const elapsed = (typeof window !== "undefined" && window.__transitionOverlayStartTime)
+      ? performance.now() - window.__transitionOverlayStartTime
+      : 2700;
+    const remainingTo2700 = Math.max(0, 2700 - elapsed);
+
+    timer = setTimeout(triggerFade, remainingTo2700);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [isTransitioning, isTargetPainted, isFadingOut, onFadeComplete]);
 
   if (!clip && !isTransitioning) return null;
@@ -277,6 +299,7 @@ export function TransitionOverlay({
       {clip && (
         <>
           {/* Companion poster */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- Instant fallback poster before video decode */}
           <img
             src={clip.poster}
             alt=""

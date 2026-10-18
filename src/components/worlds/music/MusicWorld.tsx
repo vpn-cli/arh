@@ -16,7 +16,19 @@ export default function MusicWorld() {
   const { isWidgetView } = useMusicView();
   const { goHome } = useGameState();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [notes, setNotes] = useState<any[]>([]);
+
+  interface FloatingNote {
+    id: number;
+    top: string;
+    left: string;
+    delay: string;
+    duration: string;
+    color: string;
+    size: string;
+    rotation: string;
+    symbol: string;
+  }
+  const [notes, setNotes] = useState<FloatingNote[]>([]);
 
   useEffect(() => {
     if (containerRef.current) {
@@ -28,7 +40,7 @@ export default function MusicWorld() {
     }
 
     // Generate random notes
-    const generatedNotes = Array.from({ length: 25 }).map((_, i) => ({
+    const generatedNotes: FloatingNote[] = Array.from({ length: 25 }).map((_, i) => ({
       id: i,
       top: `${Math.random() * 100}%`,
       left: `${Math.random() * 100}%`,
@@ -39,6 +51,7 @@ export default function MusicWorld() {
       rotation: `${Math.random() * 60 - 30}deg`, // slight tilt
       symbol: ['♪', '♫', '♬', '♩', '♭', '♮', '♯'][Math.floor(Math.random() * 7)]
     }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Generate ambient music notes on mount
     setNotes(generatedNotes);
   }, []);
 

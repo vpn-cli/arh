@@ -3,7 +3,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import WorldRouter, { preloadWorld } from '../WorldRouter';
 import HomeWorld from '../HomeWorld';
-import { GameStateProvider, useGameState } from '@/lib/gameState';
+import { GameStateProvider } from '@/lib/gameState';
 
 // Mock GSAP and audio
 vi.mock('gsap', () => ({

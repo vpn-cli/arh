@@ -33,15 +33,17 @@ const ScrapbookWorld = dynamic(() => import("./scrapbook/ScrapbookWorld"), {
   ),
 });
 
+type PreloadableComponent = React.ComponentType<unknown> & { preload?: () => Promise<unknown> };
+
 export function preloadWorld(worldId: string) {
   if (worldId === "main") {
-    (MainWorld as any).preload?.();
+    (MainWorld as unknown as PreloadableComponent).preload?.();
     return import("./main/MainWorld");
   } else if (worldId === "music") {
-    (MusicWorld as any).preload?.();
+    (MusicWorld as unknown as PreloadableComponent).preload?.();
     return import("./music/MusicWorld");
   } else if (worldId === "scrapbook") {
-    (ScrapbookWorld as any).preload?.();
+    (ScrapbookWorld as unknown as PreloadableComponent).preload?.();
     return import("./scrapbook/ScrapbookWorld");
   }
 }
@@ -55,7 +57,7 @@ function HomeWorldPaintSignal({ onPainted }: { onPainted: () => void }) {
     a1 = requestAnimationFrame(() => {
       a2 = requestAnimationFrame(() => {
         if (typeof window !== "undefined") {
-          (window as any).__targetPaintedTime = performance.now();
+          window.__targetPaintedTime = performance.now();
         }
         onPainted();
       });
@@ -87,33 +89,27 @@ export default function WorldRouter() {
     }
   }, [isTransitioning, transitionTarget]);
 
-  // Staged mount timing: keep previous world mounted during video playback,
-  // then mount target world at 2.7s right before the 300ms overlay fade-out begins.
+  // Mount target world at t=0 behind the opaque transition overlay so it finishes
+  // painting well before the 2.7s mark, eliminating timer slip under slow CPU conditions.
   useEffect(() => {
     if (!isTransitioning) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronize staged world when transitioning completes
       setStagedWorld(currentWorld);
       setIsTargetPainted(false);
       return;
     }
 
-    setStagedWorld(previousWorld || currentWorld);
+    const target = transitionTarget || currentWorld;
+    setStagedWorld(target);
     setIsTargetPainted(false);
     if (typeof window !== "undefined") {
-      (window as any).__targetMountTime = null;
-      (window as any).__targetPaintedTime = null;
-    }
-
-    // Mount target world at 2.7s (2700ms)
-    const mountTimer = setTimeout(() => {
-      const target = transitionTarget || currentWorld;
-      setStagedWorld(target);
-      if (typeof window !== "undefined") {
-        (window as any).__targetMountTime = performance.now();
+      window.__targetMountTime = performance.now();
+      window.__targetPaintedTime = null;
+      if (!window.__transitionOverlayStartTime) {
+        window.__transitionOverlayStartTime = performance.now();
       }
-    }, 2700);
-
-    return () => clearTimeout(mountTimer);
-  }, [isTransitioning, currentWorld, previousWorld, transitionTarget]);
+    }
+  }, [isTransitioning, currentWorld, transitionTarget]);
 
   // Listen for paint signal from target world (two rAFs after mount effect)
   useEffect(() => {
@@ -123,16 +119,16 @@ export default function WorldRouter() {
 
     const handlePaintSignal = () => {
       if (fallbackTimer) clearTimeout(fallbackTimer);
-      if (typeof window !== "undefined" && !(window as any).__targetPaintedTime) {
-        (window as any).__targetPaintedTime = performance.now();
+      if (typeof window !== "undefined" && !window.__targetPaintedTime) {
+        window.__targetPaintedTime = performance.now();
       }
       setIsTargetPainted(true);
     };
 
     window.addEventListener(TARGET_WORLD_PAINTED_EVENT, handlePaintSignal);
 
-    // Fallback: if paint signal not received within 3500ms of transition start, trigger anyway
-    fallbackTimer = setTimeout(handlePaintSignal, 3500);
+    // Fallback: if paint signal not received within 4000ms of transition start, trigger anyway
+    fallbackTimer = setTimeout(handlePaintSignal, 4000);
 
     return () => {
       window.removeEventListener(TARGET_WORLD_PAINTED_EVENT, handlePaintSignal);

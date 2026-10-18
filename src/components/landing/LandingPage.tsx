@@ -25,7 +25,7 @@ export default function LandingPage() {
   // Phase gates — each unlocks the next screen
   const [hasEntered, setHasEntered] = useState(false);
   const [introFinished, setIntroFinished] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+  const [_isReady, setIsReady] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [loaderDone, setLoaderDone] = useState(false);
 
@@ -43,6 +43,7 @@ export default function LandingPage() {
       new URLSearchParams(window.location.search).get("skipIntro") === "1";
 
     if (isAuthReturn) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Client URL parameters must synchronize phase states on initial mount
       setIsAuthLoading(true);
       setHasEntered(true);
       setIntroFinished(true);
@@ -54,7 +55,7 @@ export default function LandingPage() {
     }
     setIsReady(true);
     if (typeof window !== "undefined") {
-      (window as any).__isReadyFlipped = performance.now();
+      window.__isReadyFlipped = performance.now();
     }
   }, []);
 
