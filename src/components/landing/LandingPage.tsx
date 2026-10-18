@@ -19,7 +19,7 @@ import { useGameState, isValidWorld } from "@/lib/gameState";
    ═══════════════════════════════════════════════════════ */
 
 export default function LandingPage() {
-  const { goToWorld } = useGameState();
+  const { currentWorld, goToWorld } = useGameState();
 
   // Phase gates — each unlocks the next screen
   const [hasEntered, setHasEntered] = useState(false);
@@ -55,10 +55,9 @@ export default function LandingPage() {
     setIntroFinished(true);
     const urlParams = new URLSearchParams(window.location.search);
     const worldParam = urlParams.get("world");
-    if (isValidWorld(worldParam)) {
-      goToWorld(worldParam);
-    } else {
-      goToWorld("home");
+    const targetWorld = isValidWorld(worldParam) ? worldParam : "home";
+    if (targetWorld !== currentWorld) {
+      goToWorld(targetWorld);
     }
   };
 

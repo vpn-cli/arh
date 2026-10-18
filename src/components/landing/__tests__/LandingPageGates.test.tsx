@@ -2,6 +2,7 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import LandingPage from "../LandingPage";
+import * as gameStateModule from "@/lib/gameState";
 import { GameStateProvider, useGameState } from "@/lib/gameState";
 
 vi.mock("../../worlds/WorldRouter", () => ({
@@ -94,8 +95,87 @@ describe("LandingPage Gates", () => {
     expect(screen.queryByTestId("world-router")).toBeNull();
   });
 
-  it("navigates to deep-linked world in ?world= after intro ends", async () => {
-    vi.useFakeTimers();
+  it("after intro on '/' does not call goToWorld with already-current world and renders 'home'", () => {
+    delete (window as any).location;
+    window.location = {
+      ...originalLocation,
+      search: "",
+      pathname: "/",
+      href: "http://localhost:3000/",
+    } as any;
+
+    const realUseGameState = gameStateModule.useGameState;
+    const goToWorldSpy = vi.fn();
+    vi.spyOn(gameStateModule, "useGameState").mockImplementation(() => {
+      const ctx = realUseGameState();
+      return {
+        ...ctx,
+        goToWorld: goToWorldSpy,
+      };
+    });
+
+    render(
+      <GameStateProvider>
+        <LandingPage />
+      </GameStateProvider>
+    );
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /click to enter/i }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /complete loading/i }));
+    });
+
+    // goToWorld must NOT be called because target is 'home' and current is already 'home'
+    expect(goToWorldSpy).not.toHaveBeenCalled();
+
+    // Renders home immediately without flash or delay
+    expect(screen.getByTestId("world-router")).toBeDefined();
+    expect(screen.getByText("World: home")).toBeDefined();
+  });
+
+  it("after intro on '/?world=main' does not call goToWorld with already-current world and renders 'main'", () => {
+    delete (window as any).location;
+    window.location = {
+      ...originalLocation,
+      search: "?world=main",
+      pathname: "/",
+      href: "http://localhost:3000/?world=main",
+    } as any;
+
+    const realUseGameState = gameStateModule.useGameState;
+    const goToWorldSpy = vi.fn();
+    vi.spyOn(gameStateModule, "useGameState").mockImplementation(() => {
+      const ctx = realUseGameState();
+      return {
+        ...ctx,
+        goToWorld: goToWorldSpy,
+      };
+    });
+
+    render(
+      <GameStateProvider>
+        <LandingPage />
+      </GameStateProvider>
+    );
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /click to enter/i }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /complete loading/i }));
+    });
+
+    // goToWorld must NOT be called because target is 'main' and current is already 'main'
+    expect(goToWorldSpy).not.toHaveBeenCalled();
+
+    // Renders main immediately without flash or delay
+    expect(screen.getByTestId("world-router")).toBeDefined();
+    expect(screen.getByText("World: main")).toBeDefined();
+  });
+
+  it("navigates to deep-linked world in ?world= after intro ends", () => {
     delete (window as any).location;
     window.location = {
       ...originalLocation,
@@ -123,18 +203,11 @@ describe("LandingPage Gates", () => {
     });
 
     // World system active and navigated to 'main'
-    act(() => {
-      vi.advanceTimersByTime(600);
-    });
-
     expect(screen.getByTestId("world-router")).toBeDefined();
     expect(screen.getByText("World: main")).toBeDefined();
-
-    vi.useRealTimers();
   });
 
-  it("navigates to default home world after intro ends when no ?world= is specified", async () => {
-    vi.useFakeTimers();
+  it("navigates to default home world after intro ends when no ?world= is specified", () => {
     delete (window as any).location;
     window.location = {
       ...originalLocation,
@@ -162,14 +235,8 @@ describe("LandingPage Gates", () => {
     });
 
     // World system active and in 'home'
-    act(() => {
-      vi.advanceTimersByTime(600);
-    });
-
     expect(screen.getByTestId("world-router")).toBeDefined();
     expect(screen.getByText("World: home")).toBeDefined();
-
-    vi.useRealTimers();
   });
 
   it("bypasses intro when spotify_auth= is in URL (OAuth callback)", () => {
