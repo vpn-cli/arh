@@ -73,6 +73,25 @@ describe('WorldRouter and preloading', () => {
     expect(onPortalIntent).toHaveBeenCalledWith('main');
   });
 
+  it('renders TransitionOverlay with world-main-3s clip when transitioning from home to main', () => {
+    render(
+      <GameStateProvider>
+        <WorldRouter />
+      </GameStateProvider>
+    );
+
+    act(() => {
+      screen.getByRole('button', { name: /Enter MAIN WORLD/i }).click();
+    });
+
+    const overlay = screen.getByTestId('world-transition-overlay');
+    expect(overlay).toBeDefined();
+
+    const video = screen.getByTestId('world-transition-video') as HTMLVideoElement;
+    expect(video.getAttribute('src')).toBe('/transitions/world-main-3s.mp4');
+    expect(video.getAttribute('poster')).toBe('/transitions/world-main-3s.webp');
+  });
+
   it('preloadWorld helper executes without throwing for valid world ids', async () => {
     await Promise.all([
       preloadWorld('main'),

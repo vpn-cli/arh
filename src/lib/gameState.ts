@@ -21,11 +21,16 @@ export interface GameState {
   currentWorld: WorldId;
   previousWorld: WorldId | null;
   isTransitioning: boolean;
+  transitionTarget: WorldId | null;
   mainWorldScrollY: number;
 }
 
+export interface GoToWorldOptions {
+  immediate?: boolean;
+}
+
 export interface GameActions {
-  goToWorld: (world: WorldId) => void;
+  goToWorld: (world: WorldId, options?: GoToWorldOptions) => void;
   goHome: () => void;
   setMainWorldScrollY: (y: number) => void;
 }
@@ -54,9 +59,29 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       currentWorld: initialWorld,
       previousWorld: null,
       isTransitioning: false,
+      transitionTarget: null,
       mainWorldScrollY: 0,
     };
   });
+
+  // Stale guards: refs to synchronously check transitioning state & current world across ticks
+  const isTransitioningRef = React.useRef(false);
+  const currentWorldRef = React.useRef<WorldId>(state.currentWorld);
+  const transitionTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const safetyTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync currentWorldRef with state.currentWorld
+  React.useEffect(() => {
+    currentWorldRef.current = state.currentWorld;
+  }, [state.currentWorld]);
+
+  // Clean up timers on unmount
+  React.useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+    };
+  }, []);
 
   // Keep URL ?world= in sync when currentWorld changes (only on root "/" route)
   React.useEffect(() => {
@@ -98,23 +123,68 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const goToWorld = useCallback((world: WorldId) => {
+  const goToWorld = useCallback((world: WorldId, options?: GoToWorldOptions) => {
+    // Correction 3: Synchronous ref guards prevent multiple transitions firing in same tick
+    if (isTransitioningRef.current) return;
+    if (currentWorldRef.current === world) return;
+
+    if (options?.immediate) {
+      isTransitioningRef.current = false;
+      currentWorldRef.current = world;
+      setState((prev) => ({
+        ...prev,
+        currentWorld: world,
+        previousWorld: prev.currentWorld,
+        isTransitioning: false,
+        transitionTarget: null,
+      }));
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0 });
+      }
+      return;
+    }
+
+    isTransitioningRef.current = true;
+    const fromWorld = currentWorldRef.current;
+
     setState((prev) => ({
       ...prev,
       isTransitioning: true,
-      previousWorld: prev.currentWorld,
+      transitionTarget: world,
+      previousWorld: fromWorld,
     }));
 
-    // Transition delay for animation
-    setTimeout(() => {
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+
+    // 3.0s (3000ms) transition animation
+    transitionTimerRef.current = setTimeout(() => {
+      isTransitioningRef.current = false;
+      currentWorldRef.current = world;
       setState((prev) => ({
         ...prev,
         currentWorld: world,
         isTransitioning: false,
+        transitionTarget: null,
       }));
-      // Scroll to top when entering a new world
-      window.scrollTo({ top: 0 });
-    }, 500);
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0 });
+      }
+    }, 3000);
+
+    // Hard safety cap at 3400ms: if anything hung, guarantee reset
+    safetyTimerRef.current = setTimeout(() => {
+      if (isTransitioningRef.current) {
+        isTransitioningRef.current = false;
+        currentWorldRef.current = world;
+        setState((prev) => ({
+          ...prev,
+          currentWorld: world,
+          isTransitioning: false,
+          transitionTarget: null,
+        }));
+      }
+    }, 3400);
   }, []);
 
   const goHome = useCallback(() => {

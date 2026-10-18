@@ -330,4 +330,36 @@ describe("LandingPage Gates", () => {
     expect(screen.queryByTestId("story-flow")).toBeNull();
     expect(screen.queryByText(/hamster/i)).toBeNull();
   });
+
+  it("maintains SiteLoadOverlay video element identity before and after isReady flips (Correction 1)", () => {
+    delete (window as any).location;
+    window.location = {
+      ...originalLocation,
+      search: "",
+      pathname: "/",
+      href: "http://localhost:3000/",
+    } as any;
+
+    // We render LandingPage and verify the video element is immediately present and maintains reference
+    const { container, rerender } = render(
+      <GameStateProvider>
+        <LandingPage />
+      </GameStateProvider>
+    );
+
+    const videoElement1 = screen.getByTestId("site-load-video");
+    expect(videoElement1).toBeDefined();
+    expect(videoElement1.getAttribute("poster")).toBe("/transitions/load-cat-5s.webp");
+
+    // Force re-render of LandingPage
+    rerender(
+      <GameStateProvider>
+        <LandingPage />
+      </GameStateProvider>
+    );
+
+    const videoElement2 = screen.getByTestId("site-load-video");
+    // Prove video element identity is strictly preserved (same DOM node instance)
+    expect(videoElement1).toBe(videoElement2);
+  });
 });

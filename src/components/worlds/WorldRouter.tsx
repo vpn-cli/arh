@@ -1,14 +1,15 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { useGameState } from "@/lib/gameState";
+import { useGameState, WorldId } from "@/lib/gameState";
 import HomeWorld from "./HomeWorld";
+import { TransitionOverlay } from "../transitions/TransitionOverlay";
+import { preloadWorldTransitions } from "@/lib/transitionPreloader";
 
 /* ═══════════════════════════════════════════════════════
    WORLD ROUTER — Renders the current world with
-   transition effects. This replaces file-based routing
-   to maintain the single-page game feel.
+   cinematic transition clips.
    ═══════════════════════════════════════════════════════ */
 
 const MainWorld = dynamic(() => import("./main/MainWorld"), {
@@ -46,30 +47,49 @@ export function preloadWorld(worldId: string) {
 }
 
 export default function WorldRouter() {
-  const { currentWorld, isTransitioning } = useGameState();
+  const { currentWorld, previousWorld, isTransitioning, transitionTarget } = useGameState();
+  const [stagedWorld, setStagedWorld] = useState<WorldId>(currentWorld);
+
+  // Warm world clips & posters when Hub is visible and idle
+  useEffect(() => {
+    if (currentWorld === "home" && !isTransitioning) {
+      preloadWorldTransitions();
+    }
+  }, [currentWorld, isTransitioning]);
+
+  // Staged mount timing: keep previous world mounted during video playback,
+  // then mount target world at 2.7s right before the 300ms overlay fade-out begins.
+  useEffect(() => {
+    if (!isTransitioning) {
+      setStagedWorld(currentWorld);
+      return;
+    }
+
+    setStagedWorld(previousWorld || currentWorld);
+    const timer = setTimeout(() => {
+      setStagedWorld(transitionTarget || currentWorld);
+    }, 2700);
+    return () => clearTimeout(timer);
+  }, [isTransitioning, currentWorld, previousWorld, transitionTarget]);
+
+  const fromWorld = previousWorld || currentWorld;
+  const toWorld = transitionTarget || currentWorld;
 
   return (
     <div className="relative w-full min-h-screen">
-      {/* Transition overlay — cinematic fade */}
-      <div
-        className={`
-          fixed inset-0 z-[100] bg-[#0C0A15] pointer-events-none
-          transition-opacity duration-500 ease-in-out
-          ${isTransitioning ? "opacity-100" : "opacity-0"}
-        `}
+      {/* Cinematic Transition Overlay with video clip & companion poster */}
+      <TransitionOverlay
+        fromWorld={fromWorld}
+        toWorld={toWorld}
+        isTransitioning={isTransitioning}
       />
 
-      {/* World content */}
-      <div
-        className={`
-          transition-all duration-300 ease-out
-          ${isTransitioning ? "opacity-0 scale-[0.98]" : "opacity-100"}
-        `}
-      >
-        {currentWorld === "home" && <HomeWorld onPortalIntent={preloadWorld} />}
-        {currentWorld === "main" && <MainWorld />}
-        {currentWorld === "music" && <MusicWorld />}
-        {currentWorld === "scrapbook" && <ScrapbookWorld />}
+      {/* World content - rendered behind overlay */}
+      <div className="w-full min-h-screen">
+        {stagedWorld === "home" && <HomeWorld onPortalIntent={preloadWorld} />}
+        {stagedWorld === "main" && <MainWorld />}
+        {stagedWorld === "music" && <MusicWorld />}
+        {stagedWorld === "scrapbook" && <ScrapbookWorld />}
       </div>
     </div>
   );

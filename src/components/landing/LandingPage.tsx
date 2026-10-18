@@ -1,18 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AmbientParticles from "./AmbientParticles";
 import GameboyLoadingScreen from "../ui/GameboyLoadingScreen";
 import ClickToEnterScreen from "../ui/ClickToEnterScreen";
 import AuthLoadingOverlay from "../ui/AuthLoadingOverlay";
 import WorldRouter from "../worlds/WorldRouter";
+import { SiteLoadOverlay } from "../transitions/TransitionOverlay";
 import { SpotifyPlayerProvider } from "@/providers/SpotifyPlayerProvider";
 import { useGameState, isValidWorld } from "@/lib/gameState";
 
 /* ═══════════════════════════════════════════════════════
    LANDING PAGE — Master orchestrator
    
-   Flow: ClickToEnter → GameboyLoading → World Hub (or ?world= destination)
+   Flow: SiteLoad (5s clip/poster) → ClickToEnter → GameboyLoading → World Hub
    
    Once the Gameboy loading sequence finishes, WorldRouter
    takes over and the user navigates freely between worlds.
@@ -26,8 +27,9 @@ export default function LandingPage() {
   const [introFinished, setIntroFinished] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [loaderDone, setLoaderDone] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Clear any leftover legacy flags so returning visitors aren't skipped
     try {
       window.localStorage.removeItem("story_complete");
@@ -44,9 +46,11 @@ export default function LandingPage() {
       setIsAuthLoading(true);
       setHasEntered(true);
       setIntroFinished(true);
+      setLoaderDone(true);
     } else if (isDevSkip) {
       setHasEntered(true);
       setIntroFinished(true);
+      setLoaderDone(true);
     }
     setIsReady(true);
   }, []);
@@ -57,16 +61,17 @@ export default function LandingPage() {
     const worldParam = urlParams.get("world");
     const targetWorld = isValidWorld(worldParam) ? worldParam : "home";
     if (targetWorld !== currentWorld) {
-      goToWorld(targetWorld);
+      goToWorld(targetWorld, { immediate: true });
     }
   };
 
-  if (!isReady) {
-    return <div className="min-h-screen w-full bg-home-bg" />;
-  }
-
   return (
     <div className="relative min-h-screen w-full bg-home-bg text-home-cream flex flex-col overflow-x-hidden selection:bg-music-pink/40">
+      {/* ═══ PHASE 0: 5.0s Site Load Overlay (SSR poster + video) ═══ */}
+      {!loaderDone && (
+        <SiteLoadOverlay onComplete={() => setLoaderDone(true)} />
+      )}
+
       {/* Auth Loading Overlay */}
       {isAuthLoading && <AuthLoadingOverlay onComplete={() => setIsAuthLoading(false)} />}
       
@@ -79,7 +84,7 @@ export default function LandingPage() {
       )}
 
       {/* ═══ PHASE 2: Retro Loading Screen ═══ */}
-      {!introFinished && (
+      {hasEntered && !introFinished && (
         <GameboyLoadingScreen
           onComplete={handleIntroComplete}
         />
