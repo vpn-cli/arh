@@ -1441,4 +1441,43 @@ Strict rules observed:
 - Staged only `public/transitions/*` and `next.config.ts` by explicit path.
 - Commit `c7e85dd` pushed to `origin/main` and verified in sync.
 
+---
+
+## 26. Session Log: Transition Clips Trimming, Slow-Motion, and Gitignore
+
+### Context & Goals
+Follow-up optimization for site-load and world transition media:
+- Add `assets-src/gifs/` to `.gitignore` matching `assets-src/slideshow/` pattern.
+- Trim site load clip to exactly 5.00s and world transitions to exactly 3.00s.
+- Stretch `snorlax.gif` (2.36s source) to exactly 3.00s via `setpts` factor `3.00 / 2.36` (≈ 1.271186).
+- Clean up unused un-trimmed files via `git rm` after verifying 0 references across `src/` and `public/`.
+- No UI components wired up yet.
+
+### 1. Gitignore & Cleanup Verification
+- `.gitignore` updated with:
+  ```gitignore
+  # raw gif originals
+  assets-src/gifs/*
+  !assets-src/gifs/.gitkeep
+  ```
+- Verified with `git check-ignore -v "assets-src/gifs/cat.mp4"`: `.gitignore:51:assets-src/gifs/*`.
+- Verified 0 references to old filenames across `src/` and `public/` using `git grep`.
+- Removed old transition files cleanly with `git rm`.
+
+### 2. Trimmed Encoding & Poster Generation
+- **`load-cat-5s.mp4`**: Start `00:00:00`, duration 5.000s, 1280×720, 24 fps, CRF 30 (CRF 28 was 552.0 KB > 450 KB; stepped to CRF 30 to reach 421,356 B / 411.5 KB ≤ 450 KB). Poster `load-cat-5s.webp`: 14,546 B (14.2 KB ≤ 40 KB).
+- **`world-main-3s.mp4`**: Start `00:00:00`, duration 3.000s, 1280×720, 24 fps, CRF 28 (233,932 B / 228.4 KB ≤ 400 KB). Poster `world-main-3s.webp`: 38,330 B (37.4 KB ≤ 40 KB).
+- **`world-music-3s.mp4`**: Start `00:00:00`, duration 3.000s, 1280×720, 24 fps, CRF 28 (80,622 B / 78.7 KB ≤ 400 KB). Poster `world-music-3s.webp`: 21,330 B (20.8 KB ≤ 40 KB).
+- **`world-scrapbook-3s.mp4`**: Slowed from 2.360s to 3.000s using `setpts=(3.0/2.36)*PTS`, 800×450, 24 fps, CRF 28 (273,344 B / 266.9 KB ≤ 400 KB). Poster `world-scrapbook-3s.webp`: 37,436 B (36.6 KB ≤ 40 KB).
+- Frame integrity: Confirmed every clip starts and ends on clean, non-black, uncorrupted frames. Snorlax animation is smooth and unchoppy (71 source frames mapped across 72 output frames at 24 fps).
+
+### 3. Quality Gates & Verification
+- `npm run check:frozen`: Passed (0 violations).
+- `npm run lint -- --quiet`: Passed (0 errors).
+- `npm run typecheck`: Passed (0 errors).
+- `npm run test`: Passed (73 test files, 671 tests passed).
+- `npm run build`: Passed (Turbopack production build succeeded).
+- Feature commit `00e8492` pushed to `origin/main` and verified in sync.
+
+
 
