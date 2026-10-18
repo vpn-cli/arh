@@ -1404,3 +1404,41 @@ Per user request, restyled the top-left `"MAIN MENU"` card and its attached help
 - Commit `8b9d690` pushed to `origin/main`.
 - Follow-up: Restyled `HelloKittyAlertModal.tsx` in pink theme (`variant="pink"`, pink `CURRENT_LOCATION: JP 🇯🇵`, and pink retro gradient button `↵ BACK TO MENU`). Commit `af55a7a` pushed to `origin/main`.
 
+---
+
+## 25. Session Log: Site-Load & World-Transition Media Encoding
+
+### Context & Goals
+Prepared 4 media clips for site loading and world transitions into `public/transitions/` with companion first-frame WebP posters and long-term immutable caching headers in `next.config.ts`.
+Strict rules observed:
+- Zero modifications, moves, renames, copies, or deletions of source assets in `assets-src/gifs/`.
+- Pre-existing working tree state kept untouched.
+- No UI components wired up yet.
+
+### 1. Source Asset Inspection (`assets-src/gifs/`)
+- `cat.mp4`: MP4 container, H.264 video, 1920×1080, 30 fps, 33.47s duration, no audio, 15,283,878 bytes (video file, not a real GIF).
+- `toads.mp4`: MP4 container, H.264 video, 1920×1080, 24 fps, 22.00s duration, no audio, 5,849,316 bytes (video file, not a real GIF).
+- `skating toads.mp4`: MP4 container, H.264 video, 1920×1080, 30 fps, 6.00s duration, no audio, 4,420,149 bytes (video file, not a real GIF).
+- `snorlax.gif`: CompuServe GIF89a format, GIF codec, 800×450, 33.33 fps, 2.36s duration, no audio, 13,437,735 bytes (real GIF).
+- Gitignore status: `assets-src/gifs/` is NOT ignored by git; kept untracked and omitted from commits.
+
+### 2. Encoding Settings & Artifact Management
+- **Settings Applied**: H.264 (`libx264`), pixel format `yuv420p`, `-an` (no audio), 24 fps, `-movflags +faststart`, scaled with Lanczos filter (smooth hand-drawn/painted animation sources). Never upscaled.
+- **Output Files**:
+  - `load-cat.mp4`: 960×540, 24 fps, CRF 34, 885,431 bytes (864.7 KB; source duration is 33.47s, stopped at 540p / CRF 34 ceiling). Poster `load-cat.webp`: 9,066 bytes.
+  - `world-main.mp4`: 960×540, 24 fps, CRF 34, 589,464 bytes (575.6 KB ≤ 600 KB). Poster `world-main.webp`: 26,016 bytes.
+  - `world-music.mp4`: 1280×720, 24 fps, CRF 28, 144,860 bytes (141.5 KB ≤ 600 KB). Poster `world-music.webp`: 21,330 bytes.
+  - `world-scrapbook.mp4`: 800×450, 24 fps, CRF 28, 226,028 bytes (220.7 KB ≤ 600 KB; source height 450 preserved). Poster `world-scrapbook.webp`: 37,804 bytes.
+- **Cache-Control Configuration**:
+  - Added `/transitions/:path*` to `next.config.ts` headers with `public, max-age=31536000, immutable`.
+
+### 3. Quality Gates & Verification
+- `npm run check:frozen`: Passed (0 violations).
+- `npm run lint -- --quiet`: Passed (0 errors).
+- `npm run typecheck`: Passed (0 errors).
+- `npm run test`: Passed (73 test files, 671 tests passed).
+- `npm run build`: Passed (Turbopack production build succeeded).
+- Staged only `public/transitions/*` and `next.config.ts` by explicit path.
+- Commit `c7e85dd` pushed to `origin/main` and verified in sync.
+
+
