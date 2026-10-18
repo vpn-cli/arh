@@ -44,6 +44,7 @@ export default function HelloKittyAlertModal({ isOpen, onClose }: HelloKittyAler
         className="relative animate-in zoom-in-95 duration-300 flex flex-col items-center"
       >
         <IndiePixelWindow 
+          variant="pink"
           title="⚠ SYSTEM ALERT ⚠" 
           className="w-[320px] sm:w-[360px]"
           onClose={onClose}
@@ -60,7 +61,7 @@ export default function HelloKittyAlertModal({ isOpen, onClose }: HelloKittyAler
                 ERROR: Player has changed location.
               </p>
               <div className="inline-block bg-[#280E1C] border border-[#FF5C77]/40 px-3 py-1.5 rounded-sm shadow-[inset_0_0_8px_rgba(255,92,119,0.1)]">
-                <p className="font-retro text-[#FFD166] text-[9px] sm:text-[10px] tracking-widest drop-shadow-[0_1px_0_#000]">
+                <p className="font-retro text-[#FFD0DC] text-[9px] sm:text-[10px] tracking-widest drop-shadow-[0_1px_0_#000]">
                   CURRENT_LOCATION: JP 🇯🇵
                 </p>
               </div>
@@ -69,9 +70,9 @@ export default function HelloKittyAlertModal({ isOpen, onClose }: HelloKittyAler
             {/* Dismiss Button */}
             <button
               onClick={onClose}
-              className="group relative inline-flex items-center justify-center px-4 py-2.5 bg-[#EBE4D8] border-t-2 border-l-2 border-white border-b-2 border-r-2 border-[#8A7F73] shadow-[3px_3px_0px_#0B0A14] active:shadow-[1px_1px_0px_#0B0A14] active:translate-y-[2px] active:translate-x-[2px] transition-all hover:bg-[#FFF] outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C77]"
+              className="group relative inline-flex items-center justify-center px-4 py-2.5 bg-gradient-to-b from-[#FF8FB3] to-[#C24075] border-t-2 border-l-2 border-[#FFD0DC] border-b-2 border-r-2 border-[#54122D] shadow-[3px_3px_0px_#0B0A14] active:shadow-[1px_1px_0px_#0B0A14] active:translate-y-[2px] active:translate-x-[2px] transition-all hover:brightness-105 outline-none focus-visible:ring-2 focus-visible:ring-[#FF8FB3] cursor-pointer"
             >
-              <span className="font-retro text-[9px] sm:text-[10px] font-bold text-[#2A2338] tracking-widest group-hover:text-[#000]">
+              <span className="font-retro text-[9px] sm:text-[10px] font-bold text-[#141224] tracking-widest">
                 ↵ BACK TO MENU
               </span>
             </button>
