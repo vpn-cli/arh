@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, act } from '@testing-library/react';
-import { GameStateProvider, useGameState } from '../gameState';
+import { GameStateProvider, useGameState, useWorldRevealed } from '../gameState';
 import { getTransitionClip } from '@/components/transitions/TransitionOverlay';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
@@ -337,5 +337,119 @@ describe('GameStateProvider', () => {
     });
     expect(screen.getByTestId('world').textContent).toBe('scrapbook');
     expect(screen.getByTestId('is-trans').textContent).toBe('false');
+  });
+
+  describe('isWorldRevealed state & useWorldRevealed hook', () => {
+    const RevealTestComponent = ({ showLateSubscriber }: { showLateSubscriber?: boolean }) => {
+      const { isWorldRevealed, goToWorld, revealWorld, completeTransition } = useGameState();
+      const hookRevealed = useWorldRevealed();
+      return (
+        <div>
+          <span data-testid="is-revealed-state">{String(isWorldRevealed)}</span>
+          <span data-testid="is-revealed-hook">{String(hookRevealed)}</span>
+          <button data-testid="go-main" onClick={() => goToWorld('main')}>Go Main</button>
+          <button data-testid="go-home-immediate" onClick={() => goToWorld('home', { immediate: true })}>Go Home Immediate</button>
+          <button data-testid="reveal-world" onClick={() => revealWorld()}>Reveal World</button>
+          <button data-testid="complete" onClick={() => completeTransition()}>Complete Transition</button>
+          {showLateSubscriber && <LateSubscriberComponent />}
+        </div>
+      );
+    };
+
+    const LateSubscriberComponent = () => {
+      const hookRevealed = useWorldRevealed();
+      return <span data-testid="late-subscriber-revealed">{String(hookRevealed)}</span>;
+    };
+
+    it('(a) TRUE after intro completion with no transition (immediate: true)', () => {
+      render(
+        <GameStateProvider>
+          <RevealTestComponent />
+        </GameStateProvider>
+      );
+
+      // On initial load without transition, revealed is true
+      expect(screen.getByTestId('is-revealed-state').textContent).toBe('true');
+      expect(screen.getByTestId('is-revealed-hook').textContent).toBe('true');
+
+      // Complete intro immediately with no transition
+      act(() => {
+        screen.getByTestId('go-home-immediate').click();
+      });
+
+      expect(screen.getByTestId('is-revealed-state').textContent).toBe('true');
+      expect(screen.getByTestId('is-revealed-hook').textContent).toBe('true');
+    });
+
+    it('(b) FALSE during a transition, TRUE at fade start', () => {
+      render(
+        <GameStateProvider>
+          <RevealTestComponent />
+        </GameStateProvider>
+      );
+
+      // Start transition
+      act(() => {
+        screen.getByTestId('go-main').click();
+      });
+
+      // During transition: revealed is false
+      expect(screen.getByTestId('is-revealed-state').textContent).toBe('false');
+      expect(screen.getByTestId('is-revealed-hook').textContent).toBe('false');
+
+      // Overlay fade-out starts (triggerFade calls revealWorld)
+      act(() => {
+        screen.getByTestId('reveal-world').click();
+      });
+
+      // Revealed flips to true at fade start
+      expect(screen.getByTestId('is-revealed-state').textContent).toBe('true');
+      expect(screen.getByTestId('is-revealed-hook').textContent).toBe('true');
+    });
+
+    it('(c) TRUE on Spotify auth return into Music World', () => {
+      window.localStorage.setItem('spotify_auth_return', 'true');
+      window.history.replaceState({}, '', '/?spotify_auth=success');
+
+      render(
+        <GameStateProvider>
+          <RevealTestComponent />
+        </GameStateProvider>
+      );
+
+      // Restores music world directly with isWorldRevealed: true
+      expect(screen.getByTestId('is-revealed-state').textContent).toBe('true');
+      expect(screen.getByTestId('is-revealed-hook').textContent).toBe('true');
+    });
+
+    it('(d) a component that mounts AFTER fade start still reads TRUE', () => {
+      const { rerender } = render(
+        <GameStateProvider>
+          <RevealTestComponent showLateSubscriber={false} />
+        </GameStateProvider>
+      );
+
+      // Start transition
+      act(() => {
+        screen.getByTestId('go-main').click();
+      });
+      expect(screen.getByTestId('is-revealed-hook').textContent).toBe('false');
+
+      // Overlay fade starts
+      act(() => {
+        screen.getByTestId('reveal-world').click();
+      });
+      expect(screen.getByTestId('is-revealed-hook').textContent).toBe('true');
+
+      // Mount late subscriber AFTER fade start
+      rerender(
+        <GameStateProvider>
+          <RevealTestComponent showLateSubscriber={true} />
+        </GameStateProvider>
+      );
+
+      // Late subscriber immediately reads TRUE from context
+      expect(screen.getByTestId('late-subscriber-revealed').textContent).toBe('true');
+    });
   });
 });

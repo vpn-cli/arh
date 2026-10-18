@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { sfx } from "@/lib/audio";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useWorldRevealed } from "@/lib/gameState";
 import HeroStickerBomb from "./HeroStickerBomb";
 
 export default function TheAdventureHero() {
@@ -12,6 +13,7 @@ export default function TheAdventureHero() {
   const [isMascotTapped, setIsMascotTapped] = useState(false);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
+  const isWorldRevealed = useWorldRevealed();
 
   useEffect(() => {
     return () => {
@@ -59,8 +61,13 @@ export default function TheAdventureHero() {
 
   useEffect(() => {
     if (prefersReducedMotion) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Full text immediately for reduced motion
       setCharCount(GREETING_TEXT.length + 1);
       hasRevealedRef.current = true;
+      return;
+    }
+
+    if (!isWorldRevealed && !hasRevealedRef.current) {
       return;
     }
 
@@ -81,7 +88,7 @@ export default function TheAdventureHero() {
     }, 25);
 
     return () => clearInterval(interval);
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, isWorldRevealed]);
 
   const showGreeting = isMascotHovered || isMascotTapped;
 
@@ -164,13 +171,15 @@ export default function TheAdventureHero() {
             data-testid="mascot-speech-bubble"
             aria-label={showGreeting ? "aur bhai" : FULL_GREETING_ACCESSIBLE}
             className={`absolute z-30 bg-[#FFFDF8] border-2 border-[#3A2440] shadow-[2px_2px_0_#3A2440] rounded-xl sm:rounded-2xl px-3 py-2 sm:px-3.5 sm:py-2.5 text-[#3A2440] font-retro font-bold select-none pointer-events-none rotate-2 motion-safe:animate-bounce-soft transition-all duration-150 ease-out bottom-full mb-1.5 sm:mb-2.5 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:-right-6 md:-right-10 ${
+              !isWorldRevealed && !prefersReducedMotion ? "opacity-0" : ""
+            } ${
               showGreeting
                 ? "scale-105 whitespace-nowrap text-[11px] sm:text-xs"
                 : "w-max max-w-[200px] sm:max-w-[260px] text-[10px] sm:text-[11px] leading-snug sm:leading-relaxed text-center sm:text-left"
             }`}
           >
             <span
-              key={showGreeting ? "greeting-hover" : "greeting-default"}
+              key={showGreeting ? "greeting-hover" : (isWorldRevealed ? "greeting-default" : "greeting-waiting")}
               className="inline-block bubble-squish-in"
               aria-hidden="true"
             >

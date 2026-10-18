@@ -6,6 +6,7 @@ import { useMusicView } from "../hooks/useMusicView";
 
 vi.mock("@/lib/gameState", () => ({
   useGameState: () => ({ goHome: vi.fn(), currentWorld: "music" }),
+  useWorldRevealed: () => true,
 }));
 
 vi.mock("@/lib/audio", () => ({

@@ -23,6 +23,7 @@ export interface GameState {
   isTransitioning: boolean;
   transitionTarget: WorldId | null;
   mainWorldScrollY: number;
+  isWorldRevealed: boolean;
 }
 
 export interface GoToWorldOptions {
@@ -33,6 +34,7 @@ export interface GameActions {
   goToWorld: (world: WorldId, options?: GoToWorldOptions) => void;
   goHome: () => void;
   completeTransition: () => void;
+  revealWorld: () => void;
   setMainWorldScrollY: (y: number) => void;
 }
 
@@ -62,6 +64,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       isTransitioning: false,
       transitionTarget: null,
       mainWorldScrollY: 0,
+      isWorldRevealed: true,
     };
   });
 
@@ -108,7 +111,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       if (returnToMusic) {
         url.searchParams.set("world", "music");
         // eslint-disable-next-line react-hooks/set-state-in-effect -- Restore music world state on Spotify OAuth redirect on mount
-        setState((prev) => ({ ...prev, currentWorld: "music" }));
+        setState((prev) => ({ ...prev, currentWorld: "music", isWorldRevealed: true }));
       }
       if (window.location.pathname === "/") {
         window.history.replaceState(window.history.state, document.title, url.toString());
@@ -124,6 +127,10 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const revealWorld = useCallback(() => {
+    setState((prev) => ({ ...prev, isWorldRevealed: true }));
+  }, []);
+
   const completeTransition = useCallback(() => {
     if (!isTransitioningRef.current) return;
     if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
@@ -137,6 +144,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       currentWorld: target,
       isTransitioning: false,
       transitionTarget: null,
+      isWorldRevealed: true,
     }));
     if (typeof window !== "undefined") {
       window.__transitionOverlayStartTime = null;
@@ -159,6 +167,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         previousWorld: prev.currentWorld,
         isTransitioning: false,
         transitionTarget: null,
+        isWorldRevealed: true,
       }));
       if (typeof window !== "undefined") {
         window.__transitionOverlayStartTime = null;
@@ -180,6 +189,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       isTransitioning: true,
       transitionTarget: world,
       previousWorld: fromWorld,
+      isWorldRevealed: false,
     }));
 
     if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
@@ -196,6 +206,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
           currentWorld: target,
           isTransitioning: false,
           transitionTarget: null,
+          isWorldRevealed: true,
         }));
         if (typeof window !== "undefined") {
           window.__transitionOverlayStartTime = null;
@@ -215,7 +226,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
 
   return React.createElement(
     GameStateContext.Provider,
-    { value: { ...state, goToWorld, goHome, completeTransition, setMainWorldScrollY } },
+    { value: { ...state, goToWorld, goHome, completeTransition, revealWorld, setMainWorldScrollY } },
     children
   );
 }
@@ -228,4 +239,9 @@ export function useGameState() {
 
 export function useOptionalGameState() {
   return useContext(GameStateContext);
+}
+
+export function useWorldRevealed(): boolean {
+  const ctx = useContext(GameStateContext);
+  return ctx ? ctx.isWorldRevealed : true;
 }

@@ -174,6 +174,7 @@ interface TransitionOverlayProps {
   toWorld: WorldId;
   isTransitioning: boolean;
   isTargetPainted?: boolean;
+  onFadeStart?: () => void;
   onFadeComplete?: () => void;
 }
 
@@ -182,6 +183,7 @@ export function TransitionOverlay({
   toWorld,
   isTransitioning,
   isTargetPainted = false,
+  onFadeStart,
   onFadeComplete,
 }: TransitionOverlayProps) {
   const [isFadingOut, setIsFadingOut] = useState(false);
@@ -240,6 +242,7 @@ export function TransitionOverlay({
     // Fallback timer: if paint signal does not arrive within 4000ms, start fade-out anyway
     const fallbackFadeTimer = setTimeout(() => {
       setIsFadingOut(true);
+      onFadeStart?.();
     }, 4000);
 
     return () => {
@@ -250,7 +253,7 @@ export function TransitionOverlay({
         videoRef.current.load();
       }
     };
-  }, [isTransitioning, prefersReducedMotion]);
+  }, [isTransitioning, prefersReducedMotion, onFadeStart]);
 
   // Start 300ms dissolve only when the target world has emitted its paint signal
   // AND the 3.0s clip has reached its 2.7s playback window (Math.max(2700, paintedTime)).
@@ -261,6 +264,7 @@ export function TransitionOverlay({
 
     const triggerFade = () => {
       setIsFadingOut(true);
+      onFadeStart?.();
       if (typeof window !== "undefined") {
         window.__fadeStartTime = performance.now();
       }
@@ -282,7 +286,7 @@ export function TransitionOverlay({
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [isTransitioning, isTargetPainted, isFadingOut, onFadeComplete]);
+  }, [isTransitioning, isTargetPainted, isFadingOut, onFadeStart, onFadeComplete]);
 
   if (!clip && !isTransitioning) return null;
 

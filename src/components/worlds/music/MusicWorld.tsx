@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { useGameState } from "@/lib/gameState";
+import { useGameState, useWorldRevealed } from "@/lib/gameState";
 import { sfx } from "@/lib/audio";
 import gsap from "gsap";
 import SpotifyPlayerUI from "./SpotifyPlayerUI";
@@ -15,7 +15,9 @@ export default function MusicWorld() {
   useMusicWorldMemories();
   const { isWidgetView } = useMusicView();
   const { goHome } = useGameState();
+  const isWorldRevealed = useWorldRevealed();
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasAnimatedRef = useRef(false);
 
   interface FloatingNote {
     id: number;
@@ -31,14 +33,32 @@ export default function MusicWorld() {
   const [notes, setNotes] = useState<FloatingNote[]>([]);
 
   useEffect(() => {
-    if (containerRef.current) {
-      gsap.fromTo(
-        containerRef.current.children,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.8, stagger: 0.1, ease: "back.out(1.2)" }
-      );
+    if (!containerRef.current) return;
+
+    if (!isWorldRevealed && !hasAnimatedRef.current) {
+      gsap.set(containerRef.current.children, { opacity: 0, y: 20 });
+      return;
     }
 
+    if (!hasAnimatedRef.current) {
+      hasAnimatedRef.current = true;
+      const prefersReducedMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (prefersReducedMotion) {
+        gsap.set(containerRef.current.children, { opacity: 1, y: 0 });
+      } else {
+        gsap.fromTo(
+          containerRef.current.children,
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.8, stagger: 0.1, ease: "back.out(1.2)" }
+        );
+      }
+    }
+  }, [isWorldRevealed]);
+
+  useEffect(() => {
     // Generate random notes
     const generatedNotes: FloatingNote[] = Array.from({ length: 25 }).map((_, i) => ({
       id: i,
@@ -103,7 +123,11 @@ export default function MusicWorld() {
 
 
       {/* Main Content Flow */}
-      <main ref={containerRef} className="relative z-10 w-full h-[100dvh] overflow-hidden">
+      <main
+        ref={containerRef}
+        className="relative z-10 w-full h-[100dvh] overflow-hidden"
+        style={!isWorldRevealed ? { opacity: 0 } : undefined}
+      >
         <SpotifyPlayerUI onGoHome={() => {
           sfx.select();
           goHome();

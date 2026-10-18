@@ -71,7 +71,7 @@ function HomeWorldPaintSignal({ onPainted }: { onPainted: () => void }) {
 }
 
 export default function WorldRouter() {
-  const { currentWorld, previousWorld, isTransitioning, transitionTarget, completeTransition } = useGameState();
+  const { currentWorld, previousWorld, isTransitioning, transitionTarget, completeTransition, revealWorld } = useGameState();
   const [stagedWorld, setStagedWorld] = useState<WorldId>(currentWorld);
   const [isTargetPainted, setIsTargetPainted] = useState(false);
 
@@ -89,8 +89,10 @@ export default function WorldRouter() {
     }
   }, [isTransitioning, transitionTarget]);
 
-  // Mount target world at t=0 behind the opaque transition overlay so it finishes
-  // painting well before the 2.7s mark, eliminating timer slip under slow CPU conditions.
+  // Mount timing:
+  // When target is "home", mount at 1800ms so the hub's card entrance animations
+  // synchronize with the reveal dissolve at 2.7s-3.0s.
+  // Other worlds mount at t=0 behind the opaque transition overlay.
   useEffect(() => {
     if (!isTransitioning) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronize staged world when transitioning completes
@@ -100,13 +102,26 @@ export default function WorldRouter() {
     }
 
     const target = transitionTarget || currentWorld;
-    setStagedWorld(target);
     setIsTargetPainted(false);
     if (typeof window !== "undefined") {
-      window.__targetMountTime = performance.now();
-      window.__targetPaintedTime = null;
       if (!window.__transitionOverlayStartTime) {
         window.__transitionOverlayStartTime = performance.now();
+      }
+      window.__targetPaintedTime = null;
+    }
+
+    if (target === "home") {
+      const timer = setTimeout(() => {
+        setStagedWorld("home");
+        if (typeof window !== "undefined") {
+          window.__targetMountTime = performance.now();
+        }
+      }, 1800);
+      return () => clearTimeout(timer);
+    } else {
+      setStagedWorld(target);
+      if (typeof window !== "undefined") {
+        window.__targetMountTime = performance.now();
       }
     }
   }, [isTransitioning, currentWorld, transitionTarget]);
@@ -147,6 +162,7 @@ export default function WorldRouter() {
         toWorld={toWorld}
         isTransitioning={isTransitioning}
         isTargetPainted={isTargetPainted}
+        onFadeStart={revealWorld}
         onFadeComplete={completeTransition}
       />
 

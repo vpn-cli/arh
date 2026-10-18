@@ -47,3 +47,5 @@ export function useNotifyWorldPainted(worldId: string) {
     };
   }, [worldId]);
 }
+
+export { useWorldRevealed } from "@/lib/gameState";
