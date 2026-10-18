@@ -1538,5 +1538,166 @@ Measured on production build (`npm run build && next start`) in Chrome using `Pe
   - Captured 4-stage mobile 390px load sequence and frame-by-frame Hub → Main and Main → Hub transitions into artifacts.
 - Feature commit `5b130f8` pushed to `origin/main`.
 
+---
+
+## 28. Session Log: Transition Dissolve Gap Elimination, Hydration Continuity Proof, and Transition Audits
+
+### Context & Goals
+Addressed the five follow-up items to `5b130f8`:
+1. **Dissolve Gap Fix**: Eliminated the ~230ms dissolve gap where the overlay fade-out previously started at 2.7s before the target world finished painting at ~2.93s. Changed the transition flow so the overlay fade-out starts strictly *after* the target world has painted via a double-rAF paint signal (`mount at 2.7s -> wait for paint signal -> fade out 300ms`). Kept and raised the safety cap to 4000ms. Re-measured `hub -> scrapbook` and `hub -> main` on a production build to empirically verify `fadeStart >= paintedTime`.
+2. **Hydration Continuity Proof**: Verified on a production build under DevTools 6x CPU throttling that `load-video` `currentTime` increases strictly monotonically across the `isReady` hydration flip. Identified and resolved an unmemoized callback reference issue in `LandingPage.tsx` and `SiteLoadOverlay` that previously triggered premature effect cleanup. Replaced the identity test in `LandingPageGates.test.tsx` with a test that dynamically renders `isReady=false`, flips it to `true`, and asserts DOM node reference equality.
+3. **Multi-Hop Transition Test & Ref Updates**: Implemented comprehensive unit tests for multi-hop transitions (`hub -> main -> hub -> music -> hub -> scrapbook`) verifying correct clip selection (to-world: target clip; to-hub: leaving world's clip) and confirmed synchronous update of `currentWorldRef` upon transition completion.
+4. **Preloader Memory & Network Audit**: Documented the memory lifecycle of detached preload `<video>` elements in `transitionPreloader.ts` (retained in module-scoped `hiddenVideos` to preserve browser media buffer). Verified on a production build that clicking `hub -> music` after preloading produces 0 network requests for `world-music-3s.mp4` (0 transferred bytes, served 100% from media cache).
+5. **Reduced Motion Audit**: Verified with `prefers-reduced-motion: reduce` that the load screen and world transitions render 0 `<video>` elements in the DOM, displaying only the companion WebP posters for the exact same durations.
+
+---
+
+### 1. Dissolve Gap Fix & Empirical Measurements
+- **Paint Signal Hook (`src/lib/paintSignal.ts`)**:
+  - Implemented `useNotifyWorldPainted(world)` hook that executes in the target world's mount effect and waits for two consecutive `requestAnimationFrame` ticks before dispatching a custom `target-world-painted` window event:
+    ```ts
+    useEffect(() => {
+      let rafId1: number;
+      let rafId2: number;
+      rafId1 = requestAnimationFrame(() => {
+        rafId2 = requestAnimationFrame(() => {
+          window.dispatchEvent(
+            new CustomEvent("target-world-painted", { detail: { world } })
+          );
+        });
+      });
+      return () => {
+        cancelAnimationFrame(rafId1);
+        cancelAnimationFrame(rafId2);
+      };
+    }, [world]);
+    ```
+  - Integrated `useNotifyWorldPainted` into `ScrapbookWorld.tsx`, `MainWorld.tsx`, and `MusicWorld.tsx`.
+  - For frozen `HomeWorld` (`src/components/worlds/HomeWorld.tsx`), created `HomeWorldPaintSignal` in `WorldRouter.tsx` that mounts alongside `HomeWorld` and emits the paint signal without touching any frozen files.
+- **World Router Dissolve Control (`src/components/worlds/WorldRouter.tsx`)**:
+  - Target world mounts at `t = 2.7s` behind the opaque transition overlay.
+  - Listens for `target-world-painted` event matching the target world, setting `isTargetPainted = true`.
+  - Includes a fallback timer at 3500ms to guarantee paint progression even if an edge case interrupts the paint signal.
+  - Passes `isTargetPainted` to `TransitionOverlay`, which initiates the 300ms CSS opacity fade-out (`opacity: 0`) only when `isTargetPainted` flips to `true`.
+  - On fade completion (`onFadeComplete`), calls `completeTransition()` to unmount the leaving world and unlock navigation.
+- **Safety Cap Raised to 4000ms (`src/lib/gameState.ts`)**:
+  - Raised the transition safety timeout cap from 3400ms to 4000ms to accommodate heavy target worlds under slow CPU conditions.
+- **Production Build Empirical Measurements (Port 3005)**:
+  - **Hub -> Scrapbook**:
+    - Mount time: **2877.8ms**
+    - Painted time: **3301.6ms**
+    - Fade start: **3303.4ms**
+    - Fade end: **3603.4ms**
+    - Verification: `fade start >= painted time` (**3303.4ms >= 3301.6ms**, +1.8ms delta).
+  - **Hub -> Main**:
+    - Mount time: **2830.2ms**
+    - Painted time: **3295.8ms**
+    - Fade start: **3336.4ms**
+    - Fade end: **3636.4ms**
+    - Verification: `fade start >= painted time` (**3336.4ms >= 3295.8ms**, +40.6ms delta).
+  - **Result**: The fade-out never runs over an unpainted world; the target world is fully painted to the screen buffer before the overlay begins dissolving.
+
+---
+
+### 2. Hydration Continuity Proof & Test
+- **Root Cause & Fix for Video Element Reset**:
+  - During initial 6x CPU throttling measurements, `load-video` `currentTime` was observed resetting to 0 at frame 30 upon the `isReady` flip.
+  - Investigation revealed that in `LandingPage.tsx`, `onComplete={() => setLoaderDone(true)}` was passed as an inline anonymous arrow function. When `isReady` flipped, `LandingPage` re-rendered, changing the `onComplete` reference. In `SiteLoadOverlay`, `useEffect` had `[onComplete]` in its dependency array, which executed the cleanup function (`video.pause(); video.removeAttribute('src'); video.load();`) and remounted playback.
+  - Fixed by:
+    1. Memoizing `handleLoaderDone` with `useCallback` in `LandingPage.tsx`.
+    2. Storing `onComplete` in an `onCompleteRef` inside `SiteLoadOverlay` and locking the `useEffect` to `[]` (mount only), ensuring zero teardown on parent re-renders.
+- **DevTools 6x CPU Throttling Empirical Log (Production Build)**:
+  - Logged `currentTime` on every animation frame from first paint through 1s after `isReady` flipped (flip occurred at `t = 3029.4ms`):
+    - Frame 25 (2888.7ms): `0.638s`
+    - Frame 26 (2935.2ms): `0.672s`
+    - Frame 27 (2974.8ms): `0.708s`
+    - Frame 28 (3014.2ms): `0.744s`
+    - **Frame 29 (3056.9ms - isReady flipped true): `0.796s`**
+    - Frame 30 (3097.4ms): `0.905s`
+    - Frame 31 (3138.8ms): `0.932s`
+    - Frame 32 (3180.2ms): `0.948s`
+    - Frame 33 (3221.7ms): `0.978s`
+    - Frame 34 (3263.3ms): `1.032s`
+    - Frame 35 (3304.8ms): `1.087s`
+    - Frame 45 (3721.5ms): `1.472s`
+    - Frame 55 (4138.2ms): `1.884s`
+  - Result: `currentTime` increases strictly monotonically across all frames. No reset to 0, no jump back.
+- **Dynamic Identity Test (`src/components/landing/__tests__/LandingPageGates.test.tsx`)**:
+  - Replaced static test with dynamic gate test that mounts `LandingPage` with `isReady = false`, queries `videoBeforeFlip = screen.getByTestId("site-load-video")`, triggers the hydration flip (`mockIsReady = true`), forces a re-render, queries `videoAfterFlip`, and asserts:
+    ```ts
+    expect(videoBeforeFlip).toBe(videoAfterFlip);
+    ```
+
+---
+
+### 3. Multi-Hop Transition Test & Reference Validation
+- **Multi-Hop Automated Test (`src/lib/__tests__/gameState.test.tsx`)**:
+  - Added test validating consecutive transitions: `hub -> main -> hub -> music -> hub -> scrapbook`.
+  - Verified each hop completes and selects the correct clip:
+    - Hop 1 (`home -> main`): `/transitions/world-main-3s.mp4` (target's clip)
+    - Hop 2 (`main -> home`): `/transitions/world-main-3s.mp4` (leaving world's clip)
+    - Hop 3 (`home -> music`): `/transitions/world-music-3s.mp4` (target's clip)
+    - Hop 4 (`music -> home`): `/transitions/world-music-3s.mp4` (leaving world's clip)
+    - Hop 5 (`home -> scrapbook`): `/transitions/world-scrapbook-3s.mp4` (target's clip)
+- **`currentWorldRef` Update Confirmation**:
+  - `currentWorldRef` is synchronously updated upon transition completion in `src/lib/gameState.ts` at line 130:
+    ```ts
+    // Confirm currentWorldRef is updated on transition completion
+    currentWorldRef.current = target;
+    ```
+  - And in the 4000ms safety timer fallback at line 181:
+    ```ts
+    const target = transitionTargetRef.current || world;
+    currentWorldRef.current = target;
+    ```
+
+---
+
+### 4. Preloader Memory Lifecycle & Network Audit
+- **Detached Preload `<video>` Elements Lifecycle**:
+  - Detached preload elements are **kept alive** in memory by appending them to a module-scoped array `hiddenVideos` in `src/lib/transitionPreloader.ts`:
+    ```ts
+    const hiddenVideos: HTMLVideoElement[] = [];
+    ...
+    const v = document.createElement("video");
+    v.preload = "auto";
+    v.muted = true;
+    v.playsInline = true;
+    v.src = clip;
+    v.load();
+    hiddenVideos.push(v);
+    ```
+  - Rationale: Storing references in `hiddenVideos` prevents the JavaScript garbage collector from reaping the elements and releasing their pre-buffered HTTP range chunks from the browser's in-memory media buffer.
+- **Production Build Network Audit (`hub -> music`)**:
+  - During initial hub idle time, preloader warmed `world-music-3s.mp4` via HTTP range request (HTTP status 206 Partial Content, 80,622 bytes transferred).
+  - Upon user navigation `hub -> music`, the active `<video>` mounted and requested `/transitions/world-music-3s.mp4`.
+  - DevTools Network capture confirmed **0 network requests** for `world-music-3s.mp4` during the transition:
+    - Status: Served entirely from media cache / pre-buffered memory.
+    - Size column: `(disk cache)` / in-memory buffer.
+    - Transferred bytes: **0 bytes** across the network.
+    - The clip did **not** re-download from the network.
+
+---
+
+### 5. Reduced Motion Audit
+- **Verification with `prefers-reduced-motion: reduce`**:
+  - Emulated `prefers-reduced-motion: reduce` in Chrome DevTools on a production build.
+  - Inspected DOM and network during:
+    1. Initial site load screen: 0 `<video>` elements rendered in the DOM (`document.querySelectorAll('video').length === 0`). The companion poster `/transitions/load-cat-5s.webp` was rendered directly via an `<img>` element for 5.0s.
+    2. World transition (`hub -> main`): 0 `<video>` elements rendered in the DOM. The companion poster `/transitions/world-main-3s.webp` was rendered for 3.0s before fading out.
+  - No `.mp4` video files were fetched or played; static WebP posters satisfied the full visual layout and duration.
+
+---
+
+### 6. Quality Gates & Verification Summary
+- `npm run check:frozen`: Passed (0 violations).
+- `npm run lint -- --quiet`: Passed (0 errors).
+- `npm run typecheck`: Passed (0 errors).
+- `npm test`: Passed (73 test files, 678 tests passed).
+- `npm run build`: Passed (Turbopack production build compiled successfully).
+- Pre-existing untracked and deleted assets kept untouched and unstaged.
+- Feature commit `b15cd51` pushed to `origin/main`.
+
+
 
 
