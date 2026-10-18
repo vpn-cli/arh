@@ -8,6 +8,7 @@ interface IndiePixelWindowProps {
   className?: string;
   contentClassName?: string;
   onClose?: () => void;
+  variant?: "gold" | "pink";
 }
 
 export default function IndiePixelWindow({
@@ -16,7 +17,10 @@ export default function IndiePixelWindow({
   className = "",
   contentClassName = "",
   onClose,
+  variant = "gold",
 }: IndiePixelWindowProps) {
+  const isPink = variant === "pink";
+
   return (
     <div
       className={`relative select-none font-retro ${className}`}
@@ -27,31 +31,81 @@ export default function IndiePixelWindow({
     >
       {/* ═══ OUTER DARK CONTOUR & CORNER STEPPING ═══ */}
       <div className="relative p-[3px] bg-[#141224] rounded-sm">
-        {/* ═══ INSET GOLDEN FILIGREE RIM ═══ */}
-        <div className="relative p-[2px] bg-gradient-to-b from-[#E5B25D] via-[#8C6226] to-[#E5B25D] rounded-[1px]">
+        {/* ═══ INSET FILIGREE RIM ═══ */}
+        <div
+          className={`relative p-[2px] rounded-[1px] ${
+            isPink
+              ? "bg-gradient-to-b from-[#FF8FB3] via-[#A83854] to-[#FF8FB3]"
+              : "bg-gradient-to-b from-[#E5B25D] via-[#8C6226] to-[#E5B25D]"
+          }`}
+        >
           {/* ═══ MAIN VELVET NIGHT BODY ═══ */}
           <div className="relative overflow-hidden bg-gradient-to-b from-[#1C1A33] via-[#16152B] to-[#121124] border border-[#2E2A52]">
             {/* Corner Jewel Stud: Top-Left */}
-            <div className="absolute top-1 left-1 w-2 h-2 bg-[#FFE27A] border border-[#523A12] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#B27B1E] z-20 pointer-events-none" />
+            <div
+              className={`absolute top-1 left-1 w-2 h-2 z-20 pointer-events-none ${
+                isPink
+                  ? "bg-[#FFD0DC] border border-[#5C1D2E] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#A83854]"
+                  : "bg-[#FFE27A] border border-[#523A12] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#B27B1E]"
+              }`}
+            />
             {/* Corner Jewel Stud: Top-Right */}
-            <div className="absolute top-1 right-1 w-2 h-2 bg-[#FFE27A] border border-[#523A12] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#B27B1E] z-20 pointer-events-none" />
+            <div
+              className={`absolute top-1 right-1 w-2 h-2 z-20 pointer-events-none ${
+                isPink
+                  ? "bg-[#FFD0DC] border border-[#5C1D2E] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#A83854]"
+                  : "bg-[#FFE27A] border border-[#523A12] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#B27B1E]"
+              }`}
+            />
             {/* Corner Jewel Stud: Bottom-Left */}
-            <div className="absolute bottom-1 left-1 w-2 h-2 bg-[#FFE27A] border border-[#523A12] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#B27B1E] z-20 pointer-events-none" />
+            <div
+              className={`absolute bottom-1 left-1 w-2 h-2 z-20 pointer-events-none ${
+                isPink
+                  ? "bg-[#FFD0DC] border border-[#5C1D2E] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#A83854]"
+                  : "bg-[#FFE27A] border border-[#523A12] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#B27B1E]"
+              }`}
+            />
             {/* Corner Jewel Stud: Bottom-Right */}
-            <div className="absolute bottom-1 right-1 w-2 h-2 bg-[#FFE27A] border border-[#523A12] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#B27B1E] z-20 pointer-events-none" />
+            <div
+              className={`absolute bottom-1 right-1 w-2 h-2 z-20 pointer-events-none ${
+                isPink
+                  ? "bg-[#FFD0DC] border border-[#5C1D2E] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#A83854]"
+                  : "bg-[#FFE27A] border border-[#523A12] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#B27B1E]"
+              }`}
+            />
 
             {/* ═══ ORNATE TITLE CREST BAR ═══ */}
             {title && (
               <div className="relative flex items-center justify-center py-2 px-6 bg-gradient-to-r from-[#18162E] via-[#262347] to-[#18162E] border-b-2 border-[#100F1F]">
-                {/* Golden filigree bottom highlight line */}
-                <div className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-[#E5B25D]/50 to-transparent" />
+                {/* Filigree bottom highlight line */}
+                <div
+                  className={`absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent to-transparent ${
+                    isPink ? "via-[#FF8FB3]/50" : "via-[#E5B25D]/50"
+                  }`}
+                />
 
                 <div className="flex items-center gap-2">
-                  <span className="text-[#FFD166] text-[8px] animate-pulse">◆</span>
-                  <span className="text-[#FFEBB3] text-[9px] tracking-[1.5px] font-bold drop-shadow-[0_2px_0px_#0C0B17]">
+                  <span
+                    className={`text-[8px] animate-pulse ${
+                      isPink ? "text-[#FF8FB3]" : "text-[#FFD166]"
+                    }`}
+                  >
+                    ◆
+                  </span>
+                  <span
+                    className={`text-[9px] tracking-[1.5px] font-bold drop-shadow-[0_2px_0px_#0C0B17] ${
+                      isPink ? "text-[#FFD0DC]" : "text-[#FFEBB3]"
+                    }`}
+                  >
                     {title}
                   </span>
-                  <span className="text-[#FFD166] text-[8px] animate-pulse">◆</span>
+                  <span
+                    className={`text-[8px] animate-pulse ${
+                      isPink ? "text-[#FF8FB3]" : "text-[#FFD166]"
+                    }`}
+                  >
+                    ◆
+                  </span>
                 </div>
 
                 {/* Close Button */}

@@ -99,7 +99,7 @@ export default function ClickToEnterScreen({ onEnter }: ClickToEnterScreenProps)
 
         {/* Ambient Warm Gradient Orbs */}
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-[#FF8FB3]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#FFD166]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#FF8FB3]/10 rounded-full blur-3xl pointer-events-none" />
       </div>
 
       {/* Center Interactive Window */}
@@ -119,11 +119,11 @@ export default function ClickToEnterScreen({ onEnter }: ClickToEnterScreenProps)
           handleEnter();
         }}
       >
-        <IndiePixelWindow title="ARHANA'S CORNER ✦ V1.0">
+        <IndiePixelWindow variant="pink" title="ARHANA'S CORNER ✦">
           <div className="p-6 sm:p-8 flex flex-col items-center text-center gap-6 bg-[#100E1C]/90">
             {/* Cute Pixel Hello Kitty Mascot */}
             <div className="relative group cursor-pointer animate-chill-breathe">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center p-2 rounded-lg bg-[#1D1A33] border-2 border-[#E5B25D]/40 shadow-[0_0_15px_rgba(255,209,102,0.25)]">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center p-2 rounded-lg bg-[#1D1A33] border-2 border-[#FF8FB3]/40 shadow-[0_0_15px_rgba(255,143,179,0.25)]">
                 <HelloKittyPixel className="w-12 h-12 sm:w-16 sm:h-16" />
               </div>
               <span className="absolute -top-1 -right-1 text-xs animate-ping">✨</span>
@@ -131,16 +131,13 @@ export default function ClickToEnterScreen({ onEnter }: ClickToEnterScreenProps)
 
             {/* Title & Tagline */}
             <div className="flex flex-col items-center gap-2">
-              <h1 className="font-pixel text-3xl sm:text-4xl font-bold text-[#FFD166] tracking-wider drop-shadow-[0_3px_0_#100E1C] leading-snug">
-                WELCOME, ARHANA ♡
+              <h1 className="font-retro text-base sm:text-lg text-[#FF8FB3] tracking-wider drop-shadow-[0_2px_0_#100E1C] leading-snug">
+                WELCOME, ARHANA
               </h1>
               <p className="font-retro text-[10px] sm:text-[11px] text-[#D2CBE6] tracking-[2px] leading-relaxed">
                 MEMORIES • SOUNDS • CHAOS
               </p>
             </div>
-
-            {/* Ornate Divider */}
-            <div className="h-[2px] w-full max-w-xs bg-gradient-to-r from-transparent via-[#E5B25D]/60 to-transparent my-1" />
 
             {/* Click to Enter Primary Action Button */}
             <button
@@ -153,20 +150,20 @@ export default function ClickToEnterScreen({ onEnter }: ClickToEnterScreenProps)
                   sfx.move();
                 } catch {}
               }}
-              className="group relative w-full sm:w-auto px-8 py-4 bg-gradient-to-b from-[#E5B25D] to-[#8C6226] rounded-sm shadow-[0_6px_0_#523A12,0_15px_20px_rgba(0,0,0,0.6)] active:translate-y-[6px] active:shadow-[0_0px_0_#523A12,0_5px_10px_rgba(0,0,0,0.6)] transition-all duration-100 cursor-pointer"
+              className="group relative w-full sm:w-auto px-8 py-4 bg-gradient-to-b from-[#FF8FB3] to-[#C24075] hover:brightness-105 rounded-sm shadow-[0_6px_0_#54122D,0_15px_20px_rgba(0,0,0,0.6)] active:translate-y-[6px] active:shadow-[0_0px_0_#54122D,0_5px_10px_rgba(0,0,0,0.6)] transition-all duration-100 cursor-pointer"
             >
               {/* Scanline Texture Overlay */}
               <div className="absolute inset-0 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVQIW2NkYGD4z8DAwMgAI0AMDA4wBBE/wDAAAAAASUVORK5CYII=')] opacity-20 mix-blend-overlay pointer-events-none" />
-              <span className="font-retro font-bold text-sm sm:text-base text-[#141224] tracking-[3px] group-hover:text-white drop-shadow-[0_1px_0_rgba(255,255,255,0.4)] group-hover:drop-shadow-[0_1px_0_rgba(0,0,0,0.4)] transition-colors flex items-center justify-center gap-2">
+              <span className="font-retro font-bold text-sm sm:text-base text-[#141224] tracking-[3px] drop-shadow-[0_1px_0_rgba(255,255,255,0.4)] transition-colors flex items-center justify-center gap-2.5">
                 <span>CLICK TO ENTER</span>
-                <span className="animate-pulse">▶</span>
+                <span className="inline-flex items-center justify-center leading-none -translate-y-[1px] animate-pulse">▶</span>
               </span>
             </button>
 
             {/* Audio & Immersion Notice */}
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#18162E] border border-[#2E2A52] rounded-sm text-[#FFD166] text-[8px] sm:text-[9px] font-retro tracking-wider shadow-inner">
+            <div className="flex items-center gap-2 text-[#A09AD4] text-[8px] sm:text-[9px] font-retro tracking-wider">
               <span className="animate-pulse text-[10px]">🎧</span>
-              <span className="text-[#FFEBB3]">HEADPHONES ON FOR BEST SOUND</span>
+              <span>HEADPHONES ON FOR BEST SOUND</span>
             </div>
 
             {/* Keyboard Hint */}
