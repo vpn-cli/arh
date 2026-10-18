@@ -16,11 +16,13 @@ import PhaseTracker from "./PhaseTracker";
 import PhaseSection from "./PhaseSection";
 import TheAdventureHero from "./TheAdventureHero";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useNotifyWorldPainted } from "@/lib/paintSignal";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function MainWorld() {
   const { goHome, setMainWorldScrollY } = useGameState();
+  useNotifyWorldPainted("main");
   const containerRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const [isUnlocked, setIsUnlocked] = React.useState(false);
@@ -64,6 +66,7 @@ export default function MainWorld() {
   return (
     <div
       ref={containerRef}
+      data-testid="main-world"
       className="relative w-full min-h-screen bg-[#FAF5E9] text-[#2D1B36] overflow-x-clip selection:bg-[#FF8FB3]/40"
     >
       {/* ═══ WORLD AMBIENCE & FIXED BACKGROUND ═══ */}

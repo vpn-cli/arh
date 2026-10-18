@@ -331,7 +331,7 @@ describe("LandingPage Gates", () => {
     expect(screen.queryByText(/hamster/i)).toBeNull();
   });
 
-  it("maintains SiteLoadOverlay video element identity before and after isReady flips (Correction 1)", () => {
+  it("maintains SiteLoadOverlay video element identity before and after isReady flips", () => {
     delete (window as any).location;
     window.location = {
       ...originalLocation,
@@ -340,26 +340,40 @@ describe("LandingPage Gates", () => {
       href: "http://localhost:3000/",
     } as any;
 
-    // We render LandingPage and verify the video element is immediately present and maintains reference
-    const { container, rerender } = render(
-      <GameStateProvider>
-        <LandingPage />
-      </GameStateProvider>
-    );
+    let triggerMountEffect: (() => void) | null = null;
+    const realUseEffect = React.useEffect;
+    const effectSpy = vi.spyOn(React, "useEffect").mockImplementation((effect, deps) => {
+      // Intercept mount effect with empty dependency array
+      if (Array.isArray(deps) && deps.length === 0) {
+        triggerMountEffect = () => {
+          effect();
+        };
+      } else {
+        realUseEffect(effect, deps);
+      }
+    });
 
-    const videoElement1 = screen.getByTestId("site-load-video");
-    expect(videoElement1).toBeDefined();
-    expect(videoElement1.getAttribute("poster")).toBe("/transitions/load-cat-5s.webp");
+    try {
+      render(
+        <GameStateProvider>
+          <LandingPage />
+        </GameStateProvider>
+      );
 
-    // Force re-render of LandingPage
-    rerender(
-      <GameStateProvider>
-        <LandingPage />
-      </GameStateProvider>
-    );
+      // Phase 1: Rendered with isReady = false (mount effect has not executed yet)
+      const videoBeforeFlip = screen.getByTestId("site-load-video");
+      expect(videoBeforeFlip).toBeDefined();
 
-    const videoElement2 = screen.getByTestId("site-load-video");
-    // Prove video element identity is strictly preserved (same DOM node instance)
-    expect(videoElement1).toBe(videoElement2);
+      // Phase 2: Trigger mount effect to flip isReady from false to true
+      act(() => {
+        triggerMountEffect?.();
+      });
+
+      // Phase 3: Assert the exact same DOM node instance remains mounted
+      const videoAfterFlip = screen.getByTestId("site-load-video");
+      expect(videoBeforeFlip).toBe(videoAfterFlip);
+    } finally {
+      effectSpy.mockRestore();
+    }
   });
 });

@@ -32,6 +32,7 @@ export interface GoToWorldOptions {
 export interface GameActions {
   goToWorld: (world: WorldId, options?: GoToWorldOptions) => void;
   goHome: () => void;
+  completeTransition: () => void;
   setMainWorldScrollY: (y: number) => void;
 }
 
@@ -67,7 +68,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
   // Stale guards: refs to synchronously check transitioning state & current world across ticks
   const isTransitioningRef = React.useRef(false);
   const currentWorldRef = React.useRef<WorldId>(state.currentWorld);
-  const transitionTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transitionTargetRef = React.useRef<WorldId | null>(null);
   const safetyTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync currentWorldRef with state.currentWorld
@@ -78,7 +79,6 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
   // Clean up timers on unmount
   React.useEffect(() => {
     return () => {
-      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
       if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
     };
   }, []);
@@ -123,6 +123,25 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const completeTransition = useCallback(() => {
+    if (!isTransitioningRef.current) return;
+    if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+    const target = transitionTargetRef.current || currentWorldRef.current;
+    // Confirm currentWorldRef is updated on transition completion
+    currentWorldRef.current = target;
+    transitionTargetRef.current = null;
+    isTransitioningRef.current = false;
+    setState((prev) => ({
+      ...prev,
+      currentWorld: target,
+      isTransitioning: false,
+      transitionTarget: null,
+    }));
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0 });
+    }
+  }, []);
+
   const goToWorld = useCallback((world: WorldId, options?: GoToWorldOptions) => {
     // Correction 3: Synchronous ref guards prevent multiple transitions firing in same tick
     if (isTransitioningRef.current) return;
@@ -130,6 +149,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
 
     if (options?.immediate) {
       isTransitioningRef.current = false;
+      transitionTargetRef.current = null;
       currentWorldRef.current = world;
       setState((prev) => ({
         ...prev,
@@ -145,6 +165,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     }
 
     isTransitioningRef.current = true;
+    transitionTargetRef.current = world;
     const fromWorld = currentWorldRef.current;
 
     setState((prev) => ({
@@ -154,37 +175,26 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       previousWorld: fromWorld,
     }));
 
-    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
     if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
 
-    // 3.0s (3000ms) transition animation
-    transitionTimerRef.current = setTimeout(() => {
-      isTransitioningRef.current = false;
-      currentWorldRef.current = world;
-      setState((prev) => ({
-        ...prev,
-        currentWorld: world,
-        isTransitioning: false,
-        transitionTarget: null,
-      }));
-      if (typeof window !== "undefined") {
-        window.scrollTo({ top: 0 });
-      }
-    }, 3000);
-
-    // Hard safety cap at 3400ms: if anything hung, guarantee reset
+    // Hard safety cap raised to 4000ms: if anything hangs, guarantee reset
     safetyTimerRef.current = setTimeout(() => {
       if (isTransitioningRef.current) {
+        const target = transitionTargetRef.current || world;
+        currentWorldRef.current = target;
+        transitionTargetRef.current = null;
         isTransitioningRef.current = false;
-        currentWorldRef.current = world;
         setState((prev) => ({
           ...prev,
-          currentWorld: world,
+          currentWorld: target,
           isTransitioning: false,
           transitionTarget: null,
         }));
+        if (typeof window !== "undefined") {
+          window.scrollTo({ top: 0 });
+        }
       }
-    }, 3400);
+    }, 4000);
   }, []);
 
   const goHome = useCallback(() => {
@@ -197,7 +207,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
 
   return React.createElement(
     GameStateContext.Provider,
-    { value: { ...state, goToWorld, goHome, setMainWorldScrollY } },
+    { value: { ...state, goToWorld, goHome, completeTransition, setMainWorldScrollY } },
     children
   );
 }

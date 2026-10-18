@@ -65,6 +65,8 @@ export function SiteLoadOverlay({ onComplete }: SiteLoadOverlayProps) {
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   // Set video DOM properties synchronously on ref attachment for strict browser autoplay
   const setVideoRef = useCallback((el: HTMLVideoElement | null) => {
@@ -87,7 +89,7 @@ export function SiteLoadOverlay({ onComplete }: SiteLoadOverlayProps) {
     }
 
     // Try playing video if available
-    if (videoRef.current && !prefersReducedMotion) {
+    if (videoRef.current && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined && typeof playPromise.catch === "function") {
         playPromise.catch(() => {
@@ -112,7 +114,7 @@ export function SiteLoadOverlay({ onComplete }: SiteLoadOverlayProps) {
         videoRef.current.removeAttribute("src");
         videoRef.current.load();
       }
-      onComplete();
+      onCompleteRef.current?.();
     }, remainingMs);
 
     return () => {
@@ -124,7 +126,7 @@ export function SiteLoadOverlay({ onComplete }: SiteLoadOverlayProps) {
         videoRef.current.load();
       }
     };
-  }, [onComplete, prefersReducedMotion]);
+  }, []);
 
   return (
     <div
@@ -166,12 +168,16 @@ interface TransitionOverlayProps {
   fromWorld: WorldId;
   toWorld: WorldId;
   isTransitioning: boolean;
+  isTargetPainted?: boolean;
+  onFadeComplete?: () => void;
 }
 
 export function TransitionOverlay({
   fromWorld,
   toWorld,
   isTransitioning,
+  isTargetPainted = false,
+  onFadeComplete,
 }: TransitionOverlayProps) {
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -209,7 +215,10 @@ export function TransitionOverlay({
       return;
     }
 
-    setIsFadingOut(false);
+    if (typeof window !== "undefined") {
+      (window as any).__fadeStartTime = null;
+      (window as any).__fadeEndTime = null;
+    }
 
     if (videoRef.current && !prefersReducedMotion) {
       videoRef.current.currentTime = 0;
@@ -221,13 +230,13 @@ export function TransitionOverlay({
       }
     }
 
-    // Start 300ms fade-out at t = 2700ms (3.0s total clip)
-    const fadeTimer = setTimeout(() => {
+    // Fallback timer: if paint signal does not arrive within 3500ms, start fade-out anyway
+    const fallbackFadeTimer = setTimeout(() => {
       setIsFadingOut(true);
-    }, 2700);
+    }, 3500);
 
     return () => {
-      clearTimeout(fadeTimer);
+      clearTimeout(fallbackFadeTimer);
       if (videoRef.current) {
         videoRef.current.pause();
         videoRef.current.removeAttribute("src");
@@ -235,6 +244,23 @@ export function TransitionOverlay({
       }
     };
   }, [isTransitioning, prefersReducedMotion]);
+
+  // Start 300ms dissolve only when the target world has emitted its paint signal
+  useEffect(() => {
+    if (isTransitioning && isTargetPainted && !isFadingOut) {
+      setIsFadingOut(true);
+      if (typeof window !== "undefined") {
+        (window as any).__fadeStartTime = performance.now();
+      }
+      const completeTimer = setTimeout(() => {
+        if (typeof window !== "undefined") {
+          (window as any).__fadeEndTime = performance.now();
+        }
+        onFadeComplete?.();
+      }, 300);
+      return () => clearTimeout(completeTimer);
+    }
+  }, [isTransitioning, isTargetPainted, isFadingOut, onFadeComplete]);
 
   if (!clip && !isTransitioning) return null;
 

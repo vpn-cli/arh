@@ -8,8 +8,10 @@ import SpotifyPlayerUI from "./SpotifyPlayerUI";
 import { useMusicView } from "./hooks/useMusicView";
 import { WidgetPlayer } from "./widget/WidgetPlayer";
 import { useMusicWorldMemories } from "./hooks/useMusicWorldMemories";
+import { useNotifyWorldPainted } from "@/lib/paintSignal";
 
 export default function MusicWorld() {
+  useNotifyWorldPainted("music");
   useMusicWorldMemories();
   const { isWidgetView } = useMusicView();
   const { goHome } = useGameState();
@@ -45,7 +47,10 @@ export default function MusicWorld() {
   }
 
   return (
-    <div className="relative w-full min-h-screen bg-[var(--color-light)] text-[var(--color-dark)] overflow-hidden selection:bg-[var(--color-muted)]/40">
+    <div
+      data-testid="music-world"
+      className="relative w-full min-h-screen bg-[var(--color-light)] text-[var(--color-dark)] overflow-hidden selection:bg-[var(--color-muted)]/40"
+    >
       
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none z-0">

@@ -53,6 +53,9 @@ export default function LandingPage() {
       setLoaderDone(true);
     }
     setIsReady(true);
+    if (typeof window !== "undefined") {
+      (window as any).__isReadyFlipped = performance.now();
+    }
   }, []);
 
   const handleIntroComplete = () => {
@@ -65,11 +68,15 @@ export default function LandingPage() {
     }
   };
 
+  const handleLoaderDone = React.useCallback(() => {
+    setLoaderDone(true);
+  }, []);
+
   return (
     <div className="relative min-h-screen w-full bg-home-bg text-home-cream flex flex-col overflow-x-hidden selection:bg-music-pink/40">
       {/* ═══ PHASE 0: 5.0s Site Load Overlay (SSR poster + video) ═══ */}
       {!loaderDone && (
-        <SiteLoadOverlay onComplete={() => setLoaderDone(true)} />
+        <SiteLoadOverlay onComplete={handleLoaderDone} />
       )}
 
       {/* Auth Loading Overlay */}

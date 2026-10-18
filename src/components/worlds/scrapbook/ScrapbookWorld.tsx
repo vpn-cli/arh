@@ -4,6 +4,7 @@ import React from "react";
 import { useGameState } from "@/lib/gameState";
 import { sfx } from "@/lib/audio";
 import ThreeDScrapbook from "./ThreeDScrapbook";
+import { useNotifyWorldPainted } from "@/lib/paintSignal";
 
 const SPARKLES = [
   { left: "12%", top: "18%", delay: "0.5s", duration: "4.2s", size: "16px", rotate: "45deg" },
@@ -16,7 +17,7 @@ const SPARKLES = [
   { left: "60%", top: "20%", delay: "0.2s", duration: "4.0s", size: "15px", rotate: "270deg" },
   { left: "35%", top: "60%", delay: "3.3s", duration: "5.0s", size: "20px", rotate: "330deg" },
   { left: "80%", top: "40%", delay: "1.9s", duration: "3.9s", size: "13px", rotate: "65deg" },
-  { left: "18%", top: "85%", delay: "0.7s", duration: "4.6s", size: "26px", rotate: "140deg" },
+  { left: "18%", top: "85%", delay: "0.7s", duration: "4.6s", size: "140deg" },
   { left: "50%", top: "88%", delay: "2.8s", duration: "5.2s", size: "17px", rotate: "225deg" },
   { left: "95%", top: "25%", delay: "1.4s", duration: "3.6s", size: "11px", rotate: "315deg" },
   { left: "30%", top: "10%", delay: "2.2s", duration: "4.4s", size: "23px", rotate: "90deg" },
@@ -25,9 +26,13 @@ const SPARKLES = [
 
 export default function ScrapbookWorld() {
   const { goHome } = useGameState();
+  useNotifyWorldPainted("scrapbook");
 
   return (
-    <div className="fixed inset-0 w-screen h-screen bg-[#FFF4F6] text-[#20233F] selection:bg-[#FF8FB3] selection:text-[#20233F] flex flex-col justify-between overflow-hidden">
+    <div
+      data-testid="scrapbook-world"
+      className="fixed inset-0 w-screen h-screen bg-[#FFF4F6] text-[#20233F] selection:bg-[#FF8FB3] selection:text-[#20233F] flex flex-col justify-between overflow-hidden"
+    >
       {/* 
         🎀 HOW TO ADD A GIF BACKGROUND 🎀 
         1. Place your GIF (e.g., 'cute-bg.gif') in the 'public' folder.
