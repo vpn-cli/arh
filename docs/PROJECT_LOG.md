@@ -1317,10 +1317,57 @@ Completely replace the Phase 04 letter poem ("50 shades of Maahi") with the fina
 - `npm run typecheck`: Passed (0 errors).
 - `npm run test`: Passed (73 test files, 669 tests passed).
 - `npm run build`: Passed (Turbopack production build compiled successfully).
-- Code Commit: `ea3ab32` (intro always & story removal) pushed and confirmed matching `origin/main`.
-- Asset Deletion Commit: `7ae2909` (7 orphaned story assets removed) pushed and confirmed matching `origin/main`.
-- Fix Commit: `47210fd` (prevent redundant `goToWorld` call and 500ms flash when target equals current world) pushed and confirmed matching `origin/main`.
 
+---
 
+## 23. Session Log: ClickToEnterScreen Pink Restyle & Gameboy Cartridge Alignment
 
+### Context & Goals
+1. Commit pre-existing user positioning tweak to `src/components/ui/gameboy/GameboyCartridge.tsx` in an isolated atomic commit (`fix(gameboy): adjust cartridge position`) after running full pre-commit gates.
+2. Restyle the initial `ClickToEnterScreen` card to match the site's pink theme, keeping the card interior dark and replacing gold/amber accents with cohesive pink tokens and metallic gradients.
+3. Clean up card copy and clutter: drop `"V1.0"` from header, drop heart `"♡"` from title, remove the horizontal divider line, and optically center the play triangle icon `▶` in the button.
+4. Establish clear typography and color hierarchy: `title > button > headphones > hint`.
+5. Parameterize `IndiePixelWindow.tsx` with `variant?: "gold" | "pink"` defaulting to `"gold"` to safeguard other consumers (`GameboyLoadingScreen` and `HelloKittyAlertModal`) from visual regression.
+6. Audit pixel font rendering: confirmed `Press Start 2P` (`font-retro`) does not ship a bold weight; removed synthetic `font-bold` from the title to eliminate faux-bold horizontal smearing.
+7. Preserve all interactive behaviors: synchronous audio context resume, GameBoy video unmute & volume ramp, `onEnter()` dispatch, Space/Enter keyboard triggers, and tap-anywhere handling.
 
+### 1. Implementation Details
+- **Cartridge Position (`src/components/ui/gameboy/GameboyCartridge.tsx`)**:
+  - Committed user's fine-tuned cartridge coordinates in commit `974f860`.
+- **IndiePixelWindow Parameterization (`src/components/ui/IndiePixelWindow.tsx`)**:
+  - Added `variant?: "gold" | "pink"` defaulting to `"gold"`.
+  - When `variant="pink"`:
+    - Filigree rim: `bg-gradient-to-b from-[#FF8FB3] via-[#A83854] to-[#FF8FB3]`.
+    - 4 Corner studs: `bg-[#FFD0DC] border border-[#5C1D2E] shadow-[inset_1px_1px_0px_#FFFFFF,inset_-1px_-1px_0px_#A83854]`.
+    - Header highlight line: `via-[#FF8FB3]/50`.
+    - Diamond studs & title text: `text-[#FF8FB3]` diamonds, `text-[#FFD0DC]` title.
+- **ClickToEnterScreen Restyle (`src/components/ui/ClickToEnterScreen.tsx`)**:
+  - Passed `variant="pink"` to `IndiePixelWindow` with title `"ARHANA'S CORNER ✦"`.
+  - Updated Hello Kitty mascot wrapper border to `#FF8FB3]/40` with pink shadow.
+  - Sized title `"WELCOME, ARHANA"` at `text-base sm:text-lg` in `font-retro` without `font-bold` in `#FF8FB3`. Removed heart `"♡"`.
+  - Preserved tagline `"MEMORIES • SOUNDS • CHAOS"` in `#D2CBE6`.
+  - Removed decorative horizontal divider line.
+  - Sized button in pink gradient `from-[#FF8FB3] to-[#C24075]` with bevel `shadow-[0_6px_0_#54122D]`, maintaining dark readable text `#141224` (8.54:1 contrast, AAA).
+  - Centered play triangle icon `▶` via `inline-flex items-center justify-center leading-none -translate-y-[1px] animate-pulse`.
+  - Stripped heavy pill background and border from headphones notice; rendered cleanly in `--color-home-muted: #A09AD4` (7.25:1 contrast, AA).
+  - Retained keyboard hint `[ or tap anywhere / press enter ]` in `#8C7A99` (4.86:1 contrast, AA).
+  - Harmonized ambient background orbs to both use pink `#FF8FB3]/10`.
+
+### 2. Contrast & Visual Hierarchy Audit
+- **Title (`#FF8FB3` on `#100E1C`)**: 8.83:1 (passes AAA).
+- **Button Text (`#141224` on `#FF8FB3`)**: 8.54:1 (passes AAA).
+- **Headphones Notice (`#A09AD4` on `#100E1C`)**: 7.25:1 (passes AA ≥ 4.5:1).
+- **Hint (`#8C7A99` on `#100E1C`)**: 4.86:1 (passes AA ≥ 4.5:1).
+- Visual hierarchy strictly achieved: `title (8.83:1) > button (8.54:1) > headphones (7.25:1) > hint (4.86:1)`.
+
+### 3. Quality Gates & Verification
+- `npm run check:frozen`: Passed (0 violations).
+- `npm run lint -- --quiet`: Passed (0 errors).
+- `npm run typecheck`: Passed (0 errors).
+- `npm run test`: Passed (73 test files, 671 tests passed).
+- `npm run build`: Passed (Turbopack production build compiled successfully).
+- Browser Visual Verification: Captured screenshots on desktop (1920×1080) and mobile (390px) demonstrating responsive layout, zero overflow, and crisp pixel typography. Confirmed `GameboyLoadingScreen` and `HelloKittyAlertModal` render completely unchanged in gold.
+- Commits:
+  - `974f860`: `fix(gameboy): adjust cartridge position`
+  - `46d61d6`: `feat(ui): restyle ClickToEnterScreen card in pink theme`
+- Both commits pushed to `origin/main` and verified in sync.
