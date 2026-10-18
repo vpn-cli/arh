@@ -1479,5 +1479,64 @@ Follow-up optimization for site-load and world transition media:
 - `npm run build`: Passed (Turbopack production build succeeded).
 - Feature commit `00e8492` pushed to `origin/main` and verified in sync.
 
+---
+
+## 27. Session Log: Site-Load & World-Transition Clips Implementation (Phase B2)
+
+### Context & Goals
+Implemented Phase B2 per the approved investigation plan and explicit user corrections:
+- **Site Load Sequence**: 5.0s initial load overlay replacing the previous black screen with `public/transitions/load-cat-5s.mp4`. First paint renders `load-cat-5s.webp` poster in server HTML before hydration. Video element persists across the `isReady` flip without remounting. 300ms dissolve into `ClickToEnterScreen`.
+- **World Transitions**: 3.0s world transitions replacing the legacy 500ms fade. Hub → World plays target world clip (`world-main-3s.mp4`, `world-music-3s.mp4`, `world-scrapbook-3s.mp4`). World → Hub plays the clip of the world being *left*.
+- **Mount Timing**: Empirically measured `mount-at-0s` vs `mount-at-2.7s` on a production build; selected `mount-at-2.7s` and locked it in.
+- **Preloading & Caching**: Preloads world clips and posters via detached `<video preload="auto">` elements during browser idle state (`requestIdleCallback`) after hub is mounted, skipping on `saveData` or 2G.
+- **Strict Constraints**: Zero changes to frozen files (`HomeWorld.tsx`, `src/components/worlds/home/*`, `TheEdit*`), pre-existing changes kept untouched and unstaged.
+
+### 1. Implementation Details
+- **GameState Ref-Based Stale & Double-Click Guards (`src/lib/gameState.ts`)**:
+  - Replaced stale state closure in `goToWorld` with `isTransitioningRef` and `currentWorldRef`.
+  - Added synchronous same-tick double-click prevention (`if (isTransitioningRef.current) return;`).
+  - Added same-world navigation guard (`if (currentWorldRef.current === world) return;`).
+  - Added hard safety cap timeout (3400ms) to unconditionally unlock navigation if any video or animation hangs.
+  - Added `{ immediate: true }` option for instantaneous navigation without transition clips (used on intro completion and OAuth returns).
+  - Maintained `window.scrollTo({ top: 0 })` behind the opaque transition overlay.
+- **Transition Overlay Components (`src/components/transitions/TransitionOverlay.tsx`)**:
+  - `SiteLoadOverlay`: Renders companion poster image and `<video data-testid="site-load-video" autoPlay muted playsInline poster="/transitions/load-cat-5s.webp" src="/transitions/load-cat-5s.mp4" />`. Synchronously sets `el.muted = true; el.defaultMuted = true;` on ref callback. Measures elapsed time from `performance.getEntriesByType('paint')` (with navigation start fallback for Safari). Initiates 300ms dissolve at `remainingMs - 300`. Cleans up memory on unmount via `pause()`, `removeAttribute('src')`, `load()`.
+  - `TransitionOverlay`: Selects clip via `getTransitionClip(from, to)`. Fades in over 150ms, plays 3.0s clip, and begins 300ms dissolve at `t = 2.7s`. Implements fallback to companion poster on error/stall or `prefers-reduced-motion`. Cleans up memory via `pause()`, `removeAttribute('src')`, `load()`.
+- **Transition Preloader (`src/lib/transitionPreloader.ts`)**:
+  - Executes via `requestIdleCallback` (with 1.2s timeout fallback) after Hub is idle.
+  - Checks network conditions: skips preloading if `conn.saveData` or `conn.effectiveType === '2g'`.
+  - Warms posters via `new Image().src` and pre-buffers range-request video chunks via detached `<video preload="auto">` elements into the browser media cache.
+- **World Router (`src/components/worlds/WorldRouter.tsx`)**:
+  - Integrated `TransitionOverlay` rendering target or leaving world clips.
+  - Implemented 2.7s staged mounting: previous world remains mounted during the 0–2.7s video playback window, and target world mounts at `t = 2.7s` behind the opaque overlay right before the 300ms cross-dissolve begins.
+  - Automatically triggers `preloadWorldTransitions()` when `currentWorld === "home"` and idle.
+- **Landing Page Orchestration (`src/components/landing/LandingPage.tsx`)**:
+  - Removed empty `if (!isReady) return <div ... />` early return.
+  - Introduced separate `loaderDone` state keeping `<SiteLoadOverlay>` mounted at the exact same DOM position across the `isReady` hydration flip.
+  - Configured `handleIntroComplete` to call `goToWorld(targetWorld, { immediate: true })` so no transition clip plays on intro completion.
+  - Configured OAuth callback and `skipIntro` to bypass load and transition overlays immediately.
+
+### 2. Empirical Mount Timing Evaluation
+Measured on production build (`npm run build && next start`) in Chrome using `PerformanceObserver('longtask')`, hardware frame decoder statistics, and paint tracking:
+- **Hub → Scrapbook**:
+  - `mount-at-0s`: 4 long tasks totaling **514ms** (max **196ms**), with 2 long tasks (50ms and 156ms) interrupting active video decoding frames.
+  - `mount-at-2.7s`: 2 long tasks totaling **292ms** (max **194ms**), with **ZERO** long tasks during the 50ms–2700ms video playback window. Target world mounted and painted **-66.4ms** before the 3000ms mark, smoothly revealed by the 300ms cross-dissolve with zero blank flash.
+- **Hub → Main**:
+  - `mount-at-0s`: 2 long tasks totaling **311ms** (max **176ms**), with a 135ms lockup at offset 544.5ms during video playback.
+  - `mount-at-2.7s`: 2 long tasks totaling **251ms** (max **126ms**). Target world painted **-49.9ms** before the 3000ms mark.
+- **Decision**: Staged mounting at `t = 2.7s` eliminates video stutter caused by heavy 3D canvas and sticker DOM evaluation while ensuring the target world is painted and ready before the overlay fades out.
+
+### 3. Quality Gates & Verification
+- `npm run check:frozen`: Passed (0 violations).
+- `npm run lint -- --quiet`: Passed (0 errors).
+- `npm run typecheck`: Passed (0 errors).
+- `npm test`: Passed (73 test files, 676 tests passed).
+- `npm run build`: Passed (Turbopack production build compiled successfully).
+- Verification & Evidence:
+  - Server HTML inspect verified literal `<video data-testid="site-load-video" autoPlay="" muted="" playsInline="" poster="/transitions/load-cat-5s.webp" ...>`.
+  - Video element identity test verified node reference is unchanged before and after `isReady` flips.
+  - Captured 4-stage mobile 390px load sequence and frame-by-frame Hub → Main and Main → Hub transitions into artifacts.
+- Feature commit `5b130f8` pushed to `origin/main`.
+
 
 
