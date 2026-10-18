@@ -1370,4 +1370,35 @@ Completely replace the Phase 04 letter poem ("50 shades of Maahi") with the fina
 - Commits:
   - `974f860`: `fix(gameboy): adjust cartridge position`
   - `46d61d6`: `feat(ui): restyle ClickToEnterScreen card in pink theme`
-- Both commits pushed to `origin/main` and verified in sync.
+  - `5ac4351`: `docs: log session 23 for ClickToEnterScreen restyle and cartridge position`
+  - `8b9d690`: `feat(gameboy): restyle top-left menu and helper bubble in pink theme`
+- All commits pushed to `origin/main` and verified in sync.
+
+---
+
+## 24. Session Log: Gameboy Loading Screen Top-Left Menu Pink Restyle
+
+### Context & Goals
+Per user request, restyled the top-left `"MAIN MENU"` card and its attached helper bubble on the `GameboyLoadingScreen` to match the newly introduced pink theme from `ClickToEnterScreen`, while keeping the center `HelloKittyAlertModal` in its gold system alert theme.
+
+### 1. Implementation Details
+- **Main Menu Frame (`src/components/ui/GameboyLoadingScreen.tsx`)**:
+  - Switched `IndiePixelWindow` to `variant="pink"`: pink filigree rim, soft pink corner studs, pink header diamonds, and pink highlight bar.
+  - Updated selection highlight gradient to `from-[#FF8FB3]/25 via-[#FF8FB3]/10 to-transparent` and drop shadow to `rgba(255,143,179,0.6)`.
+  - Updated hover indicators to `#FF8FB3]/60` and active sparkle to `text-[#FF8FB3]`.
+  - Updated horizontal divider to pink gradient (`via-[#FF8FB3]/50`) with diamond `text-[#FFD0DC]`.
+  - Updated key binding labels (`MOVE` and `SELECT`) to soft pink `text-[#FFD0DC]`.
+- **Speech / Helper Bubble (`src/components/ui/GameboyLoadingScreen.tsx`)**:
+  - Updated outer border rim gradient to `from-[#FF8FB3] via-[#A83854] to-[#FF8FB3]`.
+  - Updated default prompt icon to `text-[#FF8FB3]`.
+  - Updated hint text to `text-[#FFD6DD]`.
+  - Preserved error shake state with red/pink `bg-[#FF5C77]` and `border-[#FF5C77]/60` on invalid continue.
+
+### 2. Quality Gates & Verification
+- `npm run check:frozen`: Passed (0 violations).
+- `npm run lint -- --quiet`: Passed (0 errors).
+- `npm run typecheck`: Passed (0 errors).
+- `npm run test`: Passed (73 test files, 671 tests passed).
+- `npm run build`: Passed (Turbopack production build succeeded).
+- Browser Visual Verification: Captured screenshots showing top-left menu in pink theme, transitioning gracefully into backdrop scrim when the gold `HelloKittyAlertModal` triggers.
+- Commit `8b9d690` pushed to `origin/main`.
