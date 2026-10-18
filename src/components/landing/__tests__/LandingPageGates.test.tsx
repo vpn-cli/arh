@@ -34,34 +34,29 @@ vi.mock("../../ui/GameboyLoadingScreen", () => ({
   ),
 }));
 
-vi.mock("../StoryFlow", () => ({
-  default: ({ onComplete }: { onComplete: () => void }) => (
-    <div data-testid="story-flow">
-      <button onClick={onComplete}>Finish Story Flow</button>
-    </div>
-  ),
-}));
-
 describe("LandingPage Gates", () => {
   const originalLocation = window.location;
+  const originalEnv = process.env.NODE_ENV;
 
   beforeEach(() => {
     window.localStorage.clear();
+    (process.env as any).NODE_ENV = "test";
   });
 
   afterEach(() => {
     window.localStorage.clear();
+    (process.env as any).NODE_ENV = originalEnv;
     vi.restoreAllMocks();
   });
 
-  it("skips ClickToEnterScreen, GameboyLoadingScreen, and StoryFlow when ?world= is valid AND story_complete === 'true'", () => {
+  it("always plays intro on '/' even if legacy story_complete === 'true' is in localStorage", () => {
     window.localStorage.setItem("story_complete", "true");
     delete (window as any).location;
     window.location = {
       ...originalLocation,
-      search: "?world=music",
+      search: "",
       pathname: "/",
-      href: "http://localhost:3000/?world=music",
+      href: "http://localhost:3000/",
     } as any;
 
     render(
@@ -70,24 +65,22 @@ describe("LandingPage Gates", () => {
       </GameStateProvider>
     );
 
-    // Gates are skipped
-    expect(screen.queryByTestId("click-to-enter")).toBeNull();
-    expect(screen.queryByTestId("gameboy-loading")).toBeNull();
-    expect(screen.queryByTestId("story-flow")).toBeNull();
+    // Intro is NOT skipped; Click to Enter gate is rendered
+    expect(screen.getByTestId("click-to-enter")).toBeDefined();
+    expect(screen.queryByTestId("world-router")).toBeNull();
 
-    // World system is directly active and rendered
-    expect(screen.getByTestId("world-router")).toBeDefined();
-    expect(screen.getByText("World: music")).toBeDefined();
+    // Legacy localStorage key was purged on mount
+    expect(window.localStorage.getItem("story_complete")).toBeNull();
   });
 
-  it("runs the normal flow when ?world= is valid BUT story_complete !== 'true'", () => {
-    window.localStorage.removeItem("story_complete");
+  it("always plays intro on '/?world=main' even if legacy story_complete === 'true' is in localStorage", () => {
+    window.localStorage.setItem("story_complete", "true");
     delete (window as any).location;
     window.location = {
       ...originalLocation,
-      search: "?world=music",
+      search: "?world=main",
       pathname: "/",
-      href: "http://localhost:3000/?world=music",
+      href: "http://localhost:3000/?world=main",
     } as any;
 
     render(
@@ -96,20 +89,19 @@ describe("LandingPage Gates", () => {
       </GameStateProvider>
     );
 
-    // Normal flow runs: initial gate is displayed
+    // Intro is NOT skipped; Click to Enter gate is rendered
     expect(screen.getByTestId("click-to-enter")).toBeDefined();
     expect(screen.queryByTestId("world-router")).toBeNull();
   });
 
-  it("navigates to the world named in ?world= instead of default home when the story completes", async () => {
+  it("navigates to deep-linked world in ?world= after intro ends", async () => {
     vi.useFakeTimers();
-    window.localStorage.removeItem("story_complete");
     delete (window as any).location;
     window.location = {
       ...originalLocation,
-      search: "?world=scrapbook",
+      search: "?world=main",
       pathname: "/",
-      href: "http://localhost:3000/?world=scrapbook",
+      href: "http://localhost:3000/?world=main",
     } as any;
 
     render(
@@ -130,36 +122,25 @@ describe("LandingPage Gates", () => {
       fireEvent.click(screen.getByRole("button", { name: /complete loading/i }));
     });
 
-    // Gate 3: StoryFlow
-    expect(screen.getByTestId("story-flow")).toBeDefined();
-    act(() => {
-      fireEvent.click(screen.getByRole("button", { name: /finish story flow/i }));
-    });
-
-    // Advance transition timer in GameStateProvider
+    // World system active and navigated to 'main'
     act(() => {
       vi.advanceTimersByTime(600);
     });
 
-    // Check localStorage saved
-    expect(window.localStorage.getItem("story_complete")).toBe("true");
-
-    // Check that we navigated to scrapbook instead of default home
     expect(screen.getByTestId("world-router")).toBeDefined();
-    expect(screen.getByText("World: scrapbook")).toBeDefined();
+    expect(screen.getByText("World: main")).toBeDefined();
 
     vi.useRealTimers();
   });
 
-  it("handles ?world=music&view=widget gate rule: runs story first if not complete, then enters music world", async () => {
+  it("navigates to default home world after intro ends when no ?world= is specified", async () => {
     vi.useFakeTimers();
-    window.localStorage.removeItem("story_complete");
     delete (window as any).location;
     window.location = {
       ...originalLocation,
-      search: "?world=music&view=widget",
+      search: "",
       pathname: "/",
-      href: "http://localhost:3000/?world=music&view=widget",
+      href: "http://localhost:3000/",
     } as any;
 
     render(
@@ -168,28 +149,118 @@ describe("LandingPage Gates", () => {
       </GameStateProvider>
     );
 
-    // Initial gate must be shown
+    // Gate 1: ClickToEnter
+    expect(screen.getByTestId("click-to-enter")).toBeDefined();
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /click to enter/i }));
+    });
+
+    // Gate 2: GameboyLoading
+    expect(screen.getByTestId("gameboy-loading")).toBeDefined();
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /complete loading/i }));
+    });
+
+    // World system active and in 'home'
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+
+    expect(screen.getByTestId("world-router")).toBeDefined();
+    expect(screen.getByText("World: home")).toBeDefined();
+
+    vi.useRealTimers();
+  });
+
+  it("bypasses intro when spotify_auth= is in URL (OAuth callback)", () => {
+    delete (window as any).location;
+    window.location = {
+      ...originalLocation,
+      search: "?spotify_auth=success",
+      pathname: "/",
+      href: "http://localhost:3000/?spotify_auth=success",
+    } as any;
+
+    render(
+      <GameStateProvider>
+        <LandingPage />
+      </GameStateProvider>
+    );
+
+    // Intro gates are bypassed on OAuth callback
+    expect(screen.queryByTestId("click-to-enter")).toBeNull();
+    expect(screen.queryByTestId("gameboy-loading")).toBeNull();
+    expect(screen.getByTestId("world-router")).toBeDefined();
+  });
+
+  it("bypasses intro with ?skipIntro=1 in development environment", () => {
+    (process.env as any).NODE_ENV = "development";
+    delete (window as any).location;
+    window.location = {
+      ...originalLocation,
+      search: "?skipIntro=1",
+      pathname: "/",
+      href: "http://localhost:3000/?skipIntro=1",
+    } as any;
+
+    render(
+      <GameStateProvider>
+        <LandingPage />
+      </GameStateProvider>
+    );
+
+    // Intro is skipped in development with flag
+    expect(screen.queryByTestId("click-to-enter")).toBeNull();
+    expect(screen.queryByTestId("gameboy-loading")).toBeNull();
+    expect(screen.getByTestId("world-router")).toBeDefined();
+  });
+
+  it("does NOT bypass intro with ?skipIntro=1 in production environment", () => {
+    (process.env as any).NODE_ENV = "production";
+    delete (window as any).location;
+    window.location = {
+      ...originalLocation,
+      search: "?skipIntro=1",
+      pathname: "/",
+      href: "http://localhost:3000/?skipIntro=1",
+    } as any;
+
+    render(
+      <GameStateProvider>
+        <LandingPage />
+      </GameStateProvider>
+    );
+
+    // Must still show intro in production despite ?skipIntro=1
     expect(screen.getByTestId("click-to-enter")).toBeDefined();
     expect(screen.queryByTestId("world-router")).toBeNull();
+  });
 
-    // Complete the flow
+  it("does not render any story components anywhere", async () => {
+    delete (window as any).location;
+    window.location = {
+      ...originalLocation,
+      search: "",
+      pathname: "/",
+      href: "http://localhost:3000/",
+    } as any;
+
+    render(
+      <GameStateProvider>
+        <LandingPage />
+      </GameStateProvider>
+    );
+
+    // Advance through the intro
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /click to enter/i }));
     });
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /complete loading/i }));
     });
-    act(() => {
-      fireEvent.click(screen.getByRole("button", { name: /finish story flow/i }));
-    });
-    act(() => {
-      vi.advanceTimersByTime(600);
-    });
 
-    expect(window.localStorage.getItem("story_complete")).toBe("true");
-    expect(screen.getByTestId("world-router")).toBeDefined();
-    expect(screen.getByText("World: music")).toBeDefined();
-
-    vi.useRealTimers();
+    // StoryFlow must not exist
+    expect(screen.queryByTestId("story-flow")).toBeNull();
+    expect(screen.queryByText(/hamster/i)).toBeNull();
   });
 });

@@ -1,12 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import AmbientParticles from "./AmbientParticles";
 import GameboyLoadingScreen from "../ui/GameboyLoadingScreen";
 import ClickToEnterScreen from "../ui/ClickToEnterScreen";
 import AuthLoadingOverlay from "../ui/AuthLoadingOverlay";
-import StoryFlow from "./StoryFlow";
 import WorldRouter from "../worlds/WorldRouter";
 import { SpotifyPlayerProvider } from "@/providers/SpotifyPlayerProvider";
 import { useGameState, isValidWorld } from "@/lib/gameState";
@@ -14,10 +12,10 @@ import { useGameState, isValidWorld } from "@/lib/gameState";
 /* ═══════════════════════════════════════════════════════
    LANDING PAGE — Master orchestrator
    
-   Flow: ClickToEnter → GameboyLoading → StoryFlow (Hamster Intro) → Home World
+   Flow: ClickToEnter → GameboyLoading → World Hub (or ?world= destination)
    
-   Once the intro story finishes, the WorldRouter takes
-   over and the user navigates freely between worlds.
+   Once the Gameboy loading sequence finishes, WorldRouter
+   takes over and the user navigates freely between worlds.
    ═══════════════════════════════════════════════════════ */
 
 export default function LandingPage() {
@@ -26,30 +24,35 @@ export default function LandingPage() {
   // Phase gates — each unlocks the next screen
   const [hasEntered, setHasEntered] = useState(false);
   const [introFinished, setIntroFinished] = useState(false);
-  const [storyComplete, setStoryComplete] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   React.useEffect(() => {
+    // Clear any leftover legacy flags so returning visitors aren't skipped
+    try {
+      window.localStorage.removeItem("story_complete");
+    } catch {
+      // ignore storage errors
+    }
+
     const isAuthReturn = window.location.search.includes("spotify_auth=");
-    const isStoryComplete = window.localStorage.getItem("story_complete") === "true";
+    const isDevSkip =
+      process.env.NODE_ENV !== "production" &&
+      new URLSearchParams(window.location.search).get("skipIntro") === "1";
 
     if (isAuthReturn) {
       setIsAuthLoading(true);
       setHasEntered(true);
       setIntroFinished(true);
-      setStoryComplete(true);
-    } else if (isStoryComplete) {
+    } else if (isDevSkip) {
       setHasEntered(true);
       setIntroFinished(true);
-      setStoryComplete(true);
     }
     setIsReady(true);
   }, []);
 
-  const completeStory = () => {
-    setStoryComplete(true);
-    window.localStorage.setItem("story_complete", "true");
+  const handleIntroComplete = () => {
+    setIntroFinished(true);
     const urlParams = new URLSearchParams(window.location.search);
     const worldParam = urlParams.get("world");
     if (isValidWorld(worldParam)) {
@@ -79,41 +82,12 @@ export default function LandingPage() {
       {/* ═══ PHASE 2: Retro Loading Screen ═══ */}
       {!introFinished && (
         <GameboyLoadingScreen
-          onComplete={() => {
-            setIntroFinished(true);
-          }}
+          onComplete={handleIntroComplete}
         />
       )}
 
-      {/* ═══ PHASE 3: Hamster Intro (StoryFlow) ═══ */}
-      {introFinished && !storyComplete && (
-        <div className="relative min-h-screen w-full flex flex-col">
-          {/* Background for story section */}
-          <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-            <Image
-              src="/images/loading_bg_pixel.jpg"
-              alt=""
-              fill
-              priority
-              className="object-cover"
-              role="presentation"
-            />
-            <div className="absolute inset-0 bg-home-bg/60 bg-[radial-gradient(ellipse_at_center,rgba(12,10,21,0.4)_0%,rgba(12,10,21,0.9)_100%)]" />
-          </div>
-
-          <main className="flex-1 w-full max-w-[1200px] mx-auto px-4 py-8 sm:py-12 relative z-10 flex flex-col items-center">
-            <div
-              className="w-full flex-1 flex items-center justify-center min-h-[85vh] animate-slide-up"
-              id="story-section"
-            >
-              <StoryFlow onComplete={completeStory} />
-            </div>
-          </main>
-        </div>
-      )}
-
-      {/* ═══ PHASE 4: World System (Home → Main/Music/Scrapbook) ═══ */}
-      {storyComplete && (
+      {/* ═══ PHASE 3: World System (Home → Main/Music/Scrapbook) ═══ */}
+      {introFinished && (
         <SpotifyPlayerProvider>
           <WorldRouter />
         </SpotifyPlayerProvider>
