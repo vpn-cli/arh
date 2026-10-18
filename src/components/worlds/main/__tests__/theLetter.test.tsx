@@ -74,13 +74,13 @@ describe("TheLetter Component", () => {
       screen.getByText(/More music, more laughter, and Tokyo's neon at night/i)
     ).toBeDefined();
     expect(
-      screen.getByText(/May our jam sessions survive the oceans between/i)
+      screen.getByText(/May our crash sessions survive the oceans between/i)
     ).toBeDefined();
     expect(
       screen.getByText(/May thy plans actually stay in thy head for a day/i)
     ).toBeDefined();
     expect(
-      screen.getByText(/I'm rather glad our third year collided with mine/i)
+      screen.getByText(/I'm rather glad your world collided with mine/i)
     ).toBeDefined();
     expect(
       screen.getByText(/So happy birthday, Maahi, thou magnificent oddity/i)

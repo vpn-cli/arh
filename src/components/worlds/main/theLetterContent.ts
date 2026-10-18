@@ -14,7 +14,7 @@ export const POEM_SECTIONS: PoemSection[] = [
     lines: [
       "A curious tale our timeline weaves,",
       "Of chance encounters and autumn leaves.",
-      "In second year, we crossed paths, barely acquainted,",
+      "second year, crossed paths, barely acquainted,",
       "Two perfectly ordinary strangers, unpainted",
       "By the chaos that fate had secretly planned,",
       "Neither suspecting what it held in its hand.",
@@ -23,12 +23,12 @@ export const POEM_SECTIONS: PoemSection[] = [
   {
     id: "year-three-chaos",
     lines: [
-      "Then year three arrived, and oh, what a mess,",
+      "Third year arrived, and oh, what a mess,",
       "How we went from strangers to this peculiar distress.",
       "From bitching 'bout people with the precision of spies,",
-      "To late-night jam sessions that summoned the neighbours' cries.",
+      "To late-night jam sessions that summoned the people's cries.",
       "From Candy visits to TOEFL practice together,",
-      "Procrastinating like it was our profession forever.",
+      "yoloing like it was our profession forever.",
     ],
   },
   {
@@ -45,7 +45,7 @@ export const POEM_SECTIONS: PoemSection[] = [
   {
     id: "software-bug",
     lines: [
-      "Our friendship, I reckon, defies all known laws,",
+      "The friendship, I reckon, defies all known laws,",
       "Like a software bug that somehow deserves applause.",
       "It crashes, restarts, and occasionally breaks,",
       "Yet somehow survives all the chaos it makes.",
@@ -83,7 +83,7 @@ export const POEM_SECTIONS: PoemSection[] = [
       "And now thou art in Japan, pursuing thy master's degree,",
       "Whilst I'm still here, finishing what takes five years for me.",
       "Thou hast crossed oceans and graduated ahead,",
-      "Whilst I remain with more semesters still left to be fed.",
+      "Whilst I remain with two semesters still left to be fed.",
     ],
   },
   {
@@ -92,7 +92,7 @@ export const POEM_SECTIONS: PoemSection[] = [
       "A whole country between us, a time zone to contend,",
       "Yet I know it clearly this is not where our nonsense ends.",
       "Thou mayst have new streets to wander and new tales to tell,",
-      "But distance hasn't granted thee an escape from me as well.",
+      "But distance hasn't granted thee an escape from my hell.",
     ],
   },
   {
@@ -120,15 +120,15 @@ export const POEM_SECTIONS: PoemSection[] = [
     lines: [
       "So prithee, let this new chapter bring thee delight,",
       "More music, more laughter, and Tokyo's neon at night.",
-      "May thy master's degree treat thee kindly, wherever thou roam,",
+      "May those jiggas treat thee kindly, wherever thou roam,",
       "And may Japan feel a little less distant than home.",
     ],
   },
   {
     id: "jam-sessions-arguments",
     lines: [
-      "May our jam sessions survive the oceans between,",
-      "Through calls, shared songs, and whatever chaos the earth hath seen.",
+      "May our crash sessions survive the oceans between,",
+      "Through calls, shared songs, and whatever chaos the world hath seen.",
       "And may our arguments eventually reach some sort of peace,",
       "Though knowing us both, their frequency may never decrease.",
     ],
@@ -139,16 +139,16 @@ export const POEM_SECTIONS: PoemSection[] = [
       "May thy plans actually stay in thy head for a day,",
       "And may thy ability to remember improve on the way.",
       "May thy new adventures be worth every mile,",
-      "And may even thy worst days find reasons to smile.",
+      "And may even thy worst days find reasons to smile :)",
     ],
   },
   {
     id: "third-year-fate",
     lines: [
       "For all of life's strange plot twists and peculiar design,",
-      "I'm rather glad our third year collided with mine.",
-      "Of all the people I might've met along the way,",
-      "Fate chose to make thee part of my everyday.",
+      "I'm rather glad your world collided with mine.",
+      "Of all the souls I might have met in my life's drag",
+      "The world led me to you, and gave me a reason to brag.",
     ],
   },
   {
@@ -157,7 +157,7 @@ export const POEM_SECTIONS: PoemSection[] = [
       "So happy birthday, Maahi, thou magnificent oddity,",
       "A walking plot twist with questionable memory.",
       "May thy morrow be brighter, thy worries grow small,",
-      "And may this next chapter be thy best one of all.",
+      "And may every chapter be thy best of all.",
     ],
   },
   {

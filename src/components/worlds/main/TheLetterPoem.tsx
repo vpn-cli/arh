@@ -30,38 +30,6 @@ export default function TheLetterPoem({ isOpen }: TheLetterPoemProps) {
                   </React.Fragment>
                 ))}
               </p>
-
-              {/* Collage marginalia sticker 1 (Year 3 chaos) */}
-              {idx === 2 && (
-                <div
-                  className="hidden sm:inline-flex items-center gap-1 absolute -right-2 top-0 translate-x-full px-2.5 py-1 bg-gradient-to-r from-[#FFF0F5] to-[#FFE4EE] border border-[#FF8FB3]/70 rounded-full text-[11px] font-letter-handwritten font-bold text-[#881337] rotate-2 shadow-xs pointer-events-none"
-                  aria-hidden="true"
-                >
-                  <span>☕</span>
-                  <span>certified procrastinators</span>
-                </div>
-              )}
-
-              {/* Collage marginalia sticker 2 (Accidental twinning) */}
-              {section.id === "wardrobe-twinning" && (
-                <div
-                  className="hidden sm:inline-flex items-center gap-1 absolute -right-2 top-0 translate-x-full px-2.5 py-1 bg-gradient-to-r from-[#FFF0F5] to-[#FFE4EE] border border-[#FF8FB3]/70 rounded-full text-[11px] font-letter-handwritten font-bold text-[#881337] rotate-2 shadow-xs pointer-events-none"
-                  aria-hidden="true"
-                >
-                  <span>accidental twinning club</span>
-                </div>
-              )}
-
-              {/* Collage marginalia sticker 3 (Delayed train) */}
-              {section.id === "railway-station-delayed" && (
-                <div
-                  className="hidden sm:inline-flex items-center gap-1 absolute -right-2 top-0 translate-x-full px-2.5 py-1 bg-gradient-to-r from-[#FFF9E6] to-[#FFF0D4] border border-[#E5B25D]/70 rounded-full text-[11px] font-letter-handwritten font-bold text-[#63430A] -rotate-2 shadow-xs pointer-events-none"
-                  aria-hidden="true"
-                >
-                  <span>🚂</span>
-                  <span>delayed train gang</span>
-                </div>
-              )}
             </div>
 
             {/* Hand-drawn sketchy doodle divider between major thematic shifts */}
