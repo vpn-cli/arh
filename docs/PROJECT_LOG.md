@@ -1762,6 +1762,8 @@ All margins exceed the 500ms safety threshold by a wide factor ($>2500\text{ms}$
 
 ---
 
+---
+
 ### 4. Quality Gates & Verification Summary
 - `npm run check:frozen`: Passed (0 violations).
 - `npm run lint -- --quiet`: Passed (0 errors; 0 warnings in all touched files).
@@ -1770,6 +1772,79 @@ All margins exceed the 500ms safety threshold by a wide factor ($>2500\text{ms}$
 - `npm run build`: Passed (Turbopack production build compiled successfully).
 - Pre-existing untracked and deleted assets kept untouched and unstaged.
 - Feature commit `7dc432e` pushed to `origin/main`.
+
+---
+
+## 30. Session Log: World Reveal Signal, Hub Mount Timing Calibration, and Entrance Animation Gating
+
+### Context & Goals
+Implemented the world reveal coordination system to prevent entrance animations, speech-bubble typewriters, and GSAP intros in target worlds from executing and finishing invisibly behind the 3.0s transition video overlay.
+
+Specific objectives:
+1. **Reveal State (`isWorldRevealed`)**:
+   - Add `isWorldRevealed` to `GameState` context and expose via `useWorldRevealed()` hook.
+   - Maintain `true` whenever no transition is running (initial page load, deep links, Spotify OAuth return, reduced motion without overlay, immediate intro completion).
+   - Switch to `false` at transition start; flip to `true` exactly when overlay fade-out begins (`triggerFade`).
+   - Add comprehensive unit tests in `src/lib/__tests__/gameState.test.tsx` verifying cases (a) through (d).
+2. **Target World Entrance Gating**:
+   - `TheAdventureHero.tsx`: Gate speech-bubble typewriter and `bubble-squish-in` animation on `useWorldRevealed()`. Preserve reduced motion instant display, hover/touch interactions ("aur bhai"), and a11y attributes without modifying any copy.
+   - `MusicWorld.tsx`: Gate GSAP container entrance to run only upon reveal, initializing elements in the animation's FROM state (`opacity: 0, y: 20`) without flash or remaining stuck at opacity 0 if revealed at mount.
+3. **Hub Mount Timing Calibration**:
+   - In `WorldRouter.tsx`, delay mounting target to 1800ms when `target === "home"` so HomeWorld entrance animations align with the reveal dissolve; keep other worlds mounting at 0ms.
+   - Measure `mount`, `paint`, `fade start`, and `fade end` under both unthrottled and 4× CPU slowdown conditions for all return-to-hub transitions.
+4. **Scrapbook Option B Investigation & Dropped Frames Evaluation**:
+   - Inspect 2.2s `setTimeout` in `ThreeDScrapbook.tsx` to determine if purely cosmetic or functional.
+   - Test skipping loader on transition; measure dropped video frames via `getVideoPlaybackQuality()`, long tasks, and paint time.
+   - Adhere strictly to drop-frame threshold rule: revert if dropped frames > 0 and propose alternative solutions.
+5. **Visual Evidence**:
+   - Capture screenshots at reveal ($t=2.7\text{s}$) and reveal + 1s ($t=3.7\text{s}$) for all 4 flows.
+
+---
+
+### 1. Empirical Hub Mount Timing Matrix (Target = "home", Mount at 1800ms)
+Measured on production build (`npm run build && next start`) via Playwright and Chrome DevTools Protocol (`Emulation.setCPUThrottlingRate`):
+
+| Transition Hop | Throttle Level | Target Mount | Painted Time | Fade Start | Fade End | Status ($\le 3.2\text{s}$) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **main → hub** | Unthrottled | 1808 ms | 2717 ms | 2705 ms | 3011 ms | Passed |
+| **main → hub** | 4× CPU | 1815 ms | 2828 ms | 2706 ms | 3017 ms | **Passed (3.02s)** |
+| **music → hub** | Unthrottled | 1804 ms | 2713 ms | 2701 ms | 3007 ms | Passed |
+| **music → hub** | 4× CPU | 1835 ms | 2937 ms | 2796 ms | 3115 ms | **Passed (3.12s)** |
+| **scrapbook → hub** | Unthrottled | 1805 ms | 2715 ms | 2703 ms | 3009 ms | Passed |
+| **scrapbook → hub** | 4× CPU | 1816 ms | 3007 ms | 2777 ms | 3087 ms | **Passed (3.09s)** |
+
+*Result*: At 4× CPU slowdown, all hub transitions comfortably complete their fade-out between 3.01s and 3.12s, well within the 3.2s ceiling.
+
+---
+
+### 2. Scrapbook Option B Investigation & Dropped Frames Audit
+- **Code Audit (`ThreeDScrapbook.tsx:739-745`)**:
+  ```tsx
+  // Simulate asset loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 2200);
+    return () => clearTimeout(timer);
+  }, []);
+  ```
+  *Finding*: The 2.2s delay is purely cosmetic and does not wait on texture uploads, audio decoders, or layout calculations.
+- **Empirical Measurement of Option B (Mount at $t=0$, Skip Loader)**:
+  - **Unthrottled**: 2 dropped frames / 69 total video frames (2.90% drop rate); 126ms main-thread long task during 3D scene initialization.
+  - **4× CPU Slowdown**: **3 dropped frames** / 64 total video frames (4.69% drop rate); **713ms main-thread long task** starting at $t=632\text{ms}$ during geometry allocation and shader compilation.
+- **Decision**: In strict accordance with the project specification (*"If dropped frames > 0, report and propose alternatives; do not ship it anyway"*), Option B was **reverted**. The cosmetic loader is retained for Scrapbook transitions until asynchronous off-thread texture/geometry preparation is implemented.
+
+---
+
+### 3. Quality Gates & Verification Summary
+- `npm run check:frozen`: Passed (0 violations).
+- `npx eslint ... --quiet`: Passed (0 new errors or warnings in all touched files).
+- `npm run typecheck`: Passed (0 errors).
+- `npm test`: Passed (73 test files, 682 tests passed).
+- `npm run build`: Passed (Turbopack production build compiled successfully).
+- Code changes committed as `0a6790e` and pushed to `origin/main`.
+- Working tree state of pre-existing untracked and deleted assets preserved without staging.
+
 
 
 
