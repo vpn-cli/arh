@@ -1304,16 +1304,10 @@ Completely replace the Phase 04 letter poem ("50 shades of Maahi") with the fina
 - **Working Tree Pre-existing Deletions**: Unstaged deletions were present in `public/hampter/` and `public/images/`. Handled by strictly avoiding whole-tree git commands (`git add .`, `git restore .`) and staging solely by explicit file paths.
 - **Frozen File Compliance**: Verified that no frozen files (`TheEdit*`, `HomeWorld.tsx`, `src/components/worlds/home/*`) were touched. "START NEW GAME" was confirmed to belong solely to `GameboyLoadingScreen.tsx`, not Home World.
 
-### 3. Open Items
-- **Story-Only Assets Pending Deletion Approval**:
-  - `public/hampter/AWWAAAAAHAHA.jpeg` (43,031 B)
-  - `public/hampter/YAAAA hamster.jpeg` (25,149 B)
-  - `public/hampter/Squirtle Pikachu dancing.gif` (348,793 B)
-  - `public/hampter/so cuteee i love it frrr.jpeg` (39,075 B)
-  - `public/hampter/whimsycap.jpeg` (25,978 B)
-  - `public/hampter/almarts27 hamster sticker.jpeg` (41,927 B)
-  - `public/images/loading_bg_pixel.jpg` (630,771 B)
-  *(Total: 7 files, 1,154,724 B / ~1.1 MB)*
+### 3. Open Items & Resolution
+- **Story-Only Assets Deletion (Resolved)**:
+  - Following explicit owner approval, all 7 orphaned story assets (`AWWAAAAAHAHA.jpeg`, `YAAAA hamster.jpeg`, `Squirtle Pikachu dancing.gif`, `so cuteee i love it frrr.jpeg`, `whimsycap.jpeg`, `almarts27 hamster sticker.jpeg`, `loading_bg_pixel.jpg`) totaling ~1.1 MB were removed via `git rm` in commit `7ae2909`.
+  - Non-story assets (`Hamster smirk.jpeg`, `devious hamster doodle.jpeg` in Main World letter polaroids) were preserved.
 - **Unrelated Working Tree Files**:
   - 16 unstaged deleted files in `public/` and untracked `public/hampter/PIC-removebg-preview.png` remain uncommitted and untouched in the working tree.
 
@@ -1323,6 +1317,8 @@ Completely replace the Phase 04 letter poem ("50 shades of Maahi") with the fina
 - `npm run typecheck`: Passed (0 errors).
 - `npm run test`: Passed (73 test files, 669 tests passed).
 - `npm run build`: Passed (Turbopack production build compiled successfully).
-- Code Commit: `ea3ab32` pushed and confirmed matching `origin/main`.
+- Code Commit: `ea3ab32` (intro always & story removal) pushed and confirmed matching `origin/main`.
+- Asset Deletion Commit: `7ae2909` (7 orphaned story assets removed) pushed and confirmed matching `origin/main`.
+
 
 
