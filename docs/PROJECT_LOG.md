@@ -1232,3 +1232,30 @@ Insert a new 6-line stanza into the Phase 04 letter poem ("50 shades of Maahi") 
 - **Browser Visual Audit**: Verified the opened letter stationery in browser; the new stanza and `accidental twinning club` badge render without clipping, and end-of-page spacing below `RETURN TO HUB` holds cleanly (~64–96px).
 - **Git & Push**: Committed `feat(letter): add accidental twinning stanza` (`bfab187`) and pushed to `origin/main`.
 
+---
+
+## 21. Session Log: Phase 04 Letter Poem Full Replacement ("50 shades of Maahi" Final Polish)
+
+### Context & Goals
+Completely replace the Phase 04 letter poem ("50 shades of Maahi") with the finalized 16-stanza, 80-line poem. Remove legacy sticker captions ("☕certified procrastinators", "accidental twinning club", and "🚂delayed train gang") from the poem, preserving exact punctuation, capitalization, curly apostrophes, and spacing without altering layout or frozen assets.
+
+### 1. Implementation Details
+- **Poem Content Replacement (`src/components/worlds/main/theLetterContent.ts`)**:
+  - Replaced all poem sections with the exact 16-stanza text character-for-character.
+  - Kept lowercase `"second year, crossed paths, barely acquainted,"`, curly apostrophe `’` in `"If we had patch notes, thine would simply read what’s at stake,"`, and smiley `:)` in `"And may even thy worst days find reasons to smile :)"`.
+  - Stanza count: 16 stanzas; Line count: 80 lines (excluding blank stanza separators).
+- **Caption Removal (`src/components/worlds/main/TheLetterPoem.tsx`)**:
+  - Removed marginalia sticker badge elements (`"☕certified procrastinators"`, `"accidental twinning club"`, and `"🚂delayed train gang"`).
+- **Test Assertion Updates (`src/components/worlds/main/__tests__/theLetter.test.tsx`)**:
+  - Updated snapshot text queries to match revised lines (`"May our crash sessions survive the oceans between"`, `"I'm rather glad your world collided with mine"`).
+
+### 2. Quality Gates & Verification
+- **Exact Line-by-Line Verification**: Script compared the source lines against the reference text saved outside the repository; reported 0 differences across all 80 lines.
+- **Frozen Guard**: `npm run check:frozen` passed with 0 violations.
+- **TypeScript**: `npm run typecheck` passed with 0 errors.
+- **ESLint**: `npm run lint -- --quiet` passed with 0 errors.
+- **Unit & Integration Tests**: 73 test suites passed, 665 tests passed (`npm test`).
+- **Production Build**: Turbopack production build succeeded cleanly (`npm run build`).
+- **Browser Visual Audit**: Verified in headless browser with the letter open that the full poem renders without clipping, sticker captions do not appear, and bottom breathing room below `RETURN TO HUB` holds cleanly at ~48–80px.
+- **Git & Push**: Committed `feat(letter): final polished poem` (`777e8b3`) and pushed to `origin/main`.
+
