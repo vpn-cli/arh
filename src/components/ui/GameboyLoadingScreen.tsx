@@ -169,7 +169,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
       {/* Title screen menu: Handcrafted Indie RPG Game Frame */}
       <div className="absolute top-8 sm:top-12 left-8 sm:left-12 origin-top-left z-50 flex flex-col items-start scale-95 sm:scale-100">
         <div className="absolute inset-0 bg-[#100f1f]/30 blur-[15px] rounded-lg -z-10" />
-        <IndiePixelWindow title="MAIN MENU" className="min-w-[275px] sm:min-w-[315px] shadow-[0_15px_40px_rgba(0,0,0,0.8)] bg-[#100f1f]/95 backdrop-blur-sm">
+        <IndiePixelWindow variant="pink" title="MAIN MENU" className="min-w-[275px] sm:min-w-[315px] shadow-[0_15px_40px_rgba(0,0,0,0.8)] bg-[#100f1f]/95 backdrop-blur-sm">
           <div className="p-2 sm:p-2.5">
             <ul
               className="list-none m-0 p-0 flex flex-col gap-1.5 focus-visible:outline-none"
@@ -192,7 +192,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
                     }}
                     className={`group relative flex items-center gap-3 px-3 py-2 select-none transition-all duration-150 ${
                       isSelected
-                        ? "bg-gradient-to-r from-[#FF8FB3]/25 via-[#FFD166]/15 to-transparent border-l-4 border-[#FF8FB3] border-t border-b border-r border-[#FF8FB3]/30 shadow-[inset_0_0_12px_rgba(255,143,179,0.15)]"
+                        ? "bg-gradient-to-r from-[#FF8FB3]/25 via-[#FF8FB3]/10 to-transparent border-l-4 border-[#FF8FB3] border-t border-b border-r border-[#FF8FB3]/30 shadow-[inset_0_0_12px_rgba(255,143,179,0.15)]"
                         : "border-l-4 border-transparent hover:bg-[#252244]/70 border border-transparent"
                     }`}
                   >
@@ -202,14 +202,14 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
                           ▶
                         </span>
                       ) : (
-                        <span className="w-1.5 h-1.5 rounded-none bg-[#383359] group-hover:bg-[#FFD166]/60 transition-colors" />
+                        <span className="w-1.5 h-1.5 rounded-none bg-[#383359] group-hover:bg-[#FF8FB3]/60 transition-colors" />
                       )}
                     </div>
 
                     <span
                       className={`text-[10px] sm:text-[11px] tracking-[1.2px] transition-colors ${
                         isSelected
-                          ? "text-[#FFF3D8] font-bold drop-shadow-[0_2px_0px_#100E21] drop-shadow-[0_0_8px_rgba(255,209,102,0.6)]"
+                          ? "text-[#FFF3D8] font-bold drop-shadow-[0_2px_0px_#100E21] drop-shadow-[0_0_8px_rgba(255,143,179,0.6)]"
                           : "text-[#D2CBE6] group-hover:text-[#FFF3D8] drop-shadow-[0_1px_0px_#0C0B17]"
                       }`}
                     >
@@ -217,7 +217,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
                     </span>
 
                     {isSelected && (
-                      <span className="ml-auto text-[#FFD166] text-[8px] animate-bounce-soft">
+                      <span className="ml-auto text-[#FF8FB3] text-[8px] animate-bounce-soft">
                         ✦
                       </span>
                     )}
@@ -228,9 +228,9 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           </div>
 
           <div className="flex items-center gap-2 px-4 py-0.5">
-            <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-[#E5B25D]/50 to-[#E5B25D]/10" />
-            <span className="text-[#FFE27A] text-[6px] opacity-80">◆</span>
-            <div className="h-[2px] flex-1 bg-gradient-to-l from-transparent via-[#E5B25D]/50 to-[#E5B25D]/10" />
+            <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-[#FF8FB3]/50 to-[#FF8FB3]/10" />
+            <span className="text-[#FFD0DC] text-[6px] opacity-80">◆</span>
+            <div className="h-[2px] flex-1 bg-gradient-to-l from-transparent via-[#FF8FB3]/50 to-[#FF8FB3]/10" />
           </div>
 
           <div className="flex items-center justify-between px-3.5 py-2 bg-[#100F1F]/60 select-none">
@@ -241,7 +241,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
               <span className="inline-flex items-center justify-center min-w-[19px] h-[19px] bg-[#EBE4D8] border-t-2 border-l-2 border-white border-b-2 border-r-2 border-[#8A7F73] shadow-[2px_2px_0px_#0B0A14] text-[8px] font-retro font-bold text-[#2A2338]">
                 ▼
               </span>
-              <span className="text-[7px] text-[#FFD166] tracking-wider ml-1 drop-shadow-[0_1px_0px_#0A0912]">
+              <span className="text-[7px] text-[#FFD0DC] tracking-wider ml-1 drop-shadow-[0_1px_0px_#0A0912]">
                 MOVE
               </span>
             </div>
@@ -250,7 +250,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
               <span className="inline-flex items-center justify-center h-[19px] px-2 bg-[#EBE4D8] border-t-2 border-l-2 border-white border-b-2 border-r-2 border-[#8A7F73] shadow-[2px_2px_0px_#0B0A14] text-[8px] font-retro font-bold text-[#2A2338]">
                 ENTER
               </span>
-              <span className="text-[7px] text-[#FFD166] tracking-wider drop-shadow-[0_1px_0px_#0A0912]">
+              <span className="text-[7px] text-[#FFD0DC] tracking-wider drop-shadow-[0_1px_0px_#0A0912]">
                 SELECT
               </span>
             </div>
@@ -262,7 +262,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
           className={`relative mt-2.5 w-full max-w-[275px] sm:max-w-[315px] p-[2px] rounded-sm select-none transition-all duration-200 ${
             popupError
               ? "bg-[#FF5C77] animate-pixel-shake shadow-[0_0_14px_rgba(255,92,119,0.5),3px_3px_0px_#100E1C]"
-              : "bg-gradient-to-r from-[#E5B25D] via-[#FFE27A] to-[#E5B25D] shadow-[3px_3px_0px_rgba(16,14,28,0.6)]"
+              : "bg-gradient-to-r from-[#FF8FB3] via-[#A83854] to-[#FF8FB3] shadow-[3px_3px_0px_rgba(16,14,28,0.6)]"
           }`}
         >
           <div
@@ -282,7 +282,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
 
             <span
               className={`text-[9px] flex-shrink-0 ${
-                popupError ? "text-[#FF5C77] font-bold animate-pulse" : "text-[#FFD166]"
+                popupError ? "text-[#FF5C77] font-bold animate-pulse" : "text-[#FF8FB3]"
               }`}
             >
               {popupError ? "⚠" : "✦"}
@@ -293,8 +293,8 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
                 popupError
                   ? "text-[#FFD6DD] font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
                   : selectedIndex === 1
-                  ? "text-[#FFEBB3] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
-                  : "text-[#FFEBB3] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+                  ? "text-[#FFD6DD] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+                  : "text-[#FFD6DD] drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
               }`}
             >
               {popupError
