@@ -1402,3 +1402,5 @@ Per user request, restyled the top-left `"MAIN MENU"` card and its attached help
 - `npm run build`: Passed (Turbopack production build succeeded).
 - Browser Visual Verification: Captured screenshots showing top-left menu in pink theme, transitioning gracefully into backdrop scrim when the gold `HelloKittyAlertModal` triggers.
 - Commit `8b9d690` pushed to `origin/main`.
+- Follow-up: Restyled `HelloKittyAlertModal.tsx` in pink theme (`variant="pink"`, pink `CURRENT_LOCATION: JP 🇯🇵`, and pink retro gradient button `↵ BACK TO MENU`). Commit `af55a7a` pushed to `origin/main`.
+
