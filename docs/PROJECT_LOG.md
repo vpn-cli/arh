@@ -1259,3 +1259,70 @@ Completely replace the Phase 04 letter poem ("50 shades of Maahi") with the fina
 - **Browser Visual Audit**: Verified in headless browser with the letter open that the full poem renders without clipping, sticker captions do not appear, and bottom breathing room below `RETURN TO HUB` holds cleanly at ~48–80px.
 - **Git & Push**: Committed `feat(letter): final polished poem` (`777e8b3`) and pushed to `origin/main`.
 
+---
+
+## 22. Session Log: Always Play Intro Sequence & Complete Hamster Story Removal
+
+### Context & Goals
+1. Ensure the intro sequence (`ClickToEnterScreen` -> `GameboyLoadingScreen`) plays on EVERY initial visit and browser reload, regardless of previously stored state or deep-link query parameters (`?world=`).
+2. Remove the 7-card hamster birthday story completely from the app, along with its associated child components, animations, styles, and legacy gates.
+3. Wire the completion of the GameBoy loading screen directly to the destination world (or default `"home"` hub).
+4. Preserve the OAuth callback intro bypass (`spotify_auth=`) so Spotify login redirections do not replay the intro.
+5. Provide a development-only escape hatch (`?skipIntro=1` when `NODE_ENV !== "production"`).
+6. Stage only relevant files, leaving pre-existing working tree deletions untouched.
+
+### 1. Timeline & Architecture
+- **Pre-flight & Reference Check**:
+  - Investigated git status: noticed 16 pre-existing deleted files (`public/hampter/download (3..9).jpeg`, `public/images/crop_*.png`, `public/images/debug_coords.png`) and 1 untracked file (`public/hampter/PIC-removebg-preview.png`).
+  - Executed PowerShell recursive scan across `src/` and `public/` confirming zero references to any of the 16 deleted files.
+  - Per owner decision, left these working tree modifications untouched without staging or deleting.
+- **Hamster Story Removal**:
+  - Deleted `src/components/landing/StoryFlow.tsx` (302 lines).
+  - Deleted `src/components/ui/StoryCard.tsx` (53 lines).
+  - Deleted `src/components/ui/HamsterSticker.tsx` (93 lines).
+- **Landing Page Orchestration (`src/components/landing/LandingPage.tsx`)**:
+  - Removed Phase 3 Hamster Story section and background image (`loading_bg_pixel.jpg`).
+  - Re-wired `GameboyLoadingScreen.onComplete` directly to `handleIntroComplete()` which calls `goToWorld(worldParam || "home")`.
+  - Removed `localStorage.getItem("story_complete")` skip gate; added cleanup call `localStorage.removeItem("story_complete")` on mount so returning visitors are never bypassed.
+  - Retained `spotify_auth=` bypass on OAuth return.
+  - Implemented dev-only `?skipIntro=1` bypass active only when `process.env.NODE_ENV !== "production"`.
+- **Test Suite Updates (`src/components/landing/__tests__/LandingPageGates.test.tsx`)**:
+  - Rewrote gate tests to verify:
+    1. Intro renders on `/` even if legacy `story_complete="true"` exists in `localStorage`.
+    2. Intro renders on `/?world=main` even if `story_complete="true"` exists in `localStorage`.
+    3. Completing the intro navigates to deep-linked `?world=main`.
+    4. Completing the intro navigates to default `"home"` hub if no world query is provided.
+    5. `spotify_auth=` OAuth callback still bypasses intro directly to app/auth loading.
+    6. `?skipIntro=1` bypasses intro in development environment.
+    7. `?skipIntro=1` does NOT bypass intro in production environment (`NODE_ENV === "production"`).
+    8. No story components render anywhere.
+- **Orphan Asset Verification**:
+  - Scanned codebase for references to the 7 story-only assets: confirmed 0 references remain in active code.
+  - Scanned for `data-cursor="hamster"` or hamster cursor CSS: confirmed 0 references remain.
+
+### 2. Hardships & Mitigations
+- **Working Tree Pre-existing Deletions**: Unstaged deletions were present in `public/hampter/` and `public/images/`. Handled by strictly avoiding whole-tree git commands (`git add .`, `git restore .`) and staging solely by explicit file paths.
+- **Frozen File Compliance**: Verified that no frozen files (`TheEdit*`, `HomeWorld.tsx`, `src/components/worlds/home/*`) were touched. "START NEW GAME" was confirmed to belong solely to `GameboyLoadingScreen.tsx`, not Home World.
+
+### 3. Open Items
+- **Story-Only Assets Pending Deletion Approval**:
+  - `public/hampter/AWWAAAAAHAHA.jpeg` (43,031 B)
+  - `public/hampter/YAAAA hamster.jpeg` (25,149 B)
+  - `public/hampter/Squirtle Pikachu dancing.gif` (348,793 B)
+  - `public/hampter/so cuteee i love it frrr.jpeg` (39,075 B)
+  - `public/hampter/whimsycap.jpeg` (25,978 B)
+  - `public/hampter/almarts27 hamster sticker.jpeg` (41,927 B)
+  - `public/images/loading_bg_pixel.jpg` (630,771 B)
+  *(Total: 7 files, 1,154,724 B / ~1.1 MB)*
+- **Unrelated Working Tree Files**:
+  - 16 unstaged deleted files in `public/` and untracked `public/hampter/PIC-removebg-preview.png` remain uncommitted and untouched in the working tree.
+
+### 4. Quality Gates & Verification
+- `npm run check:frozen`: Passed (0 violations).
+- `npm run lint -- --quiet`: Passed (0 errors, warnings only).
+- `npm run typecheck`: Passed (0 errors).
+- `npm run test`: Passed (73 test files, 669 tests passed).
+- `npm run build`: Passed (Turbopack production build compiled successfully).
+- Code Commit: `ea3ab32` pushed and confirmed matching `origin/main`.
+
+
