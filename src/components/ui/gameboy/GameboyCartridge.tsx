@@ -6,46 +6,64 @@ export default function GameboyCartridge() {
   return (
     <>
       {/* ═══ OPAQUE ROTATING COPYRIGHT BADGE (Covers Watermark / Cartridge Seal) ═══ */}
-      <div
-        className="absolute z-[60] flex items-center justify-center pointer-events-none drop-shadow-xl will-change-transform"
-        style={{
-          right: "4.85%",
-          bottom: "9.0%",
-          width: "140px",
-          height: "140px",
-          transform: "translate3d(calc(var(--mx, 0) * -15px), calc(var(--my, 0) * -10px), 0)",
-        }}
-      >
-        {/* Frosted Glass Background Plate */}
-        <div className="absolute inset-0 bg-[#0C0A15]/70 backdrop-blur-lg rounded-full shadow-[inset_0_0_25px_rgba(0,0,0,0.9),0_4px_10px_rgba(0,0,0,0.3)] z-0" />
-
-        {/* Rotating Text */}
-        <svg
-          className="w-[130px] h-[130px] absolute z-10 opacity-90"
-          viewBox="0 0 100 100"
-          style={{ animation: "spin 15s linear infinite" }}
+      {/* Locked to 16:9 aspect-ratio video content so it centers exactly on the watermark across all viewports */}
+      <div className="absolute inset-0 overflow-hidden flex items-center justify-center pointer-events-none z-[60]">
+        <div
+          className="relative flex-shrink-0 select-none w-full h-full"
+          style={{
+            width: "max(100vw, calc(100vh * 16 / 9))",
+            height: "max(100vh, calc(100vw * 9 / 16))",
+          }}
         >
-          <defs>
-            <path
-              id="circlePath"
-              d="M 50, 50
-                 m -38, 0
-                 a 38,38 0 1,1 76,0
-                 a 38,38 0 1,1 -76,0"
-            />
-          </defs>
-          <text className="font-retro text-[9px] fill-[#FFEBB3] tracking-[0.2em] uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-            <textPath href="#circlePath" startOffset="0%">
-              © VPN COPYRIGHT • VPN COPYRIGHT •
-            </textPath>
-          </text>
-        </svg>
+          <div
+            className="w-full h-full relative will-change-transform"
+            style={{
+              transform: "scale(1.02) translate3d(calc(var(--mx, 0) * -15px), calc(var(--my, 0) * -10px), 0)",
+            }}
+          >
+            <div
+              className="absolute flex items-center justify-center drop-shadow-xl"
+              style={{
+                left: "90.74%",
+                top: "84%",
+                width: "140px",
+                height: "140px",
+                transform: "translate(-50%, -50%)",
+              }}
+            >
+              {/* Frosted Glass Background Plate */}
+              <div className="absolute inset-0 bg-[#0C0A15]/70 backdrop-blur-lg rounded-full shadow-[inset_0_0_25px_rgba(0,0,0,0.9),0_4px_10px_rgba(0,0,0,0.3)] z-0" />
 
-        {/* Center Logo */}
-        <div className="absolute inset-0 flex items-center justify-center z-20">
-          <span className="text-[#FFEBB3] text-4xl font-retro leading-none mt-1 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,1)] opacity-80">
-            V
-          </span>
+              {/* Rotating Text */}
+              <svg
+                className="w-[130px] h-[130px] absolute z-10 opacity-90"
+                viewBox="0 0 100 100"
+                style={{ animation: "spin 15s linear infinite" }}
+              >
+                <defs>
+                  <path
+                    id="circlePath"
+                    d="M 50, 50
+                       m -38, 0
+                       a 38,38 0 1,1 76,0
+                       a 38,38 0 1,1 -76,0"
+                  />
+                </defs>
+                <text className="font-retro text-[9px] fill-[#FFEBB3] tracking-[0.2em] uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                  <textPath href="#circlePath" startOffset="0%">
+                    © VPN COPYRIGHT • VPN COPYRIGHT •
+                  </textPath>
+                </text>
+              </svg>
+
+              {/* Center Logo */}
+              <div className="absolute inset-0 flex items-center justify-center z-20">
+                <span className="text-[#FFEBB3] text-4xl font-retro leading-none animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,1)] opacity-80">
+                  V
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
