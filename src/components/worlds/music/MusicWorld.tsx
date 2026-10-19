@@ -14,7 +14,7 @@ export default function MusicWorld() {
   useNotifyWorldPainted("music");
   useMusicWorldMemories();
   const { isWidgetView } = useMusicView();
-  const { goHome } = useGameState();
+  const { isWorldRevealed, goHome } = useGameState();
   const containerRef = useRef<HTMLDivElement>(null);
   const hasAnimatedRef = useRef(false);
 
@@ -33,6 +33,7 @@ export default function MusicWorld() {
 
   useEffect(() => {
     if (!containerRef.current) return;
+    if (!isWorldRevealed) return;
 
     if (!hasAnimatedRef.current) {
       hasAnimatedRef.current = true;
@@ -50,7 +51,7 @@ export default function MusicWorld() {
         );
       }
     }
-  }, []);
+  }, [isWorldRevealed]);
 
   useEffect(() => {
     // Generate random notes
