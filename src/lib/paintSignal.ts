@@ -18,6 +18,14 @@ declare global {
   }
 }
 
+export function isTestMetricsEnabled(): boolean {
+  if (process.env.NODE_ENV !== "production") return true;
+  if (typeof window !== "undefined" && Boolean((window as unknown as { __TEST_METRICS__?: boolean }).__TEST_METRICS__)) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Dispatches a paint signal two requestAnimationFrame callbacks after
  * the target world component's mount effect runs.
@@ -35,10 +43,12 @@ export function useNotifyWorldPainted(worldId: string) {
               detail: { world: worldId, timestamp: performance.now() },
             })
           );
-          window.__lastWorldPainted = {
-            world: worldId,
-            timestamp: performance.now(),
-          };
+          if (isTestMetricsEnabled()) {
+            window.__lastWorldPainted = {
+              world: worldId,
+              timestamp: performance.now(),
+            };
+          }
         }
       });
     });

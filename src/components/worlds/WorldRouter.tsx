@@ -6,7 +6,7 @@ import { useGameState, WorldId } from "@/lib/gameState";
 import HomeWorld from "./HomeWorld";
 import { TransitionOverlay, getTransitionClip } from "../transitions/TransitionOverlay";
 import { preloadWorldTransitions } from "@/lib/transitionPreloader";
-import { TARGET_WORLD_PAINTED_EVENT } from "@/lib/paintSignal";
+import { TARGET_WORLD_PAINTED_EVENT, isTestMetricsEnabled } from "@/lib/paintSignal";
 
 /* ═══════════════════════════════════════════════════════
    WORLD ROUTER — Renders the current world with
@@ -72,14 +72,22 @@ function HomeWorldPaintSignal({ onPainted }: { onPainted: () => void }) {
 }
 
 export default function WorldRouter() {
-  const { currentWorld, previousWorld, isTransitioning, transitionTarget, completeTransition, revealWorld } = useGameState();
+  const { currentWorld, previousWorld, isTransitioning, transitionTarget, completeTransition, revealWorld, transitionStartTime } = useGameState();
   const [clipStagedWorld, setClipStagedWorld] = useState<WorldId | null>(null);
   const [isTargetPainted, setIsTargetPainted] = useState(false);
-  const [pointerOrigin, setPointerOrigin] = useState<{ x: number; y: number } | null>(null);
-
   const pointerPosRef = useRef<{ x: number; y: number } | null>(null);
   const worldContainerRef = useRef<HTMLDivElement | null>(null);
   const outgoingContainerRef = useRef<HTMLDivElement | null>(null);
+  const [prevTransitioning, setPrevTransitioning] = useState(false);
+  const [pointerOrigin, setPointerOrigin] = useState<{ x: number; y: number } | null>(null);
+
+  if (isTransitioning && !prevTransitioning) {
+    setPrevTransitioning(true);
+    setPointerOrigin(pointerPosRef.current ? { ...pointerPosRef.current } : null);
+  } else if (!isTransitioning && prevTransitioning) {
+    setPrevTransitioning(false);
+    setPointerOrigin(null);
+  }
 
   const fromWorld = previousWorld || currentWorld;
   const toWorld = transitionTarget || currentWorld;
@@ -122,12 +130,6 @@ export default function WorldRouter() {
     };
   }, []);
 
-  // Snapshot pointer position at transition start
-  useEffect(() => {
-    if (isTransitioning) {
-      setPointerOrigin(pointerPosRef.current ? { ...pointerPosRef.current } : null);
-    }
-  }, [isTransitioning]);
 
   // Warm world clips & posters when Hub is visible and idle
   useEffect(() => {
@@ -171,13 +173,13 @@ export default function WorldRouter() {
       setClipStagedWorld(fromWorld);
       const timer = setTimeout(() => {
         setClipStagedWorld(toWorld);
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && isTestMetricsEnabled()) {
           window.__targetMountTime = performance.now();
         }
       }, 500);
       return () => clearTimeout(timer);
     } else {
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && isTestMetricsEnabled()) {
         window.__targetMountTime = performance.now();
       }
     }
@@ -185,7 +187,7 @@ export default function WorldRouter() {
 
   // Stable callback for HomeWorld paint signal
   const handleHomeWorldPainted = useCallback(() => {
-    if (typeof window !== "undefined" && !window.__targetPaintedTime) {
+    if (typeof window !== "undefined" && isTestMetricsEnabled() && !window.__targetPaintedTime) {
       window.__targetPaintedTime = performance.now();
     }
     setIsTargetPainted(true);
@@ -204,7 +206,7 @@ export default function WorldRouter() {
         return;
       }
       if (fallbackTimer) clearTimeout(fallbackTimer);
-      if (typeof window !== "undefined" && !window.__targetPaintedTime) {
+      if (typeof window !== "undefined" && isTestMetricsEnabled() && !window.__targetPaintedTime) {
         window.__targetPaintedTime = performance.now();
       }
       setIsTargetPainted(true);
@@ -240,10 +242,15 @@ export default function WorldRouter() {
         pointerOrigin={pointerOrigin}
         worldContainerRef={worldContainerRef}
         outgoingContainerRef={outgoingContainerRef}
+        transitionStartTime={transitionStartTime}
       />
 
       {/* Target world content */}
-      <div ref={worldContainerRef} className="w-full min-h-screen">
+      <div
+        ref={worldContainerRef}
+        data-testid="world-content-container"
+        className="w-full min-h-screen"
+      >
         {activeTarget === "home" && (
           <>
             <HomeWorld onPortalIntent={preloadWorld} />

@@ -3,6 +3,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
 import { WorldId } from "@/lib/gameState";
+import { isTestMetricsEnabled } from "@/lib/paintSignal";
+
+declare global {
+  interface Window {
+    __activeTl?: unknown;
+  }
+}
 
 /* ═══════════════════════════════════════════════════════
    TRANSITION SYSTEM
@@ -175,6 +182,7 @@ interface TransitionOverlayProps {
   pointerOrigin?: { x: number; y: number } | null;
   worldContainerRef?: React.RefObject<HTMLDivElement | null>;
   outgoingContainerRef?: React.RefObject<HTMLDivElement | null>;
+  transitionStartTime?: number | null;
 }
 
 export function TransitionOverlay({
@@ -187,6 +195,7 @@ export function TransitionOverlay({
   pointerOrigin,
   worldContainerRef,
   outgoingContainerRef,
+  transitionStartTime,
 }: TransitionOverlayProps) {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [isFallback, setIsFallback] = useState(false);
@@ -200,6 +209,8 @@ export function TransitionOverlay({
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onFadeStartRef = useRef(onFadeStart);
   const onFadeCompleteRef = useRef(onFadeComplete);
+  const pointerOriginRef = useRef(pointerOrigin);
+  pointerOriginRef.current = pointerOrigin;
 
   useEffect(() => {
     onFadeStartRef.current = onFadeStart;
@@ -249,7 +260,8 @@ export function TransitionOverlay({
     if (tlRef.current) {
       tlRef.current.kill();
       tlRef.current = null;
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && isTestMetricsEnabled()) {
+        window.__activeTl = null;
         window.__activeTlCount = Math.max(0, (window.__activeTlCount || 1) - 1);
       }
     }
@@ -303,7 +315,7 @@ export function TransitionOverlay({
       // Crossfade transition: start 300ms crossfade immediately once target world is painted
       if (!isTargetPainted) return;
       isExitStartedRef.current = true;
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && isTestMetricsEnabled()) {
         window.__fadeStartTime = performance.now();
       }
       onFadeStartRef.current?.();
@@ -315,7 +327,7 @@ export function TransitionOverlay({
           duration: 0.3,
           ease: "power1.inOut",
           onComplete: () => {
-            if (typeof window !== "undefined") {
+            if (typeof window !== "undefined" && isTestMetricsEnabled()) {
               window.__fadeEndTime = performance.now();
             }
             if (outgoingContainerRef?.current) {
@@ -326,7 +338,7 @@ export function TransitionOverlay({
           },
         });
       } else {
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && isTestMetricsEnabled()) {
           window.__fadeEndTime = performance.now();
         }
         onFadeCompleteRef.current?.();
@@ -337,18 +349,16 @@ export function TransitionOverlay({
     if (!isTargetPainted) return;
 
     const now = performance.now();
-    const elapsed = transitionStartTimeRef.current !== null ? now - transitionStartTimeRef.current : 0;
-    const clipTime = videoRef.current && !isNaN(videoRef.current.currentTime) ? videoRef.current.currentTime : 0;
+    const effectiveStart = transitionStartTime ?? transitionStartTimeRef.current;
+    const elapsed = effectiveStart !== null ? now - effectiveStart : 0;
 
-    // Standard motion: resume only when BOTH paint arrived AND clip time >= 2.1s (or elapsed >= 2100ms)
+    // Standard motion: resume only when BOTH paint arrived AND elapsed >= 2100ms from transition start
     // Reduced motion: resume when paint arrived AND enter fade has completed (elapsed >= 300ms)
-    const isTimeReady = prefersReducedMotion
-      ? elapsed >= 300
-      : (clipTime >= 2.1 || elapsed >= 2100);
+    const isTimeReady = prefersReducedMotion ? elapsed >= 300 : elapsed >= 2100;
 
     if (isTimeReady) {
       isExitStartedRef.current = true;
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && isTestMetricsEnabled()) {
         window.__fadeStartTime = performance.now();
       }
       onFadeStartRef.current?.();
@@ -357,31 +367,23 @@ export function TransitionOverlay({
       }
     } else {
       const targetDuration = prefersReducedMotion ? 300 : 2100;
-      const remainingMs = Math.max(16, targetDuration - elapsed);
+      const remainingMs = Math.max(0, targetDuration - elapsed);
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
       holdTimerRef.current = setTimeout(() => {
         checkAndResumeRef.current();
       }, remainingMs);
     }
-  }, [isTransitioning, isTargetPainted, prefersReducedMotion, clip, outgoingContainerRef]);
+  }, [isTransitioning, isTargetPainted, prefersReducedMotion, clip, outgoingContainerRef, transitionStartTime]);
 
   useEffect(() => {
     checkAndResumeRef.current = checkAndResume;
   }, [checkAndResume]);
 
-  // Listen for paint signal or time updates to evaluate hold release
+  // Listen for paint signal to evaluate hold release
   useEffect(() => {
     if (!isTransitioning || isExitStartedRef.current) return;
     checkAndResume();
-
-    const videoEl = videoRef.current;
-    if (videoEl && !prefersReducedMotion) {
-      videoEl.addEventListener("timeupdate", checkAndResume);
-      return () => {
-        videoEl.removeEventListener("timeupdate", checkAndResume);
-      };
-    }
-  }, [isTransitioning, isTargetPainted, checkAndResume, prefersReducedMotion]);
+  }, [isTransitioning, isTargetPainted, checkAndResume]);
 
   // Main transition orchestration: GSAP timeline and imperative video setup
   useEffect(() => {
@@ -399,11 +401,11 @@ export function TransitionOverlay({
     const thisTransitionId = transitionIdRef.current;
 
     // Initialize timestamps
-    transitionStartTimeRef.current = performance.now();
+    transitionStartTimeRef.current = transitionStartTime ?? performance.now();
     isExitStartedRef.current = false;
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && isTestMetricsEnabled()) {
       if (!window.__transitionOverlayStartTime) {
-        window.__transitionOverlayStartTime = performance.now();
+        window.__transitionOverlayStartTime = transitionStartTimeRef.current;
       }
       window.__fadeStartTime = null;
       window.__fadeEndTime = null;
@@ -416,10 +418,10 @@ export function TransitionOverlay({
 
       fallbackTimerRef.current = setTimeout(() => {
         if (thisTransitionId !== transitionIdRef.current) return;
-        if (typeof window !== "undefined" && !window.__fadeStartTime) {
+        if (typeof window !== "undefined" && isTestMetricsEnabled() && !window.__fadeStartTime) {
           window.__fadeStartTime = performance.now();
         }
-        if (typeof window !== "undefined" && !window.__fadeEndTime) {
+        if (typeof window !== "undefined" && isTestMetricsEnabled() && !window.__fadeEndTime) {
           window.__fadeEndTime = performance.now();
         }
         cleanupTransition(thisTransitionId);
@@ -442,8 +444,8 @@ export function TransitionOverlay({
     const worldEl = worldContainerRef?.current;
 
     // Calculate iris center (default to viewport center for keyboard/ESC)
-    const originX = pointerOrigin?.x ?? (typeof window !== "undefined" ? Math.round(window.innerWidth / 2) : 0);
-    const originY = pointerOrigin?.y ?? (typeof window !== "undefined" ? Math.round(window.innerHeight / 2) : 0);
+    const originX = pointerOriginRef.current?.x ?? (typeof window !== "undefined" ? Math.round(window.innerWidth / 2) : 0);
+    const originY = pointerOriginRef.current?.y ?? (typeof window !== "undefined" ? Math.round(window.innerHeight / 2) : 0);
 
     // Video setup with token check and error handling (Requirements A, B, C, D)
     if (videoRef.current && !prefersReducedMotion && clip) {
@@ -490,7 +492,6 @@ export function TransitionOverlay({
         : "transform, opacity, clip-path";
     }
     if (worldEl) {
-      // eslint-disable-next-line react-hooks/immutability -- Mutating DOM node style for hardware acceleration
       worldEl.style.willChange = "transform, opacity";
     }
 
@@ -499,7 +500,9 @@ export function TransitionOverlay({
       paused: false,
     });
     tlRef.current = tl;
-    if (typeof window !== "undefined") {
+
+    if (typeof window !== "undefined" && isTestMetricsEnabled()) {
+      window.__activeTl = tl;
       window.__activeTlCount = (window.__activeTlCount || 0) + 1;
     }
 
@@ -513,9 +516,10 @@ export function TransitionOverlay({
           0
         );
       }
-      if (worldEl) {
+      const outgoingEl = outgoingContainerRef?.current;
+      if (outgoingEl) {
         tl.fromTo(
-          worldEl,
+          outgoingEl,
           { opacity: 1 },
           { opacity: 0, duration: 0.3, ease: "power1.inOut" },
           0
@@ -525,8 +529,8 @@ export function TransitionOverlay({
       // Pause at exit label after 300ms enter
       tl.addLabel("exit", 0.3);
       tl.call(() => {
-        if (worldEl) {
-          gsap.set(worldEl, { clearProps: "opacity" });
+        if (outgoingEl) {
+          gsap.set(outgoingEl, { clearProps: "opacity" });
         }
       }, undefined, 0.3);
       if (typeof tl.addPause === "function") {
@@ -544,7 +548,7 @@ export function TransitionOverlay({
       if (worldEl) {
         tl.fromTo(
           worldEl,
-          { opacity: 0 },
+          { opacity: 0, immediateRender: false },
           { opacity: 1, duration: 0.3, ease: "power1.inOut" },
           "exit"
         );
@@ -571,9 +575,10 @@ export function TransitionOverlay({
       }
 
       // Outgoing world animates scale 1 -> 0.96 and opacity 1 -> 0.6
-      if (worldEl) {
+      const outgoingEl = outgoingContainerRef?.current;
+      if (outgoingEl) {
         tl.fromTo(
-          worldEl,
+          outgoingEl,
           {
             scale: 1,
             opacity: 1,
@@ -592,12 +597,12 @@ export function TransitionOverlay({
       // At 0.5s: iris fully covers screen. Clear outgoing world scale/opacity before hold
       tl.addLabel("exit", 0.5);
       tl.call(() => {
-        if (worldEl) {
-          gsap.set(worldEl, { clearProps: "transformOrigin,scale,opacity" });
+        if (outgoingEl) {
+          gsap.set(outgoingEl, { clearProps: "transformOrigin,scale,opacity" });
         }
       }, undefined, 0.5);
 
-      // Pause at exit label until BOTH paint signal arrives AND clip time >= 2.1s
+      // Pause at exit label until BOTH paint signal arrives AND elapsed >= 2100ms
       if (typeof tl.addPause === "function") {
         tl.addPause("exit");
       }
@@ -624,6 +629,7 @@ export function TransitionOverlay({
           {
             scale: 1.03,
             opacity: 0,
+            immediateRender: false,
           },
           {
             scale: 1,
@@ -639,14 +645,15 @@ export function TransitionOverlay({
     // 3. COMPLETION:
     tl.call(() => {
       if (thisTransitionId !== transitionIdRef.current) return;
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && isTestMetricsEnabled()) {
         window.__fadeEndTime = performance.now();
       }
       // Clear GSAP inline styles and will-change
       if (overlayEl) {
-        overlayEl.style.willChange = "";
-        overlayEl.style.display = "none";
         gsap.set(overlayEl, { clearProps: "all" });
+        overlayEl.style.willChange = "";
+        overlayEl.style.opacity = "0";
+        overlayEl.style.display = "none";
       }
       if (worldEl) {
         worldEl.style.willChange = "";
@@ -657,22 +664,23 @@ export function TransitionOverlay({
         gsap.set(outgoingContainerRef.current, { clearProps: "all" });
       }
       cleanupVideo(thisTransitionId);
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && isTestMetricsEnabled()) {
+        window.__activeTl = null;
         window.__activeTlCount = Math.max(0, (window.__activeTlCount || 1) - 1);
       }
       onFadeCompleteRef.current?.();
     });
 
     // 4. HARD SAFETY CAP (4000ms):
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && isTestMetricsEnabled()) {
       window.__activeSafetyTimers = (window.__activeSafetyTimers || 0) + 1;
     }
     fallbackTimerRef.current = setTimeout(() => {
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && isTestMetricsEnabled()) {
         window.__activeSafetyTimers = Math.max(0, (window.__activeSafetyTimers || 1) - 1);
       }
       if (thisTransitionId !== transitionIdRef.current) return;
-      if (typeof window !== "undefined" && !window.__fadeStartTime) {
+      if (typeof window !== "undefined" && isTestMetricsEnabled() && !window.__fadeStartTime) {
         window.__fadeStartTime = performance.now();
       }
       cleanupTransition(thisTransitionId);
@@ -685,7 +693,8 @@ export function TransitionOverlay({
       if (tlRef.current) {
         tlRef.current.kill();
         tlRef.current = null;
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && isTestMetricsEnabled()) {
+          window.__activeTl = null;
           window.__activeTlCount = Math.max(0, (window.__activeTlCount || 1) - 1);
         }
       }
@@ -696,16 +705,15 @@ export function TransitionOverlay({
       if (fallbackTimerRef.current) {
         clearTimeout(fallbackTimerRef.current);
         fallbackTimerRef.current = null;
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && isTestMetricsEnabled()) {
           window.__activeSafetyTimers = Math.max(0, (window.__activeSafetyTimers || 1) - 1);
         }
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Pointer origin is snapshotted via pointerOriginRef at transition start; we do not restart active transition timelines on subsequent pointer events
   }, [
     isTransitioning,
     clip,
-    pointerOrigin?.x,
-    pointerOrigin?.y,
     worldContainerRef,
     outgoingContainerRef,
     prefersReducedMotion,

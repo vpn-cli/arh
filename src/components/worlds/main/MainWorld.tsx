@@ -2,10 +2,9 @@
 
 import React, { useEffect, useRef } from "react";
 import Image from "next/image";
-import { useGameState } from "@/lib/gameState";
+import { useGameState, useWorldRevealed } from "@/lib/gameState";
 import { sfx } from "@/lib/audio";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import AsciiSection from "./AsciiSection";
 import BirthdayVault from "./BirthdayVault";
@@ -17,10 +16,9 @@ import PhaseSection from "./PhaseSection";
 import TheAdventureHero from "./TheAdventureHero";
 import { useNotifyWorldPainted } from "@/lib/paintSignal";
 
-gsap.registerPlugin(ScrollTrigger);
-
 export default function MainWorld() {
   const { goHome, setMainWorldScrollY } = useGameState();
+  const isWorldRevealed = useWorldRevealed();
   useNotifyWorldPainted("main");
   const containerRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -135,7 +133,7 @@ export default function MainWorld() {
       </div>
 
       {/* ═══ NAVIGATION / HEADER ═══ */}
-      <header className="fixed top-0 left-0 w-full p-4 sm:p-6 z-50 flex justify-between items-start pointer-events-none">
+      <header className={`fixed top-0 left-0 w-full p-4 sm:p-6 z-50 flex justify-between items-start pointer-events-none transition-opacity duration-300 ${isWorldRevealed ? "opacity-100" : "opacity-0"}`}>
         <button
           onClick={() => {
             sfx.select();
@@ -161,12 +159,14 @@ export default function MainWorld() {
       </header>
 
       {/* ═══ PHASE NAVIGATION TRACKER (Fixed on Right Edge, Hidden on Mobile < 768px) ═══ */}
-      <PhaseTracker isUnlocked={isUnlocked} />
+      <div className={`transition-opacity duration-300 ${isWorldRevealed ? "opacity-100" : "opacity-0"}`}>
+        <PhaseTracker isUnlocked={isUnlocked} />
+      </div>
 
       {/* ═══ CONTENT FLOW ═══ */}
       <main
         ref={mainRef}
-        className="relative z-10 w-full flex flex-col items-center pb-8 sm:pb-12"
+        className={`relative z-10 w-full flex flex-col items-center pb-8 sm:pb-12 transition-opacity duration-300 ${isWorldRevealed ? "opacity-100" : "opacity-0"}`}
       >
         {/* Ribbon Thread Connecting Phases (Hidden on Mobile < 768px) */}
         <ScrollRibbon

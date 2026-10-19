@@ -86,7 +86,7 @@ export default function MusicWorld() {
     >
       
       {/* Background Ambience */}
-      <div className="absolute inset-0 pointer-events-none z-0">
+      <div className={`absolute inset-0 pointer-events-none z-0 transition-opacity duration-300 ${isWorldRevealed ? "opacity-100" : "opacity-0"}`}>
         {/* Soft glowing orbs */}
         <div className="absolute top-[20%] left-[20%] w-[400px] h-[400px] bg-[var(--color-muted)]/30 rounded-full blur-[100px] animate-pulse" style={{animationDuration: '8s'}} />
         <div className="absolute bottom-[20%] right-[20%] w-[350px] h-[350px] bg-[var(--color-light)]/50 rounded-full blur-[100px] animate-pulse" style={{animationDuration: '12s', animationDelay: '2s'}} />

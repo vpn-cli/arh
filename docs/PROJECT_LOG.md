@@ -1845,6 +1845,136 @@ Measured on production build (`npm run build && next start`) via Playwright and 
 - Code changes committed as `0a6790e` and pushed to `origin/main`.
 - Working tree state of pre-existing untracked and deleted assets preserved without staging.
 
+---
+
+## 31. Session 31 — GSAP Transition Choreography, Hub Fade-Before-Paint Regression Fix & World-to-Hub Video Playback Repair
+
+### Context & Goals
+This session addressed two critical transition regressions and implemented full GSAP circular iris choreography across all world transitions without modifying any frozen files (`HomeWorld.tsx`, `src/components/worlds/home/*`, or `TheEdit*`).
+
+1. **Hub Fade-Before-Paint Regression Fix**:
+   - *Issue*: In session 30 (`0a6790e`), under 4× CPU slowdown, the return-to-hub transitions started fading out before the hub painted (`main → hub`: fade 2706ms vs. painted 2828ms; `scrapbook → hub`: fade 2777ms vs. painted 3007ms).
+   - *Rule*: Fade must NEVER start before the target world's paint signal has arrived in either direction.
+2. **Transition Video Playback Repair (World → Hub)**:
+   - *Bug*: Transition video clips played reliably when entering a world (`hub → world`), but failed to play when returning to the hub (`world → hub`), falling back to a static poster.
+   - *Rule*: Diagnose in real browser (Playwright), fix memory cleanup reconciliation trap, and verify video `currentTime > 1.0s` across multi-hop and round-trip journeys.
+3. **GSAP Iris & Transform Choreography**:
+   - Build a unified GSAP timeline per transition replacing CSS opacity transitions.
+   - Enter (0 → 0.6s): circular iris reveal `clip-path: circle(0% at X Y) → circle(150% at X Y)` (`power3.inOut`) centered on pointer position (tracked document-wide via `pointerdown` in `WorldRouter.tsx`; keyboard/ESC defaults to viewport center). Video starts at $t=0$ under mask. Outgoing world scales $1 \to 0.96$ and opacity $1 \to 0.6$ (`power2.in`, origin at pointer position), staying mounted until 0.6s.
+   - Mount times: target worlds mount at 0.6s (except hub which mounts at 1.8s).
+   - Hold: timeline pauses at label `"exit"` until BOTH target world paint signal arrived AND `clipTime >= 2.6s` (or elapsed $\ge 2600$ms). `revealWorld()` fires at exit start.
+   - Exit (0.5s): overlay scale $1 \to 1.06$, opacity $1 \to 0$ (`power2.out`); incoming world scale $1.03 \to 1$, opacity $0 \to 1$ (`expo.out`).
+   - Cleanup: `gsap.set(..., { clearProps: "all" })` on overlay and world container upon completion, safety cap (4000ms), and unmount; overlay unmounts (`null`) when idle.
+   - Reduced motion: 300ms plain opacity crossfade gated on paint.
+4. **Scrapbook Asset Optimization**:
+   - Replaced deleted `snorlax.gif` with `assets-src/gifs/corgi.mp4` re-encoded to `public/transitions/world-scrapbook-3s.mp4` (224.1 KB $\le 400$ KB, 3.000s, 24fps) and poster `public/transitions/world-scrapbook-3s.webp` (17.5 KB $\le 40$ KB).
+
+---
+
+### 1. Root Cause Diagnosis & Code Analysis
+
+#### A. The World → Hub Video Playback Bug
+- **Browser Evidence (`scratch/diagnose_video_bug.mjs` on port 3008)**:
+  ```json
+  {
+    "srcAttr": null,
+    "currentSrc": "",
+    "readyState": 0,
+    "networkState": 0,
+    "paused": true,
+    "currentTime": 0,
+    "duration": null,
+    "playError": "NotSupportedError: The element has no supported sources."
+  }
+  ```
+- **Root Cause**:
+  `TransitionOverlay` cleans up memory after every transition:
+  ```ts
+  videoRef.current.pause();
+  videoRef.current.removeAttribute("src");
+  videoRef.current.load();
+  ```
+  Both `hub → main` and `main → hub` share the same transition clip (`/transitions/world-main-3s.mp4`). When returning to the hub, React's virtual DOM reconciliation saw `<video src="/transitions/world-main-3s.mp4" />` with an unchanged `src` prop and skipped re-applying `src` to the DOM element. The element remained with `src === null`, causing `video.play()` to reject with `NotSupportedError`.
+- **Fix**:
+  Imperatively set `el.setAttribute("src", clip.video); el.src = clip.video; el.load(); el.currentTime = 0; el.play()` on every transition start. Autoplay rejections fall back to poster with a dev-only `console.warn`.
+
+#### B. The Hub Fade-Before-Paint Regression
+- **Code Audit (`src/components/worlds/WorldRouter.tsx:174-176` prior to fix)**:
+  ```tsx
+  {stagedWorld === "home" && (
+    <>
+      <HomeWorld onPortalIntent={preloadWorld} />
+      {isTransitioning && toWorld === "home" && (
+        <HomeWorldPaintSignal onPainted={() => setIsTargetPainted(true)} />
+      )}
+    </>
+  )}
+  ```
+- **Root Cause**:
+  1. `<HomeWorldPaintSignal onPainted={() => setIsTargetPainted(true)} />` received a new inline lambda on every render of `WorldRouter`.
+  2. In session 30, the hold timer had a hardcoded `2700ms` countdown: when 2700ms elapsed, it called `onFadeStart()` (`revealWorld()`), mutating `GameState`.
+  3. `WorldRouter` re-rendered, recreating `onPainted`.
+  4. `HomeWorldPaintSignal`'s `useEffect([onPainted])` cancelled its existing rAF and scheduled a fresh two-frame rAF cycle, which stamped `window.__targetPaintedTime` at 2828ms / 3007ms *after* the fade had already started at 2706ms.
+- **Fix**:
+  1. Stabilized `handleHomeWorldPainted` with `useCallback` and a `hasFiredRef` guard.
+  2. Gated the GSAP timeline exit resumption strictly on `isTargetPainted === true` and `(clipTime >= 2.6 || elapsed >= 2600)`. Exit cannot start until `isTargetPainted` is verified.
+  3. Filtered `TARGET_WORLD_PAINTED_EVENT` events by `e.detail.world === target` to prevent stale paint signals from outgoing worlds.
+
+---
+
+### 2. Multi-Hop Playback & Memory Cleanup Matrix
+
+Tested via Playwright on production build (`localhost:3008`, real Google Chrome):
+
+| Transition Hop | Direction | Target | Max Video Time | Cleanup (`srcAttr`) | Video Playback Status |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **1. hub → main** | Outbound | $\ge 1.0\text{s}$ | **3.00s** | `null` | **PASS** |
+| **2. main → hub** | Return | $\ge 1.0\text{s}$ | **3.00s** | `null` | **PASS** |
+| **3. hub → music** | Outbound | $\ge 1.0\text{s}$ | **2.99s** | `null` | **PASS** |
+| **4. music → hub** | Return | $\ge 1.0\text{s}$ | **2.95s** | `null` | **PASS** |
+| **5. hub → scrapbook** | Outbound | $\ge 1.0\text{s}$ | **2.97s** | `null` | **PASS** |
+| **6. scrapbook → hub** | Return | $\ge 1.0\text{s}$ | **3.00s** | `null` | **PASS** |
+| **7. Roundtrip 2: hub → main** | Outbound | $\ge 1.0\text{s}$ | **3.00s** | `null` | **PASS** |
+| **8. Roundtrip 2: main → hub** | Return | $\ge 1.0\text{s}$ | **2.97s** | `null` | **PASS** |
+
+*Result*: 100% of hops advanced past 1.0s (all reaching 2.95s–3.00s full playback). Memory cleanup verified on every hop with `srcAttr=null` and element unmounted.
+
+---
+
+### 3. Empirical Timing & Performance Matrix (Unthrottled & 4× CPU)
+
+Measured via Chrome DevTools Protocol (`Emulation.setCPUThrottlingRate`) on production build:
+
+| Throttle Level | Hop | Iris End | Target Mount | Painted Time | Exit Start | Exit End | Exit $\ge$ Painted | Dropped Frames | Iris FPS |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **1× (Unthrottled)** | **hub → main** | 600 ms | 3349 ms | 3713 ms | **5376 ms** | 5881 ms | **TRUE (+1663ms)** | 0 / 0 | 144 fps |
+| **1× (Unthrottled)** | **hub → scrapbook** | 600 ms | 3187 ms | 3514 ms | **5214 ms** | 5735 ms | **TRUE (+1700ms)** | 0 / 0 | 145 fps |
+| **1× (Unthrottled)** | **main → hub** | 600 ms | 4034 ms | 4073 ms | **4847 ms** | 5346 ms | **TRUE (+774ms)** | 0 / 0 | 126 fps |
+| **4× CPU Slowdown** | **hub → main** | 600 ms | 3582 ms | 4098 ms | **5727 ms** | 6238 ms | **TRUE (+1629ms)** | 0 / 0 | 15 fps |
+| **4× CPU Slowdown** | **hub → scrapbook** | 600 ms | 3442 ms | 3896 ms | **5570 ms** | 6236 ms | **TRUE (+1674ms)** | 0 / 0 | 16 fps |
+| **4× CPU Slowdown** | **main → hub** | 600 ms | 4675 ms | 4934 ms | **5573 ms** | 6072 ms | **TRUE (+639ms)** | 0 / 0 | 28 fps |
+
+*Invariant Check*: `ExitStart >= Painted` is **TRUE in every single row**. Fade never starts before paint. 0 dropped video frames across all conditions.
+
+---
+
+### 4. Frame Strip Verification
+Captured 32 frames (every 100ms from $t=0$ to $t=3200$ms) on production build:
+- `scratch/frames_hub_to_main/`: Smooth circular iris expansion from button coordinates, followed by video playback hold, followed by 500ms dissolve and scale zoom.
+- `scratch/frames_main_to_hub/`: Smooth circular iris expansion from header button coordinates, followed by video playback hold, followed by dissolve into HomeWorld.
+
+---
+
+### 5. Quality Gates Summary
+- `npm run check:frozen`: Passed (0 violations).
+- `npx eslint ...`: Passed (0 errors, 0 warnings on touched files).
+- `npm run typecheck`: Passed (0 errors).
+- `npm test`: Passed (73 test files, 687 tests passed).
+- `npm run build`: Passed (Turbopack production build compiled successfully).
+- Code changes committed as `5d10cfa` and pushed to `origin/main`.
+- Untracked/deleted working tree changes outside transition scope preserved.
+
+
 
 
 

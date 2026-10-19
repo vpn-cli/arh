@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback } from "react";
+import { isTestMetricsEnabled } from "@/lib/paintSignal";
 
 /* ═══════════════════════════════════════════════════════
    GAME STATE — World navigation & interaction state
@@ -24,6 +25,7 @@ export interface GameState {
   transitionTarget: WorldId | null;
   mainWorldScrollY: number;
   isWorldRevealed: boolean;
+  transitionStartTime: number | null;
 }
 
 export interface GoToWorldOptions {
@@ -65,6 +67,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       transitionTarget: null,
       mainWorldScrollY: 0,
       isWorldRevealed: true,
+      transitionStartTime: null,
     };
   });
 
@@ -144,10 +147,19 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       currentWorld: target,
       isTransitioning: false,
       transitionTarget: null,
+      transitionStartTime: null,
       isWorldRevealed: true,
     }));
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0 });
+      if (isTestMetricsEnabled()) {
+        window.__targetMountTime = null;
+        window.__targetPaintedTime = null;
+        window.__fadeStartTime = null;
+        window.__fadeEndTime = null;
+        window.__transitionOverlayStartTime = null;
+        window.__lastWorldPainted = undefined;
+      }
     }
   }, []);
 
@@ -166,10 +178,13 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         previousWorld: prev.currentWorld,
         isTransitioning: false,
         transitionTarget: null,
+        transitionStartTime: null,
         isWorldRevealed: true,
       }));
       if (typeof window !== "undefined") {
-        window.__transitionOverlayStartTime = null;
+        if (isTestMetricsEnabled()) {
+          window.__transitionOverlayStartTime = null;
+        }
         window.scrollTo({ top: 0 });
       }
       return;
@@ -178,9 +193,10 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     isTransitioningRef.current = true;
     transitionTargetRef.current = world;
     const fromWorld = currentWorldRef.current;
+    const clickTimestamp = typeof performance !== "undefined" ? performance.now() : Date.now();
 
-    if (typeof window !== "undefined") {
-      window.__transitionOverlayStartTime = performance.now();
+    if (typeof window !== "undefined" && isTestMetricsEnabled()) {
+      window.__transitionOverlayStartTime = clickTimestamp;
       window.__targetPaintedTime = null;
       window.__fadeStartTime = null;
       window.__fadeEndTime = null;
@@ -192,6 +208,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       transitionTarget: world,
       previousWorld: fromWorld,
       isWorldRevealed: false,
+      transitionStartTime: clickTimestamp,
     }));
 
     if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);

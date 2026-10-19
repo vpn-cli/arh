@@ -76,21 +76,30 @@ export default function ScrollRibbon({
     const container = containerRef.current;
     if (!container) return;
 
-    recomputePath();
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedRecompute = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        recomputePath();
+      }, 150);
+    };
+
+    // Defer initial computation slightly so it does not block the mounting frame
+    const initTimer = setTimeout(recomputePath, 50);
 
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== "undefined") {
-      resizeObserver = new ResizeObserver(() => {
-        recomputePath();
-      });
+      resizeObserver = new ResizeObserver(debouncedRecompute);
       resizeObserver.observe(container);
     }
 
-    window.addEventListener("resize", recomputePath);
+    window.addEventListener("resize", debouncedRecompute);
 
     return () => {
+      if (initTimer) clearTimeout(initTimer);
+      if (debounceTimer) clearTimeout(debounceTimer);
       if (resizeObserver) resizeObserver.disconnect();
-      window.removeEventListener("resize", recomputePath);
+      window.removeEventListener("resize", debouncedRecompute);
     };
   }, [containerRef, startElementId, endElementId]);
 
