@@ -8,6 +8,7 @@ interface PhaseSectionProps {
   children: React.ReactNode;
   className?: string;
   minHeight?: number;
+  minHeightClassName?: string;
   deferMount?: boolean;
   forceMount?: boolean;
 }
@@ -17,6 +18,7 @@ export default function PhaseSection({
   children,
   className = "",
   minHeight,
+  minHeightClassName = "",
   deferMount = false,
   forceMount = false,
 }: PhaseSectionProps) {
@@ -171,7 +173,9 @@ export default function PhaseSection({
         ...(minHeight && !isContentMounted ? { minHeight: `${minHeight}px` } : {}),
         ...(hasEntered ? { transform: "none" } : {}),
       }}
-      className={`w-full flex flex-col items-center py-12 md:py-16 px-3 sm:px-6 relative z-10 scroll-mt-28 sm:scroll-mt-32 snap-start ${animationClasses} ${className}`}
+      className={`w-full flex flex-col items-center py-12 md:py-16 px-3 sm:px-6 relative z-10 scroll-mt-28 sm:scroll-mt-32 snap-start ${
+        !isContentMounted && minHeightClassName ? minHeightClassName : ""
+      } ${animationClasses} ${className}`}
     >
       {isContentMounted ? children : null}
     </section>

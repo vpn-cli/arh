@@ -198,9 +198,9 @@ export default function MainWorld() {
           {/* Phase 01: ASCII Kitty Terminal */}
           <PhaseSection
             id="phase-01-terminal"
-            minHeight={810}
+            minHeightClassName="min-h-[715px] md:min-h-[810px]"
             deferMount
-            forceMount={mainWorldScrollY >= 300}
+            forceMount={mainWorldScrollY >= 250}
           >
             <AsciiSection onUnlock={handleUnlock} onReset={handleReset} isUnlocked={isUnlocked} />
           </PhaseSection>
@@ -235,9 +235,9 @@ export default function MainWorld() {
               {/* Phase 02: Mystery Birthday Chest */}
               <PhaseSection
                 id="phase-02-vault"
-                minHeight={566}
+                minHeightClassName="min-h-[483px] md:min-h-[566px]"
                 deferMount
-                forceMount={mainWorldScrollY >= 1000}
+                forceMount={mainWorldScrollY >= 900}
                 className="z-[50]"
               >
                 <BirthdayVault />
@@ -246,9 +246,9 @@ export default function MainWorld() {
               {/* Phase 03: The Edit Cinema */}
               <PhaseSection
                 id="phase-03-edit"
-                minHeight={746}
+                minHeightClassName="min-h-[534px] md:min-h-[701px] lg:min-h-[746px]"
                 deferMount
-                forceMount={mainWorldScrollY >= 1600}
+                forceMount={mainWorldScrollY >= 1500}
                 className="z-20"
               >
                 <TheEdit />
@@ -257,9 +257,9 @@ export default function MainWorld() {
               {/* Phase 04: The Letter */}
               <PhaseSection
                 id="phase-04-letter"
-                minHeight={642}
+                minHeightClassName="min-h-[531px] md:min-h-[642px]"
                 deferMount
-                forceMount={mainWorldScrollY >= 2200}
+                forceMount={mainWorldScrollY >= 2000}
                 className="z-10 !pb-3 md:!pb-4"
               >
                 <TheLetter />
