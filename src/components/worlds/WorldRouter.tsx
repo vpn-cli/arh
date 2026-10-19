@@ -144,8 +144,8 @@ export default function WorldRouter() {
   }, [isTransitioning, transitionTarget]);
 
   // Mount timing choreography:
-  // - Clip hops (hub->main, hub->music): Outgoing world remains mounted from 0s to 0.6s (while iris covers).
-  //   Target world mounts at 0.6s (after iris covers screen).
+  // - Clip hops (hub->main, hub->music): Outgoing world remains mounted from 0s to 0.5s (while iris covers).
+  //   Target world mounts at 0.5s (after iris covers screen).
   // - Crossfade hops (all world->hub, and hub->scrapbook):
   //   Target world mounts immediately at t=0.
   //   Outgoing world stays mounted in outgoingContainerRef at opacity 1 until paint signal.
@@ -161,9 +161,10 @@ export default function WorldRouter() {
     setIsTargetPainted(false);
 
     if (typeof window !== "undefined") {
-      window.__transitionOverlayStartTime = performance.now();
-      window.__targetPaintedTime = null;
-      window.__targetMountTime = null;
+      if (!window.__transitionOverlayStartTime) {
+        window.__transitionOverlayStartTime = performance.now();
+      }
+      window.__targetMountTime = performance.now();
     }
 
     if (isClipHop) {
@@ -173,7 +174,7 @@ export default function WorldRouter() {
         if (typeof window !== "undefined") {
           window.__targetMountTime = performance.now();
         }
-      }, 600);
+      }, 500);
       return () => clearTimeout(timer);
     } else {
       if (typeof window !== "undefined") {

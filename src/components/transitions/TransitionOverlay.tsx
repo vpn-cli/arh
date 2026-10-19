@@ -340,11 +340,11 @@ export function TransitionOverlay({
     const elapsed = transitionStartTimeRef.current !== null ? now - transitionStartTimeRef.current : 0;
     const clipTime = videoRef.current && !isNaN(videoRef.current.currentTime) ? videoRef.current.currentTime : 0;
 
-    // Standard motion: resume only when BOTH paint arrived AND clip time >= 2.6s (or elapsed >= 2600ms)
+    // Standard motion: resume only when BOTH paint arrived AND clip time >= 2.1s (or elapsed >= 2100ms)
     // Reduced motion: resume when paint arrived AND enter fade has completed (elapsed >= 300ms)
     const isTimeReady = prefersReducedMotion
       ? elapsed >= 300
-      : (clipTime >= 2.6 || elapsed >= 2600);
+      : (clipTime >= 2.1 || elapsed >= 2100);
 
     if (isTimeReady) {
       isExitStartedRef.current = true;
@@ -356,7 +356,7 @@ export function TransitionOverlay({
         tlRef.current.play();
       }
     } else {
-      const targetDuration = prefersReducedMotion ? 300 : 2600;
+      const targetDuration = prefersReducedMotion ? 300 : 2100;
       const remainingMs = Math.max(16, targetDuration - elapsed);
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
       holdTimerRef.current = setTimeout(() => {
@@ -402,7 +402,9 @@ export function TransitionOverlay({
     transitionStartTimeRef.current = performance.now();
     isExitStartedRef.current = false;
     if (typeof window !== "undefined") {
-      window.__transitionOverlayStartTime = performance.now();
+      if (!window.__transitionOverlayStartTime) {
+        window.__transitionOverlayStartTime = performance.now();
+      }
       window.__fadeStartTime = null;
       window.__fadeEndTime = null;
     }
@@ -549,7 +551,7 @@ export function TransitionOverlay({
       }
     } else {
       // ══════ FULL GSAP IRIS CHOREOGRAPHY TIMELINE ══════
-      // 1. ENTER (0 -> 0.6s):
+      // 1. ENTER (0 -> 0.5s):
       // Overlay reveals via circular iris from pointer position
       if (overlayEl) {
         tl.fromTo(
@@ -561,7 +563,7 @@ export function TransitionOverlay({
           },
           {
             clipPath: `circle(150% at ${originX}px ${originY}px)`,
-            duration: 0.6,
+            duration: 0.5,
             ease: "power3.inOut",
           },
           0
@@ -580,54 +582,52 @@ export function TransitionOverlay({
           {
             scale: 0.96,
             opacity: 0.6,
-            duration: 0.6,
+            duration: 0.5,
             ease: "power2.in",
           },
           0
         );
       }
 
-      // At 0.6s: iris fully covers screen. Clear outgoing world scale/opacity before hold
-      tl.addLabel("exit", 0.6);
+      // At 0.5s: iris fully covers screen. Clear outgoing world scale/opacity before hold
+      tl.addLabel("exit", 0.5);
       tl.call(() => {
         if (worldEl) {
           gsap.set(worldEl, { clearProps: "transformOrigin,scale,opacity" });
         }
-      }, undefined, 0.6);
+      }, undefined, 0.5);
 
-      // Pause at exit label until BOTH paint signal arrives AND clip time >= 2.6s
+      // Pause at exit label until BOTH paint signal arrives AND clip time >= 2.1s
       if (typeof tl.addPause === "function") {
         tl.addPause("exit");
       }
 
-      // 2. EXIT (0.5s):
-      // Overlay scale 1 -> 1.06, opacity 1 -> 0, ease "power2.out"
+      // 2. EXIT (0.4s):
+      // Overlay scale 1 -> 1.04, opacity 1 -> 0, ease "power2.out"
       if (overlayEl) {
         tl.to(
           overlayEl,
           {
-            scale: 1.06,
+            scale: 1.04,
             opacity: 0,
-            duration: 0.5,
+            duration: 0.4,
             ease: "power2.out",
           },
           "exit"
         );
       }
 
-      // Incoming world scale 1.03 -> 1, opacity 0 -> 1, ease "expo.out"
+      // Incoming world: opacity 0 -> 1, scale stays 1.0 (no counter-scaling), ease "power1.inOut"
       if (worldEl) {
         tl.fromTo(
           worldEl,
           {
-            scale: 1.03,
             opacity: 0,
           },
           {
-            scale: 1,
             opacity: 1,
-            duration: 0.5,
-            ease: "expo.out",
+            duration: 0.4,
+            ease: "power1.inOut",
           },
           "exit"
         );

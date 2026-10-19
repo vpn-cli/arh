@@ -181,6 +181,9 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
 
     if (typeof window !== "undefined") {
       window.__transitionOverlayStartTime = performance.now();
+      window.__targetPaintedTime = null;
+      window.__fadeStartTime = null;
+      window.__fadeEndTime = null;
     }
 
     setState((prev) => ({

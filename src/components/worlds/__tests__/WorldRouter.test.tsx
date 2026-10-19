@@ -148,7 +148,7 @@ describe('WorldRouter and preloading', () => {
     ]);
   }, 15000);
 
-  it('keeps outgoing world mounted until 0.6s during transition', () => {
+  it('keeps outgoing world mounted until 0.5s during transition', () => {
     vi.useFakeTimers();
 
     render(
@@ -165,17 +165,17 @@ describe('WorldRouter and preloading', () => {
       screen.getByRole('button', { name: /Enter MAIN WORLD/i }).click();
     });
 
-    // At t = 0 to 500ms (< 600ms iris duration), outgoing world (HomeWorld) MUST remain mounted
+    // At t = 0 to 400ms (< 500ms iris duration), outgoing world (HomeWorld) MUST remain mounted
     act(() => {
-      mockPerformanceNow += 500;
-      vi.advanceTimersByTime(500);
+      mockPerformanceNow += 400;
+      vi.advanceTimersByTime(400);
     });
     expect(screen.getByRole('button', { name: /Enter MAIN WORLD/i })).toBeDefined();
 
-    // At t = 600ms, iris fully covers screen and outgoing HomeWorld unmounts
+    // At t = 500ms, iris fully covers screen and outgoing HomeWorld unmounts
     act(() => {
       mockPerformanceNow += 100;
-      vi.advanceTimersByTime(100); // 600ms total
+      vi.advanceTimersByTime(100); // 500ms total
     });
     expect(screen.queryByRole('button', { name: /Enter MAIN WORLD/i })).toBeNull();
   });
@@ -216,10 +216,10 @@ describe('Transition choreography and paint-before-fade invariant', () => {
       rerenderFn = res.rerender;
     });
 
-    // Advance beyond minimum clip hold time (2600ms) while target world has not painted
+    // Advance beyond minimum clip hold time (2100ms) while target world has not painted
     act(() => {
-      mockPerformanceNow += 2800;
-      vi.advanceTimersByTime(2800);
+      mockPerformanceNow += 2300;
+      vi.advanceTimersByTime(2300);
     });
 
     // Crucial invariant: fade must NOT have started because target world has not painted
@@ -239,7 +239,7 @@ describe('Transition choreography and paint-before-fade invariant', () => {
       );
     });
 
-    // Now fade start fires immediately since time >= 2.6s and paint signal is received
+    // Now fade start fires immediately since time >= 2.1s and paint signal is received
     expect(onFadeStart).toHaveBeenCalledTimes(1);
   });
 
