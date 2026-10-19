@@ -1,15 +1,46 @@
 "use client";
 
+import { HERO_STICKERS } from "@/components/worlds/main/heroStickers";
+
 /* ═══════════════════════════════════════════════════════
    TRANSITION PRELOADER
    Warms world transition clips & posters when Hub is idle.
    Skips on saveData or 2G network connections.
    Uses hidden video elements so browser media subsystem caches
    the range-request byte chunks for immediate playback.
+   Decodes Main World's above-the-fold images (main_world.webp +
+   20 hero stickers + mascot accents) in parallel during idle.
    ═══════════════════════════════════════════════════════ */
 
 let isPreloaded = false;
 const hiddenVideos: HTMLVideoElement[] = [];
+
+export const MAIN_ABOVE_FOLD_IMAGES = [
+  "/images/main_world.webp",
+  "/images/portals/hk-main.webp",
+  "/images/elements/bow_satin.webp",
+  "/images/elements/star_top_right.webp",
+  "/images/elements/cherries.webp",
+  ...HERO_STICKERS.map((s) => s.src),
+];
+
+export async function decodeMainAboveTheFoldImages() {
+  if (typeof window === "undefined" || !("Image" in window)) return;
+
+  await Promise.all(
+    MAIN_ABOVE_FOLD_IMAGES.map(async (src) => {
+      try {
+        const img = new Image();
+        img.src = src;
+        if ("decode" in img) {
+          await img.decode();
+        }
+      } catch {
+        // ignore individual decode errors
+      }
+    })
+  );
+}
 
 export function preloadWorldTransitions() {
   if (isPreloaded || typeof window === "undefined") return;
@@ -42,12 +73,11 @@ export function preloadWorldTransitions() {
       },
     ];
 
+    // 1. Preload transition clips into media cache
     clips.forEach(({ video, poster }) => {
-      // 1. Warm poster image in browser image cache
       const img = new Image();
       img.src = poster;
 
-      // 2. Warm video in media player cache using a detached video element with preload="auto"
       try {
         const v = document.createElement("video");
         v.preload = "auto";
@@ -60,15 +90,18 @@ export function preloadWorldTransitions() {
         // ignore preload errors
       }
     });
+
+    // 2. Decode Main World's above-the-fold images in parallel during idle
+    decodeMainAboveTheFoldImages().catch(() => {});
   };
 
   const win = typeof window !== "undefined"
     ? (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number })
     : null;
   if (win?.requestIdleCallback) {
-    win.requestIdleCallback(runPreload, { timeout: 3000 });
+    win.requestIdleCallback(runPreload, { timeout: 2000 });
   } else {
-    setTimeout(runPreload, 1200);
+    setTimeout(runPreload, 800);
   }
 }
 
