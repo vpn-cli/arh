@@ -34,11 +34,6 @@ export default function MusicWorld() {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    if (!isWorldRevealed && !hasAnimatedRef.current) {
-      gsap.set(containerRef.current.children, { opacity: 0, y: 20 });
-      return;
-    }
-
     if (!hasAnimatedRef.current) {
       hasAnimatedRef.current = true;
       const prefersReducedMotion =
@@ -55,7 +50,7 @@ export default function MusicWorld() {
         );
       }
     }
-  }, [isWorldRevealed]);
+  }, []);
 
   useEffect(() => {
     // Generate random notes
@@ -125,7 +120,6 @@ export default function MusicWorld() {
       <main
         ref={containerRef}
         className="relative z-10 w-full h-[100dvh] overflow-hidden"
-        style={!isWorldRevealed ? { opacity: 0 } : undefined}
       >
         <SpotifyPlayerUI onGoHome={() => {
           sfx.select();
