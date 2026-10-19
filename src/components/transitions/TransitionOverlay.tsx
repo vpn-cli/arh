@@ -272,7 +272,7 @@ export function TransitionOverlay({
     if (fallbackTimerRef.current) {
       clearTimeout(fallbackTimerRef.current);
       fallbackTimerRef.current = null;
-      if (typeof window !== "undefined") {
+      if (typeof window !== "undefined" && isTestMetricsEnabled()) {
         window.__activeSafetyTimers = Math.max(0, (window.__activeSafetyTimers || 1) - 1);
       }
     }

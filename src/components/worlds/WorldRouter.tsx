@@ -162,7 +162,7 @@ export default function WorldRouter() {
 
     setIsTargetPainted(false);
 
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && isTestMetricsEnabled()) {
       if (!window.__transitionOverlayStartTime) {
         window.__transitionOverlayStartTime = performance.now();
       }

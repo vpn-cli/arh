@@ -9,6 +9,7 @@ import WorldRouter from "../worlds/WorldRouter";
 import { SiteLoadOverlay } from "../transitions/TransitionOverlay";
 import { SpotifyPlayerProvider } from "@/providers/SpotifyPlayerProvider";
 import { useGameState, isValidWorld } from "@/lib/gameState";
+import { isTestMetricsEnabled } from "@/lib/paintSignal";
 
 /* ═══════════════════════════════════════════════════════
    LANDING PAGE — Master orchestrator
@@ -54,7 +55,7 @@ export default function LandingPage() {
       setLoaderDone(true);
     }
     setIsReady(true);
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && isTestMetricsEnabled()) {
       window.__isReadyFlipped = performance.now();
     }
   }, []);
