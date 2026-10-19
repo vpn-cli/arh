@@ -4,8 +4,9 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useGameState, WorldId } from "@/lib/gameState";
 import HomeWorld from "./HomeWorld";
-import { TransitionOverlay } from "../transitions/TransitionOverlay";
+import { TransitionOverlay, getTransitionClip } from "../transitions/TransitionOverlay";
 import { preloadWorldTransitions } from "@/lib/transitionPreloader";
+import { TARGET_WORLD_PAINTED_EVENT } from "@/lib/paintSignal";
 
 /* ═══════════════════════════════════════════════════════
    WORLD ROUTER — Renders the current world with
@@ -48,8 +49,6 @@ export function preloadWorld(worldId: string) {
   }
 }
 
-import { TARGET_WORLD_PAINTED_EVENT } from "@/lib/paintSignal";
-
 function HomeWorldPaintSignal({ onPainted }: { onPainted: () => void }) {
   const hasFiredRef = useRef(false);
 
@@ -74,12 +73,35 @@ function HomeWorldPaintSignal({ onPainted }: { onPainted: () => void }) {
 
 export default function WorldRouter() {
   const { currentWorld, previousWorld, isTransitioning, transitionTarget, completeTransition, revealWorld } = useGameState();
-  const [stagedWorld, setStagedWorld] = useState<WorldId | null>(currentWorld);
+  const [clipStagedWorld, setClipStagedWorld] = useState<WorldId | null>(null);
   const [isTargetPainted, setIsTargetPainted] = useState(false);
   const [pointerOrigin, setPointerOrigin] = useState<{ x: number; y: number } | null>(null);
 
   const pointerPosRef = useRef<{ x: number; y: number } | null>(null);
   const worldContainerRef = useRef<HTMLDivElement | null>(null);
+  const outgoingContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const fromWorld = previousWorld || currentWorld;
+  const toWorld = transitionTarget || currentWorld;
+  const clip = getTransitionClip(fromWorld, toWorld);
+  const isClipHop = Boolean(clip);
+
+  // Synchronous world mapping:
+  // For clip hops: staging managed via clipStagedWorld (fromWorld for 0.6s, then toWorld)
+  // For crossfade hops: target is toWorld (mounts at t=0), outgoing is fromWorld (in outgoingContainerRef)
+  // When idle: target is currentWorld, outgoing is null
+  let activeTarget: WorldId | null = currentWorld;
+  let activeOutgoing: WorldId | null = null;
+
+  if (isTransitioning) {
+    if (isClipHop) {
+      activeTarget = clipStagedWorld ?? fromWorld;
+      activeOutgoing = null;
+    } else {
+      activeTarget = toWorld;
+      activeOutgoing = fromWorld;
+    }
+  }
 
   // Track pointerdown at document level without modifying HomeWorld
   // Keyboard / ESC triggers clear pointer position so they default to viewport center
@@ -122,66 +144,43 @@ export default function WorldRouter() {
   }, [isTransitioning, transitionTarget]);
 
   // Mount timing choreography:
-  // - Outgoing world remains mounted from 0s to 0.6s (while iris covers the screen).
-  // - Target worlds mount at 0.6s (after iris covers), except hub which mounts at 1.8s.
+  // - Clip hops (hub->main, hub->music): Outgoing world remains mounted from 0s to 0.6s (while iris covers).
+  //   Target world mounts at 0.6s (after iris covers screen).
+  // - Crossfade hops (all world->hub, and hub->scrapbook):
+  //   Target world mounts immediately at t=0.
+  //   Outgoing world stays mounted in outgoingContainerRef at opacity 1 until paint signal.
+  //   300ms crossfade starts only after target's paint signal arrives.
   useEffect(() => {
     if (!isTransitioning) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronize staged world when transitioning completes
-      setStagedWorld(currentWorld);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Reset staged clip state when transitioning completes
+      setClipStagedWorld(null);
       setIsTargetPainted(false);
       return;
     }
 
-    const target = transitionTarget || currentWorld;
-    const from = previousWorld || currentWorld;
-
-    // Outgoing world stays mounted until 0.6s
-    setStagedWorld(from);
     setIsTargetPainted(false);
 
     if (typeof window !== "undefined") {
-      if (!window.__transitionOverlayStartTime) {
-        window.__transitionOverlayStartTime = performance.now();
-      }
+      window.__transitionOverlayStartTime = performance.now();
       window.__targetPaintedTime = null;
       window.__targetMountTime = null;
     }
 
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    if (target === "home") {
-      // Outgoing world unmounts at 0.6s (iris fully covers screen)
-      timers.push(
-        setTimeout(() => {
-          setStagedWorld(null);
-        }, 600)
-      );
-
-      // Hub mounts at 1.8s (1800ms)
-      timers.push(
-        setTimeout(() => {
-          setStagedWorld("home");
-          if (typeof window !== "undefined") {
-            window.__targetMountTime = performance.now();
-          }
-        }, 1800)
-      );
+    if (isClipHop) {
+      setClipStagedWorld(fromWorld);
+      const timer = setTimeout(() => {
+        setClipStagedWorld(toWorld);
+        if (typeof window !== "undefined") {
+          window.__targetMountTime = performance.now();
+        }
+      }, 600);
+      return () => clearTimeout(timer);
     } else {
-      // Target world mounts at 0.6s (600ms)
-      timers.push(
-        setTimeout(() => {
-          setStagedWorld(target);
-          if (typeof window !== "undefined") {
-            window.__targetMountTime = performance.now();
-          }
-        }, 600)
-      );
+      if (typeof window !== "undefined") {
+        window.__targetMountTime = performance.now();
+      }
     }
-
-    return () => {
-      timers.forEach(clearTimeout);
-    };
-  }, [isTransitioning, currentWorld, previousWorld, transitionTarget]);
+  }, [isTransitioning, fromWorld, toWorld, isClipHop]);
 
   // Stable callback for HomeWorld paint signal
   const handleHomeWorldPainted = useCallback(() => {
@@ -223,8 +222,10 @@ export default function WorldRouter() {
     };
   }, [isTransitioning, transitionTarget, currentWorld]);
 
-  const fromWorld = previousWorld || currentWorld;
-  const toWorld = transitionTarget || currentWorld;
+  const handleTransitionComplete = useCallback(() => {
+    revealWorld();
+    completeTransition();
+  }, [revealWorld, completeTransition]);
 
   return (
     <div className="relative w-full min-h-screen">
@@ -234,15 +235,15 @@ export default function WorldRouter() {
         toWorld={toWorld}
         isTransitioning={isTransitioning}
         isTargetPainted={isTargetPainted}
-        onFadeStart={revealWorld}
-        onFadeComplete={completeTransition}
+        onFadeComplete={handleTransitionComplete}
         pointerOrigin={pointerOrigin}
         worldContainerRef={worldContainerRef}
+        outgoingContainerRef={outgoingContainerRef}
       />
 
-      {/* World content - rendered behind overlay */}
+      {/* Target world content */}
       <div ref={worldContainerRef} className="w-full min-h-screen">
-        {stagedWorld === "home" && (
+        {activeTarget === "home" && (
           <>
             <HomeWorld onPortalIntent={preloadWorld} />
             {isTransitioning && toWorld === "home" && (
@@ -250,10 +251,25 @@ export default function WorldRouter() {
             )}
           </>
         )}
-        {stagedWorld === "main" && <MainWorld />}
-        {stagedWorld === "music" && <MusicWorld />}
-        {stagedWorld === "scrapbook" && <ScrapbookWorld />}
+        {activeTarget === "main" && <MainWorld />}
+        {activeTarget === "music" && <MusicWorld />}
+        {activeTarget === "scrapbook" && <ScrapbookWorld />}
       </div>
+
+      {/* Outgoing world container during crossfade hops */}
+      {isTransitioning && activeOutgoing && (
+        <div
+          ref={outgoingContainerRef}
+          data-testid="outgoing-world-container"
+          className="fixed inset-0 z-30 pointer-events-none overflow-hidden"
+          style={{ opacity: 1 }}
+        >
+          {activeOutgoing === "home" && <HomeWorld onPortalIntent={preloadWorld} />}
+          {activeOutgoing === "main" && <MainWorld />}
+          {activeOutgoing === "music" && <MusicWorld />}
+          {activeOutgoing === "scrapbook" && <ScrapbookWorld />}
+        </div>
+      )}
     </div>
   );
 }

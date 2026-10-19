@@ -40,10 +40,6 @@ export function preloadWorldTransitions() {
         video: "/transitions/world-music-3s.mp4",
         poster: "/transitions/world-music-3s.webp",
       },
-      {
-        video: "/transitions/world-scrapbook-3s.mp4",
-        poster: "/transitions/world-scrapbook-3s.webp",
-      },
     ];
 
     clips.forEach(({ video, poster }) => {

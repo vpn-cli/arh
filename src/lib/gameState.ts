@@ -147,7 +147,6 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       isWorldRevealed: true,
     }));
     if (typeof window !== "undefined") {
-      window.__transitionOverlayStartTime = null;
       window.scrollTo({ top: 0 });
     }
   }, []);
@@ -209,7 +208,6 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
           isWorldRevealed: true,
         }));
         if (typeof window !== "undefined") {
-          window.__transitionOverlayStartTime = null;
           window.scrollTo({ top: 0 });
         }
       }

@@ -24,15 +24,13 @@ const TRANSITION_CLIPS: Record<string, TransitionClip> = {
     video: "/transitions/world-music-3s.mp4",
     poster: "/transitions/world-music-3s.webp",
   },
-  scrapbook: {
-    video: "/transitions/world-scrapbook-3s.mp4",
-    poster: "/transitions/world-scrapbook-3s.webp",
-  },
 };
 
 export function getTransitionClip(from: WorldId, to: WorldId): TransitionClip | null {
-  const worldKey = from === "home" ? to : from;
-  return TRANSITION_CLIPS[worldKey] ?? null;
+  if (from === "home" && (to === "main" || to === "music")) {
+    return TRANSITION_CLIPS[to] ?? null;
+  }
+  return null;
 }
 
 function getFirstPaintTime(): number {
@@ -176,6 +174,7 @@ interface TransitionOverlayProps {
   onFadeComplete?: () => void;
   pointerOrigin?: { x: number; y: number } | null;
   worldContainerRef?: React.RefObject<HTMLDivElement | null>;
+  outgoingContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function TransitionOverlay({
@@ -187,6 +186,7 @@ export function TransitionOverlay({
   onFadeComplete,
   pointerOrigin,
   worldContainerRef,
+  outgoingContainerRef,
 }: TransitionOverlayProps) {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [isFallback, setIsFallback] = useState(false);
@@ -273,13 +273,18 @@ export function TransitionOverlay({
       worldContainerRef.current.style.willChange = "";
       gsap.set(worldContainerRef.current, { clearProps: "all" });
     }
+    if (outgoingContainerRef?.current) {
+      gsap.killTweensOf(outgoingContainerRef.current);
+      outgoingContainerRef.current.style.willChange = "";
+      gsap.set(outgoingContainerRef.current, { clearProps: "all" });
+    }
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.removeAttribute("src");
       videoRef.current.load();
     }
     isExitStartedRef.current = false;
-  }, [worldContainerRef]);
+  }, [worldContainerRef, outgoingContainerRef]);
 
   // Clean up on component unmount: unconditionally frees video memory regardless of token
   useEffect(() => {
@@ -293,6 +298,42 @@ export function TransitionOverlay({
   // Check and resume hold
   const checkAndResume = useCallback(() => {
     if (!isTransitioning || isExitStartedRef.current) return;
+
+    if (!clip) {
+      // Crossfade transition: start 300ms crossfade immediately once target world is painted
+      if (!isTargetPainted) return;
+      isExitStartedRef.current = true;
+      if (typeof window !== "undefined") {
+        window.__fadeStartTime = performance.now();
+      }
+      onFadeStartRef.current?.();
+
+      const outgoingEl = outgoingContainerRef?.current;
+      if (outgoingEl) {
+        gsap.to(outgoingEl, {
+          opacity: 0,
+          duration: 0.3,
+          ease: "power1.inOut",
+          onComplete: () => {
+            if (typeof window !== "undefined") {
+              window.__fadeEndTime = performance.now();
+            }
+            if (outgoingContainerRef?.current) {
+              outgoingContainerRef.current.style.willChange = "";
+              gsap.set(outgoingContainerRef.current, { clearProps: "all" });
+            }
+            onFadeCompleteRef.current?.();
+          },
+        });
+      } else {
+        if (typeof window !== "undefined") {
+          window.__fadeEndTime = performance.now();
+        }
+        onFadeCompleteRef.current?.();
+      }
+      return;
+    }
+
     if (!isTargetPainted) return;
 
     const now = performance.now();
@@ -322,7 +363,7 @@ export function TransitionOverlay({
         checkAndResumeRef.current();
       }, remainingMs);
     }
-  }, [isTransitioning, isTargetPainted, prefersReducedMotion, clip]);
+  }, [isTransitioning, isTargetPainted, prefersReducedMotion, clip, outgoingContainerRef]);
 
   useEffect(() => {
     checkAndResumeRef.current = checkAndResume;
@@ -361,8 +402,38 @@ export function TransitionOverlay({
     transitionStartTimeRef.current = performance.now();
     isExitStartedRef.current = false;
     if (typeof window !== "undefined") {
+      window.__transitionOverlayStartTime = performance.now();
       window.__fadeStartTime = null;
       window.__fadeEndTime = null;
+    }
+
+    if (!clip) {
+      // ══════ CROSSFADE TIMELINE (NO clip, NO poster, NO iris) ══════
+      // Outgoing world sits at opacity 1 until checkAndResume fires after target paint.
+      const outgoingEl = outgoingContainerRef?.current;
+
+      fallbackTimerRef.current = setTimeout(() => {
+        if (thisTransitionId !== transitionIdRef.current) return;
+        if (typeof window !== "undefined" && !window.__fadeStartTime) {
+          window.__fadeStartTime = performance.now();
+        }
+        if (typeof window !== "undefined" && !window.__fadeEndTime) {
+          window.__fadeEndTime = performance.now();
+        }
+        cleanupTransition(thisTransitionId);
+        onFadeStartRef.current?.();
+        onFadeCompleteRef.current?.();
+      }, 4000);
+
+      return () => {
+        if (fallbackTimerRef.current) {
+          clearTimeout(fallbackTimerRef.current);
+          fallbackTimerRef.current = null;
+        }
+        if (outgoingEl) {
+          gsap.killTweensOf(outgoingEl);
+        }
+      };
     }
 
     const overlayEl = overlayRef.current;
@@ -579,6 +650,10 @@ export function TransitionOverlay({
         worldEl.style.willChange = "";
         gsap.set(worldEl, { clearProps: "all" });
       }
+      if (outgoingContainerRef?.current) {
+        outgoingContainerRef.current.style.willChange = "";
+        gsap.set(outgoingContainerRef.current, { clearProps: "all" });
+      }
       cleanupVideo(thisTransitionId);
       if (typeof window !== "undefined") {
         window.__activeTlCount = Math.max(0, (window.__activeTlCount || 1) - 1);
@@ -630,12 +705,28 @@ export function TransitionOverlay({
     pointerOrigin?.x,
     pointerOrigin?.y,
     worldContainerRef,
+    outgoingContainerRef,
     prefersReducedMotion,
     cleanupTransition,
     cleanupVideo,
   ]);
 
-  if (!isTransitioning || !clip) return null;
+  if (!isTransitioning) return null;
+
+  if (!clip) {
+    return (
+      <div
+        ref={overlayRef}
+        data-testid="world-transition-overlay"
+        aria-hidden="true"
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          display: isTransitioning ? "block" : "none",
+          opacity: 0,
+        }}
+      />
+    );
+  }
 
   const originX = pointerOrigin?.x ?? (typeof window !== "undefined" ? Math.round(window.innerWidth / 2) : 0);
   const originY = pointerOrigin?.y ?? (typeof window !== "undefined" ? Math.round(window.innerHeight / 2) : 0);
@@ -663,6 +754,9 @@ export function TransitionOverlay({
             data-testid="world-transition-poster"
             data-visible={isFallback || prefersReducedMotion ? "true" : "false"}
             className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+            style={{
+              display: isFallback || prefersReducedMotion ? "block" : "none",
+            }}
           />
 
           {/* Single reused video element */}

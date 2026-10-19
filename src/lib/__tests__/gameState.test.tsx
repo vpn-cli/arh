@@ -282,14 +282,13 @@ describe('GameStateProvider', () => {
     expect(screen.getByTestId('world').textContent).toBe('main');
     expect(screen.getByTestId('is-trans').textContent).toBe('false');
 
-    // Hop 2: main → hub
+    // Hop 2: main → hub (NO clip on world → hub)
     act(() => {
       screen.getByTestId('go-home').click();
     });
     expect(screen.getByTestId('is-trans').textContent).toBe('true');
-    // to-hub: the left world's clip (main)
-    expect(screen.getByTestId('clip-video').textContent).toBe('/transitions/world-main-3s.mp4');
-    expect(screen.getByTestId('clip-poster').textContent).toBe('/transitions/world-main-3s.webp');
+    expect(screen.getByTestId('clip-video').textContent).toBe('');
+    expect(screen.getByTestId('clip-poster').textContent).toBe('');
     act(() => {
       screen.getByTestId('complete').click();
     });
@@ -310,28 +309,26 @@ describe('GameStateProvider', () => {
     expect(screen.getByTestId('world').textContent).toBe('music');
     expect(screen.getByTestId('is-trans').textContent).toBe('false');
 
-    // Hop 4: music → hub
+    // Hop 4: music → hub (NO clip on world → hub)
     act(() => {
       screen.getByTestId('go-home').click();
     });
     expect(screen.getByTestId('is-trans').textContent).toBe('true');
-    // to-hub: the left world's clip (music)
-    expect(screen.getByTestId('clip-video').textContent).toBe('/transitions/world-music-3s.mp4');
-    expect(screen.getByTestId('clip-poster').textContent).toBe('/transitions/world-music-3s.webp');
+    expect(screen.getByTestId('clip-video').textContent).toBe('');
+    expect(screen.getByTestId('clip-poster').textContent).toBe('');
     act(() => {
       screen.getByTestId('complete').click();
     });
     expect(screen.getByTestId('world').textContent).toBe('home');
     expect(screen.getByTestId('is-trans').textContent).toBe('false');
 
-    // Hop 5: hub → scrapbook
+    // Hop 5: hub → scrapbook (NO clip on hub → scrapbook)
     act(() => {
       screen.getByTestId('go-scrapbook').click();
     });
     expect(screen.getByTestId('is-trans').textContent).toBe('true');
-    // to-world: target's clip (scrapbook)
-    expect(screen.getByTestId('clip-video').textContent).toBe('/transitions/world-scrapbook-3s.mp4');
-    expect(screen.getByTestId('clip-poster').textContent).toBe('/transitions/world-scrapbook-3s.webp');
+    expect(screen.getByTestId('clip-video').textContent).toBe('');
+    expect(screen.getByTestId('clip-poster').textContent).toBe('');
     act(() => {
       screen.getByTestId('complete').click();
     });
