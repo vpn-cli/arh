@@ -142,25 +142,31 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     currentWorldRef.current = target;
     transitionTargetRef.current = null;
     isTransitioningRef.current = false;
-    setState((prev) => ({
-      ...prev,
-      currentWorld: target,
-      isTransitioning: false,
-      transitionTarget: null,
-      transitionStartTime: null,
-      isWorldRevealed: true,
-    }));
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0 });
-      if (isTestMetricsEnabled()) {
-        window.__targetMountTime = null;
-        window.__targetPaintedTime = null;
-        window.__fadeStartTime = null;
-        window.__fadeEndTime = null;
-        window.__transitionOverlayStartTime = null;
-        window.__lastWorldPainted = undefined;
+    setState((prev) => {
+      if (typeof window !== "undefined") {
+        if (target === "main" && prev.mainWorldScrollY > 0) {
+          window.scrollTo({ top: prev.mainWorldScrollY });
+        } else {
+          window.scrollTo({ top: 0 });
+        }
+        if (isTestMetricsEnabled()) {
+          window.__targetMountTime = null;
+          window.__targetPaintedTime = null;
+          window.__fadeStartTime = null;
+          window.__fadeEndTime = null;
+          window.__transitionOverlayStartTime = null;
+          window.__lastWorldPainted = undefined;
+        }
       }
-    }
+      return {
+        ...prev,
+        currentWorld: target,
+        isTransitioning: false,
+        transitionTarget: null,
+        transitionStartTime: null,
+        isWorldRevealed: true,
+      };
+    });
   }, []);
 
   const goToWorld = useCallback((world: WorldId, options?: GoToWorldOptions) => {
@@ -185,7 +191,11 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         if (isTestMetricsEnabled()) {
           window.__transitionOverlayStartTime = null;
         }
-        window.scrollTo({ top: 0 });
+        if (world === "main" && state.mainWorldScrollY > 0) {
+          window.scrollTo({ top: state.mainWorldScrollY });
+        } else {
+          window.scrollTo({ top: 0 });
+        }
       }
       return;
     }
@@ -228,7 +238,11 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
           isWorldRevealed: true,
         }));
         if (typeof window !== "undefined") {
-          window.scrollTo({ top: 0 });
+          if (target === "main" && state.mainWorldScrollY > 0) {
+            window.scrollTo({ top: state.mainWorldScrollY });
+          } else {
+            window.scrollTo({ top: 0 });
+          }
         }
       }
     }, 4000);

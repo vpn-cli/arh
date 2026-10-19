@@ -17,20 +17,18 @@ import TheAdventureHero from "./TheAdventureHero";
 import { useNotifyWorldPainted } from "@/lib/paintSignal";
 
 export default function MainWorld() {
-  const { goHome, setMainWorldScrollY } = useGameState();
+  const { goHome, setMainWorldScrollY, mainWorldScrollY } = useGameState();
   useNotifyWorldPainted("main");
   const containerRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
-  const [isUnlocked, setIsUnlocked] = React.useState(false);
-
-  useEffect(() => {
-    // Always reboot terminal fresh whenever user lands on the page
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Always reboot terminal fresh on world mount
-    setIsUnlocked(false);
-    try {
-      sessionStorage.removeItem("kitty_terminal_unlocked");
-    } catch {}
-  }, []);
+  const [isUnlocked, setIsUnlocked] = React.useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return sessionStorage.getItem("kitty_terminal_unlocked") === "true";
+      } catch {}
+    }
+    return false;
+  });
 
   const handleUnlock = () => {
     setIsUnlocked(true);
@@ -46,19 +44,37 @@ export default function MainWorld() {
     } catch {}
   };
 
-  // Ensure on page load we smoothly transition to the cat mascot at the top, not the terminal
+  const isRestoredRef = useRef(false);
+
+  // Scroll restoration: if returning to Main at a lower scroll position, restore scroll ONCE on mount
   useEffect(() => {
     if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
     }
 
-    // Ensure on page load we are positioned at the top hero cat without fighting scroll
-    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    if (!isRestoredRef.current) {
+      isRestoredRef.current = true;
+      if (mainWorldScrollY > 0) {
+        window.scrollTo({ top: mainWorldScrollY, behavior: "instant" as ScrollBehavior });
+      } else {
+        window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+      }
+    }
+
+    const handleScroll = () => {
+      if (window.scrollY > 0) {
+        setMainWorldScrollY(window.scrollY);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      setMainWorldScrollY(window.scrollY);
+      window.removeEventListener("scroll", handleScroll);
+      if (window.scrollY > 0) {
+        setMainWorldScrollY(window.scrollY);
+      }
     };
-  }, [setMainWorldScrollY]);
+  }, []); // Mount only — no self-updating effect dependency
 
   return (
     <div
@@ -136,6 +152,7 @@ export default function MainWorld() {
         <button
           onClick={() => {
             sfx.select();
+            setMainWorldScrollY(window.scrollY);
             goHome();
           }}
           onMouseEnter={() => sfx.hover()}
@@ -179,7 +196,12 @@ export default function MainWorld() {
         {/* 2. THE STORY PHASES */}
         <div id="kitty-terminal" className="w-full relative flex flex-col items-center z-10">
           {/* Phase 01: ASCII Kitty Terminal */}
-          <PhaseSection id="phase-01-terminal">
+          <PhaseSection
+            id="phase-01-terminal"
+            minHeight={810}
+            deferMount
+            forceMount={mainWorldScrollY >= 300}
+          >
             <AsciiSection onUnlock={handleUnlock} onReset={handleReset} isUnlocked={isUnlocked} />
           </PhaseSection>
 
@@ -211,17 +233,35 @@ export default function MainWorld() {
           ) : (
             <>
               {/* Phase 02: Mystery Birthday Chest */}
-              <PhaseSection id="phase-02-vault" className="z-[50]">
+              <PhaseSection
+                id="phase-02-vault"
+                minHeight={566}
+                deferMount
+                forceMount={mainWorldScrollY >= 1000}
+                className="z-[50]"
+              >
                 <BirthdayVault />
               </PhaseSection>
 
               {/* Phase 03: The Edit Cinema */}
-              <PhaseSection id="phase-03-edit" className="z-20">
+              <PhaseSection
+                id="phase-03-edit"
+                minHeight={746}
+                deferMount
+                forceMount={mainWorldScrollY >= 1600}
+                className="z-20"
+              >
                 <TheEdit />
               </PhaseSection>
 
               {/* Phase 04: The Letter */}
-              <PhaseSection id="phase-04-letter" className="z-10 !pb-3 md:!pb-4">
+              <PhaseSection
+                id="phase-04-letter"
+                minHeight={642}
+                deferMount
+                forceMount={mainWorldScrollY >= 2200}
+                className="z-10 !pb-3 md:!pb-4"
+              >
                 <TheLetter />
               </PhaseSection>
             </>
@@ -241,6 +281,7 @@ export default function MainWorld() {
               type="button"
               onClick={() => {
                 sfx.select();
+                setMainWorldScrollY(window.scrollY);
                 goHome();
               }}
               onMouseEnter={() => sfx.hover()}
