@@ -603,12 +603,12 @@ export function TransitionOverlay({
       }
 
       // 2. EXIT (0.4s):
-      // Overlay scale 1 -> 1.04, opacity 1 -> 0, ease "power2.out"
+      // Overlay scale 1 -> 1.06, opacity 1 -> 0, ease "power2.out"
       if (overlayEl) {
         tl.to(
           overlayEl,
           {
-            scale: 1.04,
+            scale: 1.06,
             opacity: 0,
             duration: 0.4,
             ease: "power2.out",
@@ -617,17 +617,19 @@ export function TransitionOverlay({
         );
       }
 
-      // Incoming world: opacity 0 -> 1, scale stays 1.0 (no counter-scaling), ease "power1.inOut"
+      // Incoming world scales 1.03 -> 1, opacity 0 -> 1, ease "expo.out"
       if (worldEl) {
         tl.fromTo(
           worldEl,
           {
+            scale: 1.03,
             opacity: 0,
           },
           {
+            scale: 1,
             opacity: 1,
             duration: 0.4,
-            ease: "power1.inOut",
+            ease: "expo.out",
           },
           "exit"
         );
