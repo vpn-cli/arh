@@ -16,7 +16,7 @@ import { getStickerStyle } from "@/components/worlds/main/stickerStyles";
    ═══════════════════════════════════════════════════════ */
 
 let isPreloaded = false;
-let hasPrewarmedShaders = false;
+let shadersPrewarmed = false;
 const hiddenVideos: HTMLVideoElement[] = [];
 const shaderPrewarmCleanups: Array<() => void> = [];
 
@@ -49,8 +49,7 @@ export async function decodeMainAboveTheFoldImages() {
 
 export function prewarmMainShaders(): () => void {
   if (typeof window === "undefined" || typeof document === "undefined") return () => {};
-  if (hasPrewarmedShaders) return () => {};
-  hasPrewarmedShaders = true;
+  if (shadersPrewarmed) return () => {};
 
   const id = "__main_shader_prewarm";
   if (document.getElementById(id)) return () => {};
@@ -69,6 +68,7 @@ export function prewarmMainShaders(): () => void {
     try {
       container.remove();
     } catch {}
+    shadersPrewarmed = false;
   };
 
   shaderPrewarmCleanups.push(cleanup);
@@ -168,6 +168,7 @@ export function prewarmMainShaders(): () => void {
   const autoRemoveTimer = setTimeout(() => {
     try {
       container.remove();
+      shadersPrewarmed = true;
     } catch {}
   }, 3000);
   timeouts.push(autoRemoveTimer);
@@ -228,7 +229,7 @@ export function preloadWorldTransitions() {
     decodeMainAboveTheFoldImages().catch(() => {});
 
     // 3. Fallback: Pre-warm shaders during idle if ClickToEnter was skipped (e.g. spotify_auth return)
-    if (!hasPrewarmedShaders) {
+    if (!shadersPrewarmed && !document.getElementById("__main_shader_prewarm")) {
       prewarmMainShaders();
     }
   };
@@ -245,7 +246,7 @@ export function preloadWorldTransitions() {
 
 export function resetPreloaderForTesting() {
   isPreloaded = false;
-  hasPrewarmedShaders = false;
+  shadersPrewarmed = false;
   hiddenVideos.forEach((v) => {
     v.pause();
     v.removeAttribute("src");

@@ -15,8 +15,7 @@ export default function ClickToEnterScreen({ onEnter }: ClickToEnterScreenProps)
 
   // Pre-warm shaders while user reads the static card
   useEffect(() => {
-    const cleanup = prewarmMainShaders();
-    return cleanup;
+    prewarmMainShaders();
   }, []);
 
   const handleEnter = () => {
