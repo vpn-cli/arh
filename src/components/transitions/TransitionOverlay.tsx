@@ -189,6 +189,8 @@ export function TransitionOverlay({
   worldContainerRef,
 }: TransitionOverlayProps) {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isFallback, setIsFallback] = useState(false);
+  const transitionIdRef = useRef(0);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const tlRef = useRef<gsap.core.Timeline | null>(null);
@@ -227,11 +229,29 @@ export function TransitionOverlay({
     }
   }, []);
 
+  // Teardown video memory only if token matches current transition
+  const cleanupVideo = useCallback((id: number) => {
+    if (id !== transitionIdRef.current) {
+      return;
+    }
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.removeAttribute("src");
+      videoRef.current.load();
+    }
+  }, []);
+
   // Cleanup helper for GSAP and video memory
-  const cleanupTransition = useCallback(() => {
+  const cleanupTransition = useCallback((id?: number) => {
+    if (id !== undefined && id !== transitionIdRef.current) {
+      return;
+    }
     if (tlRef.current) {
       tlRef.current.kill();
       tlRef.current = null;
+      if (typeof window !== "undefined") {
+        window.__activeTlCount = Math.max(0, (window.__activeTlCount || 1) - 1);
+      }
     }
     if (holdTimerRef.current) {
       clearTimeout(holdTimerRef.current);
@@ -240,6 +260,9 @@ export function TransitionOverlay({
     if (fallbackTimerRef.current) {
       clearTimeout(fallbackTimerRef.current);
       fallbackTimerRef.current = null;
+      if (typeof window !== "undefined") {
+        window.__activeSafetyTimers = Math.max(0, (window.__activeSafetyTimers || 1) - 1);
+      }
     }
     if (overlayRef.current) {
       overlayRef.current.style.willChange = "";
@@ -258,7 +281,7 @@ export function TransitionOverlay({
     isExitStartedRef.current = false;
   }, [worldContainerRef]);
 
-  // Clean up on component unmount
+  // Clean up on component unmount: unconditionally frees video memory regardless of token
   useEffect(() => {
     return () => {
       cleanupTransition();
@@ -299,7 +322,7 @@ export function TransitionOverlay({
         checkAndResumeRef.current();
       }, remainingMs);
     }
-  }, [isTransitioning, isTargetPainted, prefersReducedMotion]);
+  }, [isTransitioning, isTargetPainted, prefersReducedMotion, clip]);
 
   useEffect(() => {
     checkAndResumeRef.current = checkAndResume;
@@ -322,9 +345,17 @@ export function TransitionOverlay({
   // Main transition orchestration: GSAP timeline and imperative video setup
   useEffect(() => {
     if (!isTransitioning) {
-      cleanupTransition();
+      cleanupTransition(transitionIdRef.current);
       return;
     }
+
+    // Reset fallback state at start of every transition (Requirement C)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Reset poster fallback state at start of new transition
+    setIsFallback(false);
+
+    // Increment transition token (Requirement B)
+    transitionIdRef.current += 1;
+    const thisTransitionId = transitionIdRef.current;
 
     // Initialize timestamps
     transitionStartTimeRef.current = performance.now();
@@ -341,7 +372,7 @@ export function TransitionOverlay({
     const originX = pointerOrigin?.x ?? (typeof window !== "undefined" ? Math.round(window.innerWidth / 2) : 0);
     const originY = pointerOrigin?.y ?? (typeof window !== "undefined" ? Math.round(window.innerHeight / 2) : 0);
 
-    // FIX (Video Bug): Imperatively assign src, load, and play on EVERY transition
+    // Video setup with token check and error handling (Requirements A, B, C, D)
     if (videoRef.current && !prefersReducedMotion && clip) {
       const el = videoRef.current;
       el.setAttribute("src", clip.video);
@@ -350,10 +381,31 @@ export function TransitionOverlay({
       el.currentTime = 0;
       const playPromise = el.play();
       if (playPromise !== undefined && typeof playPromise.catch === "function") {
-        playPromise.catch((err) => {
-          if (process.env.NODE_ENV !== "production") {
-            console.warn("Transition video autoplay blocked/rejected, falling back to poster:", err);
+        playPromise.catch((err: unknown) => {
+          // If a newer transition has already started, ignore stale play rejection
+          if (thisTransitionId !== transitionIdRef.current) return;
+
+          const error = err as Error | undefined;
+          const errorName = error?.name || "UnknownError";
+
+          // Requirement A:
+          // only NotAllowedError -> poster fallback.
+          // AbortError -> ignore (log at debug level), do NOT set fallback state.
+          // Any other error -> poster fallback + console.warn with error.name.
+          if (errorName === "AbortError") {
+            if (process.env.NODE_ENV !== "production") {
+              console.debug("Transition video play aborted:", err);
+            }
+            return;
           }
+
+          if (errorName === "NotAllowedError") {
+            setIsFallback(true);
+            return;
+          }
+
+          setIsFallback(true);
+          console.warn(`Transition video failed (${errorName}), falling back to poster:`, err);
         });
       }
     }
@@ -374,6 +426,9 @@ export function TransitionOverlay({
       paused: false,
     });
     tlRef.current = tl;
+    if (typeof window !== "undefined") {
+      window.__activeTlCount = (window.__activeTlCount || 0) + 1;
+    }
 
     if (prefersReducedMotion) {
       // ══════ REDUCED MOTION TIMELINE (300ms in, hold on paint, 300ms out) ══════
@@ -510,6 +565,7 @@ export function TransitionOverlay({
 
     // 3. COMPLETION:
     tl.call(() => {
+      if (thisTransitionId !== transitionIdRef.current) return;
       if (typeof window !== "undefined") {
         window.__fadeEndTime = performance.now();
       }
@@ -523,26 +579,50 @@ export function TransitionOverlay({
         worldEl.style.willChange = "";
         gsap.set(worldEl, { clearProps: "all" });
       }
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.removeAttribute("src");
-        videoRef.current.load();
+      cleanupVideo(thisTransitionId);
+      if (typeof window !== "undefined") {
+        window.__activeTlCount = Math.max(0, (window.__activeTlCount || 1) - 1);
       }
       onFadeCompleteRef.current?.();
     });
 
     // 4. HARD SAFETY CAP (4000ms):
+    if (typeof window !== "undefined") {
+      window.__activeSafetyTimers = (window.__activeSafetyTimers || 0) + 1;
+    }
     fallbackTimerRef.current = setTimeout(() => {
+      if (typeof window !== "undefined") {
+        window.__activeSafetyTimers = Math.max(0, (window.__activeSafetyTimers || 1) - 1);
+      }
+      if (thisTransitionId !== transitionIdRef.current) return;
       if (typeof window !== "undefined" && !window.__fadeStartTime) {
         window.__fadeStartTime = performance.now();
       }
-      cleanupTransition();
+      cleanupTransition(thisTransitionId);
       onFadeStartRef.current?.();
       onFadeCompleteRef.current?.();
     }, 4000);
 
     return () => {
-      cleanupTransition();
+      // Stale cleanup guard: do not touch video on re-render / double-invoke if transition is active
+      if (tlRef.current) {
+        tlRef.current.kill();
+        tlRef.current = null;
+        if (typeof window !== "undefined") {
+          window.__activeTlCount = Math.max(0, (window.__activeTlCount || 1) - 1);
+        }
+      }
+      if (holdTimerRef.current) {
+        clearTimeout(holdTimerRef.current);
+        holdTimerRef.current = null;
+      }
+      if (fallbackTimerRef.current) {
+        clearTimeout(fallbackTimerRef.current);
+        fallbackTimerRef.current = null;
+        if (typeof window !== "undefined") {
+          window.__activeSafetyTimers = Math.max(0, (window.__activeSafetyTimers || 1) - 1);
+        }
+      }
     };
   }, [
     isTransitioning,
@@ -552,6 +632,7 @@ export function TransitionOverlay({
     worldContainerRef,
     prefersReducedMotion,
     cleanupTransition,
+    cleanupVideo,
   ]);
 
   if (!isTransitioning || !clip) return null;
@@ -563,6 +644,7 @@ export function TransitionOverlay({
     <div
       ref={overlayRef}
       data-testid="world-transition-overlay"
+      data-fallback={isFallback ? "true" : "false"}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0C0A15] pointer-events-none"
       style={{
         display: isTransitioning ? "flex" : "none",
@@ -578,6 +660,8 @@ export function TransitionOverlay({
             src={clip.poster}
             alt=""
             aria-hidden="true"
+            data-testid="world-transition-poster"
+            data-visible={isFallback || prefersReducedMotion ? "true" : "false"}
             className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
           />
 
@@ -586,10 +670,14 @@ export function TransitionOverlay({
             <video
               ref={setVideoRef}
               data-testid="world-transition-video"
+              data-visible={!isFallback ? "true" : "false"}
               muted
               playsInline
               poster={clip.poster}
               className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+              style={{
+                display: isFallback ? "none" : "block",
+              }}
             />
           )}
         </>

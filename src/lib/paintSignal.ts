@@ -13,6 +13,8 @@ declare global {
     __isReadyFlipped?: number | null;
     __transitionOverlayStartTime?: number | null;
     __lastWorldPainted?: { world: string; timestamp: number };
+    __activeTlCount?: number;
+    __activeSafetyTimers?: number;
   }
 }
 
