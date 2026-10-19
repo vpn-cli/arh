@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import IndiePixelWindow from "./IndiePixelWindow";
 import HelloKittyPixel from "./HelloKittyPixel";
 import { sfx, getAudioContext } from "@/lib/audio";
+import { prewarmMainShaders } from "@/lib/transitionPreloader";
 
 interface ClickToEnterScreenProps {
   onEnter: () => void;
@@ -11,6 +12,12 @@ interface ClickToEnterScreenProps {
 
 export default function ClickToEnterScreen({ onEnter }: ClickToEnterScreenProps) {
   const [isEntering, setIsEntering] = useState(false);
+
+  // Pre-warm shaders while user reads the static card
+  useEffect(() => {
+    const cleanup = prewarmMainShaders();
+    return cleanup;
+  }, []);
 
   const handleEnter = () => {
     if (isEntering) return;

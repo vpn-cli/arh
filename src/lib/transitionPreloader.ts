@@ -16,6 +16,7 @@ import { getStickerStyle } from "@/components/worlds/main/stickerStyles";
    ═══════════════════════════════════════════════════════ */
 
 let isPreloaded = false;
+let hasPrewarmedShaders = false;
 const hiddenVideos: HTMLVideoElement[] = [];
 const shaderPrewarmCleanups: Array<() => void> = [];
 
@@ -48,6 +49,8 @@ export async function decodeMainAboveTheFoldImages() {
 
 export function prewarmMainShaders(): () => void {
   if (typeof window === "undefined" || typeof document === "undefined") return () => {};
+  if (hasPrewarmedShaders) return () => {};
+  hasPrewarmedShaders = true;
 
   const id = "__main_shader_prewarm";
   if (document.getElementById(id)) return () => {};
@@ -189,8 +192,10 @@ export function preloadWorldTransitions() {
     // 2. Decode Main World's above-the-fold images in parallel during idle
     decodeMainAboveTheFoldImages().catch(() => {});
 
-    // 3. Pre-warm Main World's shaders during idle (time-spaced to avoid stuttering Hub)
-    prewarmMainShaders();
+    // 3. Fallback: Pre-warm shaders during idle if ClickToEnter was skipped (e.g. spotify_auth return)
+    if (!hasPrewarmedShaders) {
+      prewarmMainShaders();
+    }
   };
 
   const win = typeof window !== "undefined"
@@ -205,6 +210,7 @@ export function preloadWorldTransitions() {
 
 export function resetPreloaderForTesting() {
   isPreloaded = false;
+  hasPrewarmedShaders = false;
   hiddenVideos.forEach((v) => {
     v.pause();
     v.removeAttribute("src");
