@@ -33,12 +33,12 @@ export function preloadWorldTransitions() {
 
     const clips = [
       {
-        video: "/transitions/world-main-3s.mp4",
-        poster: "/transitions/world-main-3s.webp",
+        video: "/transitions/world-main-2500ms.mp4",
+        poster: "/transitions/world-main-2500ms.webp",
       },
       {
-        video: "/transitions/world-music-3s.mp4",
-        poster: "/transitions/world-music-3s.webp",
+        video: "/transitions/world-music-2500ms.mp4",
+        poster: "/transitions/world-music-2500ms.webp",
       },
     ];
 

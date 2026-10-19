@@ -274,8 +274,8 @@ describe('GameStateProvider', () => {
     });
     expect(screen.getByTestId('is-trans').textContent).toBe('true');
     // to-world: target's clip (main)
-    expect(screen.getByTestId('clip-video').textContent).toBe('/transitions/world-main-3s.mp4');
-    expect(screen.getByTestId('clip-poster').textContent).toBe('/transitions/world-main-3s.webp');
+    expect(screen.getByTestId('clip-video').textContent).toBe('/transitions/world-main-2500ms.mp4');
+    expect(screen.getByTestId('clip-poster').textContent).toBe('/transitions/world-main-2500ms.webp');
     act(() => {
       screen.getByTestId('complete').click();
     });
@@ -301,8 +301,8 @@ describe('GameStateProvider', () => {
     });
     expect(screen.getByTestId('is-trans').textContent).toBe('true');
     // to-world: target's clip (music)
-    expect(screen.getByTestId('clip-video').textContent).toBe('/transitions/world-music-3s.mp4');
-    expect(screen.getByTestId('clip-poster').textContent).toBe('/transitions/world-music-3s.webp');
+    expect(screen.getByTestId('clip-video').textContent).toBe('/transitions/world-music-2500ms.mp4');
+    expect(screen.getByTestId('clip-poster').textContent).toBe('/transitions/world-music-2500ms.webp');
     act(() => {
       screen.getByTestId('complete').click();
     });
