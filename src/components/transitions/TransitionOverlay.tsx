@@ -492,7 +492,7 @@ export function TransitionOverlay({
         : "transform, opacity, clip-path";
     }
     if (worldEl) {
-      worldEl.style.willChange = "transform, opacity";
+      worldEl.style.willChange = "transform";
     }
 
     // Build single GSAP timeline
@@ -622,18 +622,16 @@ export function TransitionOverlay({
         );
       }
 
-      // Incoming world scales 1.03 -> 1, opacity 0 -> 1, ease "expo.out"
+      // Incoming world scales 1.03 -> 1, NO opacity tween
       if (worldEl) {
         tl.fromTo(
           worldEl,
           {
             scale: 1.03,
-            opacity: 0,
             immediateRender: false,
           },
           {
             scale: 1,
-            opacity: 1,
             duration: 0.4,
             ease: "expo.out",
           },
