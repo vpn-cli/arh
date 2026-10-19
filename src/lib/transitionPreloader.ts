@@ -117,24 +117,59 @@ export function prewarmMainShaders(): () => void {
         "width:4px;height:4px;background:#fff;filter:drop-shadow(4px 4px 0 #3A2440);display:block;";
       container.appendChild(el);
     },
+    // 7. Music backdrop blur (PlayerHeader, FreeTierNotice, QueueModal)
+    () => {
+      const el = document.createElement("div");
+      el.style.cssText =
+        "width:4px;height:4px;background:rgba(255,255,255,0.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:block;";
+      container.appendChild(el);
+    },
+    // 8. Music background blur orb (blur 100px)
+    () => {
+      const el = document.createElement("div");
+      el.style.cssText =
+        "width:4px;height:4px;background:#C2185B;filter:blur(100px);display:block;";
+      container.appendChild(el);
+    },
+    // 9. Music floating notes & progress handle drop-shadow-md
+    () => {
+      const el = document.createElement("div");
+      el.style.cssText =
+        "width:4px;height:4px;background:#fff;filter:drop-shadow(0 4px 3px rgba(0,0,0,0.07)) drop-shadow(0 2px 2px rgba(0,0,0,0.06));display:block;";
+      container.appendChild(el);
+    },
+    // 10. Music vinyl sleeve drop-shadow-sm
+    () => {
+      const el = document.createElement("div");
+      el.style.cssText =
+        "width:4px;height:4px;background:#fff;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.05));display:block;";
+      container.appendChild(el);
+    },
+    // 11. Music retro dot radial gradient
+    () => {
+      const el = document.createElement("div");
+      el.style.cssText =
+        "width:4px;height:4px;background-image:radial-gradient(#3A2440 2px, transparent 2px);background-size:24px 24px;display:block;";
+      container.appendChild(el);
+    },
   ];
 
-  // Space tasks across 150ms intervals so GPU shader compilation doesn't stutter the Hub
+  // Space tasks across 100ms intervals so GPU shader compilation doesn't stutter the Hub or intro
   tasks.forEach((task, i) => {
     const t = setTimeout(() => {
       try {
         task();
       } catch {}
-    }, (i + 1) * 150);
+    }, (i + 1) * 100);
     timeouts.push(t);
   });
 
-  // Auto-remove container after 2.5s once all shaders are compiled
+  // Auto-remove container after 3.0s once all shaders are compiled
   const autoRemoveTimer = setTimeout(() => {
     try {
       container.remove();
     } catch {}
-  }, 2500);
+  }, 3000);
   timeouts.push(autoRemoveTimer);
 
   return cleanup;
