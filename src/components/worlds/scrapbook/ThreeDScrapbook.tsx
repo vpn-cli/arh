@@ -756,6 +756,7 @@ export default function ThreeDScrapbook() {
   useEffect(() => {
     let isCancelled = false;
     const logError = (err: unknown) => {
+      if (process.env.NODE_ENV === 'production') return;
       const msg = err instanceof Error ? err.message : String(err);
       fetch('/api/log', {
         method: 'POST',
@@ -764,12 +765,14 @@ export default function ThreeDScrapbook() {
       }).catch(() => { });
     };
     const originalError = console.error;
-    console.error = (...args) => {
-      logError(args.join(' '));
-      originalError(...args);
-    };
-    window.addEventListener('unhandledrejection', (e) => logError(e.reason));
-    window.addEventListener('error', (e) => logError(e.message));
+    if (process.env.NODE_ENV !== 'production') {
+      console.error = (...args) => {
+        logError(args.join(' '));
+        originalError(...args);
+      };
+      window.addEventListener('unhandledrejection', (e) => logError(e.reason));
+      window.addEventListener('error', (e) => logError(e.message));
+    }
 
     const initScrapbook = async () => {
       let finalLayout = [...appSpreads]; // Fallback to SPREADS
@@ -817,9 +820,11 @@ export default function ThreeDScrapbook() {
 
     return () => {
       isCancelled = true;
-      console.error = originalError;
-      window.removeEventListener('unhandledrejection', (e) => logError(e.reason));
-      window.removeEventListener('error', (e) => logError(e.message));
+      if (process.env.NODE_ENV !== 'production') {
+        console.error = originalError;
+        window.removeEventListener('unhandledrejection', (e) => logError(e.reason));
+        window.removeEventListener('error', (e) => logError(e.message));
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
