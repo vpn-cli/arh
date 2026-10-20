@@ -7,6 +7,7 @@ import HomeWorld from "./HomeWorld";
 import { TransitionOverlay, getTransitionClip } from "../transitions/TransitionOverlay";
 import { preloadWorldTransitions } from "@/lib/transitionPreloader";
 import { TARGET_WORLD_PAINTED_EVENT, isTestMetricsEnabled } from "@/lib/paintSignal";
+import { track } from "@vercel/analytics";
 
 /* ═══════════════════════════════════════════════════════
    WORLD ROUTER — Renders the current world with
@@ -144,6 +145,12 @@ export default function WorldRouter() {
       preloadWorld(transitionTarget);
     }
   }, [isTransitioning, transitionTarget]);
+
+  useEffect(() => {
+    try {
+      track("world_view", { world: currentWorld });
+    } catch {}
+  }, [currentWorld]);
 
   // Mount timing choreography:
   // - Clip hops (hub->main, hub->music): Outgoing world remains mounted from 0s to 0.5s (while iris covers).
