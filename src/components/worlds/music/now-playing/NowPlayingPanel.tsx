@@ -142,7 +142,7 @@ export const NowPlayingPanel = memo(function NowPlayingPanel({
                   {currentTrack.name}
                 </h3>
                 <p
-                  className="font-pixel text-caption text-[var(--color-dark)] font-medium truncate"
+                  className="font-pixel text-meta text-[var(--color-dark)] font-medium truncate"
                   title={
                     currentTrack.artists
                       ? currentTrack.artists.map((a: { name: string }) => a.name).join(', ')
