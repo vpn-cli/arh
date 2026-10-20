@@ -45,7 +45,10 @@ describe("WidgetPlayer", () => {
     render(<WidgetPlayer />);
 
     expect(screen.getByText("Cozy Lofi Beats")).toBeDefined();
-    expect(screen.getByText("Kawaii Hamster")).toBeDefined();
+    const artistEl = screen.getByText("Kawaii Hamster");
+    expect(artistEl).toBeDefined();
+    expect(artistEl.className).toContain("text-body");
+    expect(artistEl.className).toContain("truncate");
     expect(screen.getByRole("button", { name: "Play" })).toBeDefined();
     expect(screen.getByRole("button", { name: "Next track" })).toBeDefined();
     expect(screen.getByRole("button", { name: "Previous track" })).toBeDefined();

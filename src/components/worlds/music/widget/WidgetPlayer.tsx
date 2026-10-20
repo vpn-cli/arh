@@ -215,7 +215,7 @@ export function WidgetPlayer() {
                 {!token ? "NOT SIGNED IN" : currentTrack?.name || "No track loaded"}
               </div>
               <div
-                className="font-pixel text-meta text-[var(--color-text-muted)] truncate leading-tight mt-0.5"
+                className="font-pixel text-body text-[var(--color-text-muted)] truncate leading-tight mt-0.5"
                 title={!token ? "Open the full app to sign in" : artistName}
               >
                 {!token ? "Open the full app to sign in" : artistName}
