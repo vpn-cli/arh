@@ -39,15 +39,18 @@ vi.mock("../../ui/GameboyLoadingScreen", () => ({
 describe("LandingPage Gates", () => {
   const originalLocation = window.location;
   const originalEnv = process.env.NODE_ENV;
+  const originalMatchMedia = window.matchMedia;
 
   beforeEach(() => {
     window.localStorage.clear();
     (process.env as any).NODE_ENV = "test";
+    window.matchMedia = originalMatchMedia;
   });
 
   afterEach(() => {
     window.localStorage.clear();
     (process.env as any).NODE_ENV = originalEnv;
+    window.matchMedia = originalMatchMedia;
     vi.restoreAllMocks();
   });
 
@@ -376,5 +379,138 @@ describe("LandingPage Gates", () => {
     } finally {
       effectSpy.mockRestore();
     }
+  });
+
+  describe("Standalone PWA Mode", () => {
+    it("standalone + /?world=music: world-router renders directly and gates/site-load-video are not in DOM at any point", () => {
+      delete (window as any).location;
+      window.location = {
+        ...originalLocation,
+        search: "?world=music",
+        pathname: "/",
+        href: "http://localhost:3000/?world=music",
+      } as any;
+
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: query.includes("display-mode: standalone"),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+
+      // Intercept mount effect to assert DOM state before any effect execution
+      let triggerMountEffect: (() => void) | null = null;
+      const realUseEffect = React.useEffect;
+      const effectSpy = vi.spyOn(React, "useEffect").mockImplementation((effect, deps) => {
+        if (Array.isArray(deps) && deps.length === 0) {
+          triggerMountEffect = () => {
+            effect();
+          };
+        } else {
+          realUseEffect(effect, deps);
+        }
+      });
+
+      try {
+        render(
+          <GameStateProvider>
+            <LandingPage />
+          </GameStateProvider>
+        );
+
+        // Before mount effect executes: gates are NOT in the DOM at any point
+        expect(screen.queryByTestId("click-to-enter")).toBeNull();
+        expect(screen.queryByTestId("gameboy-loading")).toBeNull();
+        expect(screen.queryByTestId("site-load-video")).toBeNull();
+        expect(screen.queryByTestId("site-load-overlay")).toBeNull();
+        expect(screen.getByTestId("world-router")).toBeDefined();
+        expect(screen.getByText("World: music")).toBeDefined();
+
+        // Trigger mount effect
+        act(() => {
+          triggerMountEffect?.();
+        });
+
+        // After mount effect: still directly in world-router with no gates rendered
+        expect(screen.queryByTestId("click-to-enter")).toBeNull();
+        expect(screen.queryByTestId("gameboy-loading")).toBeNull();
+        expect(screen.queryByTestId("site-load-video")).toBeNull();
+        expect(screen.queryByTestId("site-load-overlay")).toBeNull();
+        expect(screen.getByTestId("world-router")).toBeDefined();
+        expect(screen.getByText("World: music")).toBeDefined();
+      } finally {
+        effectSpy.mockRestore();
+      }
+    });
+
+    it("NON-standalone + /?world=music: click-to-enter renders and world-router does not (browser regression guard)", () => {
+      delete (window as any).location;
+      window.location = {
+        ...originalLocation,
+        search: "?world=music",
+        pathname: "/",
+        href: "http://localhost:3000/?world=music",
+      } as any;
+
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+
+      render(
+        <GameStateProvider>
+          <LandingPage />
+        </GameStateProvider>
+      );
+
+      // Regression guard: browser visitors must still see Click to Enter and not world-router
+      expect(screen.getByTestId("click-to-enter")).toBeDefined();
+      expect(screen.queryByTestId("world-router")).toBeNull();
+    });
+
+    it("standalone + / (no world param): skips intro gates and renders world-router with targetWorld default (home)", () => {
+      delete (window as any).location;
+      window.location = {
+        ...originalLocation,
+        search: "",
+        pathname: "/",
+        href: "http://localhost:3000/",
+      } as any;
+
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: query.includes("display-mode: standalone"),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+
+      render(
+        <GameStateProvider>
+          <LandingPage />
+        </GameStateProvider>
+      );
+
+      // Standalone with no world param skips intro gates and renders default world (home)
+      expect(screen.getByTestId("world-router")).toBeDefined();
+      expect(screen.getByText("World: home")).toBeDefined();
+      expect(screen.queryByTestId("click-to-enter")).toBeNull();
+      expect(screen.queryByTestId("gameboy-loading")).toBeNull();
+      expect(screen.queryByTestId("site-load-video")).toBeNull();
+      expect(screen.queryByTestId("site-load-overlay")).toBeNull();
+    });
   });
 });

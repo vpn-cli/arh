@@ -10,6 +10,7 @@ import { SiteLoadOverlay } from "../transitions/TransitionOverlay";
 import { SpotifyPlayerProvider } from "@/providers/SpotifyPlayerProvider";
 import { useGameState, isValidWorld } from "@/lib/gameState";
 import { isTestMetricsEnabled } from "@/lib/paintSignal";
+import { isStandaloneMode } from "../worlds/music/hooks/useMusicView";
 
 /* ═══════════════════════════════════════════════════════
    LANDING PAGE — Master orchestrator
@@ -23,12 +24,14 @@ import { isTestMetricsEnabled } from "@/lib/paintSignal";
 export default function LandingPage() {
   const { currentWorld, goToWorld } = useGameState();
 
+  const isStandalone = typeof window !== "undefined" && isStandaloneMode();
+
   // Phase gates — each unlocks the next screen
-  const [hasEntered, setHasEntered] = useState(false);
-  const [introFinished, setIntroFinished] = useState(false);
+  const [hasEntered, setHasEntered] = useState(isStandalone);
+  const [introFinished, setIntroFinished] = useState(isStandalone);
   const [_isReady, setIsReady] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
-  const [loaderDone, setLoaderDone] = useState(false);
+  const [loaderDone, setLoaderDone] = useState(isStandalone);
 
   useEffect(() => {
     // Clear any leftover legacy flags so returning visitors aren't skipped
@@ -49,7 +52,7 @@ export default function LandingPage() {
       setHasEntered(true);
       setIntroFinished(true);
       setLoaderDone(true);
-    } else if (isDevSkip) {
+    } else if (isDevSkip || isStandalone) {
       setHasEntered(true);
       setIntroFinished(true);
       setLoaderDone(true);
