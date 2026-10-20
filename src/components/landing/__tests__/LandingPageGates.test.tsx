@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
+import { renderToString } from "react-dom/server";
+import { hydrateRoot } from "react-dom/client";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import LandingPage from "../LandingPage";
@@ -382,7 +384,7 @@ describe("LandingPage Gates", () => {
   });
 
   describe("Standalone PWA Mode", () => {
-    it("standalone + /?world=music: world-router renders directly and gates/site-load-video are not in DOM at any point", () => {
+    it("standalone + /?world=music: world-router renders directly and gates/site-load-video are absent after mount", () => {
       delete (window as any).location;
       window.location = {
         ...originalLocation,
@@ -402,48 +404,95 @@ describe("LandingPage Gates", () => {
         dispatchEvent: vi.fn(),
       }));
 
-      // Intercept mount effect to assert DOM state before any effect execution
-      let triggerMountEffect: (() => void) | null = null;
-      const realUseEffect = React.useEffect;
-      const effectSpy = vi.spyOn(React, "useEffect").mockImplementation((effect, deps) => {
-        if (Array.isArray(deps) && deps.length === 0) {
-          triggerMountEffect = () => {
-            effect();
-          };
-        } else {
-          realUseEffect(effect, deps);
-        }
+      render(
+        <GameStateProvider>
+          <LandingPage />
+        </GameStateProvider>
+      );
+
+      // Final state after mount: directly in world-router with no gates rendered
+      expect(screen.getByTestId("world-router")).toBeDefined();
+      expect(screen.getByText("World: music")).toBeDefined();
+      expect(screen.queryByTestId("click-to-enter")).toBeNull();
+      expect(screen.queryByTestId("gameboy-loading")).toBeNull();
+      expect(screen.queryByTestId("site-load-video")).toBeNull();
+      expect(screen.queryByTestId("site-load-overlay")).toBeNull();
+    });
+
+    it("hydrates cleanly without mismatch in standalone mode", () => {
+      delete (window as any).location;
+      window.location = {
+        ...originalLocation,
+        search: "?world=music",
+        pathname: "/",
+        href: "http://localhost:3000/?world=music",
+      } as any;
+
+      // 1. Server render pass: matchMedia returns false on server
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+
+      const element = (
+        <GameStateProvider>
+          <LandingPage />
+        </GameStateProvider>
+      );
+      const serverHtml = renderToString(element);
+
+      const container = document.createElement("div");
+      container.innerHTML = serverHtml;
+      // JSDOM does not reflect the 'muted' HTML attribute to the DOM property, causing a false attribute mismatch
+      container.querySelectorAll("video").forEach((v) => {
+        if (v.hasAttribute("muted")) v.muted = true;
+      });
+      document.body.appendChild(container);
+
+      // 2. Client hydration pass with matchMedia mocked as standalone
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: query.includes("display-mode: standalone"),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+
+      const onRecoverableError = vi.fn();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      let root: any;
+      act(() => {
+        root = hydrateRoot(container, element, { onRecoverableError });
       });
 
       try {
-        render(
-          <GameStateProvider>
-            <LandingPage />
-          </GameStateProvider>
+        const hydrationErrors = onRecoverableError.mock.calls.filter(([err]) =>
+          String(err).toLowerCase().includes("hydrat")
         );
+        const consoleHydrationErrors = consoleErrorSpy.mock.calls.filter(([msg]) =>
+          String(msg).toLowerCase().includes("hydrat")
+        );
+        expect(hydrationErrors).toHaveLength(0);
+        expect(consoleHydrationErrors).toHaveLength(0);
 
-        // Before mount effect executes: gates are NOT in the DOM at any point
-        expect(screen.queryByTestId("click-to-enter")).toBeNull();
-        expect(screen.queryByTestId("gameboy-loading")).toBeNull();
-        expect(screen.queryByTestId("site-load-video")).toBeNull();
-        expect(screen.queryByTestId("site-load-overlay")).toBeNull();
-        expect(screen.getByTestId("world-router")).toBeDefined();
-        expect(screen.getByText("World: music")).toBeDefined();
-
-        // Trigger mount effect
-        act(() => {
-          triggerMountEffect?.();
-        });
-
-        // After mount effect: still directly in world-router with no gates rendered
-        expect(screen.queryByTestId("click-to-enter")).toBeNull();
-        expect(screen.queryByTestId("gameboy-loading")).toBeNull();
-        expect(screen.queryByTestId("site-load-video")).toBeNull();
-        expect(screen.queryByTestId("site-load-overlay")).toBeNull();
-        expect(screen.getByTestId("world-router")).toBeDefined();
-        expect(screen.getByText("World: music")).toBeDefined();
+        expect(container.querySelector("[data-testid='world-router']")).not.toBeNull();
+        expect(container.textContent).toContain("World: music");
       } finally {
-        effectSpy.mockRestore();
+        act(() => {
+          root?.unmount();
+        });
+        document.body.removeChild(container);
+        consoleErrorSpy.mockRestore();
       }
     });
 
