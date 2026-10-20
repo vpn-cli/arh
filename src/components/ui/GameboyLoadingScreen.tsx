@@ -29,18 +29,28 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
   }, []);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(() => {});
-    }
-    return () => {
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.src = "";
-        videoRef.current.load();
+    if (!videoRef.current) return;
+    const v = videoRef.current;
+    v.muted = false;
+    v.volume = 0;
+    v.play().catch(() => {});
+
+    let currentVol = 0;
+    const fadeInterval = setInterval(() => {
+      currentVol = Math.min(1, currentVol + 0.1);
+      v.volume = currentVol;
+      if (currentVol >= 1) {
+        clearInterval(fadeInterval);
       }
+    }, 45);
+
+    return () => {
+      clearInterval(fadeInterval);
+      v.pause();
+      v.src = "";
+      v.load();
     };
-  }, []);
+  }, [isMounted]);
 
   const menuItems = ["CONTINUE", "START NEW GAME"];
 
@@ -134,7 +144,7 @@ export default function GameboyLoadingScreen({ onComplete }: GameboyLoadingScree
               src="/videos/real_vid.mp4"
               autoPlay
               loop
-              muted
+              muted={false}
               playsInline
               className="w-full h-full object-cover pointer-events-none will-change-transform"
               style={{

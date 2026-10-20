@@ -32,28 +32,7 @@ export default function ClickToEnterScreen({ onEnter }: ClickToEnterScreenProps)
       // ignore
     }
 
-    // 3. Immediately unmute background video and smoothly ramp up volume
-    try {
-      const videos = document.querySelectorAll<HTMLVideoElement>("video[data-gameboy-video='true']");
-      videos.forEach((v) => {
-        v.muted = false;
-        v.volume = 0;
-        v.play().catch(() => {});
-
-        let currentVol = 0;
-        const fadeInterval = setInterval(() => {
-          currentVol = Math.min(1, currentVol + 0.1);
-          v.volume = currentVol;
-          if (currentVol >= 1) {
-            clearInterval(fadeInterval);
-          }
-        }, 45);
-      });
-    } catch {
-      // ignore
-    }
-
-    // 4. Smooth cinematic dissolve before unmounting
+    // 3. Smooth cinematic dissolve before unmounting
     setTimeout(() => {
       onEnter();
     }, 850);
