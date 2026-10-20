@@ -36,6 +36,7 @@ export default function LandingPage() {
       setHasEntered(true);
       setIntroFinished(true);
       setLoaderDone(true);
+      document.title = "punkrose.fm";
     }
   }, []);
 

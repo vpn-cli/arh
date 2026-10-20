@@ -42,6 +42,7 @@ describe("LandingPage Gates", () => {
   const originalLocation = window.location;
   const originalEnv = process.env.NODE_ENV;
   const originalMatchMedia = window.matchMedia;
+  const originalTitle = document.title;
 
   beforeEach(() => {
     window.localStorage.clear();
@@ -53,6 +54,7 @@ describe("LandingPage Gates", () => {
     window.localStorage.clear();
     (process.env as any).NODE_ENV = originalEnv;
     window.matchMedia = originalMatchMedia;
+    document.title = originalTitle;
     vi.restoreAllMocks();
   });
 
@@ -560,6 +562,50 @@ describe("LandingPage Gates", () => {
       expect(screen.queryByTestId("gameboy-loading")).toBeNull();
       expect(screen.queryByTestId("site-load-video")).toBeNull();
       expect(screen.queryByTestId("site-load-overlay")).toBeNull();
+    });
+
+    it("sets document.title to 'punkrose.fm' in standalone mode", () => {
+      document.title = "Original Title";
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: query.includes("display-mode: standalone"),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+
+      render(
+        <GameStateProvider>
+          <LandingPage />
+        </GameStateProvider>
+      );
+
+      expect(document.title).toBe("punkrose.fm");
+    });
+
+    it("leaves document.title unchanged from its initial value in non-standalone mode", () => {
+      document.title = "Original Title";
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }));
+
+      render(
+        <GameStateProvider>
+          <LandingPage />
+        </GameStateProvider>
+      );
+
+      expect(document.title).toBe("Original Title");
     });
   });
 });
