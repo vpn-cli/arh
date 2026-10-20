@@ -243,7 +243,7 @@ describe('Transition choreography and paint-before-fade invariant', () => {
     expect(onFadeStart).toHaveBeenCalledTimes(1);
   });
 
-  it('world -> hub: fade NEVER starts before hub paint signal arrives', () => {
+  it('world -> hub: fade starts after hub paint signal arrives and settling rAFs complete', () => {
     vi.useFakeTimers();
     const onFadeStart = vi.fn();
     const onFadeComplete = vi.fn();
@@ -263,13 +263,13 @@ describe('Transition choreography and paint-before-fade invariant', () => {
       rerenderFn = res.rerender;
     });
 
-    // Advance to 2750ms while unpainted
+    // Advance 500ms (< 600ms ceiling) while unpainted
     act(() => {
-      mockPerformanceNow += 2750;
-      vi.advanceTimersByTime(2750);
+      mockPerformanceNow += 500;
+      vi.advanceTimersByTime(500);
     });
 
-    // Invariant: fade must not start
+    // Invariant: fade must not start while unpainted before ceiling
     expect(onFadeStart).not.toHaveBeenCalled();
 
     // Signal paint arrival from hub
@@ -286,6 +286,42 @@ describe('Transition choreography and paint-before-fade invariant', () => {
       );
     });
 
+    // Settling condition: flush the two rAF ticks
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    expect(onFadeStart).toHaveBeenCalledTimes(1);
+  });
+
+  it('world -> hub: ceiling starts fade at 600ms if settling condition is not met', () => {
+    vi.useFakeTimers();
+    const onFadeStart = vi.fn();
+    const onFadeComplete = vi.fn();
+
+    render(
+      <TransitionOverlay
+        fromWorld="main"
+        toWorld="home"
+        isTransitioning={true}
+        isTargetPainted={false}
+        onFadeStart={onFadeStart}
+        onFadeComplete={onFadeComplete}
+      />
+    );
+
+    // At 590ms, still unpainted -> fade not started
+    act(() => {
+      mockPerformanceNow += 590;
+      vi.advanceTimersByTime(590);
+    });
+    expect(onFadeStart).not.toHaveBeenCalled();
+
+    // At 600ms -> ceiling fires, starting fade
+    act(() => {
+      mockPerformanceNow += 10;
+      vi.advanceTimersByTime(10);
+    });
     expect(onFadeStart).toHaveBeenCalledTimes(1);
   });
 

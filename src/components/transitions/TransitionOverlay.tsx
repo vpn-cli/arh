@@ -240,6 +240,10 @@ export function TransitionOverlay({
     }
   }, []);
 
+  const crossfadeRaf1Ref = useRef<number | null>(null);
+  const crossfadeRaf2Ref = useRef<number | null>(null);
+  const crossfadeCeilingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Teardown video memory only if token matches current transition
   const cleanupVideo = useCallback((id: number) => {
     if (id !== transitionIdRef.current) {
@@ -256,6 +260,18 @@ export function TransitionOverlay({
   const cleanupTransition = useCallback((id?: number) => {
     if (id !== undefined && id !== transitionIdRef.current) {
       return;
+    }
+    if (crossfadeRaf1Ref.current) {
+      cancelAnimationFrame(crossfadeRaf1Ref.current);
+      crossfadeRaf1Ref.current = null;
+    }
+    if (crossfadeRaf2Ref.current) {
+      cancelAnimationFrame(crossfadeRaf2Ref.current);
+      crossfadeRaf2Ref.current = null;
+    }
+    if (crossfadeCeilingTimerRef.current) {
+      clearTimeout(crossfadeCeilingTimerRef.current);
+      crossfadeCeilingTimerRef.current = null;
     }
     if (tlRef.current) {
       tlRef.current.kill();
@@ -307,42 +323,76 @@ export function TransitionOverlay({
 
   const checkAndResumeRef = useRef<() => void>(() => {});
 
+  const startCrossfade = useCallback(() => {
+    if (isExitStartedRef.current) return;
+    isExitStartedRef.current = true;
+
+    if (crossfadeRaf1Ref.current) {
+      cancelAnimationFrame(crossfadeRaf1Ref.current);
+      crossfadeRaf1Ref.current = null;
+    }
+    if (crossfadeRaf2Ref.current) {
+      cancelAnimationFrame(crossfadeRaf2Ref.current);
+      crossfadeRaf2Ref.current = null;
+    }
+    if (crossfadeCeilingTimerRef.current) {
+      clearTimeout(crossfadeCeilingTimerRef.current);
+      crossfadeCeilingTimerRef.current = null;
+    }
+    if (fallbackTimerRef.current) {
+      clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
+      if (typeof window !== "undefined" && isTestMetricsEnabled()) {
+        window.__activeSafetyTimers = Math.max(0, (window.__activeSafetyTimers || 1) - 1);
+      }
+    }
+
+    if (typeof window !== "undefined" && isTestMetricsEnabled()) {
+      window.__fadeStartTime = performance.now();
+    }
+    onFadeStartRef.current?.();
+
+    const outgoingEl = outgoingContainerRef?.current;
+    if (outgoingEl) {
+      gsap.to(outgoingEl, {
+        opacity: 0,
+        duration: 0.3,
+        ease: "power1.inOut",
+        onComplete: () => {
+          if (typeof window !== "undefined" && isTestMetricsEnabled()) {
+            window.__fadeEndTime = performance.now();
+          }
+          if (outgoingContainerRef?.current) {
+            outgoingContainerRef.current.style.willChange = "";
+            gsap.set(outgoingContainerRef.current, { clearProps: "all" });
+          }
+          onFadeCompleteRef.current?.();
+        },
+      });
+    } else {
+      if (typeof window !== "undefined" && isTestMetricsEnabled()) {
+        window.__fadeEndTime = performance.now();
+      }
+      onFadeCompleteRef.current?.();
+    }
+  }, [outgoingContainerRef]);
+
   // Check and resume hold
   const checkAndResume = useCallback(() => {
     if (!isTransitioning || isExitStartedRef.current) return;
 
     if (!clip) {
-      // Crossfade transition: start 300ms crossfade immediately once target world is painted
+      // Crossfade transition: wait two requestAnimationFrame ticks after target paint signal
       if (!isTargetPainted) return;
-      isExitStartedRef.current = true;
-      if (typeof window !== "undefined" && isTestMetricsEnabled()) {
-        window.__fadeStartTime = performance.now();
-      }
-      onFadeStartRef.current?.();
+      if (crossfadeRaf1Ref.current !== null || crossfadeRaf2Ref.current !== null) return;
 
-      const outgoingEl = outgoingContainerRef?.current;
-      if (outgoingEl) {
-        gsap.to(outgoingEl, {
-          opacity: 0,
-          duration: 0.3,
-          ease: "power1.inOut",
-          onComplete: () => {
-            if (typeof window !== "undefined" && isTestMetricsEnabled()) {
-              window.__fadeEndTime = performance.now();
-            }
-            if (outgoingContainerRef?.current) {
-              outgoingContainerRef.current.style.willChange = "";
-              gsap.set(outgoingContainerRef.current, { clearProps: "all" });
-            }
-            onFadeCompleteRef.current?.();
-          },
+      crossfadeRaf1Ref.current = requestAnimationFrame(() => {
+        crossfadeRaf1Ref.current = null;
+        crossfadeRaf2Ref.current = requestAnimationFrame(() => {
+          crossfadeRaf2Ref.current = null;
+          startCrossfade();
         });
-      } else {
-        if (typeof window !== "undefined" && isTestMetricsEnabled()) {
-          window.__fadeEndTime = performance.now();
-        }
-        onFadeCompleteRef.current?.();
-      }
+      });
       return;
     }
 
@@ -373,7 +423,7 @@ export function TransitionOverlay({
         checkAndResumeRef.current();
       }, remainingMs);
     }
-  }, [isTransitioning, isTargetPainted, prefersReducedMotion, clip, outgoingContainerRef, transitionStartTime]);
+  }, [isTransitioning, isTargetPainted, prefersReducedMotion, clip, outgoingContainerRef, transitionStartTime, startCrossfade]);
 
   useEffect(() => {
     checkAndResumeRef.current = checkAndResume;
@@ -413,11 +463,20 @@ export function TransitionOverlay({
 
     if (!clip) {
       // ══════ CROSSFADE TIMELINE (NO clip, NO poster, NO iris) ══════
-      // Outgoing world sits at opacity 1 until checkAndResume fires after target paint.
+      // Outgoing world sits at opacity 1 until hub settles (paint signal + double rAF) or 600ms ceiling after click.
       const outgoingEl = outgoingContainerRef?.current;
+
+      const clickTime = transitionStartTime ?? transitionStartTimeRef.current ?? performance.now();
+      const elapsed = performance.now() - clickTime;
+      const remainingTo600 = Math.max(0, 600 - elapsed);
+
+      crossfadeCeilingTimerRef.current = setTimeout(() => {
+        startCrossfade();
+      }, remainingTo600);
 
       fallbackTimerRef.current = setTimeout(() => {
         if (thisTransitionId !== transitionIdRef.current) return;
+        if (isExitStartedRef.current) return;
         if (typeof window !== "undefined" && isTestMetricsEnabled() && !window.__fadeStartTime) {
           window.__fadeStartTime = performance.now();
         }
@@ -430,6 +489,18 @@ export function TransitionOverlay({
       }, 4000);
 
       return () => {
+        if (crossfadeCeilingTimerRef.current) {
+          clearTimeout(crossfadeCeilingTimerRef.current);
+          crossfadeCeilingTimerRef.current = null;
+        }
+        if (crossfadeRaf1Ref.current) {
+          cancelAnimationFrame(crossfadeRaf1Ref.current);
+          crossfadeRaf1Ref.current = null;
+        }
+        if (crossfadeRaf2Ref.current) {
+          cancelAnimationFrame(crossfadeRaf2Ref.current);
+          crossfadeRaf2Ref.current = null;
+        }
         if (fallbackTimerRef.current) {
           clearTimeout(fallbackTimerRef.current);
           fallbackTimerRef.current = null;
@@ -661,6 +732,13 @@ export function TransitionOverlay({
         outgoingContainerRef.current.style.willChange = "";
         gsap.set(outgoingContainerRef.current, { clearProps: "all" });
       }
+      if (fallbackTimerRef.current) {
+        clearTimeout(fallbackTimerRef.current);
+        fallbackTimerRef.current = null;
+        if (typeof window !== "undefined" && isTestMetricsEnabled()) {
+          window.__activeSafetyTimers = Math.max(0, (window.__activeSafetyTimers || 1) - 1);
+        }
+      }
       cleanupVideo(thisTransitionId);
       if (typeof window !== "undefined" && isTestMetricsEnabled()) {
         window.__activeTl = null;
@@ -678,6 +756,7 @@ export function TransitionOverlay({
         window.__activeSafetyTimers = Math.max(0, (window.__activeSafetyTimers || 1) - 1);
       }
       if (thisTransitionId !== transitionIdRef.current) return;
+      if (isExitStartedRef.current) return;
       if (typeof window !== "undefined" && isTestMetricsEnabled() && !window.__fadeStartTime) {
         window.__fadeStartTime = performance.now();
       }
