@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import QueryProvider from "@/providers/QueryProvider";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { SpotifyModeBadge } from "@/components/SpotifyModeBadge";
@@ -38,6 +39,7 @@ export default function RootLayout({
             </div>
           </CursorProvider>
         </QueryProvider>
+        <Analytics />
       </body>
     </html>
   );
