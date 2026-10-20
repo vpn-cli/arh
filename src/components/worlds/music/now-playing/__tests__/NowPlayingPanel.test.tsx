@@ -34,7 +34,7 @@ describe('NowPlayingPanel', () => {
     });
   });
 
-  it('renders artist line with text-meta, font-pixel, medium weight, and truncate', () => {
+  it('renders artist line with text-body, font-pixel, medium weight, and truncate', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <NowPlayingPanel
@@ -66,13 +66,13 @@ describe('NowPlayingPanel', () => {
 
     const artistEl = screen.getByText('Lady Gaga');
     expect(artistEl).toBeDefined();
-    expect(artistEl.className).toContain('text-meta');
+    expect(artistEl.className).toContain('text-body');
     expect(artistEl.className).toContain('font-pixel');
     expect(artistEl.className).toContain('font-medium');
     expect(artistEl.className).toContain('truncate');
   });
 
-  it('renders long multi-artist string with text-meta and truncate', () => {
+  it('renders long multi-artist string with text-body and truncate', () => {
     useSpotifyPlayerStore.setState({
       currentTrack: {
         id: 'track-2',
@@ -118,7 +118,7 @@ describe('NowPlayingPanel', () => {
 
     const longArtistEl = screen.getByText('Kendrick Lamar, Blxst, Amanda Reif');
     expect(longArtistEl).toBeDefined();
-    expect(longArtistEl.className).toContain('text-meta');
+    expect(longArtistEl.className).toContain('text-body');
     expect(longArtistEl.className).toContain('truncate');
   });
 });
