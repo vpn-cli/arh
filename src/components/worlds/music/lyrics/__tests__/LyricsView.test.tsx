@@ -240,5 +240,84 @@ describe('Lyrics Modules & Extraction', () => {
       expect(screen.getByText('Lyrics are taking a nap')).toBeDefined();
       expect(screen.getByText('TRY AGAIN')).toBeDefined();
     });
+
+    it('renders unsynced plain lyrics with scrollable overflow-y, min-h-0, and allows manual wheel/touch scrolling', async () => {
+      const trackId = 'plain-track';
+      const plainLyrics = 'Verse 1\nLine 1\nLine 2\n\nVerse 2\nLine 3\nLine 4\n\nOutro\nLast line';
+      setCachedLyrics(trackId, {
+        synced: null,
+        plain: plainLyrics,
+      });
+
+      const { container } = render(
+        <LyricsView
+          trackId={trackId}
+          trackDisplay={mockTrackDisplay}
+          isPaused={false}
+          getPositionMs={() => 0}
+          onSeek={vi.fn()}
+          onClose={vi.fn()}
+        />
+      );
+
+      expect(screen.getByText('NOT SYNCED')).toBeDefined();
+      expect(screen.getByText(/Verse 1/)).toBeDefined();
+
+      const scrollContainer = container.querySelector('.lyrics-container') as HTMLElement;
+      expect(scrollContainer).toBeDefined();
+
+      // Assert container has overflow-y-auto, min-h-0, and custom-scrollbar, and not overflow-hidden
+      expect(scrollContainer.classList.contains('overflow-y-auto')).toBe(true);
+      expect(scrollContainer.classList.contains('overflow-hidden')).toBe(false);
+      expect(scrollContainer.classList.contains('min-h-0')).toBe(true);
+      expect(scrollContainer.classList.contains('custom-scrollbar')).toBe(true);
+      expect(scrollContainer.classList.contains('overscroll-contain')).toBe(true);
+
+      // Assert manual wheel event is not preventDefault'ed
+      const wheelEvent = new Event('wheel', { bubbles: true, cancelable: true });
+      const wheelAllowed = scrollContainer.dispatchEvent(wheelEvent);
+      expect(wheelAllowed).toBe(true);
+      expect(wheelEvent.defaultPrevented).toBe(false);
+
+      // Assert touchmove event is not preventDefault'ed
+      const touchEvent = new Event('touchmove', { bubbles: true, cancelable: true });
+      const touchAllowed = scrollContainer.dispatchEvent(touchEvent);
+      expect(touchAllowed).toBe(true);
+      expect(touchEvent.defaultPrevented).toBe(false);
+    });
+
+    it('ensures synced lyrics container uses overflow-hidden and handles wheel events for manual browsing', async () => {
+      const trackId = 'synced-scroll-track';
+      setCachedLyrics(trackId, {
+        synced: attachEstimatedWordTimings([
+          { timeMs: 1000, text: 'Synced Line 1' },
+          { timeMs: 4000, text: 'Synced Line 2' },
+        ]),
+        plain: null,
+      });
+
+      const { container } = render(
+        <LyricsView
+          trackId={trackId}
+          trackDisplay={mockTrackDisplay}
+          isPaused={false}
+          getPositionMs={() => 1000}
+          onSeek={vi.fn()}
+          onClose={vi.fn()}
+        />
+      );
+
+      const scrollContainer = container.querySelector('.lyrics-container') as HTMLElement;
+      expect(scrollContainer.classList.contains('overflow-hidden')).toBe(true);
+      expect(scrollContainer.classList.contains('overflow-y-auto')).toBe(false);
+      expect(scrollContainer.classList.contains('min-h-0')).toBe(true);
+
+      // For synced lyrics, wheel events are intercepted by custom scroller (default is prevented)
+      const wheelEvent = new Event('wheel', { bubbles: true, cancelable: true });
+      act(() => {
+        scrollContainer.dispatchEvent(wheelEvent);
+      });
+      expect(wheelEvent.defaultPrevented).toBe(true);
+    });
   });
 });

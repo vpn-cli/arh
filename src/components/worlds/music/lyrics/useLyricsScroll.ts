@@ -51,9 +51,10 @@ export function syncActiveLineWordDelays(
 
 interface UseLyricsScrollOptions {
   activeLyricIndexRef: React.MutableRefObject<number>;
+  isSynced?: boolean;
 }
 
-export function useLyricsScroll({ activeLyricIndexRef }: UseLyricsScrollOptions) {
+export function useLyricsScroll({ activeLyricIndexRef, isSynced = true }: UseLyricsScrollOptions) {
   const lyricsContainerRef = useRef<HTMLDivElement | null>(null);
   const lyricsLinesRef = useRef<(HTMLDivElement | null)[]>([]);
   const baseLyricsYRef = useRef<number>(0);
@@ -111,7 +112,9 @@ export function useLyricsScroll({ activeLyricIndexRef }: UseLyricsScrollOptions)
   }, [updateLyricsPosition, activeLyricIndexRef]);
 
   // Recompute lyrics on container resize
+  // Recompute lyrics on container resize (only when lyrics are synced)
   useEffect(() => {
+    if (!isSynced) return;
     const container = lyricsContainerRef.current;
     if (!container || typeof ResizeObserver === 'undefined') return;
 
@@ -125,10 +128,11 @@ export function useLyricsScroll({ activeLyricIndexRef }: UseLyricsScrollOptions)
     });
     ro.observe(container);
     return () => ro.disconnect();
-  }, [updateLyricsPosition, activeLyricIndexRef]);
+  }, [updateLyricsPosition, activeLyricIndexRef, isSynced]);
 
-  // Recompute lyrics after document.fonts.ready
+  // Recompute lyrics after document.fonts.ready (only when lyrics are synced)
   useEffect(() => {
+    if (!isSynced) return;
     if (typeof document !== 'undefined' && document.fonts) {
       if (document.fonts.status !== 'loaded') {
         document.fonts.ready.then(() => {
@@ -136,10 +140,11 @@ export function useLyricsScroll({ activeLyricIndexRef }: UseLyricsScrollOptions)
         });
       }
     }
-  }, [updateLyricsPosition, activeLyricIndexRef]);
+  }, [updateLyricsPosition, activeLyricIndexRef, isSynced]);
 
-  // Manual wheel and touch browsing with non-passive listeners
+  // Manual wheel and touch browsing with non-passive listeners (only when lyrics are synced)
   useEffect(() => {
+    if (!isSynced) return;
     const container = lyricsContainerRef.current;
     if (!container) return;
 
@@ -181,6 +186,7 @@ export function useLyricsScroll({ activeLyricIndexRef }: UseLyricsScrollOptions)
     };
 
     const handleWheel = (e: WheelEvent) => {
+      if (!lyricsLinesRef.current || lyricsLinesRef.current.length === 0) return;
       e.preventDefault(); // Non-passive! Page behind does not scroll
       applyDelta(-e.deltaY);
     };
@@ -193,6 +199,7 @@ export function useLyricsScroll({ activeLyricIndexRef }: UseLyricsScrollOptions)
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      if (!lyricsLinesRef.current || lyricsLinesRef.current.length === 0) return;
       if (e.touches.length > 0) {
         e.preventDefault(); // Non-passive! Page behind does not scroll
         const currentY = e.touches[0].clientY;
@@ -211,7 +218,7 @@ export function useLyricsScroll({ activeLyricIndexRef }: UseLyricsScrollOptions)
       container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
     };
-  }, [resumeToActive]);
+  }, [resumeToActive, isSynced]);
 
   useEffect(() => {
     return () => {

@@ -48,6 +48,7 @@ export const LyricsView = React.memo(
     const playerDuration = useSpotifyPlayerStore((s) => s.duration);
     const [activeLyricIndex, setActiveLyricIndex] = useState<number>(-1);
     const activeLyricIndexRef = useRef<number>(-1);
+    const isSynced = Boolean(lyricsData?.synced && lyricsData.synced.length > 0);
 
     const {
       lyricsContainerRef,
@@ -59,7 +60,7 @@ export const LyricsView = React.memo(
       manualTimeoutRef,
       updateLyricsPosition,
       resumeToActive,
-    } = useLyricsScroll({ activeLyricIndexRef });
+    } = useLyricsScroll({ activeLyricIndexRef, isSynced });
 
     // Edit mode & manual lyrics states
     const [editMode, setEditMode] = useState<boolean>(() => {
@@ -113,10 +114,13 @@ export const LyricsView = React.memo(
       manualOffsetRef.current = 0;
       setIsManualBrowsing((prev) => (prev ? false : prev));
 
-      if (!lyricsData?.synced || lyricsData.synced.length === 0) {
+      if (!isSynced || !lyricsData?.synced) {
         activeLyricIndexRef.current = -1;
         setActiveLyricIndex(-1);
         lyricsLinesRef.current = [];
+        if (lyricsContainerRef.current) {
+          lyricsContainerRef.current.scrollTop = 0;
+        }
         return;
       }
 
@@ -241,14 +245,14 @@ export const LyricsView = React.memo(
     }, []);
 
     return (
-      <div className="absolute top-0 bottom-0 z-40 bg-[var(--color-bg)] flex flex-col pointer-events-auto transition-all duration-300 max-lg:left-auto max-lg:right-0 max-lg:w-[380px] lg:left-[var(--sidebar-width)] lg:right-[400px] xl:right-[420px] 2xl:right-[440px]">
+      <div className="absolute top-0 bottom-0 z-40 bg-[var(--color-bg)] flex flex-col pointer-events-auto transition-all duration-300 max-lg:left-auto max-lg:right-0 max-lg:w-[380px] max-lg:max-w-full lg:left-[var(--sidebar-width)] lg:right-[400px] xl:right-[420px] 2xl:right-[440px]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 shrink-0 border-b-2 border-[var(--color-muted)] bg-[var(--color-light)]/50">
           <span className="font-pixel text-body font-bold text-[var(--color-dark)] flex items-center gap-2">
             <span className="text-[var(--color-vibrant)] text-title">❝</span> Lyrics
           </span>
           <div className="flex items-center gap-2">
-            {editMode && lyricsData?.synced && lyricsData.synced.length > 0 && (
+            {editMode && isSynced && (
               <SyncOffsetControl
                 trackId={trackId}
                 offsetMs={offsetMs}
@@ -291,21 +295,17 @@ export const LyricsView = React.memo(
         <div
           ref={lyricsContainerRef}
           data-paused={isPaused}
-          className={`flex-1 relative select-none lyrics-container ${
-            lyricsData?.synced && lyricsData.synced.length > 0
-              ? 'overflow-hidden px-6'
-              : 'overflow-y-auto px-4'
+          className={`flex-1 min-h-0 relative select-none lyrics-container overscroll-contain ${
+            isSynced ? 'overflow-hidden px-6' : 'overflow-y-auto px-4 custom-scrollbar'
           }`}
           style={{
             position: 'relative',
-            maskImage:
-              lyricsData?.synced && lyricsData.synced.length > 0
-                ? 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
-                : 'none',
-            WebkitMaskImage:
-              lyricsData?.synced && lyricsData.synced.length > 0
-                ? 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
-                : 'none',
+            maskImage: isSynced
+              ? 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
+              : 'none',
+            WebkitMaskImage: isSynced
+              ? 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
+              : 'none',
             animationPlayState: isPaused ? 'paused' : 'running',
             ['--lyrics-play-state' as string]: isPaused ? 'paused' : 'running',
           } as React.CSSProperties}
@@ -320,7 +320,7 @@ export const LyricsView = React.memo(
               onRetry={retryLyrics}
               isRetrying={isLyricsLoading}
             />
-          ) : lyricsData?.synced && lyricsData.synced.length > 0 ? (
+          ) : isSynced && lyricsData?.synced ? (
             <LyricLines
               lines={lyricsData.synced}
               activeLyricIndex={activeLyricIndex}
@@ -361,7 +361,7 @@ export const LyricsView = React.memo(
         {/* Back to now pill */}
         <div
           className={`absolute bottom-8 left-1/2 -translate-x-1/2 transition-all duration-300 z-50 ${
-            isManualBrowsing
+            isManualBrowsing && isSynced
               ? 'opacity-100 translate-y-0'
               : 'opacity-0 translate-y-4 pointer-events-none'
           }`}
