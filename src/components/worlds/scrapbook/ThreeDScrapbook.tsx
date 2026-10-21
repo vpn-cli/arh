@@ -896,6 +896,7 @@ export default function ThreeDScrapbook() {
   const [inspectVisible, setInspectVisible] = useState(false);
   const [carouselReady, setCarouselReady] = useState(false);
   const [inspectIndex, setInspectIndex] = useState(0);
+  const [openedIndex, setOpenedIndex] = useState(0);
   const inspectIndexRef = useRef(inspectIndex);
   inspectIndexRef.current = inspectIndex;
 
@@ -1151,6 +1152,7 @@ export default function ThreeDScrapbook() {
     const idx = allImages.indexOf(src);
     if (idx !== -1) {
       setInspectIndex(idx);
+      setOpenedIndex(idx);
       const toPreloadIndices = [idx - 1, idx, idx + 1];
       toPreloadIndices.forEach((i) => {
         if (i >= 0 && i < allImages.length) {
@@ -1649,6 +1651,7 @@ export default function ThreeDScrapbook() {
                       }
                       alt="Memory"
                       className="relative z-10 w-auto h-auto max-w-[85vw] sm:max-w-[70vw] max-h-[80vh] object-contain rounded-lg pointer-events-auto"
+                      fetchPriority={Math.abs(i - openedIndex) <= 1 ? "high" : "low"}
                       decoding="async"
                       style={{
                         opacity: fullLoadedSet.has(i) || shownSet.has(i) ? 1 : 0,
