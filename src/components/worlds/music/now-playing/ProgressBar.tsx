@@ -296,10 +296,10 @@ export const ProgressBar = memo(
               size={36}
               className={
                 SNOOPY_STICKERS_ENABLED
-                  ? `progress-handle-scooter absolute right-0 bottom-2 translate-x-1/2 origin-bottom z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300 max-w-none ${
+                  ? `progress-handle-scooter absolute right-0 bottom-2 translate-x-1/2 origin-bottom z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300 ease-out max-w-none ${
                       isDragging ? 'scale-125' : ''
                     }`
-                  : `absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 origin-center z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300 max-w-none ${
+                  : `absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 origin-center z-10 drop-shadow-md group-hover/slider:scale-125 transition-transform duration-300 ease-out max-w-none ${
                       isDragging ? 'scale-125' : ''
                     }`
               }
