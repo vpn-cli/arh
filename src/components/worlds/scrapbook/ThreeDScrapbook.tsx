@@ -1487,7 +1487,11 @@ export default function ThreeDScrapbook() {
                   <div className="overflow-hidden rounded-xl border border-white/40 bg-white/20 shadow-sm pointer-events-auto" onContextMenu={(e) => e.stopPropagation()}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={fullSrc(src)}
+                      src={
+                        inspectImage && Math.abs(i - allImages.indexOf(inspectImage)) <= 1
+                          ? fullSrc(src)
+                          : "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+                      }
                       alt="Memory"
                       className="w-auto h-auto max-w-[85vw] sm:max-w-[70vw] max-h-[80vh] object-contain rounded-lg pointer-events-auto"
                       decoding="async"

@@ -20,14 +20,14 @@ export { IsOutgoingWorldContext };
 const MainWorld = dynamic(() => import("./main/MainWorld"), {
   ssr: false,
   loading: () => (
-    <div className="min-h-screen w-full bg-[#0C0A15]" />
+    <div className="min-h-screen w-full bg-[#FAF5E9]" />
   ),
 });
 
 const MusicWorld = dynamic(() => import("./music/MusicWorld"), {
   ssr: false,
   loading: () => (
-    <div className="min-h-screen w-full bg-[#0C0A15]" />
+    <div className="min-h-screen w-full bg-[var(--color-light)]" />
   ),
 });
 
