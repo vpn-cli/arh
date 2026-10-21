@@ -17,6 +17,12 @@ export function useRecoveryStatus({
   deviceIdRef: externalDeviceIdRef,
 }: UseRecoveryStatusProps = {}) {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const showLoginPromptRef = useRef(showLoginPrompt);
+
+  useEffect(() => {
+    showLoginPromptRef.current = showLoginPrompt;
+  }, [showLoginPrompt]);
+
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
 
@@ -25,6 +31,11 @@ export function useRecoveryStatus({
   const setDeviceId = useSpotifyPlayerStore((s) => s.setDeviceId);
 
   const { data: sessionData, refetch: refetchSession } = useSpotifySession();
+  const refetchSessionRef = useRef(refetchSession);
+
+  useEffect(() => {
+    refetchSessionRef.current = refetchSession;
+  }, [refetchSession]);
 
   const previousTokenRef = useRef(sessionData?.accessToken);
 
@@ -52,8 +63,11 @@ export function useRecoveryStatus({
   useEffect(() => {
     onLoginRequired(() => setShowLoginPrompt(true));
     onSessionRecovered(() => {
+      const wasPromptShowing = showLoginPromptRef.current;
       setShowLoginPrompt(false);
-      refetchSession?.();
+      if (wasPromptShowing) {
+        refetchSessionRef.current?.();
+      }
     });
     const unsubscribe = subscribeRecoveryState({
       onReconnectingChange: (reconnecting) => setIsReconnecting(reconnecting),
@@ -70,7 +84,7 @@ export function useRecoveryStatus({
       onSessionRecovered(null);
       unsubscribe();
     };
-  }, [setDeviceId, deviceIdRef, refetchSession]);
+  }, [setDeviceId, deviceIdRef]);
 
   return {
     isReconnecting,

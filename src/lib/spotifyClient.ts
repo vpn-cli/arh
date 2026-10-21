@@ -27,6 +27,7 @@ let inFlightTokenPromise: Promise<string | null> | null = null;
 
 async function fetchSessionToken(silent = false): Promise<string | null> {
   const maxAttempts = 2;
+  const retryDelayMs = 600;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       const res = await fetch('/api/spotify/session', {
@@ -35,7 +36,8 @@ async function fetchSessionToken(silent = false): Promise<string | null> {
       });
       if (!res.ok) {
         if (attempt < maxAttempts - 1) {
-          // Retry once on transient failure before invoking callback
+          // Wait briefly (~600ms) before retrying to clear transient cold function or upstream blips
+          await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
           continue;
         }
         const errBody = await res.json().catch(() => ({}));
@@ -50,7 +52,8 @@ async function fetchSessionToken(silent = false): Promise<string | null> {
       const data = await res.json();
       if (!data.accessToken) {
         if (attempt < maxAttempts - 1) {
-          // Retry once before invoking callback
+          // Wait briefly (~600ms) before retrying
+          await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
           continue;
         }
         if (!silent) {
@@ -63,6 +66,7 @@ async function fetchSessionToken(silent = false): Promise<string | null> {
       return data.accessToken;
     } catch (err) {
       if (attempt < maxAttempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
         continue;
       }
       if (!silent) {

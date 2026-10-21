@@ -139,4 +139,60 @@ describe('useRecoveryStatus - session expiration and recovery', () => {
 
     expect(result.current.isSessionExpired).toBe(true);
   });
+
+  it('only calls refetchSession on session recovery when showLoginPrompt was actually true', async () => {
+    const mockRefetch = vi.fn();
+    const { useSpotifySession } = await import('@/hooks/useSpotify');
+    vi.mocked(useSpotifySession).mockReturnValue({
+      data: null,
+      isError: false,
+      refetch: mockRefetch,
+    } as any);
+
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ accessToken: 'routine_token' }),
+    });
+
+    const { result } = renderHook(() => useRecoveryStatus());
+
+    // Case A: token fetched when showLoginPrompt is false (routine fetch)
+    await act(async () => {
+      await getFreshToken();
+    });
+    expect(mockRefetch).not.toHaveBeenCalled();
+
+    // Case B: session failed and prompted login
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' }),
+      });
+
+    await act(async () => {
+      await getFreshToken();
+    });
+    expect(result.current.isSessionExpired).toBe(true);
+
+    // Case C: token recovered when showLoginPrompt was true
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ accessToken: 'recovery_token' }),
+    });
+
+    await act(async () => {
+      await getFreshToken();
+    });
+
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
+    expect(result.current.isSessionExpired).toBe(false);
+  });
 });
