@@ -63,3 +63,6 @@ public/hampter/Unconfirmed*
 # diagnostics
 diagnose-results.json
 browser-logs.txt
+#issues
+diff.txt
+issues/
