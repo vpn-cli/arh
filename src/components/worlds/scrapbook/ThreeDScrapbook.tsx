@@ -896,6 +896,62 @@ export default function ThreeDScrapbook() {
   const [inspectVisible, setInspectVisible] = useState(false);
   const [carouselReady, setCarouselReady] = useState(false);
   const [inspectIndex, setInspectIndex] = useState(0);
+  const inspectIndexRef = useRef(inspectIndex);
+  inspectIndexRef.current = inspectIndex;
+
+  const [loadedCardsVersion, setLoadedCardsVersion] = useState(0);
+  const loadedCardsLruRef = useRef<number[]>([]);
+
+  const markCardLoaded = useCallback((idx: number) => {
+    const list = loadedCardsLruRef.current;
+    const pos = list.indexOf(idx);
+    let changed = false;
+
+    if (pos === -1) {
+      list.push(idx);
+      changed = true;
+    } else {
+      // Re-order to end (most recently used)
+      list.splice(pos, 1);
+      list.push(idx);
+    }
+
+    // Cap at 12 entries. When it exceeds 12, evict the least recently viewed index that is NOT inside the current +/-2 window.
+    while (list.length > 12) {
+      const evictIdx = list.findIndex(
+        (cardIdx) => Math.abs(cardIdx - inspectIndexRef.current) > 2
+      );
+      if (evictIdx !== -1) {
+        list.splice(evictIdx, 1);
+        changed = true;
+      } else {
+        break;
+      }
+    }
+
+    if (changed) {
+      setLoadedCardsVersion((v) => v + 1);
+    }
+  }, []);
+
+  // Update recency for loaded cards inside current +/-2 window when inspectIndex changes
+  useEffect(() => {
+    if (!inspectVisible) return;
+    const list = loadedCardsLruRef.current;
+    for (let offset = -2; offset <= 2; offset++) {
+      const targetIdx = inspectIndex + offset;
+      const pos = list.indexOf(targetIdx);
+      if (pos !== -1) {
+        list.splice(pos, 1);
+        list.push(targetIdx);
+      }
+    }
+  }, [inspectIndex, inspectVisible]);
+
+  const loadedCardsSet = React.useMemo(
+    () => new Set(loadedCardsLruRef.current),
+    [loadedCardsVersion]
+  );
 
   // Smooth scroll & momentum physics refs for inspect carousel
   const carouselTargetScrollRef = useRef<number | null>(null);
@@ -1544,13 +1600,18 @@ export default function ThreeDScrapbook() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={
-                        inspectVisible && Math.abs(i - inspectIndex) <= 2
+                        (inspectVisible && Math.abs(i - inspectIndex) <= 2) || loadedCardsSet.has(i)
                           ? fullSrc(src)
                           : "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
                       }
                       alt="Memory"
                       className="w-auto h-auto max-w-[85vw] sm:max-w-[70vw] max-h-[80vh] object-contain rounded-lg pointer-events-auto"
                       decoding="async"
+                      onLoad={(e) => {
+                        const currentSrc = e.currentTarget.currentSrc || e.currentTarget.src;
+                        if (!currentSrc || currentSrc.startsWith("data:")) return;
+                        markCardLoaded(i);
+                      }}
                       onError={(e) => {
                         const target = e.currentTarget;
                         if (!target.dataset.fallback) {
