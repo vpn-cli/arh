@@ -218,18 +218,19 @@ const DraggableCropImage = React.memo(function DraggableCropImage({ item, onImag
   return (
     <div
       data-cursor={editMode ? "grab" : "polaroid"}
-      className={`relative w-full h-full bg-white overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 ease-out kitty-polaroid-lift ${isSelected ? 'ring-4 ring-[#FF8FB3] scale-95 opacity-80' : ''}`}
+      className={`relative w-full h-full bg-[#FFF4F6] overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 ease-out kitty-polaroid-lift ${isSelected ? 'ring-4 ring-[#FF8FB3] scale-95 opacity-80' : ''}`}
       onPointerDown={handlePointerDown}
       onPointerMove={editMode ? handlePointerMove : undefined}
       onPointerUp={editMode ? handlePointerUp : undefined}
       onPointerCancel={editMode ? handlePointerUp : undefined}
       style={{ touchAction: editMode ? 'none' : 'auto' }}
     >
+      <div className="absolute inset-0 flex items-center justify-center text-4xl text-[#FFD0DC] animate-spin pointer-events-none select-none" style={{ animationDuration: '3s' }}>✿</div>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={gridSrc(item.src)}
         alt="memory"
-        className="w-full h-full object-cover"
+        className="relative w-full h-full object-cover"
         style={{
           objectPosition: `${currentX}% ${currentY}%`
         }}
