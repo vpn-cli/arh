@@ -64,6 +64,7 @@ export function usePlayerStateSync({
   const hasActuallyPlayedRef = useRef(false);
   const prevPositionRef = useRef(0);
   const queueDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const advanceRecoveryTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const playerRef = useRef(player);
   playerRef.current = player;
@@ -93,11 +94,14 @@ export function usePlayerStateSync({
     setSharedPaused(isPaused);
   }, [isPaused]);
 
-  // Clean up debounce timer on unmount
+  // Clean up debounce and recovery timers on unmount
   useEffect(() => {
     return () => {
       if (queueDebounceTimerRef.current) {
         clearTimeout(queueDebounceTimerRef.current);
+      }
+      if (advanceRecoveryTimerRef.current) {
+        clearTimeout(advanceRecoveryTimerRef.current);
       }
     };
   }, []);
@@ -174,6 +178,11 @@ export function usePlayerStateSync({
         lastActiveTrackIdRef.current = incomingTrackId;
         hasActuallyPlayedRef.current = false;
         prevPositionRef.current = 0;
+        lastAdvancedTrackUriRef.current = null;
+        if (advanceRecoveryTimerRef.current) {
+          clearTimeout(advanceRecoveryTimerRef.current);
+          advanceRecoveryTimerRef.current = null;
+        }
       }
 
       if (!state.paused && state.position > 1000) {
@@ -220,13 +229,19 @@ export function usePlayerStateSync({
       if (isEnded && nextTracks.length > 0) {
         const currentEndedUri = state.track_window?.current_track?.uri || lastActiveTrackUriRef.current;
         if (
-          !userPausedRef.current &&
           currentEndedUri &&
           lastAdvancedTrackUriRef.current !== currentEndedUri &&
-          state.track_window?.current_track?.uri === lastActiveTrackUriRef.current
+          !advanceRecoveryTimerRef.current
         ) {
-          lastAdvancedTrackUriRef.current = currentEndedUri;
-          nextTrackGlobal();
+          const recordedUri = currentEndedUri;
+          advanceRecoveryTimerRef.current = setTimeout(() => {
+            advanceRecoveryTimerRef.current = null;
+            const currentState = useSpotifyPlayerStore.getState();
+            if (currentState.currentTrack?.uri === recordedUri && currentState.isPaused) {
+              lastAdvancedTrackUriRef.current = recordedUri;
+              nextTrackGlobal();
+            }
+          }, 2000);
         }
       }
 
