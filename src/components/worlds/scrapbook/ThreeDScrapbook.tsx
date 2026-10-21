@@ -900,32 +900,51 @@ export default function ThreeDScrapbook() {
   inspectIndexRef.current = inspectIndex;
 
   const [loadedCardsVersion, setLoadedCardsVersion] = useState(0);
-  const loadedCardsLruRef = useRef<number[]>([]);
+  const fullLoadedLruRef = useRef<number[]>([]);
+  const shownIndicesRef = useRef<Set<number>>(new Set());
 
-  const markCardLoaded = useCallback((idx: number) => {
-    const list = loadedCardsLruRef.current;
-    const pos = list.indexOf(idx);
+  const markCardLoaded = useCallback((idx: number, currentSrc: string, itemSrc: string) => {
     let changed = false;
 
-    if (pos === -1) {
-      list.push(idx);
+    // Record on ANY non-data: load, including onError fallbacks (grid or original)
+    if (!shownIndicesRef.current.has(idx)) {
+      shownIndicesRef.current.add(idx);
       changed = true;
-    } else {
-      // Re-order to end (most recently used)
-      list.splice(pos, 1);
-      list.push(idx);
     }
 
-    // Cap at 12 entries. When it exceeds 12, evict the least recently viewed index that is NOT inside the current +/-2 window.
-    while (list.length > 12) {
-      const evictIdx = list.findIndex(
-        (cardIdx) => Math.abs(cardIdx - inspectIndexRef.current) > 2
-      );
-      if (evictIdx !== -1) {
-        list.splice(evictIdx, 1);
+    // fullLoaded (the existing 12-cap LRU): record ONLY when loaded URL is the full-size URL
+    let isFullSize = false;
+    try {
+      const loc = typeof window !== "undefined" ? window.location.href : "http://localhost";
+      isFullSize = new URL(currentSrc, loc).pathname === new URL(fullSrc(itemSrc), loc).pathname;
+    } catch {
+      isFullSize = currentSrc.includes("/full/");
+    }
+
+    if (isFullSize) {
+      const list = fullLoadedLruRef.current;
+      const pos = list.indexOf(idx);
+
+      if (pos === -1) {
+        list.push(idx);
         changed = true;
       } else {
-        break;
+        // Re-order to end (most recently used)
+        list.splice(pos, 1);
+        list.push(idx);
+      }
+
+      // Cap at 12 entries. When it exceeds 12, evict the least recently viewed index that is NOT inside the current +/-2 window.
+      while (list.length > 12) {
+        const evictIdx = list.findIndex(
+          (cardIdx) => Math.abs(cardIdx - inspectIndexRef.current) > 2
+        );
+        if (evictIdx !== -1) {
+          list.splice(evictIdx, 1);
+          changed = true;
+        } else {
+          break;
+        }
       }
     }
 
@@ -934,22 +953,24 @@ export default function ThreeDScrapbook() {
     }
   }, []);
 
-  // Update recency for loaded cards inside current +/-2 window when inspectIndex changes
+  // When inspectIndex settles on an index that is in the list, move it to the end
   useEffect(() => {
     if (!inspectVisible) return;
-    const list = loadedCardsLruRef.current;
-    for (let offset = -2; offset <= 2; offset++) {
-      const targetIdx = inspectIndex + offset;
-      const pos = list.indexOf(targetIdx);
-      if (pos !== -1) {
-        list.splice(pos, 1);
-        list.push(targetIdx);
-      }
+    const list = fullLoadedLruRef.current;
+    const pos = list.indexOf(inspectIndex);
+    if (pos !== -1 && pos !== list.length - 1) {
+      list.splice(pos, 1);
+      list.push(inspectIndex);
     }
   }, [inspectIndex, inspectVisible]);
 
-  const loadedCardsSet = React.useMemo(
-    () => new Set(loadedCardsLruRef.current),
+  const fullLoadedSet = React.useMemo(
+    () => new Set(fullLoadedLruRef.current),
+    [loadedCardsVersion]
+  );
+
+  const shownSet = React.useMemo(
+    () => new Set(shownIndicesRef.current),
     [loadedCardsVersion]
   );
 
@@ -1596,21 +1617,34 @@ export default function ThreeDScrapbook() {
                   </div>
 
                   {/* Inner Photo Frame */}
-                  <div className="overflow-hidden rounded-xl border border-white/40 bg-white/20 shadow-sm pointer-events-auto" onContextMenu={(e) => e.stopPropagation()}>
+                  <div
+                    className="overflow-hidden rounded-xl border border-white/40 bg-white/20 shadow-sm pointer-events-auto"
+                    onContextMenu={(e) => e.stopPropagation()}
+                    style={{
+                      backgroundImage: inspectVisible && Math.abs(i - inspectIndex) <= 6 ? `url("${gridSrc(src)}")` : undefined,
+                      backgroundSize: inspectVisible && Math.abs(i - inspectIndex) <= 6 ? "contain" : undefined,
+                      backgroundPosition: inspectVisible && Math.abs(i - inspectIndex) <= 6 ? "center" : undefined,
+                      backgroundRepeat: inspectVisible && Math.abs(i - inspectIndex) <= 6 ? "no-repeat" : undefined,
+                    }}
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={
-                        (inspectVisible && Math.abs(i - inspectIndex) <= 2) || loadedCardsSet.has(i)
+                        (inspectVisible && Math.abs(i - inspectIndex) <= 2) || fullLoadedSet.has(i)
                           ? fullSrc(src)
                           : "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
                       }
                       alt="Memory"
                       className="w-auto h-auto max-w-[85vw] sm:max-w-[70vw] max-h-[80vh] object-contain rounded-lg pointer-events-auto"
                       decoding="async"
+                      style={{
+                        opacity: fullLoadedSet.has(i) || shownSet.has(i) ? 1 : 0,
+                        transition: fullLoadedSet.has(i) ? "none" : "opacity 200ms ease",
+                      }}
                       onLoad={(e) => {
                         const currentSrc = e.currentTarget.currentSrc || e.currentTarget.src;
                         if (!currentSrc || currentSrc.startsWith("data:")) return;
-                        markCardLoaded(i);
+                        markCardLoaded(i, currentSrc, src);
                       }}
                       onError={(e) => {
                         const target = e.currentTarget;
