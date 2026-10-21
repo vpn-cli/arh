@@ -1618,15 +1618,28 @@ export default function ThreeDScrapbook() {
 
                   {/* Inner Photo Frame */}
                   <div
-                    className="overflow-hidden rounded-xl border border-white/40 bg-white/20 shadow-sm pointer-events-auto"
+                    className="relative overflow-hidden rounded-xl border border-white/40 bg-white/20 shadow-sm pointer-events-auto"
                     onContextMenu={(e) => e.stopPropagation()}
-                    style={{
-                      backgroundImage: inspectVisible && Math.abs(i - inspectIndex) <= 6 ? `url("${gridSrc(src)}")` : undefined,
-                      backgroundSize: inspectVisible && Math.abs(i - inspectIndex) <= 6 ? "contain" : undefined,
-                      backgroundPosition: inspectVisible && Math.abs(i - inspectIndex) <= 6 ? "center" : undefined,
-                      backgroundRepeat: inspectVisible && Math.abs(i - inspectIndex) <= 6 ? "no-repeat" : undefined,
-                    }}
                   >
+                    {/* Thumbnail layer behind main image */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={
+                        inspectVisible
+                          ? gridSrc(src)
+                          : "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
+                      }
+                      loading="lazy"
+                      decoding="async"
+                      alt=""
+                      aria-hidden="true"
+                      draggable={false}
+                      className="absolute inset-0 w-full h-full object-contain rounded-lg pointer-events-none"
+                      style={{ pointerEvents: "none" }}
+                      onError={(e) => {
+                        e.currentTarget.style.visibility = "hidden";
+                      }}
+                    />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={
@@ -1635,11 +1648,11 @@ export default function ThreeDScrapbook() {
                           : "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
                       }
                       alt="Memory"
-                      className="w-auto h-auto max-w-[85vw] sm:max-w-[70vw] max-h-[80vh] object-contain rounded-lg pointer-events-auto"
+                      className="relative z-10 w-auto h-auto max-w-[85vw] sm:max-w-[70vw] max-h-[80vh] object-contain rounded-lg pointer-events-auto"
                       decoding="async"
                       style={{
                         opacity: fullLoadedSet.has(i) || shownSet.has(i) ? 1 : 0,
-                        transition: fullLoadedSet.has(i) ? "none" : "opacity 200ms ease",
+                        transition: "opacity 200ms ease",
                       }}
                       onLoad={(e) => {
                         const currentSrc = e.currentTarget.currentSrc || e.currentTarget.src;
