@@ -165,11 +165,7 @@ const DraggableCropImage = React.memo(function DraggableCropImage({ item, onImag
   }
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!editMode) {
-      e.stopPropagation();
-      onImageClick?.(item.src);
-      return;
-    }
+    if (!editMode) return;
     setIsDragging(true);
     setHasDragged(false);
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -219,7 +215,11 @@ const DraggableCropImage = React.memo(function DraggableCropImage({ item, onImag
     <div
       data-cursor={editMode ? "grab" : "polaroid"}
       className={`relative w-full h-full bg-[#FFF4F6] overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 ease-out kitty-polaroid-lift ${isSelected ? 'ring-4 ring-[#FF8FB3] scale-95 opacity-80' : ''}`}
-      onPointerDown={handlePointerDown}
+      onClick={!editMode ? (e) => {
+        e.stopPropagation();
+        onImageClick?.(item.src);
+      } : undefined}
+      onPointerDown={editMode ? handlePointerDown : undefined}
       onPointerMove={editMode ? handlePointerMove : undefined}
       onPointerUp={editMode ? handlePointerUp : undefined}
       onPointerCancel={editMode ? handlePointerUp : undefined}
@@ -621,16 +621,8 @@ const PageContent = React.memo(function PageContent({
 
   return (
     <div
-      className="relative w-full h-full p-4 sm:p-6 lg:p-8 flex flex-col overflow-hidden select-none cursor-pointer"
+      className="relative w-full h-full p-4 sm:p-6 lg:p-8 flex flex-col overflow-hidden select-none"
       style={{ backgroundColor: "#FFB6C1" }}
-      onClick={() => {
-        if (editMode) return;
-        if (side === 'right' && onTurnPage && spreadIdx < (totalSpreads || 1) - 1 && data.pageTitle !== "COVER") {
-          onTurnPage(1);
-        } else if (side === 'left' && onTurnPage && spreadIdx > 0) {
-          onTurnPage(-1);
-        }
-      }}
     >
       {/* Cute Pastel Pattern overlay */}
       <div className="absolute inset-0 opacity-100 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#FFE4A1 1.5px, transparent 1.5px)', backgroundSize: '24px 24px' }} />
@@ -902,9 +894,6 @@ export default function ThreeDScrapbook() {
   const carouselRafRef = useRef<number | null>(null);
   const carouselWheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 3D Scrapbook wheel page-turning refs
-  const lastBookWheelRef = useRef<number>(0);
-  const bookWheelDeltaRef = useRef<number>(0);
 
   // Cleanup scroll RAF and timers on unmount
   useEffect(() => {
@@ -1263,27 +1252,6 @@ export default function ThreeDScrapbook() {
     }, 720);
   }, []);
 
-  const handleBookWheel = useCallback((e: React.WheelEvent) => {
-    if (inspectVisible || editMode) return;
-    const now = Date.now();
-    // Cooldown during flip animation (750ms) to prevent collision
-    if (now - lastBookWheelRef.current < 800 || bookStateRef.current.flippingIndex !== -1) {
-      return;
-    }
-    const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-    bookWheelDeltaRef.current += delta;
-
-    if (Math.abs(bookWheelDeltaRef.current) > 30) {
-      if (bookWheelDeltaRef.current > 0) {
-        turnPage(1);
-      } else {
-        turnPage(-1);
-      }
-      bookWheelDeltaRef.current = 0;
-      lastBookWheelRef.current = now;
-    }
-  }, [inspectVisible, editMode, turnPage]);
-
   const goToCover = useCallback(() => {
     const { currentSpread, flippingIndex } = bookStateRef.current;
     if (flippingIndex !== -1 || currentSpread === 0) return;
@@ -1526,7 +1494,6 @@ export default function ThreeDScrapbook() {
 
       <div
         className="relative w-[95%] max-w-[1300px] aspect-[1.75/1] z-10"
-        onWheel={handleBookWheel}
         style={{
           perspective: "3500px",
           transformStyle: "preserve-3d",
