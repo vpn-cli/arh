@@ -8,6 +8,9 @@ import { TransitionOverlay, getTransitionClip } from "../transitions/TransitionO
 import { preloadWorldTransitions } from "@/lib/transitionPreloader";
 import { TARGET_WORLD_PAINTED_EVENT, isTestMetricsEnabled } from "@/lib/paintSignal";
 import { track } from "@vercel/analytics";
+import { IsOutgoingWorldContext } from "@/context/OutgoingWorldContext";
+
+export { IsOutgoingWorldContext };
 
 /* ═══════════════════════════════════════════════════════
    WORLD ROUTER — Renders the current world with
@@ -279,10 +282,12 @@ export default function WorldRouter() {
           className="fixed inset-0 z-30 pointer-events-none overflow-hidden"
           style={{ opacity: 1 }}
         >
-          {activeOutgoing === "home" && <HomeWorld onPortalIntent={preloadWorld} />}
-          {activeOutgoing === "main" && <MainWorld />}
-          {activeOutgoing === "music" && <MusicWorld />}
-          {activeOutgoing === "scrapbook" && <ScrapbookWorld />}
+          <IsOutgoingWorldContext.Provider value={true}>
+            {activeOutgoing === "home" && <HomeWorld onPortalIntent={preloadWorld} />}
+            {activeOutgoing === "main" && <MainWorld />}
+            {activeOutgoing === "music" && <MusicWorld />}
+            {activeOutgoing === "scrapbook" && <ScrapbookWorld />}
+          </IsOutgoingWorldContext.Provider>
         </div>
       )}
     </div>

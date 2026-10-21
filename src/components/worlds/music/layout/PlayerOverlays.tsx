@@ -8,6 +8,7 @@ import { SpotifyRestingBanner } from "../SpotifyRestingBanner";
 import { FreeTierNotice } from "../FreeTierNotice";
 import { useGameState } from "@/lib/gameState";
 import { sfx } from "@/lib/audio";
+import { useIsOutgoingWorld } from "@/context/OutgoingWorldContext";
 
 export interface PlayerOverlaysProps {
   isReconnecting: boolean;
@@ -34,6 +35,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
 }: PlayerOverlaysProps) {
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   const { goHome } = useGameState();
+  const isOutgoing = useIsOutgoingWorld();
 
   const handleGoHome = React.useCallback(() => {
     try {
@@ -78,7 +80,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
         </div>
       )}
 
-      {isSessionExpired && (
+      {!isOutgoing && isSessionExpired && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-bg)]/75 backdrop-blur-sm px-4">
           <div className="absolute top-4 left-4 z-10">
             <button
@@ -117,7 +119,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
         </div>
       )}
 
-      {!token && !isSessionExpired && (
+      {!isOutgoing && !token && !isSessionExpired && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-bg)]/75 backdrop-blur-sm px-4">
           <div className="absolute top-4 left-4 z-10">
             <button
