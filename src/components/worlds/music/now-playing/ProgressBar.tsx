@@ -68,12 +68,13 @@ export const ProgressBar = memo(
       (positionMs: number, disableTransition: boolean) => {
         lastPositionMsRef.current = positionMs;
 
+        const durationMs = durationRef.current;
+        const clampedPos = durationMs > 0 ? Math.min(positionMs, durationMs) : positionMs;
         if (positionLabelRef.current) {
-          const ts = Math.floor(positionMs / 1000);
+          const ts = Math.floor(clampedPos / 1000);
           positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
         }
 
-        const durationMs = durationRef.current;
         if (!durationMs || durationMs <= 0) {
           return;
         }
@@ -230,8 +231,10 @@ export const ProgressBar = memo(
           const currentPos = getPositionMs();
 
           // Update numeric time label
+          const durationMs = durationRef.current;
+          const clampedPos = durationMs > 0 ? Math.min(currentPos, durationMs) : currentPos;
           if (positionLabelRef.current) {
-            const ts = Math.floor(currentPos / 1000);
+            const ts = Math.floor(clampedPos / 1000);
             positionLabelRef.current.textContent = `${Math.floor(ts / 60)}:${(ts % 60).toString().padStart(2, '0')}`;
           }
 

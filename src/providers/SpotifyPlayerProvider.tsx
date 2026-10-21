@@ -48,6 +48,7 @@ export interface SpotifyPlayerContextValue {
 let sharedPlayer: any = null;
 let isInitializing = false;
 let sharedLatestState: any = null;
+let onPlayerStateChanged: ((state: any) => void) | null = null;
 const subscribers = new Set<(state: any) => void>();
 const playerListeners = new Set<() => void>();
 
@@ -72,6 +73,7 @@ export function disconnectSpotifyPlayer() {
   }
   isInitializing = false;
   sharedLatestState = null;
+  onPlayerStateChanged = null;
   subscribers.clear();
   try {
     registerPlayerForRecovery(null, { current: null }, { current: false });
@@ -180,7 +182,11 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
           needsRecoveryRef.current = false;
           clearNeedsRecovery();
           latestStateRef.current = state;
-          sharedLatestState = state;
+          if (onPlayerStateChanged) {
+            onPlayerStateChanged(state);
+          } else {
+            sharedLatestState = state;
+          }
         }
       } catch (err) {
         console.warn(
@@ -304,7 +310,7 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
         useSpotifyPlayerStore.getState().setIsReady(false);
       });
 
-      spotifyPlayer.addListener("player_state_changed", (state: any) => {
+      const handlePlayerState = (state: any) => {
         if (!state) return;
         latestStateRef.current = state;
         sharedLatestState = state;
@@ -317,7 +323,7 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
           });
         }
 
-        updateSharedPlaybackState(state.position, state.paused);
+        updateSharedPlaybackState(state.position, state.paused, state.duration);
 
         const newTrack = state.track_window?.current_track;
         const store = useSpotifyPlayerStore.getState();
@@ -349,7 +355,10 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
             console.error("[SpotifyPlayerProvider] Subscriber error:", err);
           }
         });
-      });
+      };
+
+      onPlayerStateChanged = handlePlayerState;
+      spotifyPlayer.addListener("player_state_changed", handlePlayerState);
 
       ["initialization_error", "authentication_error", "playback_error"].forEach((evt) => {
         spotifyPlayer.addListener(evt, ({ message }: { message: string }) => {

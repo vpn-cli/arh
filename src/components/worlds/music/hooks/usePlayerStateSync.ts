@@ -16,6 +16,7 @@ import {
   setSharedPaused,
 } from "../playback/playbackClock";
 import { PLAYBACK_DEBUG } from "../playback/playbackHelpers";
+import { nextTrackGlobal } from "../playback/globalPlaybackActions";
 import { getPlayerQueue } from "@/lib/spotify/player";
 
 export interface UsePlayerStateSyncOptions {
@@ -59,6 +60,7 @@ export function usePlayerStateSync({
   const lastActiveTrackIdRef = useRef<string | null>(null);
   const isAutoplayingRef = useRef(false);
   const lastActiveTrackUriRef = useRef<string | null>(null);
+  const lastAdvancedTrackUriRef = useRef<string | null>(null);
   const hasActuallyPlayedRef = useRef(false);
   const prevPositionRef = useRef(0);
   const queueDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -178,7 +180,7 @@ export function usePlayerStateSync({
         hasActuallyPlayedRef.current = true;
       }
 
-      updateSharedPlaybackState(state.position, state.paused);
+      updateSharedPlaybackState(state.position, state.paused, state.duration);
 
       progressBarRef.current?.applyState({
         positionMs: state.position,
@@ -214,6 +216,19 @@ export function usePlayerStateSync({
         state.paused && didReachEnd && !userPausedRef.current && !!lastActiveTrackUriRef.current;
 
       prevPositionRef.current = state.position;
+
+      if (isEnded && nextTracks.length > 0) {
+        const currentEndedUri = state.track_window?.current_track?.uri || lastActiveTrackUriRef.current;
+        if (
+          !userPausedRef.current &&
+          currentEndedUri &&
+          lastAdvancedTrackUriRef.current !== currentEndedUri &&
+          state.track_window?.current_track?.uri === lastActiveTrackUriRef.current
+        ) {
+          lastAdvancedTrackUriRef.current = currentEndedUri;
+          nextTrackGlobal();
+        }
+      }
 
       if (isEnded && nextTracks.length === 0 && !isAutoplayingRef.current) {
         isAutoplayingRef.current = true;

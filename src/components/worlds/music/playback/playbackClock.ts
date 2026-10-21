@@ -3,18 +3,18 @@
 let trackStartTime = Date.now();
 let pausedDuration = 0;
 let pauseTimestamp: number | null = null;
+let currentDurationMs: number | null = null;
 
 export function getSharedPositionMs(): number {
-  return Math.max(
-    0,
-    (pauseTimestamp ?? Date.now()) - trackStartTime - pausedDuration
-  );
+  const elapsed = Math.max(0, (pauseTimestamp ?? Date.now()) - trackStartTime - pausedDuration);
+  return currentDurationMs && currentDurationMs > 0 ? Math.min(elapsed, currentDurationMs) : elapsed;
 }
 
-export function updateSharedPlaybackState(positionMs: number, paused: boolean): void {
+export function updateSharedPlaybackState(positionMs: number, paused: boolean, durationMs?: number): void {
   trackStartTime = Date.now() - positionMs;
   pausedDuration = 0;
   pauseTimestamp = paused ? Date.now() : null;
+  if (typeof durationMs === "number") currentDurationMs = durationMs > 0 ? durationMs : null;
 }
 
 export function seekSharedClock(targetMs: number): void {
