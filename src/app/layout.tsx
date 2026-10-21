@@ -8,7 +8,7 @@ import HelloKittyCursor from "@/components/ui/HelloKittyCursor";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "A Little Corner of the Internet for You ✦ Happy Birthday!",
+  title: "Bananaaa",
   description: "A personal handmade indie-web birthday scrapbook filled with memories, memes, and pixel magic.",
   keywords: ["birthday", "pixel art", "scrapbook", "indie web", "hamster"],
   authors: [{ name: "Your Best Friend" }],
