@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, MutableRefObject, RefObject } from "react";
-import { onLoginRequired } from "@/lib/spotifyClient";
+import { useEffect, useState, useCallback, useRef, MutableRefObject, RefObject } from "react";
+import { onLoginRequired, onSessionRecovered } from "@/lib/spotifyClient";
 import { subscribeRecoveryState } from "@/lib/spotifyRecovery";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { useSpotifyPlayer } from "@/providers/SpotifyPlayerProvider";
@@ -24,23 +24,24 @@ export function useRecoveryStatus({
   const deviceIdRef = externalDeviceIdRef || contextDeviceIdRef;
   const setDeviceId = useSpotifyPlayerStore((s) => s.setDeviceId);
 
-  const { data: sessionData } = useSpotifySession();
-  const hasValidSession = Boolean(sessionData?.accessToken);
+  const { data: sessionData, refetch: refetchSession } = useSpotifySession();
 
-  const resetLoginPrompt = useCallback(() => {
-    setShowLoginPrompt(false);
-  }, []);
+  const previousTokenRef = useRef(sessionData?.accessToken);
 
-  // Reset sticky login prompt when session is valid, error clears, or spotify_auth=success is present
+  // Reset sticky login prompt when session genuinely recovers via auth redirect or a newly acquired valid session
   useEffect(() => {
     const hasAuthSuccess =
       typeof window !== "undefined" &&
       window.location.search.includes("spotify_auth=success");
 
-    if (hasValidSession || hasAuthSuccess || (!sessionError && sessionData)) {
+    const currentToken = sessionData?.accessToken;
+    const isNewToken = Boolean(currentToken && currentToken !== previousTokenRef.current);
+
+    if (hasAuthSuccess || isNewToken) {
       setShowLoginPrompt(false);
     }
-  }, [hasValidSession, sessionError, sessionData]);
+    previousTokenRef.current = currentToken;
+  }, [sessionData?.accessToken]);
 
   const isSessionExpired = sessionError || showLoginPrompt;
 
@@ -50,6 +51,10 @@ export function useRecoveryStatus({
 
   useEffect(() => {
     onLoginRequired(() => setShowLoginPrompt(true));
+    onSessionRecovered(() => {
+      setShowLoginPrompt(false);
+      refetchSession?.();
+    });
     const unsubscribe = subscribeRecoveryState({
       onReconnectingChange: (reconnecting) => setIsReconnecting(reconnecting),
       onErrorChange: (err) => setRecoveryError(err),
@@ -62,9 +67,10 @@ export function useRecoveryStatus({
     });
     return () => {
       onLoginRequired(null);
+      onSessionRecovered(null);
       unsubscribe();
     };
-  }, [setDeviceId, deviceIdRef]);
+  }, [setDeviceId, deviceIdRef, refetchSession]);
 
   return {
     isReconnecting,
@@ -72,7 +78,6 @@ export function useRecoveryStatus({
     setRecoveryError,
     handleDismissRecoveryError,
     showLoginPrompt,
-    resetLoginPrompt,
     isSessionExpired,
   };
 }

@@ -79,7 +79,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
       )}
 
       {isSessionExpired && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-light)]/80 backdrop-blur-sm p-4">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--color-bg)]/75 backdrop-blur-sm px-4">
           <div className="absolute top-4 left-4 z-10">
             <button
               onClick={handleGoHome}
@@ -94,7 +94,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
             </button>
           </div>
 
-          <div className="bg-white rounded-none border-4 border-[var(--color-vibrant)] shadow-[8px_8px_0px_var(--color-muted)] p-8 flex flex-col items-center gap-4 max-w-xs text-center w-full">
+          <div className="bg-white/95 rounded-3xl border-2 border-[var(--color-muted)] shadow-[0_18px_45px_var(--color-muted)] shadow-opacity-20 p-8 flex flex-col items-center gap-4 max-w-sm text-center w-full">
             <div className="text-display animate-bounce">🔑</div>
             <h3 className="font-pixel text-title font-bold text-[var(--color-dark)] leading-snug">SESSION EXPIRED</h3>
             <p className="font-pixel text-caption text-[var(--color-dark)] leading-relaxed">
@@ -102,7 +102,7 @@ export const PlayerOverlays = React.memo(function PlayerOverlays({
             </p>
             <button
               onClick={onReLogin}
-              className="w-full mt-2 bg-gradient-to-r from-[#1DB954] to-[#1ed760] text-white font-pixel text-body font-bold py-3 px-6 rounded-full shadow-[0_4px_15px_rgba(29,185,84,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full mt-2 bg-[var(--color-vibrant)] hover:bg-[var(--color-vibrant)] text-[var(--on-vibrant)] font-pixel text-title font-bold py-3 px-6 rounded-full shadow-[0_8px_22px_var(--color-vibrant)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
             >
               RE-LOGIN TO SPOTIFY
             </button>

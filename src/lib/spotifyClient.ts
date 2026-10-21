@@ -8,10 +8,15 @@ export { clearClientSpotifyLock };
 export const spotifyQueue = new PQueue({ concurrency: 2, interval: 200, intervalCap: 2 });
 
 let loginRequiredCallback: (() => void) | null = null;
+let sessionRecoveredCallback: (() => void) | null = null;
 let customRecoveryHandler: ((reason?: string) => Promise<string>) | null = null;
 
 export function onLoginRequired(cb: (() => void) | null) {
   loginRequiredCallback = cb;
+}
+
+export function onSessionRecovered(cb: (() => void) | null) {
+  sessionRecoveredCallback = cb;
 }
 
 export function registerDeviceRecoveryHandler(handler: ((reason?: string) => Promise<string>) | null) {
@@ -21,36 +26,52 @@ export function registerDeviceRecoveryHandler(handler: ((reason?: string) => Pro
 let inFlightTokenPromise: Promise<string | null> | null = null;
 
 async function fetchSessionToken(silent = false): Promise<string | null> {
-  try {
-    const res = await fetch('/api/spotify/session', {
-      credentials: 'include',
-      cache: 'no-store'
-    });
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      if (!silent) {
-        console.error(`[${new Date().toISOString()}] [Spotify Session Token Fetch Failed] Status: ${res.status}`, errBody);
-        if (res.status === 401) {
+  const maxAttempts = 2;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const res = await fetch('/api/spotify/session', {
+        credentials: 'include',
+        cache: 'no-store'
+      });
+      if (!res.ok) {
+        if (attempt < maxAttempts - 1) {
+          // Retry once on transient failure before invoking callback
+          continue;
+        }
+        const errBody = await res.json().catch(() => ({}));
+        if (!silent) {
+          console.error(`[${new Date().toISOString()}] [Spotify Session Token Fetch Failed] Status: ${res.status}`, errBody);
+          if (res.status === 401) {
+            loginRequiredCallback?.();
+          }
+        }
+        return null;
+      }
+      const data = await res.json();
+      if (!data.accessToken) {
+        if (attempt < maxAttempts - 1) {
+          // Retry once before invoking callback
+          continue;
+        }
+        if (!silent) {
+          console.error(`[${new Date().toISOString()}] [Spotify Session Token Missing] Response:`, data);
           loginRequiredCallback?.();
         }
+        return null;
       }
-      return null;
-    }
-    const data = await res.json();
-    if (!data.accessToken) {
+      sessionRecoveredCallback?.();
+      return data.accessToken;
+    } catch (err) {
+      if (attempt < maxAttempts - 1) {
+        continue;
+      }
       if (!silent) {
-        console.error(`[${new Date().toISOString()}] [Spotify Session Token Missing] Response:`, data);
-        loginRequiredCallback?.();
+        console.error(`[${new Date().toISOString()}] [Spotify Session Token Fetch Error]`, err);
       }
       return null;
     }
-    return data.accessToken;
-  } catch (err) {
-    if (!silent) {
-      console.error(`[${new Date().toISOString()}] [Spotify Session Token Fetch Error]`, err);
-    }
-    return null;
   }
+  return null;
 }
 
 export async function getFreshToken(options?: { silent?: boolean }): Promise<string | null> {
