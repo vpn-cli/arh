@@ -34,7 +34,7 @@ const MusicWorld = dynamic(() => import("./music/MusicWorld"), {
 const ScrapbookWorld = dynamic(() => import("./scrapbook/ScrapbookWorld"), {
   ssr: false,
   loading: () => (
-    <div className="min-h-screen w-full bg-[#0C0A15]" />
+    <div className="min-h-screen w-full bg-[#FFF4F6]" />
   ),
 });
 
