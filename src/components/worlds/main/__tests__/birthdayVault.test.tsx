@@ -67,7 +67,7 @@ describe("BirthdayVault Phase 02 Component", () => {
     const closingLine = screen.getByText(/okay, one nice thing: thanks for existing\. genuinely\./i);
     expect(closingLine).toBeDefined();
     expect(closingLine.className).toContain("font-letter-handwritten");
-    expect(closingLine.className).toContain("text-[#FF7597]");
+    expect(closingLine.className).toContain("text-[#C8436A]");
     expect(closingLine.className).toContain("mt-3");
 
     // Emoji span

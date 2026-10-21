@@ -114,7 +114,7 @@ export default function BirthdayVault() {
           first time for everything, i guess. don’t let it go to your head. there’s not much room up there anyway.
         </p>
 
-        <p className="mt-3 mb-6 font-letter-handwritten text-xs sm:text-sm text-[#FF7597] font-semibold leading-relaxed">
+        <p className="mt-3 mb-6 font-letter-handwritten text-sm sm:text-base text-[#C8436A] font-medium leading-relaxed">
           okay, one nice thing: thanks for existing. genuinely.{" "}
           <span
             className="font-sans inline-block"
