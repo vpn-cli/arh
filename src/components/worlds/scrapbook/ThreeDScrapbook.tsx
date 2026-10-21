@@ -902,7 +902,6 @@ export default function ThreeDScrapbook() {
   const carouselRafRef = useRef<number | null>(null);
   const carouselWheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const carouselScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const carouselScrollThrottleRef = useRef<NodeJS.Timeout | null>(null);
 
   // 3D Scrapbook wheel page-turning refs
   const lastBookWheelRef = useRef<number>(0);
@@ -914,9 +913,16 @@ export default function ThreeDScrapbook() {
       if (carouselRafRef.current) cancelAnimationFrame(carouselRafRef.current);
       if (carouselWheelTimeoutRef.current) clearTimeout(carouselWheelTimeoutRef.current);
       if (carouselScrollTimeoutRef.current) clearTimeout(carouselScrollTimeoutRef.current);
-      if (carouselScrollThrottleRef.current) clearTimeout(carouselScrollThrottleRef.current);
     };
   }, []);
+
+  // Cleanup carousel scroll debounce timer when inspectVisible becomes false
+  useEffect(() => {
+    if (!inspectVisible && carouselScrollTimeoutRef.current) {
+      clearTimeout(carouselScrollTimeoutRef.current);
+      carouselScrollTimeoutRef.current = null;
+    }
+  }, [inspectVisible]);
 
   const allImages = React.useMemo(() => {
     return appSpreads
@@ -994,18 +1000,12 @@ export default function ThreeDScrapbook() {
   }, []);
 
   const handleCarouselScroll = useCallback(() => {
-    if (!carouselScrollThrottleRef.current) {
-      carouselScrollThrottleRef.current = setTimeout(() => {
-        carouselScrollThrottleRef.current = null;
-        updateCenteredInspectIndex();
-      }, 40);
-    }
     if (carouselScrollTimeoutRef.current) {
       clearTimeout(carouselScrollTimeoutRef.current);
     }
     carouselScrollTimeoutRef.current = setTimeout(() => {
       updateCenteredInspectIndex();
-    }, 80);
+    }, 150);
   }, [updateCenteredInspectIndex]);
 
   const handleCarouselWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
@@ -1121,16 +1121,16 @@ export default function ThreeDScrapbook() {
       clearTimeout(carouselScrollTimeoutRef.current);
       carouselScrollTimeoutRef.current = null;
     }
-    if (carouselScrollThrottleRef.current) {
-      clearTimeout(carouselScrollThrottleRef.current);
-      carouselScrollThrottleRef.current = null;
-    }
     carouselTargetScrollRef.current = null;
 
     if (overlayRef.current) {
       overlayRef.current.style.opacity = '0';
       overlayRef.current.style.transform = 'scale(0.98)';
       setTimeout(() => {
+        if (carouselScrollTimeoutRef.current) {
+          clearTimeout(carouselScrollTimeoutRef.current);
+          carouselScrollTimeoutRef.current = null;
+        }
         setInspectVisible(false);
         setInspectImage(null);
         setCarouselReady(false);
