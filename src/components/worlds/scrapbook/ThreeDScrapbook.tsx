@@ -895,11 +895,14 @@ export default function ThreeDScrapbook() {
   const carouselDragRef = useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
   const [inspectVisible, setInspectVisible] = useState(false);
   const [carouselReady, setCarouselReady] = useState(false);
+  const [inspectIndex, setInspectIndex] = useState(0);
 
   // Smooth scroll & momentum physics refs for inspect carousel
   const carouselTargetScrollRef = useRef<number | null>(null);
   const carouselRafRef = useRef<number | null>(null);
   const carouselWheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const carouselScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const carouselScrollThrottleRef = useRef<NodeJS.Timeout | null>(null);
 
   // 3D Scrapbook wheel page-turning refs
   const lastBookWheelRef = useRef<number>(0);
@@ -910,6 +913,8 @@ export default function ThreeDScrapbook() {
     return () => {
       if (carouselRafRef.current) cancelAnimationFrame(carouselRafRef.current);
       if (carouselWheelTimeoutRef.current) clearTimeout(carouselWheelTimeoutRef.current);
+      if (carouselScrollTimeoutRef.current) clearTimeout(carouselScrollTimeoutRef.current);
+      if (carouselScrollThrottleRef.current) clearTimeout(carouselScrollThrottleRef.current);
     };
   }, []);
 
@@ -937,16 +942,20 @@ export default function ThreeDScrapbook() {
     if (items.length === 0) return;
 
     let closestItem = items[0];
+    let closestIdx = 0;
     let minDiff = Infinity;
 
-    items.forEach((item) => {
+    items.forEach((item, index) => {
       const itemCenter = item.offsetLeft + item.offsetWidth / 2;
       const diff = Math.abs(containerCenter - itemCenter);
       if (diff < minDiff) {
         minDiff = diff;
         closestItem = item;
+        closestIdx = index;
       }
     });
+
+    setInspectIndex(closestIdx);
 
     const targetLeft =
       closestItem.offsetLeft - container.clientWidth / 2 + closestItem.offsetWidth / 2;
@@ -961,6 +970,43 @@ export default function ThreeDScrapbook() {
       }
     }, 350);
   }, []);
+
+  const updateCenteredInspectIndex = useCallback(() => {
+    const container = carouselRef.current;
+    if (!container) return;
+    const containerCenter = container.scrollLeft + container.clientWidth / 2;
+    const items = Array.from(container.children).filter(
+      (c) => c.tagName !== 'STYLE' && (c as HTMLElement).offsetLeft !== undefined
+    ) as HTMLElement[];
+    if (items.length === 0) return;
+
+    let closestIdx = 0;
+    let minDiff = Infinity;
+    items.forEach((item, index) => {
+      const itemCenter = item.offsetLeft + item.offsetWidth / 2;
+      const diff = Math.abs(containerCenter - itemCenter);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIdx = index;
+      }
+    });
+    setInspectIndex((prev) => (prev !== closestIdx ? closestIdx : prev));
+  }, []);
+
+  const handleCarouselScroll = useCallback(() => {
+    if (!carouselScrollThrottleRef.current) {
+      carouselScrollThrottleRef.current = setTimeout(() => {
+        carouselScrollThrottleRef.current = null;
+        updateCenteredInspectIndex();
+      }, 40);
+    }
+    if (carouselScrollTimeoutRef.current) {
+      clearTimeout(carouselScrollTimeoutRef.current);
+    }
+    carouselScrollTimeoutRef.current = setTimeout(() => {
+      updateCenteredInspectIndex();
+    }, 80);
+  }, [updateCenteredInspectIndex]);
 
   const handleCarouselWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
     const container = carouselRef.current;
@@ -1027,6 +1073,7 @@ export default function ThreeDScrapbook() {
     // Preload full version only for clicked image and its immediate neighbours (+/-1)
     const idx = allImages.indexOf(src);
     if (idx !== -1) {
+      setInspectIndex(idx);
       const toPreloadIndices = [idx - 1, idx, idx + 1];
       toPreloadIndices.forEach((i) => {
         if (i >= 0 && i < allImages.length) {
@@ -1069,6 +1116,14 @@ export default function ThreeDScrapbook() {
     if (carouselWheelTimeoutRef.current) {
       clearTimeout(carouselWheelTimeoutRef.current);
       carouselWheelTimeoutRef.current = null;
+    }
+    if (carouselScrollTimeoutRef.current) {
+      clearTimeout(carouselScrollTimeoutRef.current);
+      carouselScrollTimeoutRef.current = null;
+    }
+    if (carouselScrollThrottleRef.current) {
+      clearTimeout(carouselScrollThrottleRef.current);
+      carouselScrollThrottleRef.current = null;
     }
     carouselTargetScrollRef.current = null;
 
@@ -1418,6 +1473,7 @@ export default function ThreeDScrapbook() {
             className={`w-full h-full flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory items-center px-[50vw] gap-2 sm:gap-4 ${carouselReady ? 'scroll-smooth' : ''} cursor-grab active:cursor-grabbing`}
             style={{ overscrollBehaviorX: 'none', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             onWheel={handleCarouselWheel}
+            onScroll={handleCarouselScroll}
             onPointerDown={(e) => {
               carouselDragRef.current.isDragging = true;
               carouselDragRef.current.startX = e.pageX;
@@ -1488,7 +1544,7 @@ export default function ThreeDScrapbook() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={
-                        inspectImage && Math.abs(i - allImages.indexOf(inspectImage)) <= 1
+                        inspectVisible && Math.abs(i - inspectIndex) <= 2
                           ? fullSrc(src)
                           : "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
                       }
