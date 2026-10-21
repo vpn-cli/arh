@@ -227,7 +227,20 @@ export default function MainWorld() {
                 className="mt-2 min-h-[44px] px-5 py-2.5 bg-[#FFEAA7] hover:bg-[#FFD868] text-[#3A2440] font-retro text-[10px] sm:text-xs tracking-wider font-bold rounded-xl border-2 border-[#3A2440] shadow-[3px_3px_0_#3A2440] hover:shadow-[1px_1px_0_#3A2440] hover:translate-x-[2px] hover:translate-y-[2px] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A2440] focus-visible:ring-offset-2 transition-all cursor-pointer flex items-center gap-2"
               >
                 <span>BYPASS &amp; SKIP TERMINAL</span>
-                <span aria-hidden="true">⏩</span>
+                <svg
+                  width="1em"
+                  height="1em"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="shrink-0"
+                >
+                  <path d="M6 17l5-5-5-5M13 17l5-5-5-5" />
+                </svg>
               </button>
             </div>
           ) : (
