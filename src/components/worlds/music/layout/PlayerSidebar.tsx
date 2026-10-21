@@ -72,7 +72,7 @@ export const PlayerSidebar = React.memo(function PlayerSidebar({
         <StickerIcon name="kawaiiCard" size={60} className="w-[60px] h-[60px] object-contain shrink-0" />
         <div>
           <div className="font-pixel text-body font-bold text-[var(--color-dark)] whitespace-nowrap">{SIDEBAR_CARD_TITLE}</div>
-          <div className="font-pixel text-caption text-[var(--color-dark)] font-medium whitespace-nowrap">{SIDEBAR_CARD_SUBTITLE}</div>
+          <div className="font-pixel text-caption text-[var(--on-vibrant)] bg-[var(--color-vibrant)] font-bold px-2.5 py-0.5 rounded-full inline-block whitespace-nowrap">{SIDEBAR_CARD_SUBTITLE}</div>
         </div>
       </div>
 
