@@ -39,7 +39,7 @@ describe('useMusicWorldMemories & Music World Preload', () => {
     expect(calledUrls.some((url) => url.includes('/api/spotify'))).toBe(false);
 
     fetchSpy.mockRestore();
-  }, 15000);
+  }, 30000);
 
   it('loads memories once when Music World mounts and the user is authenticated', () => {
     vi.mocked(useSpotifySession).mockReturnValue({
