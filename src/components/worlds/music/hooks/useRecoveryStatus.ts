@@ -61,8 +61,8 @@ export function useRecoveryStatus({
   }, []);
 
   useEffect(() => {
-    onLoginRequired(() => setShowLoginPrompt(true));
-    onSessionRecovered(() => {
+    const unsubLogin = onLoginRequired(() => setShowLoginPrompt(true));
+    const unsubSession = onSessionRecovered(() => {
       const wasPromptShowing = showLoginPromptRef.current;
       setShowLoginPrompt(false);
       if (wasPromptShowing) {
@@ -80,8 +80,8 @@ export function useRecoveryStatus({
       },
     });
     return () => {
-      onLoginRequired(null);
-      onSessionRecovered(null);
+      unsubLogin();
+      unsubSession();
       unsubscribe();
     };
   }, [setDeviceId, deviceIdRef]);

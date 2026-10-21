@@ -195,4 +195,34 @@ describe('useRecoveryStatus - session expiration and recovery', () => {
     expect(mockRefetch).toHaveBeenCalledTimes(1);
     expect(result.current.isSessionExpired).toBe(false);
   });
+
+  it('crossfade regression: unmounting an outgoing instance does not clobber the surviving instance', async () => {
+    // Two instances mounted concurrently during crossfade (like WorldRouter outgoingContainerRef)
+    const { unmount: unmountOutgoing } = renderHook(() => useRecoveryStatus());
+    const { result: survivingResult } = renderHook(() => useRecoveryStatus());
+
+    // Outgoing instance unmounts as crossfade finishes
+    unmountOutgoing();
+
+    // Session expires on surviving instance
+    (global.fetch as any)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' }),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' }),
+      });
+
+    await act(async () => {
+      await getFreshToken();
+    });
+
+    // Surviving instance MUST receive the expiration callback
+    expect(survivingResult.current.isSessionExpired).toBe(true);
+  });
 });
+

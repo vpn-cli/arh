@@ -477,4 +477,97 @@ describe('spotifyClient (Fail-Safe API Proxy with Unified Recovery)', () => {
     expect(caughtError.message).not.toContain('Missing Scopes');
     expect(global.fetch).toHaveBeenCalledTimes(1); // Never retried
   });
+
+  describe('multi-subscriber callback registry (regression: callback clobbering)', () => {
+    it('with two onLoginRequired subscribers registered, unsubscribing one leaves the other receiving callbacks', async () => {
+      const { onLoginRequired, getFreshToken } = await import('../spotifyClient');
+      const cb1 = vi.fn();
+      const cb2 = vi.fn();
+
+      const unsub1 = onLoginRequired(cb1);
+      const unsub2 = onLoginRequired(cb2);
+
+      // Unsubscribe the first subscriber
+      unsub1();
+
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: async () => ({ error: 'Unauthorized' }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: async () => ({ error: 'Unauthorized' }),
+        });
+
+      await getFreshToken();
+
+      expect(cb1).not.toHaveBeenCalled();
+      expect(cb2).toHaveBeenCalledTimes(1);
+
+      unsub2();
+    });
+
+    it('with two onSessionRecovered subscribers registered, unsubscribing one leaves the other receiving callbacks', async () => {
+      const { onSessionRecovered, getFreshToken } = await import('../spotifyClient');
+      const cb1 = vi.fn();
+      const cb2 = vi.fn();
+
+      const unsub1 = onSessionRecovered(cb1);
+      const unsub2 = onSessionRecovered(cb2);
+
+      // Unsubscribe the first subscriber
+      unsub1();
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ accessToken: 'recovered_tok' }),
+      });
+
+      await getFreshToken();
+
+      expect(cb1).not.toHaveBeenCalled();
+      expect(cb2).toHaveBeenCalledTimes(1);
+
+      unsub2();
+    });
+
+    it('one throwing subscriber does not block subsequent subscribers from running', async () => {
+      const { onLoginRequired, getFreshToken } = await import('../spotifyClient');
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const throwingCb = vi.fn(() => {
+        throw new Error('boom');
+      });
+      const healthyCb = vi.fn();
+
+      const unsubThrowing = onLoginRequired(throwingCb);
+      const unsubHealthy = onLoginRequired(healthyCb);
+
+      (global.fetch as any)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: async () => ({ error: 'Unauthorized' }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: async () => ({ error: 'Unauthorized' }),
+        });
+
+      await getFreshToken();
+
+      expect(throwingCb).toHaveBeenCalledTimes(1);
+      expect(healthyCb).toHaveBeenCalledTimes(1);
+
+      unsubThrowing();
+      unsubHealthy();
+      errorSpy.mockRestore();
+    });
+  });
 });
+

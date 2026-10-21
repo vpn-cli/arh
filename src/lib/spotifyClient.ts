@@ -7,16 +7,50 @@ export { clearClientSpotifyLock };
 // Concurrency of 2, interval of 200ms between processing up to 2 items
 export const spotifyQueue = new PQueue({ concurrency: 2, interval: 200, intervalCap: 2 });
 
-let loginRequiredCallback: (() => void) | null = null;
-let sessionRecoveredCallback: (() => void) | null = null;
+const loginRequiredSubscribers = new Set<() => void>();
+const sessionRecoveredSubscribers = new Set<() => void>();
 let customRecoveryHandler: ((reason?: string) => Promise<string>) | null = null;
 
-export function onLoginRequired(cb: (() => void) | null) {
-  loginRequiredCallback = cb;
+function notifyLoginRequired() {
+  loginRequiredSubscribers.forEach((cb) => {
+    try {
+      cb();
+    } catch (err) {
+      console.error('[spotifyClient] loginRequired listener error:', err);
+    }
+  });
 }
 
-export function onSessionRecovered(cb: (() => void) | null) {
-  sessionRecoveredCallback = cb;
+function notifySessionRecovered() {
+  sessionRecoveredSubscribers.forEach((cb) => {
+    try {
+      cb();
+    } catch (err) {
+      console.error('[spotifyClient] sessionRecovered listener error:', err);
+    }
+  });
+}
+
+export function onLoginRequired(cb: (() => void) | null): () => void {
+  if (!cb) {
+    loginRequiredSubscribers.clear();
+    return () => {};
+  }
+  loginRequiredSubscribers.add(cb);
+  return () => {
+    loginRequiredSubscribers.delete(cb);
+  };
+}
+
+export function onSessionRecovered(cb: (() => void) | null): () => void {
+  if (!cb) {
+    sessionRecoveredSubscribers.clear();
+    return () => {};
+  }
+  sessionRecoveredSubscribers.add(cb);
+  return () => {
+    sessionRecoveredSubscribers.delete(cb);
+  };
 }
 
 export function registerDeviceRecoveryHandler(handler: ((reason?: string) => Promise<string>) | null) {
@@ -44,7 +78,7 @@ async function fetchSessionToken(silent = false): Promise<string | null> {
         if (!silent) {
           console.error(`[${new Date().toISOString()}] [Spotify Session Token Fetch Failed] Status: ${res.status}`, errBody);
           if (res.status === 401) {
-            loginRequiredCallback?.();
+            notifyLoginRequired();
           }
         }
         return null;
@@ -58,11 +92,11 @@ async function fetchSessionToken(silent = false): Promise<string | null> {
         }
         if (!silent) {
           console.error(`[${new Date().toISOString()}] [Spotify Session Token Missing] Response:`, data);
-          loginRequiredCallback?.();
+          notifyLoginRequired();
         }
         return null;
       }
-      sessionRecoveredCallback?.();
+      notifySessionRecovered();
       return data.accessToken;
     } catch (err) {
       if (attempt < maxAttempts - 1) {
@@ -161,7 +195,7 @@ async function doFetch(
           return doFetch(endpoint, options, retryAttempts);
         }
       }
-      loginRequiredCallback?.();
+      notifyLoginRequired();
       throw { status: 401, message: 'Unauthorized (Session Expired)', details: errorData };
     }
 
