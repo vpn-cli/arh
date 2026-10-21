@@ -157,7 +157,7 @@ export const QueuePanel = memo(function QueuePanel({
       </div>
 
       {/* Tracks List */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1">
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1 pb-8 [mask-image:linear-gradient(to_bottom,black_calc(100%-32px),transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-32px),transparent_100%)]">
         {rightPanelTab === 'queue' ? (
           upcomingQueue.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center px-2 py-4">
