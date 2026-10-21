@@ -895,91 +895,12 @@ export default function ThreeDScrapbook() {
   const carouselDragRef = useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
   const [inspectVisible, setInspectVisible] = useState(false);
   const [carouselReady, setCarouselReady] = useState(false);
-  const [inspectIndex, setInspectIndex] = useState(0);
-  const [openedIndex, setOpenedIndex] = useState(0);
-  const inspectIndexRef = useRef(inspectIndex);
-  inspectIndexRef.current = inspectIndex;
-
-  const [loadedCardsVersion, setLoadedCardsVersion] = useState(0);
-  const fullLoadedLruRef = useRef<number[]>([]);
-  const shownIndicesRef = useRef<Set<number>>(new Set());
-
-  const markCardLoaded = useCallback((idx: number, currentSrc: string, itemSrc: string) => {
-    let changed = false;
-
-    // Record on ANY non-data: load, including onError fallbacks (grid or original)
-    if (!shownIndicesRef.current.has(idx)) {
-      shownIndicesRef.current.add(idx);
-      changed = true;
-    }
-
-    // fullLoaded (the existing 12-cap LRU): record ONLY when loaded URL is the full-size URL
-    let isFullSize = false;
-    try {
-      const loc = typeof window !== "undefined" ? window.location.href : "http://localhost";
-      isFullSize = new URL(currentSrc, loc).pathname === new URL(fullSrc(itemSrc), loc).pathname;
-    } catch {
-      isFullSize = currentSrc.includes("/full/");
-    }
-
-    if (isFullSize) {
-      const list = fullLoadedLruRef.current;
-      const pos = list.indexOf(idx);
-
-      if (pos === -1) {
-        list.push(idx);
-        changed = true;
-      } else {
-        // Re-order to end (most recently used)
-        list.splice(pos, 1);
-        list.push(idx);
-      }
-
-      // Cap at 12 entries. When it exceeds 12, evict the least recently viewed index that is NOT inside the current +/-2 window.
-      while (list.length > 12) {
-        const evictIdx = list.findIndex(
-          (cardIdx) => Math.abs(cardIdx - inspectIndexRef.current) > 2
-        );
-        if (evictIdx !== -1) {
-          list.splice(evictIdx, 1);
-          changed = true;
-        } else {
-          break;
-        }
-      }
-    }
-
-    if (changed) {
-      setLoadedCardsVersion((v) => v + 1);
-    }
-  }, []);
-
-  // When inspectIndex settles on an index that is in the list, move it to the end
-  useEffect(() => {
-    if (!inspectVisible) return;
-    const list = fullLoadedLruRef.current;
-    const pos = list.indexOf(inspectIndex);
-    if (pos !== -1 && pos !== list.length - 1) {
-      list.splice(pos, 1);
-      list.push(inspectIndex);
-    }
-  }, [inspectIndex, inspectVisible]);
-
-  const fullLoadedSet = React.useMemo(
-    () => new Set(fullLoadedLruRef.current),
-    [loadedCardsVersion]
-  );
-
-  const shownSet = React.useMemo(
-    () => new Set(shownIndicesRef.current),
-    [loadedCardsVersion]
-  );
+  const [hasOpenedInspect, setHasOpenedInspect] = useState(false);
 
   // Smooth scroll & momentum physics refs for inspect carousel
   const carouselTargetScrollRef = useRef<number | null>(null);
   const carouselRafRef = useRef<number | null>(null);
   const carouselWheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const carouselScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 3D Scrapbook wheel page-turning refs
   const lastBookWheelRef = useRef<number>(0);
@@ -990,17 +911,8 @@ export default function ThreeDScrapbook() {
     return () => {
       if (carouselRafRef.current) cancelAnimationFrame(carouselRafRef.current);
       if (carouselWheelTimeoutRef.current) clearTimeout(carouselWheelTimeoutRef.current);
-      if (carouselScrollTimeoutRef.current) clearTimeout(carouselScrollTimeoutRef.current);
     };
   }, []);
-
-  // Cleanup carousel scroll debounce timer when inspectVisible becomes false
-  useEffect(() => {
-    if (!inspectVisible && carouselScrollTimeoutRef.current) {
-      clearTimeout(carouselScrollTimeoutRef.current);
-      carouselScrollTimeoutRef.current = null;
-    }
-  }, [inspectVisible]);
 
   const allImages = React.useMemo(() => {
     return appSpreads
@@ -1026,20 +938,16 @@ export default function ThreeDScrapbook() {
     if (items.length === 0) return;
 
     let closestItem = items[0];
-    let closestIdx = 0;
     let minDiff = Infinity;
 
-    items.forEach((item, index) => {
+    items.forEach((item) => {
       const itemCenter = item.offsetLeft + item.offsetWidth / 2;
       const diff = Math.abs(containerCenter - itemCenter);
       if (diff < minDiff) {
         minDiff = diff;
         closestItem = item;
-        closestIdx = index;
       }
     });
-
-    setInspectIndex(closestIdx);
 
     const targetLeft =
       closestItem.offsetLeft - container.clientWidth / 2 + closestItem.offsetWidth / 2;
@@ -1054,37 +962,6 @@ export default function ThreeDScrapbook() {
       }
     }, 350);
   }, []);
-
-  const updateCenteredInspectIndex = useCallback(() => {
-    const container = carouselRef.current;
-    if (!container) return;
-    const containerCenter = container.scrollLeft + container.clientWidth / 2;
-    const items = Array.from(container.children).filter(
-      (c) => c.tagName !== 'STYLE' && (c as HTMLElement).offsetLeft !== undefined
-    ) as HTMLElement[];
-    if (items.length === 0) return;
-
-    let closestIdx = 0;
-    let minDiff = Infinity;
-    items.forEach((item, index) => {
-      const itemCenter = item.offsetLeft + item.offsetWidth / 2;
-      const diff = Math.abs(containerCenter - itemCenter);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestIdx = index;
-      }
-    });
-    setInspectIndex((prev) => (prev !== closestIdx ? closestIdx : prev));
-  }, []);
-
-  const handleCarouselScroll = useCallback(() => {
-    if (carouselScrollTimeoutRef.current) {
-      clearTimeout(carouselScrollTimeoutRef.current);
-    }
-    carouselScrollTimeoutRef.current = setTimeout(() => {
-      updateCenteredInspectIndex();
-    }, 150);
-  }, [updateCenteredInspectIndex]);
 
   const handleCarouselWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
     const container = carouselRef.current;
@@ -1144,6 +1021,7 @@ export default function ThreeDScrapbook() {
 
   const openInspect = useCallback((src: string | null) => {
     if (!src || src.endsWith('.mp4') || src.endsWith('.webm')) return;
+    setHasOpenedInspect(true);
     setCarouselReady(false);
     setInspectImage(src);
     setInspectVisible(true);
@@ -1151,8 +1029,6 @@ export default function ThreeDScrapbook() {
     // Preload full version only for clicked image and its immediate neighbours (+/-1)
     const idx = allImages.indexOf(src);
     if (idx !== -1) {
-      setInspectIndex(idx);
-      setOpenedIndex(idx);
       const toPreloadIndices = [idx - 1, idx, idx + 1];
       toPreloadIndices.forEach((i) => {
         if (i >= 0 && i < allImages.length) {
@@ -1196,20 +1072,12 @@ export default function ThreeDScrapbook() {
       clearTimeout(carouselWheelTimeoutRef.current);
       carouselWheelTimeoutRef.current = null;
     }
-    if (carouselScrollTimeoutRef.current) {
-      clearTimeout(carouselScrollTimeoutRef.current);
-      carouselScrollTimeoutRef.current = null;
-    }
     carouselTargetScrollRef.current = null;
 
     if (overlayRef.current) {
       overlayRef.current.style.opacity = '0';
       overlayRef.current.style.transform = 'scale(0.98)';
       setTimeout(() => {
-        if (carouselScrollTimeoutRef.current) {
-          clearTimeout(carouselScrollTimeoutRef.current);
-          carouselScrollTimeoutRef.current = null;
-        }
         setInspectVisible(false);
         setInspectImage(null);
         setCarouselReady(false);
@@ -1552,7 +1420,6 @@ export default function ThreeDScrapbook() {
             className={`w-full h-full flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory items-center px-[50vw] gap-2 sm:gap-4 ${carouselReady ? 'scroll-smooth' : ''} cursor-grab active:cursor-grabbing`}
             style={{ overscrollBehaviorX: 'none', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             onWheel={handleCarouselWheel}
-            onScroll={handleCarouselScroll}
             onPointerDown={(e) => {
               carouselDragRef.current.isDragging = true;
               carouselDragRef.current.startX = e.pageX;
@@ -1619,60 +1486,26 @@ export default function ThreeDScrapbook() {
                   </div>
 
                   {/* Inner Photo Frame */}
-                  <div
-                    className="relative overflow-hidden rounded-xl border border-white/40 bg-white/20 shadow-sm pointer-events-auto"
-                    onContextMenu={(e) => e.stopPropagation()}
-                  >
-                    {/* Thumbnail layer behind main image */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={
-                        inspectVisible
-                          ? gridSrc(src)
-                          : "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
-                      }
-                      loading="lazy"
-                      decoding="async"
-                      alt=""
-                      aria-hidden="true"
-                      draggable={false}
-                      className="absolute inset-0 w-full h-full object-contain rounded-lg pointer-events-none"
-                      style={{ pointerEvents: "none" }}
-                      onError={(e) => {
-                        e.currentTarget.style.visibility = "hidden";
-                      }}
-                    />
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={
-                        (inspectVisible && Math.abs(i - inspectIndex) <= 2) || fullLoadedSet.has(i)
-                          ? fullSrc(src)
-                          : "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="
-                      }
-                      alt="Memory"
-                      className="relative z-10 w-auto h-auto max-w-[85vw] sm:max-w-[70vw] max-h-[80vh] object-contain rounded-lg pointer-events-auto"
-                      fetchPriority={Math.abs(i - openedIndex) <= 1 ? "high" : "low"}
-                      decoding="async"
-                      style={{
-                        opacity: fullLoadedSet.has(i) || shownSet.has(i) ? 1 : 0,
-                        transition: "opacity 200ms ease",
-                      }}
-                      onLoad={(e) => {
-                        const currentSrc = e.currentTarget.currentSrc || e.currentTarget.src;
-                        if (!currentSrc || currentSrc.startsWith("data:")) return;
-                        markCardLoaded(i, currentSrc, src);
-                      }}
-                      onError={(e) => {
-                        const target = e.currentTarget;
-                        if (!target.dataset.fallback) {
-                          target.dataset.fallback = "grid";
-                          target.src = gridSrc(src);
-                        } else if (target.dataset.fallback === "grid") {
-                          target.dataset.fallback = "orig";
-                          target.src = src;
-                        }
-                      }}
-                    />
+                  <div className="overflow-hidden rounded-xl border border-white/40 bg-white/20 shadow-sm pointer-events-auto" onContextMenu={(e) => e.stopPropagation()}>
+                    {hasOpenedInspect && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={fullSrc(src)}
+                        alt="Memory"
+                        className="w-auto h-auto max-w-[85vw] sm:max-w-[70vw] max-h-[80vh] object-contain rounded-lg pointer-events-auto"
+                        decoding="async"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (!target.dataset.fallback) {
+                            target.dataset.fallback = "grid";
+                            target.src = gridSrc(src);
+                          } else if (target.dataset.fallback === "grid") {
+                            target.dataset.fallback = "orig";
+                            target.src = src;
+                          }
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
