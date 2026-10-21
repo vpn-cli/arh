@@ -26,8 +26,8 @@ const mockProps = {
 };
 
 describe('HeroSlideshow constants', () => {
-  it('has expected timing constants for 3 minute stays and 15s preloading', () => {
-    expect(STILL_MS).toBe(180000);
+  it('has expected timing constants for 7s stays and 15s preloading', () => {
+    expect(STILL_MS).toBe(7000);
     expect(ANIMATED_MS).toBe(180000);
     expect(FADE_MS).toBe(800);
     expect(PRELOAD_LEAD_MS).toBe(15000);

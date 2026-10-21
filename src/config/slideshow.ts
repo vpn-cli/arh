@@ -1,5 +1,5 @@
 // Generated automatically by slideshow scripts - DO NOT EDIT MANUALLY
-// Generated on: 2026-10-10T14:56:31.040Z
+// Generated on: 2026-10-21T15:10:32.835Z
 
 export interface SlideItem {
   src: string;
@@ -52,7 +52,19 @@ export const slideshowSlides: SlideItem[] = [
     "animated": false
   },
   {
+    "src": "/slideshow/m-hello-kitty-ipad-wallpaper-25ad7ada.webp",
+    "width": 1600,
+    "height": 364,
+    "animated": false
+  },
+  {
     "src": "/slideshow/m-io-d8097bd4.webp",
+    "width": 1600,
+    "height": 364,
+    "animated": false
+  },
+  {
+    "src": "/slideshow/m-melody-wallpaper-for-laptop-40d8ee43.webp",
     "width": 1600,
     "height": 364,
     "animated": false

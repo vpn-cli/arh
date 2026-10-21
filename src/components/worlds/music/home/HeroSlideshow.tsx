@@ -7,8 +7,9 @@ import { CurrentlyPlayingHero } from "./CurrentlyPlayingHero";
 import { SlideLayer } from "./SlideLayer";
 import { PlayIcon, PauseIcon } from "../icons";
 
-// Timing constants: each slide stays for 3 minutes (180s) by default
-export const STILL_MS = 180000;
+// Timing constants: each slide stays for 7s by default
+export const STILL_MS = 7000;
+// No current slide has animated: true, so this value is currently unused
 export const ANIMATED_MS = 180000;
 export const FADE_MS = 800;
 export const PRELOAD_LEAD_MS = 15000;
