@@ -15,7 +15,11 @@ import {
   seekSharedClock,
   setSharedPaused,
 } from "../playback/playbackClock";
-import { PLAYBACK_DEBUG, shouldIgnoreIncomingTrack } from "../playback/playbackHelpers";
+import {
+  PLAYBACK_DEBUG,
+  shouldIgnoreIncomingTrack,
+  setDeferredApplyCallback,
+} from "../playback/playbackHelpers";
 import { nextTrackGlobal } from "../playback/globalPlaybackActions";
 import { getPlayerQueue } from "@/lib/spotify/player";
 
@@ -106,6 +110,30 @@ export function usePlayerStateSync({
     };
   }, []);
 
+  // Apply queue cache updates and refresh when a deferred track is applied upon timer expiry
+  useEffect(() => {
+    return setDeferredApplyCallback((deferredTrack: any, nextTracks?: any[]) => {
+      queryClient.setQueryData(['spotify', 'playerQueue'], {
+        currently_playing: deferredTrack,
+        queue: nextTracks || [],
+      });
+
+      if (queueDebounceTimerRef.current) {
+        clearTimeout(queueDebounceTimerRef.current);
+      }
+      queueDebounceTimerRef.current = setTimeout(async () => {
+        try {
+          const freshQueue = await getPlayerQueue(true);
+          if (freshQueue) {
+            queryClient.setQueryData(['spotify', 'playerQueue'], freshQueue);
+          }
+        } catch (e) {
+          console.error('Debounced queue refresh error:', e);
+        }
+      }, 1500);
+    });
+  }, [queryClient]);
+
   const applyPlayerState = useCallback(
     async (state: any) => {
       if (!state) return;
@@ -113,10 +141,10 @@ export function usePlayerStateSync({
       const storeState = useSpotifyPlayerStore.getState();
 
       if (newTrack?.id !== storeState.currentTrack?.id) {
-        if (!shouldIgnoreIncomingTrack(newTrack?.id)) {
+        const nextTracks = state.track_window?.next_tracks || [];
+        if (!shouldIgnoreIncomingTrack(newTrack, undefined, nextTracks)) {
           setCurrentTrack(newTrack);
           // Update queue from SDK's track_window.next_tracks instead of invalidating query
-          const nextTracks = state.track_window?.next_tracks || [];
           queryClient.setQueryData(['spotify', 'playerQueue'], {
             currently_playing: newTrack,
             queue: nextTracks,

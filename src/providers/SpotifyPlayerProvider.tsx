@@ -321,7 +321,7 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
 
         const newTrack = state.track_window?.current_track;
         const store = useSpotifyPlayerStore.getState();
-        if (!shouldIgnoreIncomingTrack(newTrack?.id)) {
+        if (!shouldIgnoreIncomingTrack(newTrack)) {
           store.setCurrentTrack(newTrack);
         }
         store.setIsPaused(state.paused);

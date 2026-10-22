@@ -36,9 +36,6 @@ export const VinylRecord = memo(function VinylRecord({
   const targetTrackRef = useRef(currentTrack);
   const latestTrackRef = useRef(currentTrack);
   latestTrackRef.current = currentTrack;
-  const displayTrackRef = useRef(displayTrack);
-  displayTrackRef.current = displayTrack;
-  const isReconcilingRef = useRef(false);
   const trackChangeIndexRef = useRef(0);
   const isMidAnimationRef = useRef(false);
   const sleeveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -74,17 +71,14 @@ export const VinylRecord = memo(function VinylRecord({
   const snapToTrack = (track: any) => {
     if (sleeveTimerRef.current) clearTimeout(sleeveTimerRef.current);
     isMidAnimationRef.current = false;
-    isReconcilingRef.current = false;
     setSleevePhase('idle');
     setCurrentTrackChangeSticker(null);
     setDisplayTrack(track);
-    displayTrackRef.current = track;
     originTrackRef.current = track;
     targetTrackRef.current = track;
   };
 
   const startTransition = (target: any, isReconcile = false) => {
-    isReconcilingRef.current = isReconcile;
     if (reducedMotion || (typeof document !== 'undefined' && document.hidden)) {
       snapToTrack(target);
       return;
@@ -103,7 +97,6 @@ export const VinylRecord = memo(function VinylRecord({
     sleeveTimerRef.current = setTimeout(() => {
       const nextDisplay = latestTrackRef.current || target;
       setDisplayTrack(nextDisplay);
-      displayTrackRef.current = nextDisplay;
       setSleevePhase('slide-out');
 
       sleeveTimerRef.current = setTimeout(() => {
@@ -116,10 +109,8 @@ export const VinylRecord = memo(function VinylRecord({
         if (latest?.id && nextDisplay?.id !== latest.id && !isReconcile) {
           startTransition(latest, true);
         } else {
-          isReconcilingRef.current = false;
           if (latest && nextDisplay?.id !== latest.id) {
             setDisplayTrack(latest);
-            displayTrackRef.current = latest;
             originTrackRef.current = latest;
           }
         }
@@ -144,7 +135,6 @@ export const VinylRecord = memo(function VinylRecord({
 
     if (originTrackRef.current?.id === next.id) {
       setDisplayTrack(next);
-      displayTrackRef.current = next;
       return;
     }
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 
 export interface UsePlaybackActionsOptions {
   selectedDevice?: string;
@@ -105,15 +106,94 @@ export async function fetchRelevantTracks(track: any): Promise<any[]> {
 export const PLAYBACK_DEBUG = false;
 
 interface PendingPlay {
-  trackId: string;
+  trackId: string | null;
+  uri: string | null;
   timestamp: number;
 }
 
 let pendingPlay: PendingPlay | null = null;
+let lastIgnoredTrack: any = null;
+let lastIgnoredNextTracks: any[] = [];
+let pendingExpiryTimer: NodeJS.Timeout | null = null;
 
-export function recordPendingTrackId(trackId?: string | null): void {
-  if (trackId) {
-    pendingPlay = { trackId, timestamp: Date.now() };
+export type DeferredApplyCallback = (deferredTrack: any, nextTracks?: any[]) => void;
+let deferredApplyCallback: DeferredApplyCallback | null = null;
+
+export function setDeferredApplyCallback(cb: DeferredApplyCallback | null): () => void {
+  deferredApplyCallback = cb;
+  return () => {
+    if (deferredApplyCallback === cb) {
+      deferredApplyCallback = null;
+    }
+  };
+}
+
+export function clearPendingTrackId(): void {
+  if (pendingExpiryTimer) {
+    clearTimeout(pendingExpiryTimer);
+    pendingExpiryTimer = null;
+  }
+  pendingPlay = null;
+  lastIgnoredTrack = null;
+  lastIgnoredNextTracks = [];
+}
+
+export function recordPendingTrackId(trackId?: string | null, uri?: string | null): void {
+  if (pendingExpiryTimer) {
+    clearTimeout(pendingExpiryTimer);
+    pendingExpiryTimer = null;
+  }
+  lastIgnoredTrack = null;
+  lastIgnoredNextTracks = [];
+
+  const resolvedId =
+    trackId || (uri?.startsWith('spotify:track:') ? uri.split(':')[2] : null);
+  const resolvedUri =
+    uri || (resolvedId ? `spotify:track:${resolvedId}` : null);
+
+  if (resolvedId || resolvedUri) {
+    pendingPlay = {
+      trackId: resolvedId,
+      uri: resolvedUri,
+      timestamp: Date.now(),
+    };
+
+    pendingExpiryTimer = setTimeout(() => {
+      pendingExpiryTimer = null;
+      if (!pendingPlay) return;
+
+      const deferred = lastIgnoredTrack;
+      const nextTracks = lastIgnoredNextTracks;
+      pendingPlay = null;
+      lastIgnoredTrack = null;
+      lastIgnoredNextTracks = [];
+
+      if (deferred) {
+        const store = useSpotifyPlayerStore.getState();
+        const current = store.currentTrack;
+        const differs =
+          (deferred.id && deferred.id !== current?.id) ||
+          (deferred.uri && deferred.uri !== current?.uri) ||
+          (!deferred.id && !deferred.uri && deferred !== current);
+
+        if (differs) {
+          store.setCurrentTrack(deferred);
+          if (store.queue.length > 0) {
+            const idx = store.queue.findIndex(
+              (item) =>
+                (item.track?.id && item.track.id === deferred.id) ||
+                (item.track?.uri && item.track.uri === deferred.uri)
+            );
+            if (idx !== -1 && idx !== store.queueIndex) {
+              store.setQueueIndex(idx);
+            }
+          }
+          if (deferredApplyCallback) {
+            deferredApplyCallback(deferred, nextTracks);
+          }
+        }
+      }
+    }, 3000);
   } else {
     pendingPlay = null;
   }
@@ -122,26 +202,72 @@ export function recordPendingTrackId(trackId?: string | null): void {
 export function getPendingTrackId(): string | null {
   if (!pendingPlay) return null;
   if (Date.now() - pendingPlay.timestamp >= 3000) {
-    pendingPlay = null;
+    clearPendingTrackId();
     return null;
   }
   return pendingPlay.trackId;
 }
 
-export function clearPendingTrackId(): void {
-  pendingPlay = null;
+export function getLastIgnoredTrack(): any {
+  return lastIgnoredTrack;
 }
 
-export function shouldIgnoreIncomingTrack(incomingTrackId?: string | null): boolean {
+export function shouldIgnoreIncomingTrack(
+  incomingTrackOrId?: any,
+  linkedFromId?: string | null,
+  nextTracks?: any[]
+): boolean {
   if (!pendingPlay) return false;
   if (Date.now() - pendingPlay.timestamp >= 3000) {
-    pendingPlay = null;
+    clearPendingTrackId();
     return false;
   }
-  if (incomingTrackId && incomingTrackId === pendingPlay.trackId) {
-    pendingPlay = null;
+
+  let incomingId: string | null = null;
+  let incomingLinkedFromId: string | null = linkedFromId || null;
+  let incomingUri: string | null = null;
+  let trackObj: any = null;
+
+  if (incomingTrackOrId && typeof incomingTrackOrId === 'object') {
+    trackObj = incomingTrackOrId;
+    incomingId =
+      trackObj.id ||
+      (trackObj.uri?.startsWith('spotify:track:') ? trackObj.uri.split(':')[2] : null);
+    incomingLinkedFromId = trackObj.linked_from?.id || linkedFromId || null;
+    incomingUri =
+      trackObj.uri || (incomingId ? `spotify:track:${incomingId}` : null);
+  } else if (typeof incomingTrackOrId === 'string') {
+    incomingId = incomingTrackOrId.startsWith('spotify:track:')
+      ? incomingTrackOrId.split(':')[2]
+      : incomingTrackOrId;
+    incomingUri = incomingTrackOrId.startsWith('spotify:track:')
+      ? incomingTrackOrId
+      : `spotify:track:${incomingTrackOrId}`;
+    trackObj = { id: incomingId, uri: incomingUri };
+  }
+
+  const matchesId = Boolean(
+    (pendingPlay.trackId && incomingId && incomingId === pendingPlay.trackId) ||
+    (pendingPlay.trackId && incomingLinkedFromId && incomingLinkedFromId === pendingPlay.trackId)
+  );
+
+  const matchesUri = Boolean(
+    (pendingPlay.uri && incomingUri && incomingUri === pendingPlay.uri) ||
+    (pendingPlay.uri && trackObj?.linked_from?.uri && trackObj.linked_from.uri === pendingPlay.uri)
+  );
+
+  if (matchesId || matchesUri) {
+    clearPendingTrackId();
     return false;
   }
+
+  if (trackObj) {
+    lastIgnoredTrack = trackObj;
+    if (nextTracks) {
+      lastIgnoredNextTracks = nextTracks;
+    }
+  }
+
   return true;
 }
 
@@ -177,13 +303,13 @@ export async function executeContinuousPlayTrack(
   setStoreQueueIndex: (index: number) => void
 ): Promise<void> {
   const resolvedTrack = track;
+  const resolvedUri = resolvedTrack?.uri || uri;
   const resolvedId =
     resolvedTrack?.id ||
-    (resolvedTrack?.uri?.startsWith('spotify:track:') ? resolvedTrack.uri.split(':')[2] : null);
-  if (resolvedId) {
-    recordPendingTrackId(resolvedId);
+    (resolvedUri?.startsWith('spotify:track:') ? resolvedUri.split(':')[2] : null);
+  if (resolvedId || resolvedUri) {
+    recordPendingTrackId(resolvedId, resolvedUri);
   }
-  const { useSpotifyPlayerStore } = await import('@/store/spotifyStore');
   if (resolvedTrack) {
     useSpotifyPlayerStore.getState().setCurrentTrack?.(resolvedTrack);
   }
@@ -257,7 +383,6 @@ export async function executePlayTracks(
 
   const selectedTrack = extractTrack(tracksList?.[startIndex]);
   if (selectedTrack) {
-    const { useSpotifyPlayerStore } = await import('@/store/spotifyStore');
     useSpotifyPlayerStore.getState().setCurrentTrack(selectedTrack);
   }
 }
