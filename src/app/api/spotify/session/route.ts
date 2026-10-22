@@ -75,15 +75,11 @@ export async function GET() {
     } else {
       // Differentiate between revoked token (invalid_grant) and transient blip / Spotify 5xx
       if (refreshResult.isInvalidGrant) {
-        console.warn(`[${new Date().toISOString()}] [Spotify Session] Refresh token rejected with invalid_grant. Clearing session cookies.`);
-        const res = NextResponse.json(
+        console.warn(`[${new Date().toISOString()}] [Spotify Session] Refresh token rejected with invalid_grant. Retaining session cookies.`);
+        return NextResponse.json(
           { error: 'Session expired', details: refreshResult.errorText },
           { status: 401 }
         );
-        res.cookies.delete('spotify_access_token');
-        res.cookies.delete('spotify_token_expires_at');
-        res.cookies.delete('spotify_refresh_token');
-        return res;
       } else {
         // Transient network or Spotify 5xx error: DO NOT delete cookies.
         console.warn(`[${new Date().toISOString()}] [Spotify Session] Transient refresh error (${refreshResult.status}). Retaining cookies.`);

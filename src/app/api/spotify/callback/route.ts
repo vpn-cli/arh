@@ -44,17 +44,12 @@ export async function GET(request: NextRequest) {
       // Create a response that redirects back to the main app
       const res = NextResponse.redirect(`${protocol}//${host}/?spotify_auth=success`);
       
-      const cookieDomain = (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
-        ? undefined
-        : url.hostname;
-
-      // Set secure HttpOnly cookies
+      // Set secure HttpOnly host-only cookies
       res.cookies.set('spotify_access_token', response.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         path: '/',
         maxAge: response.expires_in,
-        ...(cookieDomain ? { domain: cookieDomain } : {}),
       });
 
       const expiresAt = Date.now() + (response.expires_in * 1000);
@@ -63,7 +58,6 @@ export async function GET(request: NextRequest) {
         secure: process.env.NODE_ENV === 'production',
         path: '/',
         maxAge: 60 * 60 * 24 * 30, // 30 days
-        ...(cookieDomain ? { domain: cookieDomain } : {}),
       });
 
       if (response.refresh_token) {
@@ -72,11 +66,31 @@ export async function GET(request: NextRequest) {
           secure: process.env.NODE_ENV === 'production',
           path: '/',
           maxAge: 60 * 60 * 24 * 30, // 30 days
-          ...(cookieDomain ? { domain: cookieDomain } : {}),
         });
       }
       
       res.cookies.delete('spotify_code_verifier');
+
+      // Cleanup legacy domain-scoped cookies for existing visitors
+      const legacyDomain = (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
+        ? undefined
+        : url.hostname;
+      if (legacyDomain) {
+        const secureFlag = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+        const cookieNames = [
+          'spotify_access_token',
+          'spotify_token_expires_at',
+          'spotify_refresh_token',
+          'spotify_code_verifier',
+        ];
+        for (const name of cookieNames) {
+          res.headers.append(
+            'Set-Cookie',
+            `${name}=; Path=/; Domain=${legacyDomain}; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly${secureFlag}`
+          );
+        }
+      }
+
       return res;
     } else {
       console.error("Spotify token exchange error:", response);
