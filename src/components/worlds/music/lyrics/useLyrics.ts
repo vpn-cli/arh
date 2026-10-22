@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { attachEstimatedWordTimings, LyricLine } from '@/lib/lyrics';
-export { getArtistNames } from '@/lib/lyricsLookup';
+import { getArtistNames } from '@/lib/artistNames';
 
 export type LyricsStatus = 'loading' | 'found' | 'instrumental' | 'not_found' | 'error';
 
@@ -225,15 +225,17 @@ export function useLyrics(
     }
   }, []);
 
+  const resolvedPrimary = primaryArtist || (artistName ? getArtistNames({ artist: artistName }).primary : undefined);
+
   const retryLyrics = useCallback(async () => {
     if (!trackId) return;
     clearCachedLyrics(trackId);
     setIsLyricsLoading(true);
-    const data = await prefetchLyrics(trackId, trackName, artistName, true, primaryArtist);
+    const data = await prefetchLyrics(trackId, trackName, artistName, true, resolvedPrimary);
     setBaseLyricsData(data);
     setOffsetMsState(data?.offsetMs ?? 0);
     setIsLyricsLoading(false);
-  }, [trackId, trackName, artistName, primaryArtist]);
+  }, [trackId, trackName, artistName, resolvedPrimary]);
 
   useEffect(() => {
     if (!trackId) return;
@@ -244,7 +246,7 @@ export function useLyrics(
 
     let isCancelled = false;
 
-    prefetchLyrics(trackId, trackName, artistName, false, primaryArtist).then((data) => {
+    prefetchLyrics(trackId, trackName, artistName, false, resolvedPrimary).then((data) => {
       if (isCancelled) return;
       setBaseLyricsData(data);
       setOffsetMsState(data?.offsetMs ?? 0);
@@ -254,7 +256,7 @@ export function useLyrics(
     return () => {
       isCancelled = true;
     };
-  }, [trackId, trackName, artistName, primaryArtist]);
+  }, [trackId, trackName, artistName, resolvedPrimary]);
 
   // Derived shifted lyrics computed when lyrics load or offset changes (never per frame)
   const lyricsData = useMemo<LyricsData | null>(() => {

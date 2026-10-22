@@ -199,6 +199,7 @@ describe('Lyrics API Route (/api/lyrics)', () => {
           'http://localhost:3000/api/lyrics?trackId=40oYjPdjvFBCZH1Smsk46H'
         );
         const res = await GET(req);
+        expect(res.status).toBe(200);
         expect(lookupLyrics).toHaveBeenCalledWith(
           expect.objectContaining({
             trackId: '40oYjPdjvFBCZH1Smsk46H',
