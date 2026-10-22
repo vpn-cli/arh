@@ -2,13 +2,7 @@
 "use client";
 
 import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-  useSyncExternalStore,
+  createContext, useContext, useEffect, useRef, useCallback, useMemo, useSyncExternalStore,
 } from "react";
 import { useGameState } from "@/lib/gameState";
 import { useSpotifySession } from "@/hooks/useSpotify";
@@ -23,7 +17,7 @@ import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { getPersistedVolume } from "./volumeStore";
 import { MediaSessionHost } from "@/components/worlds/music/pip/MediaSessionHost";
 import { updateSharedPlaybackState } from "@/components/worlds/music/playback/playbackClock";
-import { PLAYBACK_DEBUG } from "@/components/worlds/music/playback/playbackHelpers";
+import { PLAYBACK_DEBUG, shouldIgnoreIncomingTrack } from "@/components/worlds/music/playback/playbackHelpers";
 import { loadSpotifySDK } from "./spotifySdkLoader";
 import { useAccountTier } from "@/hooks/useAccountTier";
 
@@ -327,7 +321,9 @@ export function SpotifyPlayerProvider({ children }: { children: React.ReactNode 
 
         const newTrack = state.track_window?.current_track;
         const store = useSpotifyPlayerStore.getState();
-        store.setCurrentTrack(newTrack);
+        if (!shouldIgnoreIncomingTrack(newTrack)) {
+          store.setCurrentTrack(newTrack);
+        }
         store.setIsPaused(state.paused);
         const incomingShuffle =
           typeof state.shuffle === "boolean"

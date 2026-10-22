@@ -282,6 +282,95 @@ describe('VinylRecord interactions', () => {
       expect(document.querySelector('.vinyl-slide-to-center')).toBeNull();
     });
 
+    it('currentTrack A -> B -> A -> B within 300ms ends with displayTrack = B and exactly one completed sleeve animation sequence (no stuck state)', () => {
+      const { rerender, container } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} />);
+      const img = screen.getByAltText('Album Cover') as HTMLImageElement;
+
+      // Initial: track1 (A)
+      expect(img.src).toContain('cover1.jpg');
+
+      // Rapid sequence within 300ms: A -> B -> A -> B
+      act(() => {
+        rerender(<VinylRecord currentTrack={mockTrack2} isPaused={false} />);
+      });
+      act(() => {
+        vi.advanceTimersByTime(100);
+        rerender(<VinylRecord currentTrack={mockTrack1} isPaused={false} />);
+      });
+      act(() => {
+        vi.advanceTimersByTime(150);
+        rerender(<VinylRecord currentTrack={mockTrack2} isPaused={false} />);
+      });
+
+      // Still in slide-in at 300ms
+      act(() => {
+        vi.advanceTimersByTime(50);
+      });
+      expect(container.querySelector('.vinyl-slide-into-sleeve')).not.toBeNull();
+
+      // At t=500ms, slide-in finishes and slide-out starts
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      expect(container.querySelector('.vinyl-slide-to-center')).not.toBeNull();
+      expect(img.src).toContain('cover2.jpg');
+
+      // At t=1150ms, animation completes
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+
+      // Finished exactly one animation sequence, idle, displayTrack is B
+      expect(container.querySelector('.vinyl-slide-into-sleeve')).toBeNull();
+      expect(container.querySelector('.vinyl-slide-to-center')).toBeNull();
+      expect(container.querySelector('.vinyl-sleeve-jacket-active')).toBeNull();
+      expect(img.src).toContain('cover2.jpg');
+    });
+
+    it('starts one more transition if displayTrack differs from latestTrack when animation ends', () => {
+      const { rerender, container } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} />);
+      const img = screen.getByAltText('Album Cover') as HTMLImageElement;
+
+      // Track changes to track2
+      act(() => {
+        rerender(<VinylRecord currentTrack={mockTrack2} isPaused={false} />);
+      });
+
+      // Slide-in completes at 500ms -> swaps to track2 and starts slide-out
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(img.src).toContain('cover2.jpg');
+
+      // During slide-out at t=600ms, track reverts to track1 (origin track)
+      act(() => {
+        vi.advanceTimersByTime(100);
+        rerender(<VinylRecord currentTrack={mockTrack1} isPaused={false} />);
+      });
+
+      // Slide-out finishes at 1150ms (550ms later)
+      // Since displayTrack (track2) !== latestTrack (track1), it starts one more transition to track1
+      act(() => {
+        vi.advanceTimersByTime(550);
+      });
+      // Should now be running the reconcile transition back to track1 (in slide-in)
+      expect(container.querySelector('.vinyl-slide-into-sleeve')).not.toBeNull();
+
+      // Complete the reconcile transition (500ms slide-in + 650ms slide-out = 1150ms)
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(img.src).toContain('cover1.jpg');
+      expect(container.querySelector('.vinyl-slide-to-center')).not.toBeNull();
+
+      act(() => {
+        vi.advanceTimersByTime(650);
+      });
+      expect(container.querySelector('.vinyl-slide-into-sleeve')).toBeNull();
+      expect(container.querySelector('.vinyl-slide-to-center')).toBeNull();
+      expect(img.src).toContain('cover1.jpg');
+    });
+
     it('(b) a third different track mid-transition jumps to the final state', () => {
       const { rerender } = render(<VinylRecord currentTrack={mockTrack1} isPaused={false} />);
       const img = screen.getByAltText('Album Cover') as HTMLImageElement;

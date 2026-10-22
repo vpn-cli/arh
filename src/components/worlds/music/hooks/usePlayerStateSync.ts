@@ -15,7 +15,11 @@ import {
   seekSharedClock,
   setSharedPaused,
 } from "../playback/playbackClock";
-import { PLAYBACK_DEBUG } from "../playback/playbackHelpers";
+import {
+  PLAYBACK_DEBUG,
+  shouldIgnoreIncomingTrack,
+  setDeferredApplyCallback,
+} from "../playback/playbackHelpers";
 import { nextTrackGlobal } from "../playback/globalPlaybackActions";
 import { getPlayerQueue } from "@/lib/spotify/player";
 
@@ -106,6 +110,30 @@ export function usePlayerStateSync({
     };
   }, []);
 
+  // Apply queue cache updates and refresh when a deferred track is applied upon timer expiry
+  useEffect(() => {
+    return setDeferredApplyCallback((deferredTrack: any, nextTracks?: any[]) => {
+      queryClient.setQueryData(['spotify', 'playerQueue'], {
+        currently_playing: deferredTrack,
+        queue: nextTracks || [],
+      });
+
+      if (queueDebounceTimerRef.current) {
+        clearTimeout(queueDebounceTimerRef.current);
+      }
+      queueDebounceTimerRef.current = setTimeout(async () => {
+        try {
+          const freshQueue = await getPlayerQueue(true);
+          if (freshQueue) {
+            queryClient.setQueryData(['spotify', 'playerQueue'], freshQueue);
+          }
+        } catch (e) {
+          console.error('Debounced queue refresh error:', e);
+        }
+      }, 1500);
+    });
+  }, [queryClient]);
+
   const applyPlayerState = useCallback(
     async (state: any) => {
       if (!state) return;
@@ -113,28 +141,30 @@ export function usePlayerStateSync({
       const storeState = useSpotifyPlayerStore.getState();
 
       if (newTrack?.id !== storeState.currentTrack?.id) {
-        setCurrentTrack(newTrack);
-        // Update queue from SDK's track_window.next_tracks instead of invalidating query
         const nextTracks = state.track_window?.next_tracks || [];
-        queryClient.setQueryData(['spotify', 'playerQueue'], {
-          currently_playing: newTrack,
-          queue: nextTracks,
-        });
+        if (!shouldIgnoreIncomingTrack(newTrack, undefined, nextTracks)) {
+          setCurrentTrack(newTrack);
+          // Update queue from SDK's track_window.next_tracks instead of invalidating query
+          queryClient.setQueryData(['spotify', 'playerQueue'], {
+            currently_playing: newTrack,
+            queue: nextTracks,
+          });
 
-        // Debounce remaining queue refresh by 1.5s after last track change (isPolling: true)
-        if (queueDebounceTimerRef.current) {
-          clearTimeout(queueDebounceTimerRef.current);
-        }
-        queueDebounceTimerRef.current = setTimeout(async () => {
-          try {
-            const freshQueue = await getPlayerQueue(true);
-            if (freshQueue) {
-              queryClient.setQueryData(['spotify', 'playerQueue'], freshQueue);
-            }
-          } catch (e) {
-            console.error('Debounced queue refresh error:', e);
+          // Debounce remaining queue refresh by 1.5s after last track change (isPolling: true)
+          if (queueDebounceTimerRef.current) {
+            clearTimeout(queueDebounceTimerRef.current);
           }
-        }, 1500);
+          queueDebounceTimerRef.current = setTimeout(async () => {
+            try {
+              const freshQueue = await getPlayerQueue(true);
+              if (freshQueue) {
+                queryClient.setQueryData(['spotify', 'playerQueue'], freshQueue);
+              }
+            } catch (e) {
+              console.error('Debounced queue refresh error:', e);
+            }
+          }, 1500);
+        }
       }
       if (storeState.isPaused !== state.paused) {
         setIsPaused(state.paused);
