@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
       }
 
       const track = await spotifyRes.json();
-      artistName = track.artists?.[0]?.name;
+      artistName = track.artists?.map((a: { name: string }) => a.name).filter(Boolean).join(', ') || track.artists?.[0]?.name;
       trackName = track.name;
       albumName = track.album?.name;
       durationSec = Math.round((track.duration_ms || 0) / 1000);

@@ -161,12 +161,18 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   // Prefetch lyrics for current and next track
   useEffect(() => {
     if (currentTrack?.id) {
-      prefetchLyrics(currentTrack.id, currentTrack.name, currentTrack.artists?.[0]?.name || currentTrack.artist);
+      const fullArtists = currentTrack.artists && currentTrack.artists.length > 0
+        ? currentTrack.artists.map((a: any) => a.name).filter(Boolean).join(', ')
+        : currentTrack.artist;
+      prefetchLyrics(currentTrack.id, currentTrack.name, fullArtists);
     }
     if (effectiveQueue && effectiveQueue.length > 0 && queueIndex < effectiveQueue.length - 1) {
       const nextTrackItem = effectiveQueue[queueIndex + 1]?.track;
       if (nextTrackItem?.id) {
-        prefetchLyrics(nextTrackItem.id, nextTrackItem.name, nextTrackItem.artists?.[0]?.name || nextTrackItem.artist);
+        const nextFullArtists = nextTrackItem.artists && nextTrackItem.artists.length > 0
+          ? nextTrackItem.artists.map((a: any) => a.name).filter(Boolean).join(', ')
+          : nextTrackItem.artist;
+        prefetchLyrics(nextTrackItem.id, nextTrackItem.name, nextFullArtists);
       }
     }
   }, [currentTrack?.id, currentTrack?.name, currentTrack?.artists, currentTrack?.artist, effectiveQueue, queueIndex]);

@@ -473,13 +473,21 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
     } else if (resA.status === 'error') {
       encounteredError = resA.error;
     } else if (resA.status === 'not_found' && primaryArtist && primaryArtist !== artist) {
-      // Primary artist fallback for step a
-      const resAFallback = await fetchGet({
-        track_name: cleanedTitle,
+      // Primary artist fallback for step a (today's behaviour)
+      let resAFallback = await fetchGet({
+        track_name: title,
         artist_name: primaryArtist,
         album_name: album,
         duration: durationSec.toString(),
       });
+      if (resAFallback.status === 'not_found' && cleanedTitle && cleanedTitle !== title) {
+        resAFallback = await fetchGet({
+          track_name: cleanedTitle,
+          artist_name: primaryArtist,
+          album_name: album,
+          duration: durationSec.toString(),
+        });
+      }
       if (resAFallback.status === 'hit' && resAFallback.data) {
         return {
           result: processCandidateLyrics(resAFallback.data, durationSec, isTempoModified),
@@ -509,12 +517,19 @@ export async function lookupLyrics(query: LookupQuery): Promise<LookupOutcome> {
   } else if (resB.status === 'error') {
     encounteredError = resB.error;
   } else if (resB.status === 'not_found' && primaryArtist && primaryArtist !== artist) {
-    // Primary artist fallback for step b
-    const resBFallback = await fetchGet({
-      track_name: cleanedTitle,
+    // Primary artist fallback for step b (today's behaviour)
+    let resBFallback = await fetchGet({
+      track_name: title,
       artist_name: primaryArtist,
       duration: durationSec.toString(),
     });
+    if (resBFallback.status === 'not_found' && cleanedTitle && cleanedTitle !== title) {
+      resBFallback = await fetchGet({
+        track_name: cleanedTitle,
+        artist_name: primaryArtist,
+        duration: durationSec.toString(),
+      });
+    }
     if (resBFallback.status === 'hit' && resBFallback.data) {
       return {
         result: processCandidateLyrics(resBFallback.data, durationSec, isTempoModified),

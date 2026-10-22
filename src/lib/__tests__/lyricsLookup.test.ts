@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import {
   cleanTrackTitle,
   getPrimaryArtist,
@@ -351,6 +351,148 @@ describe('lyricsLookup suffix stripping and tempo modified titles', () => {
     const processed = processCandidateLyrics(candidate, 360, true);
     expect(processed.syncedLyrics).toBeNull();
     expect(processed.plainLyrics).toBe('Thought I almost died');
+  });
+});
+
+describe('Multi-artist track lookup chain', () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('multi-artist track with an exact multi-artist LRCLIB record -> uses that record', async () => {
+    const requestedUrls: string[] = [];
+    global.fetch = async (url: any) => {
+      const urlStr = String(url);
+      requestedUrls.push(urlStr);
+      const parsed = new URL(urlStr);
+      const artistParam = parsed.searchParams.get('artist_name');
+
+      if (artistParam === 'Yeat, Joji') {
+        return new Response(
+          JSON.stringify({
+            id: 31700732,
+            trackName: 'Back Home',
+            artistName: 'Yeat, Joji',
+            albumName: 'Back Home',
+            duration: 194,
+            syncedLyrics: '[00:01.10] And I told you what I told ya',
+            plainLyrics: 'And I told you what I told ya',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        ) as any;
+      }
+
+      return new Response('Not Found', { status: 404 }) as any;
+    };
+
+    const { lookupLyrics } = await import('../lyricsLookup');
+    const outcome = await lookupLyrics({
+      trackId: '40oYjPdjvFBCZH1Smsk46H',
+      title: 'Back Home',
+      artist: 'Yeat, Joji',
+      album: 'Back Home',
+      durationSec: 194,
+    });
+
+    expect(outcome.hasUpstreamError).toBe(false);
+    expect(outcome.matchedStep).toBe('a');
+    expect(outcome.lrclibRecordId).toBe(31700732);
+    expect(outcome.result?.plainLyrics).toBe('And I told you what I told ya');
+    expect(requestedUrls[0]).toContain('artist_name=Yeat%2C+Joji');
+    expect(requestedUrls.some((u) => u.includes('artist_name=Yeat&'))).toBe(false);
+  });
+
+  it('multi-artist track with ONLY a primary-artist LRCLIB record -> still finds it (no regression)', async () => {
+    const requestedUrls: string[] = [];
+    global.fetch = async (url: any) => {
+      const urlStr = String(url);
+      requestedUrls.push(urlStr);
+      const parsed = new URL(urlStr);
+      const artistParam = parsed.searchParams.get('artist_name');
+
+      // Multi-artist fails with 404
+      if (artistParam === 'Yeat, Joji') {
+        return new Response('Not Found', { status: 404 }) as any;
+      }
+
+      // Primary artist fallback succeeds
+      if (artistParam === 'Yeat') {
+        return new Response(
+          JSON.stringify({
+            id: 31709461,
+            trackName: 'Back Home',
+            artistName: 'Yeat',
+            albumName: 'ADL',
+            duration: 194,
+            syncedLyrics: '[00:01.00] Yeat solo lyrics',
+            plainLyrics: 'Yeat solo lyrics',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        ) as any;
+      }
+
+      return new Response('Not Found', { status: 404 }) as any;
+    };
+
+    const { lookupLyrics } = await import('../lyricsLookup');
+    const outcome = await lookupLyrics({
+      trackId: 'test_fallback_track',
+      title: 'Back Home',
+      artist: 'Yeat, Joji',
+      durationSec: 194,
+    });
+
+    expect(outcome.hasUpstreamError).toBe(false);
+    expect(outcome.matchedStep).toBe('b');
+    expect(outcome.lrclibRecordId).toBe(31709461);
+    expect(outcome.result?.plainLyrics).toBe('Yeat solo lyrics');
+
+    // First request was with full artist, second was fallback to primary artist
+    expect(requestedUrls[0]).toContain('artist_name=Yeat%2C+Joji');
+    expect(requestedUrls[1]).toContain('artist_name=Yeat&');
+  });
+
+  it('single-artist track -> behaviour identical to today', async () => {
+    const requestedUrls: string[] = [];
+    global.fetch = async (url: any) => {
+      const urlStr = String(url);
+      requestedUrls.push(urlStr);
+      const parsed = new URL(urlStr);
+      const artistParam = parsed.searchParams.get('artist_name');
+
+      if (artistParam === 'Coldplay') {
+        return new Response(
+          JSON.stringify({
+            id: 5555,
+            trackName: 'Yellow',
+            artistName: 'Coldplay',
+            duration: 269,
+            syncedLyrics: '[00:10.00] Look at the stars',
+            plainLyrics: 'Look at the stars',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        ) as any;
+      }
+
+      return new Response('Not Found', { status: 404 }) as any;
+    };
+
+    const { lookupLyrics } = await import('../lyricsLookup');
+    const outcome = await lookupLyrics({
+      trackId: 'test_single_artist',
+      title: 'Yellow',
+      artist: 'Coldplay',
+      durationSec: 269,
+    });
+
+    expect(outcome.hasUpstreamError).toBe(false);
+    expect(outcome.matchedStep).toBe('b');
+    expect(outcome.lrclibRecordId).toBe(5555);
+    // Single request directly to Coldplay, no redundant fallback
+    expect(requestedUrls.length).toBe(1);
+    expect(requestedUrls[0]).toContain('artist_name=Coldplay');
   });
 });
 

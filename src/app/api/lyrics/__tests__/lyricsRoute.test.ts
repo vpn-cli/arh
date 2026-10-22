@@ -29,12 +29,11 @@ vi.mock('@/lib/lyricsLookup', () => ({
   extractPlainFromLrc: vi.fn((s) => s),
 }));
 
-vi.mock('@/lib/lyrics', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/lyrics')>();
-  return {
-    ...actual,
-  };
-});
+vi.mock('next/headers', () => ({
+  cookies: async () => ({
+    getAll: () => [{ name: 'spotify_access_token', value: 'mock_token' }],
+  }),
+}));
 
 describe('Lyrics API Route (/api/lyrics)', () => {
   const originalEnv = process.env;
@@ -149,6 +148,66 @@ describe('Lyrics API Route (/api/lyrics)', () => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('LRCLIB record id: 98765')
       );
+    });
+
+    it('passes full artist list to lookupLyrics when fetched from Spotify track proxy', async () => {
+      mockSelect.mockReturnValue({
+        from: () => ({
+          where: () => ({
+            limit: () => [],
+          }),
+        }),
+      });
+
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          name: 'Back Home',
+          artists: [{ name: 'Yeat' }, { name: 'Joji' }],
+          album: { name: 'ADL' },
+          duration_ms: 193684,
+        }),
+      });
+
+      const { lookupLyrics } = await import('@/lib/lyricsLookup');
+      (lookupLyrics as any).mockResolvedValue({
+        result: {
+          syncedLyrics: '[00:01.00] test',
+          plainLyrics: 'test',
+          instrumental: false,
+        },
+        matchedStep: 'b',
+        hasUpstreamError: false,
+        lrclibRecordId: 31700732,
+      });
+
+      mockInsert.mockReturnValue({
+        values: () => ({
+          onConflictDoUpdate: () => ({
+            returning: () => [{ offsetMs: 0 }],
+          }),
+        }),
+      });
+
+      try {
+        const req = new NextRequest(
+          'http://localhost:3000/api/lyrics?trackId=40oYjPdjvFBCZH1Smsk46H'
+        );
+        const res = await GET(req);
+        expect(res.status).toBe(200);
+
+        expect(lookupLyrics).toHaveBeenCalledWith(
+          expect.objectContaining({
+            trackId: '40oYjPdjvFBCZH1Smsk46H',
+            title: 'Back Home',
+            artist: 'Yeat, Joji',
+            durationSec: 194,
+          })
+        );
+      } finally {
+        global.fetch = originalFetch;
+      }
     });
 
     it('returns 503 with status: upstream_error and notFound: false on upstream error', async () => {
