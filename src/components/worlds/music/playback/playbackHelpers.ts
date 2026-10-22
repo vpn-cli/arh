@@ -104,6 +104,47 @@ export async function fetchRelevantTracks(track: any): Promise<any[]> {
 
 export const PLAYBACK_DEBUG = false;
 
+interface PendingPlay {
+  trackId: string;
+  timestamp: number;
+}
+
+let pendingPlay: PendingPlay | null = null;
+
+export function recordPendingTrackId(trackId?: string | null): void {
+  if (trackId) {
+    pendingPlay = { trackId, timestamp: Date.now() };
+  } else {
+    pendingPlay = null;
+  }
+}
+
+export function getPendingTrackId(): string | null {
+  if (!pendingPlay) return null;
+  if (Date.now() - pendingPlay.timestamp >= 3000) {
+    pendingPlay = null;
+    return null;
+  }
+  return pendingPlay.trackId;
+}
+
+export function clearPendingTrackId(): void {
+  pendingPlay = null;
+}
+
+export function shouldIgnoreIncomingTrack(incomingTrackId?: string | null): boolean {
+  if (!pendingPlay) return false;
+  if (Date.now() - pendingPlay.timestamp >= 3000) {
+    pendingPlay = null;
+    return false;
+  }
+  if (incomingTrackId && incomingTrackId === pendingPlay.trackId) {
+    pendingPlay = null;
+    return false;
+  }
+  return true;
+}
+
 export function isQueueItem(item: any): boolean {
   return Boolean(
     item &&
@@ -136,6 +177,12 @@ export async function executeContinuousPlayTrack(
   setStoreQueueIndex: (index: number) => void
 ): Promise<void> {
   const resolvedTrack = track;
+  const resolvedId =
+    resolvedTrack?.id ||
+    (resolvedTrack?.uri?.startsWith('spotify:track:') ? resolvedTrack.uri.split(':')[2] : null);
+  if (resolvedId) {
+    recordPendingTrackId(resolvedId);
+  }
   const { useSpotifyPlayerStore } = await import('@/store/spotifyStore');
   if (resolvedTrack) {
     useSpotifyPlayerStore.getState().setCurrentTrack?.(resolvedTrack);

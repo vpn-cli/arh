@@ -11,26 +11,18 @@ export interface VinylRecordProps {
 }
 
 import {
-  LIKE_REACTION_DURATION_MS,
-  TRACK_CHANGE_SLIDE_IN_MS,
-  TRACK_CHANGE_SLIDE_OUT_MS,
-  TRACK_CHANGE_TOTAL_MS,
+  LIKE_REACTION_DURATION_MS, TRACK_CHANGE_SLIDE_IN_MS,
+  TRACK_CHANGE_SLIDE_OUT_MS, TRACK_CHANGE_TOTAL_MS,
 } from './vinylConstants';
-
 export {
-  LIKE_REACTION_DURATION_MS,
-  TRACK_CHANGE_SLIDE_IN_MS,
-  TRACK_CHANGE_SLIDE_OUT_MS,
-  TRACK_CHANGE_TOTAL_MS,
+  LIKE_REACTION_DURATION_MS, TRACK_CHANGE_SLIDE_IN_MS,
+  TRACK_CHANGE_SLIDE_OUT_MS, TRACK_CHANGE_TOTAL_MS,
 } from './vinylConstants';
 
 type SleevePhase = 'idle' | 'slide-in' | 'slide-out';
 
 export const VinylRecord = memo(function VinylRecord({
-  currentTrack,
-  isPaused,
-  onAddMemory,
-  likeTrigger = 0,
+  currentTrack, isPaused, onAddMemory, likeTrigger = 0,
 }: VinylRecordProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [displayTrack, setDisplayTrack] = useState(currentTrack);
@@ -42,6 +34,11 @@ export const VinylRecord = memo(function VinylRecord({
 
   const originTrackRef = useRef(currentTrack);
   const targetTrackRef = useRef(currentTrack);
+  const latestTrackRef = useRef(currentTrack);
+  latestTrackRef.current = currentTrack;
+  const displayTrackRef = useRef(displayTrack);
+  displayTrackRef.current = displayTrack;
+  const isReconcilingRef = useRef(false);
   const trackChangeIndexRef = useRef(0);
   const isMidAnimationRef = useRef(false);
   const sleeveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -74,6 +71,62 @@ export const VinylRecord = memo(function VinylRecord({
     return memories.find((m) => m.spotifyUri === trackUri) || null;
   }, [memories, trackUri]);
 
+  const snapToTrack = (track: any) => {
+    if (sleeveTimerRef.current) clearTimeout(sleeveTimerRef.current);
+    isMidAnimationRef.current = false;
+    isReconcilingRef.current = false;
+    setSleevePhase('idle');
+    setCurrentTrackChangeSticker(null);
+    setDisplayTrack(track);
+    displayTrackRef.current = track;
+    originTrackRef.current = track;
+    targetTrackRef.current = track;
+  };
+
+  const startTransition = (target: any, isReconcile = false) => {
+    isReconcilingRef.current = isReconcile;
+    if (reducedMotion || (typeof document !== 'undefined' && document.hidden)) {
+      snapToTrack(target);
+      return;
+    }
+
+    targetTrackRef.current = target;
+    isMidAnimationRef.current = true;
+    setIsFlipped(false);
+
+    const sticker = SNOOPY_STICKERS_ENABLED && trackChange.length > 0
+      ? trackChange[trackChangeIndexRef.current++ % trackChange.length] : null;
+    setCurrentTrackChangeSticker(sticker);
+
+    setSleevePhase('slide-in');
+
+    sleeveTimerRef.current = setTimeout(() => {
+      const nextDisplay = latestTrackRef.current || target;
+      setDisplayTrack(nextDisplay);
+      displayTrackRef.current = nextDisplay;
+      setSleevePhase('slide-out');
+
+      sleeveTimerRef.current = setTimeout(() => {
+        setSleevePhase('idle');
+        setCurrentTrackChangeSticker(null);
+        isMidAnimationRef.current = false;
+        originTrackRef.current = nextDisplay;
+
+        const latest = latestTrackRef.current;
+        if (latest?.id && nextDisplay?.id !== latest.id && !isReconcile) {
+          startTransition(latest, true);
+        } else {
+          isReconcilingRef.current = false;
+          if (latest && nextDisplay?.id !== latest.id) {
+            setDisplayTrack(latest);
+            displayTrackRef.current = latest;
+            originTrackRef.current = latest;
+          }
+        }
+      }, TRACK_CHANGE_SLIDE_OUT_MS);
+    }, TRACK_CHANGE_SLIDE_IN_MS);
+  };
+
   // Sleeve animation on track change: 500ms slide-in, 650ms slide-out (1150ms total)
   useEffect(() => {
     const next = currentTrack;
@@ -84,61 +137,18 @@ export const VinylRecord = memo(function VinylRecord({
     }
 
     if (isMidAnimationRef.current) {
-      if (next.id === targetTrackRef.current?.id) return;
-      if (next.id === originTrackRef.current?.id) return;
-      if (sleeveTimerRef.current) clearTimeout(sleeveTimerRef.current);
-      isMidAnimationRef.current = false;
-      setSleevePhase('idle');
-      setCurrentTrackChangeSticker(null);
-      setDisplayTrack(next);
-      originTrackRef.current = next;
-      targetTrackRef.current = next;
-      return;
-    }
-
-    if (reducedMotion || (typeof document !== 'undefined' && document.hidden)) {
-      if (sleeveTimerRef.current) clearTimeout(sleeveTimerRef.current);
-      isMidAnimationRef.current = false;
-      setSleevePhase('idle');
-      setCurrentTrackChangeSticker(null);
-      setDisplayTrack(next);
-      originTrackRef.current = next;
-      targetTrackRef.current = next;
+      if (next.id === targetTrackRef.current?.id || next.id === originTrackRef.current?.id) return;
+      snapToTrack(next);
       return;
     }
 
     if (originTrackRef.current?.id === next.id) {
       setDisplayTrack(next);
+      displayTrackRef.current = next;
       return;
     }
 
-    targetTrackRef.current = next;
-    isMidAnimationRef.current = true;
-    setIsFlipped(false);
-
-    if (SNOOPY_STICKERS_ENABLED && trackChange.length > 0) {
-      const sticker = trackChange[trackChangeIndexRef.current % trackChange.length];
-      trackChangeIndexRef.current += 1;
-      setCurrentTrackChangeSticker(sticker);
-    } else {
-      setCurrentTrackChangeSticker(null);
-    }
-
-    // Phase 1: Slide into sleeve (500ms)
-    setSleevePhase('slide-in');
-
-    sleeveTimerRef.current = setTimeout(() => {
-      // Phase 2: Swap to new record and slide out from sleeve (650ms)
-      setDisplayTrack(next);
-      setSleevePhase('slide-out');
-
-      sleeveTimerRef.current = setTimeout(() => {
-        setSleevePhase('idle');
-        setCurrentTrackChangeSticker(null);
-        isMidAnimationRef.current = false;
-        originTrackRef.current = next;
-      }, TRACK_CHANGE_SLIDE_OUT_MS);
-    }, TRACK_CHANGE_SLIDE_IN_MS);
+    startTransition(next, false);
   }, [currentTrack?.id, reducedMotion]);
 
   // Clean up timers on unmount
@@ -163,24 +173,17 @@ export const VinylRecord = memo(function VinylRecord({
     }
   }, [likeTrigger, reducedMotion, isDocHidden]);
 
-  const albumArtUrl =
-    displayTrack?.album?.images?.[0]?.url ||
-    (typeof displayTrack?.album?.images?.[0] === 'string'
-      ? displayTrack.album.images[0]
-      : '') ||
+  const getArtUrl = (t: any) =>
+    t?.album?.images?.[0]?.url ||
+    (typeof t?.album?.images?.[0] === 'string' ? t.album.images[0] : '') ||
     '/soundscape_ref/finalui.png';
 
+  const albumArtUrl = getArtUrl(displayTrack);
   const sleeveCoverTrack =
     sleevePhase === 'slide-in'
       ? originTrackRef.current
-      : targetTrackRef.current || displayTrack;
-
-  const sleeveArtUrl =
-    sleeveCoverTrack?.album?.images?.[0]?.url ||
-    (typeof sleeveCoverTrack?.album?.images?.[0] === 'string'
-      ? sleeveCoverTrack.album.images[0]
-      : '') ||
-    '/soundscape_ref/finalui.png';
+      : latestTrackRef.current || targetTrackRef.current || displayTrack;
+  const sleeveArtUrl = getArtUrl(sleeveCoverTrack);
 
   const recordSlideClass =
     sleevePhase === 'slide-in'
@@ -192,15 +195,13 @@ export const VinylRecord = memo(function VinylRecord({
   return (
     <div
       className="relative w-full h-full flex items-center justify-center"
-      style={
-        {
-          '--vinyl-reaction-duration': `${LIKE_REACTION_DURATION_MS}ms`,
-          '--vinyl-slide-in-duration': `${TRACK_CHANGE_SLIDE_IN_MS}ms`,
-          '--vinyl-slide-out-duration': `${TRACK_CHANGE_SLIDE_OUT_MS}ms`,
-          '--vinyl-track-change-duration': `${TRACK_CHANGE_TOTAL_MS}ms`,
-          '--vinyl-label-size': '25%',
-        } as React.CSSProperties
-      }
+      style={{
+        '--vinyl-reaction-duration': `${LIKE_REACTION_DURATION_MS}ms`,
+        '--vinyl-slide-in-duration': `${TRACK_CHANGE_SLIDE_IN_MS}ms`,
+        '--vinyl-slide-out-duration': `${TRACK_CHANGE_SLIDE_OUT_MS}ms`,
+        '--vinyl-track-change-duration': `${TRACK_CHANGE_TOTAL_MS}ms`,
+        '--vinyl-label-size': '25%',
+      } as React.CSSProperties}
     >
       {/* Sleeve Jacket (square record sleeve showing album art) */}
       <div

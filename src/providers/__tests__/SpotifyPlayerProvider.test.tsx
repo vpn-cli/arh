@@ -8,6 +8,7 @@ import {
   disconnectSpotifyPlayer,
 } from '../SpotifyPlayerProvider';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
+import { recordPendingTrackId, clearPendingTrackId } from '@/components/worlds/music/playback/playbackHelpers';
 
 // Mocks
 let mockCurrentWorld = 'home';
@@ -251,5 +252,73 @@ describe('SpotifyPlayerProvider', () => {
       duration: 200000,
       paused: true,
     });
+  });
+
+  it('optimistic B, then SDK state A within 3s -> currentTrack stays B', () => {
+    mockCurrentWorld = 'music';
+    mockSessionToken = 'test_token_123';
+
+    let listenerFn: Function | null = null;
+    mockPlayerInstance.addListener.mockImplementation((event: string, cb: Function) => {
+      if (event === 'player_state_changed') {
+        listenerFn = cb;
+      }
+    });
+
+    render(
+      <SpotifyPlayerProvider>
+        <div>Player</div>
+      </SpotifyPlayerProvider>
+    );
+
+    const trackA = { id: 'trackA', name: 'Song A' };
+    const trackB = { id: 'trackB', name: 'Song B' };
+
+    useSpotifyPlayerStore.getState().setCurrentTrack(trackA);
+    expect(useSpotifyPlayerStore.getState().currentTrack?.id).toBe('trackA');
+
+    // Optimistic B arrives
+    recordPendingTrackId('trackB');
+    useSpotifyPlayerStore.getState().setCurrentTrack(trackB);
+    expect(useSpotifyPlayerStore.getState().currentTrack?.id).toBe('trackB');
+
+    // SDK state A arrives within 3s
+    act(() => {
+      listenerFn!({
+        track_window: { current_track: trackA },
+        position: 1000,
+        duration: 200000,
+        paused: false,
+      });
+    });
+
+    // Must stay B, but paused/position updated!
+    expect(useSpotifyPlayerStore.getState().currentTrack?.id).toBe('trackB');
+    expect(useSpotifyPlayerStore.getState().isPaused).toBe(false);
+
+    // SDK state B arrives -> clears pendingTrackId and stays B
+    act(() => {
+      listenerFn!({
+        track_window: { current_track: trackB },
+        position: 2000,
+        duration: 200000,
+        paused: false,
+      });
+    });
+    expect(useSpotifyPlayerStore.getState().currentTrack?.id).toBe('trackB');
+
+    // Next track C arrives after pending play is resolved -> updates to C
+    const trackC = { id: 'trackC', name: 'Song C' };
+    act(() => {
+      listenerFn!({
+        track_window: { current_track: trackC },
+        position: 3000,
+        duration: 200000,
+        paused: false,
+      });
+    });
+    expect(useSpotifyPlayerStore.getState().currentTrack?.id).toBe('trackC');
+
+    clearPendingTrackId();
   });
 });
