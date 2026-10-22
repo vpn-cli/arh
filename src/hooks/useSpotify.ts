@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { proxyFetch } from '@/lib/spotifyClient';
+import { proxyFetch, getSpotifySession } from '@/lib/spotifyClient';
 import { useSpotifyPlayerStore } from '@/store/spotifyStore';
 import { fetchLikedTracks } from './useLikedTracks';
 
@@ -7,9 +7,9 @@ export function useSpotifySession() {
   return useQuery({
     queryKey: ['spotifySession'],
     queryFn: async () => {
-      const res = await fetch('/api/spotify/session');
-      if (!res.ok) throw new Error('No session');
-      return res.json();
+      const session = await getSpotifySession();
+      if (!session?.accessToken) throw new Error('No session');
+      return session;
     },
     retry: false,
     staleTime: 55 * 60 * 1000, // 55 minutes

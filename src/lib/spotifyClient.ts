@@ -57,9 +57,14 @@ export function registerDeviceRecoveryHandler(handler: ((reason?: string) => Pro
   customRecoveryHandler = handler;
 }
 
-let inFlightTokenPromise: Promise<string | null> | null = null;
+export interface SpotifySessionPayload {
+  accessToken: string;
+  expiresAt: number;
+}
 
-async function fetchSessionToken(silent = false): Promise<string | null> {
+let inFlightTokenPromise: Promise<SpotifySessionPayload | null> | null = null;
+
+async function fetchSessionPayload(silent = false): Promise<SpotifySessionPayload | null> {
   const maxAttempts = 2;
   const retryDelayMs = 600;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -69,24 +74,33 @@ async function fetchSessionToken(silent = false): Promise<string | null> {
         cache: 'no-store'
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          if (attempt < maxAttempts - 1) {
+            // Winning concurrent refresh cookie will be set by then; wait ~600ms and retry once
+            await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+            continue;
+          }
+          const errBody = await res.json().catch(() => ({}));
+          if (!silent) {
+            console.error(`[${new Date().toISOString()}] [Spotify Session Token Fetch Failed] Status: 401 (confirmed on retry)`, errBody);
+            notifyLoginRequired();
+          }
+          return null;
+        }
+
         if (attempt < maxAttempts - 1) {
-          // Wait briefly (~600ms) before retrying to clear transient cold function or upstream blips
           await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
           continue;
         }
         const errBody = await res.json().catch(() => ({}));
         if (!silent) {
           console.error(`[${new Date().toISOString()}] [Spotify Session Token Fetch Failed] Status: ${res.status}`, errBody);
-          if (res.status === 401) {
-            notifyLoginRequired();
-          }
         }
         return null;
       }
       const data = await res.json();
-      if (!data.accessToken) {
+      if (!data?.accessToken) {
         if (attempt < maxAttempts - 1) {
-          // Wait briefly (~600ms) before retrying
           await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
           continue;
         }
@@ -97,7 +111,10 @@ async function fetchSessionToken(silent = false): Promise<string | null> {
         return null;
       }
       notifySessionRecovered();
-      return data.accessToken;
+      return {
+        accessToken: data.accessToken,
+        expiresAt: typeof data.expiresAt === 'number' ? data.expiresAt : 0,
+      };
     } catch (err) {
       if (attempt < maxAttempts - 1) {
         await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
@@ -112,7 +129,7 @@ async function fetchSessionToken(silent = false): Promise<string | null> {
   return null;
 }
 
-export async function getFreshToken(options?: { silent?: boolean }): Promise<string | null> {
+export async function getSpotifySession(options?: { silent?: boolean }): Promise<SpotifySessionPayload | null> {
   const silent = options?.silent ?? false;
   if (inFlightTokenPromise) {
     return inFlightTokenPromise;
@@ -122,16 +139,21 @@ export async function getFreshToken(options?: { silent?: boolean }): Promise<str
     try {
       if (typeof navigator !== 'undefined' && navigator.locks && typeof navigator.locks.request === 'function') {
         return await navigator.locks.request('spotify-token-refresh', async () => {
-          return await fetchSessionToken(silent);
+          return await fetchSessionPayload(silent);
         });
       }
-      return await fetchSessionToken(silent);
+      return await fetchSessionPayload(silent);
     } finally {
       inFlightTokenPromise = null;
     }
   })();
 
   return inFlightTokenPromise;
+}
+
+export async function getFreshToken(options?: { silent?: boolean }): Promise<string | null> {
+  const session = await getSpotifySession(options);
+  return session?.accessToken || null;
 }
 
 export interface RetryAttempts {

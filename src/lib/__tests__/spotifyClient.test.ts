@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { proxyFetch, spotifyQueue, registerDeviceRecoveryHandler, getFreshToken, clearClientSpotifyLock } from '../spotifyClient';
+import { proxyFetch, spotifyQueue, registerDeviceRecoveryHandler, getFreshToken, getSpotifySession, clearClientSpotifyLock } from '../spotifyClient';
 
 describe('spotifyClient (Fail-Safe API Proxy with Unified Recovery)', () => {
   beforeEach(() => {
@@ -193,6 +193,60 @@ describe('spotifyClient (Fail-Safe API Proxy with Unified Recovery)', () => {
     expect(token1).toBe('single_flight_token');
     expect(token2).toBe('single_flight_token');
     expect(token3).toBe('single_flight_token');
+  });
+
+  it('two concurrent session fetches on the client produce exactly one network request', async () => {
+    let sessionCallCount = 0;
+    (global.fetch as any).mockImplementation(async (url: string) => {
+      if (url === '/api/spotify/session') {
+        sessionCallCount++;
+        await new Promise((r) => setTimeout(r, 20));
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ accessToken: 'concurrent_session_token', expiresAt: Date.now() + 3600000 }),
+        };
+      }
+      return { ok: true, status: 200 };
+    });
+
+    const [session1, session2] = await Promise.all([
+      getSpotifySession(),
+      getSpotifySession(),
+    ]);
+
+    expect(sessionCallCount).toBe(1);
+    expect(session1?.accessToken).toBe('concurrent_session_token');
+    expect(session2?.accessToken).toBe('concurrent_session_token');
+  });
+
+  it('401 then 200 on retry resolves successfully', async () => {
+    let callCount = 0;
+    (global.fetch as any).mockImplementation(async (url: string) => {
+      if (url === '/api/spotify/session') {
+        callCount++;
+        if (callCount === 1) {
+          return {
+            ok: false,
+            status: 401,
+            json: async () => ({ error: 'Session expired' }),
+          };
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ accessToken: 'recovered_after_retry', expiresAt: 99999999 }),
+        };
+      }
+      return { ok: true, status: 200 };
+    });
+
+    const session = await getSpotifySession();
+    expect(callCount).toBe(2);
+    expect(session).toEqual({
+      accessToken: 'recovered_after_retry',
+      expiresAt: 99999999,
+    });
   });
 
   it('should acquire navigator.locks for "spotify-token-refresh" when available', async () => {

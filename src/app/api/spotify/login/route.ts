@@ -26,15 +26,11 @@ export async function GET(request: Request) {
     const returnUrl = `${protocol}//${host}/?spotify_auth=success`;
     const response = NextResponse.redirect(returnUrl);
     const expiresAt = Date.now() + 3600 * 1000;
-    const cookieDomain = (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
-      ? undefined
-      : url.hostname;
     const cookieOptions = {
       httpOnly: true,
       secure: false,
       path: '/',
       maxAge: 3600,
-      ...(cookieDomain ? { domain: cookieDomain } : {}),
     };
     response.cookies.set('spotify_access_token', MOCK_ACCESS_TOKEN, cookieOptions);
     response.cookies.set('spotify_token_expires_at', String(expiresAt), cookieOptions);
@@ -75,16 +71,12 @@ export async function GET(request: Request) {
   authUrl.search = new URLSearchParams(params).toString();
 
   const response = NextResponse.redirect(authUrl.toString());
-  const cookieDomain = (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
-    ? undefined
-    : url.hostname;
   response.cookies.set('spotify_code_verifier', codeVerifier, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: 60 * 10, // 10 minutes
     sameSite: 'lax',
-    ...(cookieDomain ? { domain: cookieDomain } : {}),
   });
 
   return response;
