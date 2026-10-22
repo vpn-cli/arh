@@ -12,6 +12,7 @@ import { CloseIcon, ChevronDownIcon } from '../icons';
 export interface LyricsTrackDisplay {
   name?: string;
   artists?: string;
+  primaryArtist?: string;
   art?: string | null;
 }
 
@@ -44,7 +45,7 @@ export const LyricsView = React.memo(
     ref
   ) {
     const { lyricsData, setLyricsData, isLyricsLoading, offsetMs, setOffsetMs, retryLyrics } =
-      useLyrics(trackId, trackDisplay?.name, trackDisplay?.artists);
+      useLyrics(trackId, trackDisplay?.name, trackDisplay?.artists, trackDisplay?.primaryArtist);
     const playerDuration = useSpotifyPlayerStore((s) => s.duration);
     const [activeLyricIndex, setActiveLyricIndex] = useState<number>(-1);
     const activeLyricIndexRef = useRef<number>(-1);

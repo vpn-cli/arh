@@ -25,7 +25,7 @@ import { QueueModal } from "./QueueModal";
 import { usePlaylistMutations } from "@/hooks/usePlaylistMutations";
 import { useSpotifyPlayerStore } from "@/store/spotifyStore";
 import { LyricsView, LyricsViewHandle, doesLyricsOverlayCoverContent } from "./lyrics/LyricsView";
-import { prefetchLyrics } from "./lyrics/useLyrics";
+import { prefetchLyrics, getArtistNames } from "./lyrics/useLyrics";
 import { usePlaybackActions } from "./playback/usePlaybackActions";
 import { NowPlayingPanel, ProgressBarHandle } from "./now-playing";
 import { PlayerHeader } from "./layout/PlayerHeader";
@@ -78,11 +78,15 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
     handleBackFromPlaylist, handleBackFromAlbum, handleBackFromArtist, setSelectedPlaylistId,
   } = useMusicNavigation({ onNavigate: handleNavigation });
 
-  const lyricsTrackDisplay = useMemo(() => ({
-    name: currentTrack?.name,
-    artists: currentTrack?.artists ? currentTrack.artists.map((a: any) => a.name).join(', ') : '',
-    art: currentTrack?.album?.images?.[0]?.url || (typeof currentTrack?.album?.images?.[0] === 'string' ? currentTrack.album.images[0] : null) || null,
-  }), [currentTrack?.id]);
+  const lyricsTrackDisplay = useMemo(() => {
+    const { full, primary } = getArtistNames(currentTrack);
+    return {
+      name: currentTrack?.name,
+      artists: full,
+      primaryArtist: primary,
+      art: currentTrack?.album?.images?.[0]?.url || (typeof currentTrack?.album?.images?.[0] === 'string' ? currentTrack.album.images[0] : null) || null,
+    };
+  }, [currentTrack]);
 
   // Modal States
   const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
@@ -161,21 +165,17 @@ export default function SpotifyPlayerUI({ onGoHome }: { onGoHome?: () => void })
   // Prefetch lyrics for current and next track
   useEffect(() => {
     if (currentTrack?.id) {
-      const fullArtists = currentTrack.artists && currentTrack.artists.length > 0
-        ? currentTrack.artists.map((a: any) => a.name).filter(Boolean).join(', ')
-        : currentTrack.artist;
-      prefetchLyrics(currentTrack.id, currentTrack.name, fullArtists);
+      const { full: currentFullArtists, primary: currentPrimaryArtist } = getArtistNames(currentTrack);
+      prefetchLyrics(currentTrack.id, currentTrack.name, currentFullArtists, false, currentPrimaryArtist);
     }
     if (effectiveQueue && effectiveQueue.length > 0 && queueIndex < effectiveQueue.length - 1) {
       const nextTrackItem = effectiveQueue[queueIndex + 1]?.track;
       if (nextTrackItem?.id) {
-        const nextFullArtists = nextTrackItem.artists && nextTrackItem.artists.length > 0
-          ? nextTrackItem.artists.map((a: any) => a.name).filter(Boolean).join(', ')
-          : nextTrackItem.artist;
-        prefetchLyrics(nextTrackItem.id, nextTrackItem.name, nextFullArtists);
+        const { full: nextFullArtists, primary: nextPrimaryArtist } = getArtistNames(nextTrackItem);
+        prefetchLyrics(nextTrackItem.id, nextTrackItem.name, nextFullArtists, false, nextPrimaryArtist);
       }
     }
-  }, [currentTrack?.id, currentTrack?.name, currentTrack?.artists, currentTrack?.artist, effectiveQueue, queueIndex]);
+  }, [currentTrack, effectiveQueue, queueIndex]);
 
   return (
     <div className="w-full h-[100dvh] flex flex-col text-[var(--color-dark)] font-sans relative overflow-hidden">

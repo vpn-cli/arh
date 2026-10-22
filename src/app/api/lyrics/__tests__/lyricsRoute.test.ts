@@ -24,10 +24,14 @@ vi.mock('@/db', () => ({
   },
 }));
 
-vi.mock('@/lib/lyricsLookup', () => ({
-  lookupLyrics: vi.fn(),
-  extractPlainFromLrc: vi.fn((s) => s),
-}));
+vi.mock('@/lib/lyricsLookup', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/lyricsLookup')>();
+  return {
+    ...actual,
+    lookupLyrics: vi.fn(),
+    extractPlainFromLrc: vi.fn((s) => s),
+  };
+});
 
 vi.mock('next/headers', () => ({
   cookies: async () => ({
@@ -195,19 +199,64 @@ describe('Lyrics API Route (/api/lyrics)', () => {
           'http://localhost:3000/api/lyrics?trackId=40oYjPdjvFBCZH1Smsk46H'
         );
         const res = await GET(req);
-        expect(res.status).toBe(200);
-
         expect(lookupLyrics).toHaveBeenCalledWith(
           expect.objectContaining({
             trackId: '40oYjPdjvFBCZH1Smsk46H',
             title: 'Back Home',
             artist: 'Yeat, Joji',
+            primaryArtist: 'Yeat',
             durationSec: 194,
           })
         );
       } finally {
         global.fetch = originalFetch;
       }
+    });
+
+    it('propagates primaryArtist query parameter to lookupLyrics', async () => {
+      mockSelect.mockReturnValue({
+        from: () => ({
+          where: () => ({
+            limit: () => [],
+          }),
+        }),
+      });
+
+      const { lookupLyrics } = await import('@/lib/lyricsLookup');
+      (lookupLyrics as any).mockResolvedValue({
+        result: {
+          syncedLyrics: null,
+          plainLyrics: 'test',
+          instrumental: false,
+        },
+        matchedStep: 'b',
+        hasUpstreamError: false,
+        lrclibRecordId: 9999,
+      });
+
+      mockInsert.mockReturnValue({
+        values: () => ({
+          onConflictDoUpdate: () => ({
+            returning: () => [{ offsetMs: 0 }],
+          }),
+        }),
+      });
+
+      const req = new NextRequest(
+        'http://localhost:3000/api/lyrics?trackId=track-t1&title=See+You+Again&artist=Tyler%2C+The+Creator%2C+Kali+Uchis&primaryArtist=Tyler%2C+The+Creator&duration=180'
+      );
+      const res = await GET(req);
+      expect(res.status).toBe(200);
+
+      expect(lookupLyrics).toHaveBeenCalledWith(
+        expect.objectContaining({
+          trackId: 'track-t1',
+          title: 'See You Again',
+          artist: 'Tyler, The Creator, Kali Uchis',
+          primaryArtist: 'Tyler, The Creator',
+          durationSec: 180,
+        })
+      );
     });
 
     it('returns 503 with status: upstream_error and notFound: false on upstream error', async () => {

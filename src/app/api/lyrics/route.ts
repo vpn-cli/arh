@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parseLrc, detectLyrics, stripTimestamps } from '@/lib/lyrics';
-import { lookupLyrics } from '@/lib/lyricsLookup';
+import { lookupLyrics, getArtistNames } from '@/lib/lyricsLookup';
 import { db, lyricsCache } from '@/db';
 import { eq, sql } from 'drizzle-orm';
 import { cookies } from 'next/headers';
@@ -118,6 +118,7 @@ export async function GET(request: NextRequest) {
     // 2. Fetch Track details (from query params if provided, or from Spotify API via proxy)
     let trackName = searchParams.get('title') || searchParams.get('track_name');
     let artistName = searchParams.get('artist') || searchParams.get('artist_name');
+    let primaryArtistName = searchParams.get('primaryArtist') || searchParams.get('primary_artist') || undefined;
     let albumName = searchParams.get('album') || searchParams.get('album_name') || undefined;
     const durParam = searchParams.get('duration');
     let durationSec = durParam ? parseInt(durParam, 10) : 0;
@@ -136,7 +137,11 @@ export async function GET(request: NextRequest) {
       }
 
       const track = await spotifyRes.json();
-      artistName = track.artists?.map((a: { name: string }) => a.name).filter(Boolean).join(', ') || track.artists?.[0]?.name;
+      const resolvedArtists = getArtistNames(track);
+      artistName = resolvedArtists.full;
+      if (!primaryArtistName) {
+        primaryArtistName = resolvedArtists.primary;
+      }
       trackName = track.name;
       albumName = track.album?.name;
       durationSec = Math.round((track.duration_ms || 0) / 1000);
@@ -151,6 +156,7 @@ export async function GET(request: NextRequest) {
       trackId,
       title: trackName,
       artist: artistName,
+      primaryArtist: primaryArtistName,
       album: albumName,
       durationSec,
     });

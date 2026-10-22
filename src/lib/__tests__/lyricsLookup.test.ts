@@ -6,6 +6,7 @@ import {
   pickBestSearchResult,
   processCandidateLyrics,
   extractPlainFromLrc,
+  getArtistNames,
   LrclibTrack
 } from '../lyricsLookup';
 
@@ -493,6 +494,203 @@ describe('Multi-artist track lookup chain', () => {
     // Single request directly to Coldplay, no redundant fallback
     expect(requestedUrls.length).toBe(1);
     expect(requestedUrls[0]).toContain('artist_name=Coldplay');
+  });
+
+  describe('getArtistNames helper (T3)', () => {
+    it('handles artists array', () => {
+      const res = getArtistNames({
+        artists: [{ name: 'Tyler, The Creator' }, { name: 'Kali Uchis' }],
+      });
+      expect(res).toEqual({
+        full: 'Tyler, The Creator, Kali Uchis',
+        primary: 'Tyler, The Creator',
+      });
+    });
+
+    it('handles single artist field only', () => {
+      const res = getArtistNames({ artist: 'Tyler, The Creator' });
+      expect(res).toEqual({
+        full: 'Tyler, The Creator',
+        primary: 'Tyler, The Creator',
+      });
+    });
+
+    it('handles empty or missing artist inputs', () => {
+      expect(getArtistNames({})).toEqual({ full: '', primary: '' });
+      expect(getArtistNames(null)).toEqual({ full: '', primary: '' });
+      expect(getArtistNames(undefined)).toEqual({ full: '', primary: '' });
+      expect(getArtistNames({ artists: [] })).toEqual({ full: '', primary: '' });
+    });
+
+    it('filters out empty string names', () => {
+      expect(
+        getArtistNames({
+          artists: [{ name: 'Tyler, The Creator' }, { name: '' }, { name: '   ' }, { name: 'Kali Uchis' }],
+        })
+      ).toEqual({
+        full: 'Tyler, The Creator, Kali Uchis',
+        primary: 'Tyler, The Creator',
+      });
+
+      expect(
+        getArtistNames({
+          artists: [{ name: '' }, { name: 'Kali Uchis' }],
+        })
+      ).toEqual({
+        full: 'Kali Uchis',
+        primary: 'Kali Uchis',
+      });
+
+      expect(
+        getArtistNames({
+          artists: [{ name: '' }],
+          artist: 'Fallback Artist',
+        })
+      ).toEqual({
+        full: 'Fallback Artist',
+        primary: 'Fallback Artist',
+      });
+    });
+  });
+
+  describe('T1 & T2: comma-containing artist names', () => {
+    it('T1: "Tyler, The Creator" as a single artist: primary === "Tyler, The Creator"; no request is ever sent with artist_name=Tyler alone', async () => {
+      const track = { artists: [{ name: 'Tyler, The Creator' }] };
+      const { full, primary } = getArtistNames(track);
+      expect(primary).toBe('Tyler, The Creator');
+      expect(full).toBe('Tyler, The Creator');
+
+      const requestedUrls: string[] = [];
+      global.fetch = async (url: any) => {
+        const urlStr = String(url);
+        requestedUrls.push(urlStr);
+        const parsed = new URL(urlStr);
+        const artistParam = parsed.searchParams.get('artist_name');
+
+        if (artistParam === 'Tyler, The Creator') {
+          return new Response(
+            JSON.stringify({
+              id: 1111,
+              trackName: 'EARFQUAKE',
+              artistName: 'Tyler, The Creator',
+              duration: 190,
+              syncedLyrics: '[00:10.00] For real this time',
+              plainLyrics: 'For real this time',
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          ) as any;
+        }
+
+        return new Response('Not Found', { status: 404 }) as any;
+      };
+
+      const { lookupLyrics } = await import('../lyricsLookup');
+      const outcome = await lookupLyrics({
+        trackId: 'test_t1',
+        title: 'EARFQUAKE',
+        artist: full,
+        primaryArtist: primary,
+        durationSec: 190,
+      });
+
+      expect(outcome.matchedStep).toBe('b');
+      expect(outcome.lrclibRecordId).toBe(1111);
+      expect(requestedUrls.length).toBe(1);
+
+      // Verify that across all requests, no request is EVER sent with artist_name=Tyler alone
+      for (const reqUrl of requestedUrls) {
+        const parsed = new URL(reqUrl);
+        expect(parsed.searchParams.get('artist_name')).not.toBe('Tyler');
+      }
+    });
+
+    it('T1 (upstream miss): no request is ever sent with artist_name=Tyler alone even across search steps', async () => {
+      const track = { artists: [{ name: 'Tyler, The Creator' }] };
+      const { full, primary } = getArtistNames(track);
+      const requestedUrls: string[] = [];
+      global.fetch = async (url: any) => {
+        const urlStr = String(url);
+        requestedUrls.push(urlStr);
+        return new Response('Not Found', { status: 404 }) as any;
+      };
+
+      const { lookupLyrics } = await import('../lyricsLookup');
+      await lookupLyrics({
+        trackId: 'test_t1_miss',
+        title: 'EARFQUAKE',
+        artist: full,
+        primaryArtist: primary,
+        durationSec: 190,
+      });
+
+      expect(requestedUrls.length).toBeGreaterThan(0);
+      for (const reqUrl of requestedUrls) {
+        const parsed = new URL(reqUrl);
+        expect(parsed.searchParams.get('artist_name')).not.toBe('Tyler');
+        if (parsed.searchParams.has('q')) {
+          expect(parsed.searchParams.get('q')).toContain('Tyler, The Creator');
+          expect(parsed.searchParams.get('q')).not.toBe('EARFQUAKE Tyler');
+        }
+      }
+    });
+
+    it('T2: Multi-artist with comma name: first request uses full "Tyler, The Creator, Kali Uchis", fallback uses "Tyler, The Creator"', async () => {
+      const track = { artists: [{ name: 'Tyler, The Creator' }, { name: 'Kali Uchis' }] };
+      const { full, primary } = getArtistNames(track);
+      expect(full).toBe('Tyler, The Creator, Kali Uchis');
+      expect(primary).toBe('Tyler, The Creator');
+
+      const requestedUrls: string[] = [];
+      global.fetch = async (url: any) => {
+        const urlStr = String(url);
+        requestedUrls.push(urlStr);
+        const parsed = new URL(urlStr);
+        const artistParam = parsed.searchParams.get('artist_name');
+
+        // Step b full artist misses
+        if (artistParam === 'Tyler, The Creator, Kali Uchis') {
+          return new Response('Not Found', { status: 404 }) as any;
+        }
+
+        // Fallback to primary artist hits
+        if (artistParam === 'Tyler, The Creator') {
+          return new Response(
+            JSON.stringify({
+              id: 2222,
+              trackName: 'See You Again',
+              artistName: 'Tyler, The Creator',
+              duration: 180,
+              syncedLyrics: '[00:10.00] Can I get a kiss',
+              plainLyrics: 'Can I get a kiss',
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          ) as any;
+        }
+
+        return new Response('Not Found', { status: 404 }) as any;
+      };
+
+      const { lookupLyrics } = await import('../lyricsLookup');
+      const outcome = await lookupLyrics({
+        trackId: 'test_t2',
+        title: 'See You Again',
+        artist: full,
+        primaryArtist: primary,
+        durationSec: 180,
+      });
+
+      expect(outcome.matchedStep).toBe('b');
+      expect(outcome.lrclibRecordId).toBe(2222);
+      expect(requestedUrls.length).toBe(2);
+
+      // First request uses full 'Tyler, The Creator, Kali Uchis'
+      const firstUrl = new URL(requestedUrls[0]);
+      expect(firstUrl.searchParams.get('artist_name')).toBe('Tyler, The Creator, Kali Uchis');
+
+      // Fallback uses 'Tyler, The Creator'
+      const secondUrl = new URL(requestedUrls[1]);
+      expect(secondUrl.searchParams.get('artist_name')).toBe('Tyler, The Creator');
+    });
   });
 });
 

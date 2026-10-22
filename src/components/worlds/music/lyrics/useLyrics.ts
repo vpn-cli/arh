@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { attachEstimatedWordTimings, LyricLine } from '@/lib/lyrics';
+export { getArtistNames } from '@/lib/lyricsLookup';
 
 export type LyricsStatus = 'loading' | 'found' | 'instrumental' | 'not_found' | 'error';
 
@@ -82,7 +83,8 @@ export async function prefetchLyrics(
   trackId: string,
   trackName?: string,
   artistName?: string,
-  forceRefresh: boolean = false
+  forceRefresh: boolean = false,
+  primaryArtist?: string
 ): Promise<LyricsData | null> {
   if (!trackId) return null;
 
@@ -103,6 +105,7 @@ export async function prefetchLyrics(
       const params = new URLSearchParams({ trackId });
       if (trackName) params.set('title', trackName);
       if (artistName) params.set('artist', artistName);
+      if (primaryArtist) params.set('primaryArtist', primaryArtist);
       if (forceRefresh) params.set('refresh', 'true');
 
       const res = await fetch(`/api/lyrics?${params.toString()}`);
@@ -177,7 +180,8 @@ export function getCachedLyrics(trackId: string): LyricsData | null | undefined 
 export function useLyrics(
   trackId: string | null | undefined,
   trackName?: string,
-  artistName?: string
+  artistName?: string,
+  primaryArtist?: string
 ) {
   const cached = trackId ? getValidCachedLyrics(trackId) : undefined;
 
@@ -225,11 +229,11 @@ export function useLyrics(
     if (!trackId) return;
     clearCachedLyrics(trackId);
     setIsLyricsLoading(true);
-    const data = await prefetchLyrics(trackId, trackName, artistName, true);
+    const data = await prefetchLyrics(trackId, trackName, artistName, true, primaryArtist);
     setBaseLyricsData(data);
     setOffsetMsState(data?.offsetMs ?? 0);
     setIsLyricsLoading(false);
-  }, [trackId, trackName, artistName]);
+  }, [trackId, trackName, artistName, primaryArtist]);
 
   useEffect(() => {
     if (!trackId) return;
@@ -240,7 +244,7 @@ export function useLyrics(
 
     let isCancelled = false;
 
-    prefetchLyrics(trackId, trackName, artistName).then((data) => {
+    prefetchLyrics(trackId, trackName, artistName, false, primaryArtist).then((data) => {
       if (isCancelled) return;
       setBaseLyricsData(data);
       setOffsetMsState(data?.offsetMs ?? 0);
@@ -250,7 +254,7 @@ export function useLyrics(
     return () => {
       isCancelled = true;
     };
-  }, [trackId, trackName, artistName]);
+  }, [trackId, trackName, artistName, primaryArtist]);
 
   // Derived shifted lyrics computed when lyrics load or offset changes (never per frame)
   const lyricsData = useMemo<LyricsData | null>(() => {
